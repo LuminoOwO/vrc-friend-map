@@ -1,0 +1,431 @@
+// Sync engine: pulls data from the VRChat API through the Rust client, which
+// spaces requests out (>= 1 s apart) and backs off on 429. Profiles and mutuals
+// are cached and only refetched when older than the configured age.
+import { backend, type ApiResponse } from "./backend";
+import { getState, resetSync, setState, setSync, showToast, updateCache, updateLocal } from "./store";
+import type { Friend, Me, MutualInfo, Presence, UserDetail } from "./types";
+
+class SessionExpired extends Error {}
+
+let generation = 0; // bumps on logout/stop so running loops bail out
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function api(path: string, query?: Record<string, string | number | boolean>): Promise<ApiResponse> {
+  const gen = generation;
+  for (let attempt = 0; attempt < 6; attempt++) {
+    if (gen !== generation) throw new Error("stopped");
+    const r = await backend.vrcGet(path, query);
+    if (r.status === 429) {
+      const wait = (r.retry_after ?? 30) * 1000;
+      setSync({ backoffUntil: Date.now() + wait, message: "VRChat asked us to slow down, waiting…" });
+      continue; // the Rust side holds the next request until the backoff ends
+    }
+    if (r.status === 401) throw new SessionExpired("Your VRChat session expired. Log in again.");
+    if (r.status >= 500) {
+      await sleep(4000 * (attempt + 1));
+      continue;
+    }
+    if (getState().sync.backoffUntil) setSync({ backoffUntil: 0, message: "" });
+    return r;
+  }
+  throw new Error(`VRChat API kept failing for ${path}`);
+}
+
+async function waitWhilePaused(gen: number) {
+  while (getState().sync.paused && gen === generation) await sleep(400);
+}
+
+function handleError(e: unknown) {
+  if (e instanceof SessionExpired) {
+    stopSync();
+    setState({ mode: "login", session: null, loginMessage: e.message });
+    return;
+  }
+  const msg = e instanceof Error ? e.message : String(e);
+  if (msg === "stopped") return;
+  setSync({ error: msg, running: false });
+}
+
+// ---------- individual fetches ----------
+
+async function fetchMe(): Promise<Me> {
+  const r = await api("/auth/user");
+  const d = r.data;
+  if (r.status !== 200 || !d?.id) throw new SessionExpired("Your VRChat session needs a fresh login.");
+  const me: Me = {
+    id: d.id,
+    displayName: d.displayName,
+    friends: d.friends ?? [],
+    onlineFriends: d.onlineFriends ?? [],
+    activeFriends: d.activeFriends ?? [],
+    offlineFriends: d.offlineFriends ?? [],
+    iconUrl: d.iconUrl || d.userIcon || d.currentAvatarThumbnailImageUrl,
+  };
+  updateCache((c) => ({ ...c, me }));
+  return me;
+}
+
+async function fetchFriendPages(offline: boolean, gen: number): Promise<Friend[]> {
+  const out: Friend[] = [];
+  for (let offset = 0; offset < 5000; offset += 100) {
+    if (gen !== generation) throw new Error("stopped");
+    const r = await api("/auth/user/friends", { offline, n: 100, offset });
+    const page: Friend[] = Array.isArray(r.data) ? r.data : [];
+    out.push(...page);
+    setSync({ message: `Loading ${offline ? "offline" : "online"} friends… ${out.length}` });
+    if (page.length < 100) break;
+  }
+  return out;
+}
+
+async function fetchFriends(me: Me, gen: number) {
+  setSync({ phase: "Friends list", message: "Loading friends…" });
+  const online = await fetchFriendPages(false, gen);
+  const offline = await fetchFriendPages(true, gen);
+  const onlineSet = new Set(me.onlineFriends);
+  const activeSet = new Set(me.activeFriends);
+  const now = Date.now();
+  const prevFriends = getState().cache.friends;
+
+  updateCache((c) => {
+    const friends: Record<string, Friend> = {};
+    const presence: Record<string, Presence> = {};
+    const fromList = new Map<string, [Friend, boolean]>();
+    online.forEach((f) => fromList.set(f.id, [f, false]));
+    offline.forEach((f) => fromList.set(f.id, [f, true]));
+    const ids = me.friends.length ? me.friends : [...fromList.keys()];
+    for (const id of ids) {
+      const hit = fromList.get(id);
+      const f = hit?.[0] ?? c.friends[id];
+      if (!f) continue;
+      friends[id] = f;
+      if (onlineSet.has(id)) presence[id] = "online";
+      else if (activeSet.has(id)) presence[id] = "web";
+      else if (hit) presence[id] = hit[1] ? "offline" : f.location === "offline" || f.platform === "web" ? "web" : "online";
+      else presence[id] = "offline";
+    }
+    return { ...c, friends, presence, lastFriendsSync: now };
+  });
+
+  recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
+}
+
+/** Keep a small log of friends added and removed since the first sync. */
+export function recordFriendChanges(current: string[], prevFriends: Record<string, Friend>) {
+  const now = Date.now();
+  updateLocal((l) => {
+    const firstRun = !l.logSince;
+    const prev = new Set(l.lastFriendIds);
+    const cur = new Set(current);
+    const log = [...l.friendLog];
+    if (!firstRun) {
+      for (const id of current) {
+        if (!prev.has(id)) log.push({ t: now, id, name: getState().cache.friends[id]?.displayName ?? id, type: "added" });
+      }
+      for (const id of prev) {
+        if (!cur.has(id)) log.push({ t: now, id, name: prevFriends[id]?.displayName ?? id, type: "removed" });
+      }
+    }
+    return { ...l, logSince: l.logSince || now, lastFriendIds: current, friendLog: log.slice(-500) };
+  });
+}
+
+async function fetchFavorites() {
+  setSync({ phase: "Favorites", message: "Loading favorite groups…" });
+  const groupsRes = await api("/favorite/groups", { type: "friend", n: 50 });
+  const groups: { name: string; displayName: string }[] = Array.isArray(groupsRes.data) ? groupsRes.data : [];
+  const names = new Map(groups.map((g) => [g.name, g.displayName || g.name]));
+  const favorites: Record<string, string[]> = {};
+  for (let offset = 0; offset < 2000; offset += 100) {
+    const r = await api("/favorites", { type: "friend", n: 100, offset });
+    const page: { favoriteId: string; tags: string[] }[] = Array.isArray(r.data) ? r.data : [];
+    for (const fav of page) {
+      favorites[fav.favoriteId] = (fav.tags ?? []).map((t) => names.get(t) ?? t);
+    }
+    if (page.length < 100) break;
+  }
+  updateCache((c) => ({ ...c, favorites }));
+}
+
+async function fetchDetail(id: string) {
+  const r = await api(`/users/${encodeURIComponent(id)}`);
+  if (r.status !== 200 || !r.data?.id) return;
+  const d = r.data;
+  const detail: UserDetail = {
+    tags: d.tags ?? [],
+    date_joined: d.date_joined,
+    pronouns: d.pronouns,
+    bio: d.bio,
+    note: d.note,
+    fetchedAt: Date.now(),
+  };
+  updateCache((c) => {
+    const friend = c.friends[id];
+    const merged = friend
+      ? {
+          ...friend,
+          developerType: d.developerType ?? friend.developerType,
+          iconUrl: friend.iconUrl || d.iconUrl,
+          bannerUrl: friend.bannerUrl || d.bannerUrl,
+          bannerColor: friend.bannerColor || d.bannerColor,
+        }
+      : friend;
+    return { ...c, details: { ...c.details, [id]: detail }, friends: merged ? { ...c.friends, [id]: merged } : c.friends };
+  });
+}
+
+async function fetchMutuals(id: string, gen: number) {
+  const ids: string[] = [];
+  let hidden = false;
+  for (let offset = 0; offset < 1000; offset += 100) {
+    if (gen !== generation) throw new Error("stopped");
+    const r = await api(`/users/${encodeURIComponent(id)}/mutuals/friends`, { n: 100, offset });
+    if (r.status === 403 || r.status === 400 || r.status === 404) {
+      hidden = true;
+      break;
+    }
+    const page: { id: string }[] = Array.isArray(r.data) ? r.data : [];
+    ids.push(...page.map((m) => m.id).filter(Boolean));
+    if (page.length < 100) break;
+  }
+  const info: MutualInfo = { ids, count: ids.length, hidden, fetchedAt: Date.now() };
+  updateCache((c) => ({ ...c, mutuals: { ...c.mutuals, [id]: info } }));
+}
+
+// ---------- orchestration ----------
+
+function staleIds(kind: "details" | "mutuals"): string[] {
+  const s = getState();
+  const ttl = (kind === "details" ? s.settings.detailTtlDays : s.settings.mutualTtlDays) * 864e5;
+  const now = Date.now();
+  const rank = (id: string) => (s.cache.presence[id] === "online" ? 0 : s.cache.presence[id] === "web" ? 1 : 2);
+  return Object.keys(s.cache.friends)
+    .filter((id) => {
+      const entry = s.cache[kind][id];
+      // Spread refreshes out a little so they don't all expire on the same day.
+      const jitter = ((id.charCodeAt(id.length - 1) % 10) / 10) * 864e5;
+      return !entry || now - entry.fetchedAt > ttl + jitter;
+    })
+    .sort((a, b) => rank(a) - rank(b));
+}
+
+async function drainQueue(kind: "details" | "mutuals", gen: number) {
+  const ids = staleIds(kind);
+  if (!ids.length) return;
+  const label = kind === "details" ? "Profiles (trust rank, join date)" : "Mutual friends";
+  setSync({ phase: label, done: 0, total: ids.length, message: "" });
+  for (let i = 0; i < ids.length; i++) {
+    await waitWhilePaused(gen);
+    if (gen !== generation) throw new Error("stopped");
+    const id = ids[i];
+    if (!getState().cache.friends[id]) continue;
+    if (kind === "details") await fetchDetail(id);
+    else await fetchMutuals(id, gen);
+    setSync({ done: i + 1, message: getState().cache.friends[id]?.displayName ?? "" });
+  }
+}
+
+export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
+  const s = getState();
+  if (s.demo || s.sync.running) return;
+  const gen = ++generation;
+  setSync({ running: true, error: "", paused: false, done: 0, total: 0 });
+  try {
+    const me = await fetchMe();
+    await fetchFriends(me, gen);
+    if (!opts.friendsOnly) {
+      await fetchFavorites();
+      await drainQueue("details", gen);
+      await drainQueue("mutuals", gen);
+    }
+    if (gen === generation) {
+      resetSync();
+      setSync({ message: `Updated ${new Date().toLocaleTimeString()}` });
+    }
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+export async function refreshPerson(id: string) {
+  const s = getState();
+  if (s.demo) return;
+  if (s.sync.running) {
+    // Mark stale so the running queue picks it up.
+    updateCache((c) => {
+      const details = { ...c.details };
+      const mutuals = { ...c.mutuals };
+      if (details[id]) details[id] = { ...details[id], fetchedAt: 0 };
+      if (mutuals[id]) mutuals[id] = { ...mutuals[id], fetchedAt: 0 };
+      return { ...c, details, mutuals };
+    });
+    return;
+  }
+  const gen = ++generation;
+  setSync({ running: true, phase: "Refreshing", message: s.cache.friends[id]?.displayName ?? "", error: "" });
+  try {
+    await fetchDetail(id);
+    await fetchMutuals(id, gen);
+    resetSync();
+  } catch (e) {
+    handleError(e);
+  }
+}
+
+export function stopSync() {
+  generation++;
+  resetSync();
+}
+
+export function togglePause() {
+  setSync({ paused: !getState().sync.paused });
+}
+
+let autoTimer: ReturnType<typeof setInterval> | null = null;
+
+/** Background refresh while the app is visible: every ~5 minutes without the
+ *  live connection, every ~30 minutes with it (just to catch anything missed). */
+export function startAutoRefresh() {
+  if (autoTimer) return;
+  const gap = () => (getState().live.connected ? 30 : 5) * 60e3 + Math.random() * 90e3;
+  let nextAt = Date.now() + gap();
+  autoTimer = setInterval(() => {
+    const s = getState();
+    if (s.demo || s.mode !== "app" || !s.settings.autoRefresh || s.sync.running) return;
+    if (document.visibilityState !== "visible") return;
+    if (Date.now() < nextAt) return;
+    nextAt = Date.now() + gap();
+    // Status refresh, then pick up any profiles/mutuals that went stale.
+    syncAll();
+  }, 15e3);
+}
+
+// ---------- live events from VRChat's WebSocket pipeline ----------
+
+const IMAGE_AND_PROFILE_FIELDS = [
+  "displayName",
+  "status",
+  "statusDescription",
+  "location",
+  "platform",
+  "last_platform",
+  "last_login",
+  "last_activity",
+  "last_mobile",
+  "iconUrl",
+  "bannerUrl",
+  "bannerColor",
+  "currentAvatarImageUrl",
+  "currentAvatarThumbnailImageUrl",
+  "profilePicOverride",
+  "userIcon",
+  "developerType",
+] as const;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mergeUser(prev: Friend | undefined, u: any, id: string): Friend {
+  const base: Friend = prev ?? {
+    id,
+    displayName: id,
+    status: "offline",
+    statusDescription: "",
+    location: "offline",
+    platform: "",
+    last_platform: "",
+    last_login: null,
+    last_activity: null,
+  };
+  const next: Friend = { ...base, id };
+  if (u && typeof u === "object") {
+    for (const k of IMAGE_AND_PROFILE_FIELDS) {
+      if (u[k] !== undefined && u[k] !== null) (next as unknown as Record<string, unknown>)[k] = u[k];
+    }
+  }
+  return next;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function presenceFromUser(u: any): Presence | null {
+  if (u?.state === "online") return "online";
+  if (u?.state === "active") return "web";
+  if (u?.state === "offline") return "offline";
+  return null;
+}
+
+/** Apply one event from the live connection to the local cache. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function applyPipelineEvent(type: string, content: any) {
+  const s = getState();
+  if (s.demo || !content || typeof content.userId !== "string") return;
+  const id: string = content.userId;
+  const now = new Date().toISOString();
+  const known = !!s.cache.friends[id];
+
+  switch (type) {
+    case "friend-add": {
+      const prevFriends = s.cache.friends;
+      const friend = mergeUser(prevFriends[id], content.user, id);
+      const u = content.user ?? {};
+      updateCache((c) => ({
+        ...c,
+        friends: { ...c.friends, [id]: friend },
+        presence: { ...c.presence, [id]: presenceFromUser(u) ?? (friend.location !== "offline" ? "online" : "offline") },
+        details: Array.isArray(u.tags)
+          ? { ...c.details, [id]: { tags: u.tags, date_joined: u.date_joined, pronouns: u.pronouns, bio: u.bio, note: u.note, fetchedAt: Date.now() } }
+          : c.details,
+        me: c.me && !c.me.friends.includes(id) ? { ...c.me, friends: [...c.me.friends, id] } : c.me,
+      }));
+      recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
+      showToast(`${friend.displayName} is now your friend`);
+      refreshPerson(id); // load their mutual friends so lines appear
+      return;
+    }
+    case "friend-delete": {
+      if (!known) return;
+      const prevFriends = s.cache.friends;
+      const name = prevFriends[id]?.displayName ?? "Someone";
+      updateCache((c) => {
+        const friends = { ...c.friends };
+        const presence = { ...c.presence };
+        delete friends[id];
+        delete presence[id];
+        const me = c.me ? { ...c.me, friends: c.me.friends.filter((x) => x !== id) } : c.me;
+        return { ...c, friends, presence, me };
+      });
+      recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
+      if (getState().selectedId === id) setState({ selectedId: null });
+      showToast(`${name} is no longer on your friends list`);
+      return;
+    }
+    case "friend-online":
+    case "friend-active":
+    case "friend-offline":
+    case "friend-update":
+    case "friend-location": {
+      if (!known) return;
+      updateCache((c) => {
+        const prev = c.friends[id];
+        let friend = mergeUser(prev, content.user, id);
+        let presence: Presence = c.presence[id] ?? "offline";
+        if (type === "friend-online") {
+          presence = "online";
+          friend = { ...friend, platform: content.platform ?? friend.platform, location: content.location ?? friend.location, last_login: now };
+        } else if (type === "friend-active") {
+          presence = "web";
+          friend = { ...friend, platform: content.platform ?? "web" };
+        } else if (type === "friend-offline") {
+          presence = "offline";
+          friend = { ...friend, status: "offline", location: "offline", last_activity: now, last_platform: content.platform || friend.last_platform };
+        } else if (type === "friend-location") {
+          presence = content.location === "offline" ? presence : "online";
+          friend = { ...friend, location: content.location ?? friend.location };
+        } else {
+          presence = presenceFromUser(content.user) ?? presence;
+        }
+        return { ...c, friends: { ...c.friends, [id]: friend }, presence: { ...c.presence, [id]: presence } };
+      });
+      return;
+    }
+  }
+}

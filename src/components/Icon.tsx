@@ -1,0 +1,47 @@
+const PATHS: Record<string, string> = {
+  graph: "M6 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M18 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M12 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M8 6h8M7 8l4 8M17 8l-4 8",
+  cards: "M4 4h7v7h-7zM13 4h7v7h-7zM4 13h7v7h-7zM13 13h7v7h-7z",
+  share: "M6 12m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0M18 6m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0M18 18m-2.5 0a2.5 2.5 0 1 0 5 0a2.5 2.5 0 1 0 -5 0M8.3 10.8l7.4 -3.6M8.3 13.2l7.4 3.6",
+  search: "M10 10m-6 0a6 6 0 1 0 12 0a6 6 0 1 0 -12 0M20 20l-5.5 -5.5",
+  filter: "M4 5h16l-6 7v6l-4 2v-8z",
+  refresh: "M19.5 9a8 8 0 0 0 -14.6 -2M4.5 15a8 8 0 0 0 14.6 2M5 3v4h4M19 21v-4h-4",
+  settings: "M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M12 3v2.5M12 18.5v2.5M3 12h2.5M18.5 12h2.5M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8 -1.8M16.6 7.4l1.8 -1.8",
+  close: "M6 6l12 12M18 6l-12 12",
+  pause: "M8 5v14M16 5v14",
+  play: "M7 4l13 8l-13 8z",
+  plus: "M12 5v14M5 12h14",
+  eye: "M2 12s3.6 -7 10 -7s10 7 10 7s-3.6 7 -10 7s-10 -7 -10 -7zM12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0",
+  eyeOff: "M3 3l18 18M10.6 10.6a3 3 0 0 0 4.2 4.2M9.4 5.4a10.7 10.7 0 0 1 2.6 -.4c6.4 0 10 7 10 7a17 17 0 0 1 -3.2 4.1M6.6 6.6c-2.9 1.9 -4.6 5.4 -4.6 5.4s3.6 7 10 7a9.7 9.7 0 0 0 5.4 -1.6",
+  trash: "M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1 -13M9 7v-3h6v3",
+  menu: "M4 6h16M4 12h16M4 18h16",
+  star: "M12 3l2.8 5.7l6.2 .9l-4.5 4.4l1.1 6.2l-5.6 -3l-5.6 3l1.1 -6.2l-4.5 -4.4l6.2 -.9z",
+  fit: "M4 9v-5h5M20 9v-5h-5M4 15v5h5M20 15v5h-5",
+  tag: "M3 12v-8h8l10 10l-8 8z M7.5 7.5h.01",
+  user: "M12 8m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0M5 21v-1a7 7 0 0 1 14 0v1",
+  logout: "M14 8v-3h-9v14h9v-3M10 12h11M18 9l3 3l-3 3",
+  copy: "M8 8h12v12h-12zM16 8v-4h-12v12h4",
+  download: "M12 4v12M7 11l5 5l5 -5M5 20h14",
+  upload: "M12 20v-12M7 13l5 -5l5 5M5 4h14",
+  info: "M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M12 8h.01M11 12h1v4h1",
+};
+
+export function Icon({ name, size = 18, title }: { name: keyof typeof PATHS | string; size?: number; title?: string }) {
+  return (
+    <svg
+      className="icon"
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden={title ? undefined : true}
+      role={title ? "img" : undefined}
+    >
+      {title ? <title>{title}</title> : null}
+      <path d={PATHS[name] ?? ""} />
+    </svg>
+  );
+}

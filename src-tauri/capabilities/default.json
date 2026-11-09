@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The app UI. The vrchat.com login window gets no IPC access.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
