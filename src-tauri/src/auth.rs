@@ -126,31 +126,100 @@ async fn finish<R: Runtime>(app: &AppHandle<R>, state: &Arc<AppState>) {
     }
 }
 
+/// Pick the `auth` and `twoFactorAuth` values out of (name, value) pairs.
+fn pick_session(pairs: impl IntoIterator<Item = (String, String)>) -> (Option<String>, Option<String>) {
+    let mut auth = None;
+    let mut two_factor = None;
+    for (name, value) in pairs {
+        if value.is_empty() {
+            continue;
+        }
+        match name.as_str() {
+            "auth" if auth.is_none() => auth = Some(value),
+            "twoFactorAuth" if two_factor.is_none() => two_factor = Some(value),
+            _ => {}
+        }
+    }
+    (auth, two_factor)
+}
+
+/// "a=1; b=2" (a Cookie header) -> [("a","1"), ("b","2")]
+#[cfg_attr(not(target_os = "android"), allow(dead_code))]
+fn parse_cookie_header(header: &str) -> Vec<(String, String)> {
+    header
+        .split(';')
+        .filter_map(|part| {
+            let (k, v) = part.trim().split_once('=')?;
+            Some((k.trim().to_string(), v.trim().to_string()))
+        })
+        .collect()
+}
+
 /// Read cookies off the main thread (WebView2 deadlocks otherwise).
+#[cfg(not(target_os = "android"))]
 async fn read_cookies<R: Runtime>(w: WebviewWindow<R>) -> (Option<String>, Option<String>) {
     tauri::async_runtime::spawn_blocking(move || {
-        let mut auth = None;
-        let mut two_factor = None;
+        let mut pairs = Vec::new();
         for u in COOKIE_URLS {
             let Ok(url) = u.parse::<Url>() else { continue };
             if let Ok(cookies) = w.cookies_for_url(url) {
-                for c in cookies {
-                    match c.name() {
-                        "auth" if auth.is_none() && !c.value().is_empty() => {
-                            auth = Some(c.value().to_string())
-                        }
-                        "twoFactorAuth" if two_factor.is_none() && !c.value().is_empty() => {
-                            two_factor = Some(c.value().to_string())
-                        }
-                        _ => {}
-                    }
-                }
+                pairs.extend(cookies.iter().map(|c| (c.name().to_string(), c.value().to_string())));
             }
         }
-        (auth, two_factor)
+        pick_session(pairs)
     })
     .await
     .unwrap_or((None, None))
+}
+
+/// Android: ask android.webkit.CookieManager directly. wry's cookies_for_url
+/// crashes the app (NullPointerException in RustWebView.getCookies) whenever
+/// a URL has no cookies yet, which is the normal state before signing in.
+#[cfg(target_os = "android")]
+async fn read_cookies<R: Runtime>(w: WebviewWindow<R>) -> (Option<String>, Option<String>) {
+    let (tx, rx) = std::sync::mpsc::channel::<Vec<String>>();
+    let sent = w.with_webview(move |pw| {
+        pw.jni_handle().exec(move |env, _activity, _webview| {
+            let headers = COOKIE_URLS.iter().filter_map(|u| android_cookie_header(env, u)).collect();
+            let _ = tx.send(headers);
+        });
+    });
+    if sent.is_err() {
+        return (None, None);
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        let headers = rx.recv_timeout(Duration::from_secs(5)).unwrap_or_default();
+        pick_session(headers.iter().flat_map(|h| parse_cookie_header(h)))
+    })
+    .await
+    .unwrap_or((None, None))
+}
+
+/// `CookieManager.getInstance().getCookie(url)`; None when there are none.
+#[cfg(target_os = "android")]
+fn android_cookie_header(env: &mut jni::JNIEnv, url: &str) -> Option<String> {
+    let result = (|| -> jni::errors::Result<Option<String>> {
+        let cm = env
+            .call_static_method("android/webkit/CookieManager", "getInstance", "()Landroid/webkit/CookieManager;", &[])?
+            .l()?;
+        let jurl = env.new_string(url)?;
+        let v = env
+            .call_method(&cm, "getCookie", "(Ljava/lang/String;)Ljava/lang/String;", &[(&jurl).into()])?
+            .l()?;
+        if v.is_null() {
+            return Ok(None);
+        }
+        let s: String = env.get_string(&jni::objects::JString::from(v))?.into();
+        Ok(Some(s))
+    })();
+    match result {
+        Ok(v) => v,
+        Err(_) => {
+            // A pending Java exception would crash the app on return to Java.
+            let _ = env.exception_clear();
+            None
+        }
+    }
 }
 
 async fn poll<R: Runtime>(app: &AppHandle<R>, state: &Arc<AppState>) -> Result<String, String> {
@@ -198,5 +267,18 @@ async fn poll<R: Runtime>(app: &AppHandle<R>, state: &Arc<AppState>) -> Result<S
                 );
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cookie_header_parsing() {
+        let pairs = parse_cookie_header("foo=1; auth=authcookie_abc; twoFactorAuth=xyz;  empty=");
+        assert_eq!(pick_session(pairs), (Some("authcookie_abc".into()), Some("xyz".into())));
+        assert_eq!(pick_session(parse_cookie_header("")), (None, None));
+        assert_eq!(pick_session(parse_cookie_header("auth=")), (None, None));
     }
 }

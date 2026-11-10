@@ -3,6 +3,14 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.3.2 (2026-11-10)
+
+### Fixed
+- Android: signing in still crashed, now with a `NullPointerException` in
+  `RustWebView.getCookies`. Android returns "no cookies" as null before you've
+  signed in, and the webview library didn't handle that. The app now reads
+  cookies through Android's CookieManager itself.
+
 ## 0.3.1 (2026-11-10)
 
 ### Fixed

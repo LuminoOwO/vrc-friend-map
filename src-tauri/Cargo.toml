@@ -1,6 +1,6 @@
 [package]
 name = "vrc-friend-map"
-version = "0.3.1"
+version = "0.3.2"
 description = "Map your VRChat friends, mutuals and circles"
 edition = "2021"
 license = "MIT"
@@ -28,3 +28,8 @@ percent-encoding = "2"
 tokio-tungstenite = { version = "0.30", default-features = false, features = ["connect", "rustls-tls-webpki-roots"] }
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+
+# Android: read cookies through android.webkit.CookieManager (see auth.rs).
+# Same version as wry's, so JniHandle::exec closures get matching types.
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.21"
