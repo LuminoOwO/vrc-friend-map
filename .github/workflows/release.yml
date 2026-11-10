@@ -85,13 +85,19 @@ jobs:
           workspaces: src-tauri -> target
       - name: System libraries
         run: |
-          PKGS="libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev"
-          MISSING=$(for p in $PKGS; do dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "ok installed" || printf '%s ' "$p"; done)
+          # a|b = either package will do (Linux Mint ships the Ayatana tray library, which conflicts with
+          # libappindicator3; the app's tray-icon crate works with both). The first one gets installed.
+          PKGS="libwebkit2gtk-4.1-dev libappindicator3-dev|libayatana-appindicator3-dev librsvg2-dev patchelf libxdo-dev"
+          MISSING=$(for alt in $PKGS; do
+            ok=; for p in ${alt//|/ }; do dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "ok installed" && ok=1; done
+            [ -n "$ok" ] || printf '%s ' "${alt%%|*}"
+          done)
           MISSING=${MISSING% }
           if [ -z "$MISSING" ]; then echo "All system libraries present"; exit 0; fi
           if [ "$RUNNER_ENVIRONMENT" = self-hosted ]; then
             # no sudo on your own PC: install them once yourself
-            echo "::error::Missing on this machine: $MISSING. Run once: sudo apt install $MISSING"
+            HINT=${MISSING/libappindicator3-dev/libayatana-appindicator3-dev}
+            echo "::error::Missing on this machine: $MISSING. Run once: sudo apt install $HINT"
             exit 1
           fi
           sudo apt-get update
