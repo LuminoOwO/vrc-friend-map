@@ -1,5 +1,6 @@
 import { memo } from "react";
 import { imgSrc } from "../backend";
+import { captureCard } from "../flip";
 import {
   PLATFORM_LABEL,
   bannerUrl,
@@ -54,7 +55,10 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
         e.dataTransfer.setData("text/vrc-user", f.id);
         e.dataTransfer.effectAllowed = "copy";
       }}
-      onClick={() => p.onSelect(f.id)}
+      onClick={(e) => {
+        captureCard(f.id, e.currentTarget);
+        p.onSelect(f.id);
+      }}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
@@ -62,7 +66,7 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
       }}
       style={{ ["--trust" as string]: trust.color }}
     >
-      <div className="fcard-banner" style={{ background: f.bannerColor || "#1e2a33" }}>
+      <div className="fcard-banner" data-flip="banner" style={{ background: f.bannerColor || "#1e2a33" }}>
         {banner && <img src={banner} alt="" loading="lazy" draggable={false} onError={(e) => (e.currentTarget.style.display = "none")} />}
         {p.favorite?.length ? (
           <span className="fav" title={`Favorite: ${p.favorite.join(", ")}`}>
@@ -74,7 +78,7 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
         </span>
       </div>
       <div className="fcard-body">
-        <div className="fcard-icon" style={{ borderColor: sColor }}>
+        <div className="fcard-icon" data-flip="icon" style={{ borderColor: sColor }}>
           {icon ? (
             <img src={icon} alt="" loading="lazy" draggable={false} onError={(e) => (e.currentTarget.style.display = "none")} />
           ) : (
@@ -83,10 +87,10 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
           <span className="status-dot" style={{ background: sColor }} />
         </div>
         <div className="fcard-text">
-          <div className="fcard-name" title={`${f.displayName} · ${trust.label}`}>
+          <div className="fcard-name" data-flip="name" title={`${f.displayName} · ${trust.label}`}>
             {f.displayName}
           </div>
-          <div className="fcard-status" title={f.statusDescription}>
+          <div className="fcard-status" data-flip="status" title={f.statusDescription}>
             {f.statusDescription || presenceLabel(f, p.presence)}
           </div>
         </div>

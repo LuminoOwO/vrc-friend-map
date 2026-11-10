@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import { backend, isTauri } from "./backend";
 import { useDerived } from "./derived";
 import { CardsView } from "./components/CardsView";
@@ -11,6 +11,7 @@ import { Sidebar } from "./components/Sidebar";
 import { ToastView } from "./components/ToastView";
 import { TopBar } from "./components/TopBar";
 import { Icon } from "./components/Icon";
+import { applyThemeColors } from "./model";
 import { applyAutoGroups, initLogs, refreshStats, scheduleLogScans, useGroupSuggestions } from "./logs";
 import { flushSaves, getState, loadPersisted, setState, useApp } from "./store";
 import { applyPipelineEvent, startAutoRefresh, syncAll } from "./sync";
@@ -24,6 +25,7 @@ export default function App() {
   const mode = useApp((s) => s.mode);
   const view = useApp((s) => s.view);
   const selectedId = useApp((s) => s.selectedId);
+  const theme = useApp((s) => s.settings.theme);
   const profileAs = useApp((s) => s.settings.profileAs);
   const settingsOpen = useApp((s) => s.settingsOpen);
   const sidebarOpen = useApp((s) => s.sidebarOpen);
@@ -101,7 +103,7 @@ export default function App() {
       <ThemeSync />
       <TopBar />
       <Notice />
-      <div className="main">
+      <div className="main" key={theme}>
         {sidebarOpen && <Sidebar />}
         <div className="content">
           {view === "graph" && <GraphView />}
@@ -130,9 +132,12 @@ export default function App() {
 /** Applies the color theme to the whole page. */
 function ThemeSync() {
   const theme = useApp((s) => s.settings.theme);
-  useEffect(() => {
+  // Layout effect: colors must be in place before the first paint of the new theme.
+  useLayoutEffect(() => {
     if (theme === "dark") delete document.documentElement.dataset.theme;
     else document.documentElement.dataset.theme = theme;
+    const cs = getComputedStyle(document.documentElement);
+    applyThemeColors((v) => cs.getPropertyValue(v).trim());
   }, [theme]);
   return null;
 }

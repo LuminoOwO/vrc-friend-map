@@ -3,6 +3,22 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.5.1 (2026-11-10)
+
+### Added
+- Opening a profile from a card animates: the profile grows out of the card, and the card's
+  banner, picture, name and status move to their places in the profile. On phones it grows
+  out of the picture you tapped. Respects "reduce motion".
+
+### Fixed
+- Dithering brightened the background. It's now zero-mean noise in sRGB, which keeps the
+  brightness the same and only breaks up the bands.
+- OLED black: the map background is pure black (no gradient, no noise showing).
+- Catppuccin themes now use the official Mocha, Macchiato and Latte palettes throughout
+  (base/mantle/crust, surfaces, text and subtext, mauve accent), including status colors,
+  trust rank colors, line colors, stars and highlights. Nord and Dracula got the same
+  treatment.
+
 ## 0.5.0 (2026-11-10)
 
 ### Added

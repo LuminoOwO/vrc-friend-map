@@ -17,11 +17,14 @@ import {
   presenceLabel,
   presenceOf,
   relTime,
+  STATUS_COLORS,
   statusColor,
+  TRUST_RANKS,
   trustRank,
 } from "../model";
 import { addToCircle, getState, setState, updateSettings, useApp } from "../store";
 import type { Circle, Friend, MapSettings, Presence } from "../types";
+import { captureCard, capturePicture } from "../flip";
 import { FRESH_MS } from "../notify";
 import { FriendCard } from "./FriendCard";
 import { Icon } from "./Icon";
@@ -77,13 +80,23 @@ function geometry(style: MapSettings["nodeStyle"], base: number, scale: number) 
 const isCard = (style: MapSettings["nodeStyle"]) => style === "card" || style === "fullcard";
 
 // Line colors: five bands, cool = few, hot = many.
-const EDGE_RGB: [number, number, number][] = [
+const DEFAULT_EDGES: [number, number, number][] = [
   [110, 130, 150],
   [56, 140, 230],
   [25, 195, 177],
   [240, 190, 40],
   [244, 80, 120],
 ];
+/** Line band colors; themes can replace them with --edges: "r,g,b|r,g,b|…". */
+let EDGE_RGB: [number, number, number][] = DEFAULT_EDGES;
+function readEdges(cs: CSSStyleDeclaration) {
+  const raw = cs.getPropertyValue("--edges").trim();
+  const parsed = raw
+    .split("|")
+    .map((part) => part.split(",").map((x) => parseInt(x, 10)) as [number, number, number])
+    .filter((c) => c.length === 3 && c.every((x) => Number.isFinite(x)));
+  EDGE_RGB = parsed.length === 5 ? parsed : DEFAULT_EDGES;
+}
 const EDGE_ALPHA = [0.16, 0.26, 0.34, 0.46, 0.62];
 const EDGE_WIDTH = [1, 1.15, 1.35, 1.7, 2.2];
 
@@ -188,9 +201,10 @@ class SpriteCache {
   }
 }
 /** Map colors that follow the color theme (read from CSS variables). */
-interface Palette { card: string; nodeBg: string; label: string; outline: string; sub: string; dim: string; line: string; border: string }
+interface Palette { card: string; nodeBg: string; label: string; outline: string; sub: string; dim: string; line: string; border: string; gold: string; ok: string }
 function readPalette(): Palette {
   const cs = getComputedStyle(document.documentElement);
+  readEdges(cs);
   const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
   return {
     card: v("--canvas-card", "#151e26"),
@@ -201,6 +215,8 @@ function readPalette(): Palette {
     dim: v("--canvas-dim", "#7d8b97"),
     line: v("--canvas-line", "160, 190, 210"),
     border: v("--border-strong", "#31455a"),
+    gold: v("--gold", "#ffd34d"),
+    ok: v("--ok", "#51e57e"),
   };
 }
 let PAL: Palette = typeof document !== "undefined" ? readPalette() : ({} as Palette);
@@ -523,7 +539,7 @@ export function GraphView() {
     }
     if (settings.map.showStars && cache.favorites[n.id]?.length) {
       ctx.font = `${Math.max(10, n.r * 0.75)}px system-ui, sans-serif`;
-      ctx.fillStyle = "#ffd34d";
+      ctx.fillStyle = PAL.gold;
       ctx.textAlign = "center";
       ctx.fillText("★", x + n.r * 0.78, y - n.r * 0.6);
     }
@@ -654,7 +670,7 @@ export function GraphView() {
       ctx.fillText(fitText(ctx, f.statusDescription || presenceLabel(f, p), maxW), tx, n.y! + 12 * s);
       if (settings.map.showStars && cache.favorites[n.id]?.length) {
         ctx.font = `${10 * s}px system-ui, sans-serif`;
-        ctx.fillStyle = "#ffd34d";
+        ctx.fillStyle = PAL.gold;
         ctx.textAlign = "right";
         ctx.fillText("★", x0 + W - 5 * s, y0 + 11 * s);
       }
@@ -704,7 +720,7 @@ export function GraphView() {
       }
       if (settings.map.showStars && cache.favorites[n.id]?.length) {
         ctx.font = `${12 * s}px system-ui, sans-serif`;
-        ctx.fillStyle = "#ffd34d";
+        ctx.fillStyle = PAL.gold;
         ctx.textAlign = "left";
         ctx.fillText("★", x0 + 7 * s, y0 + 16 * s);
       }
@@ -893,9 +909,11 @@ export function GraphView() {
           const fade = 1 - age / FRESH_MS;
           ctx.beginPath();
           ctx.arc(n.x, n.y, Math.max(n.hw, n.hh) * (1 + phase * 1.8), 0, Math.PI * 2);
-          ctx.strokeStyle = `rgba(81,229,126,${(1 - phase) * 0.8 * fade})`;
+          ctx.globalAlpha = alpha * (1 - phase) * 0.8 * fade;
+          ctx.strokeStyle = PAL.ok;
           ctx.lineWidth = 3 / t.k;
           ctx.stroke();
+          ctx.globalAlpha = alpha;
         }
         ctx.save();
         ctx.translate(n.x, n.y);
@@ -1349,6 +1367,17 @@ export function GraphView() {
     const onClick = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const n = findAt(e.clientX - rect.left, e.clientY - rect.top);
+      // Opening from the hover card: remember where its parts are for the transition.
+      if (n && hoverCardRef.current && tooltipIdRef.current === n.id) {
+        captureCard(n.id, hoverCardRef.current.querySelector(".fcard"));
+        hoverRef.current = null;
+        tooltipIdRef.current = null;
+        setTooltip(null);
+      } else if (n && n.x != null && n.y != null) {
+        const t = transformRef.current;
+        const r = Math.min(n.hw, n.hh) * t.k;
+        capturePicture(n.id, new DOMRect(rect.left + t.applyX(n.x) - r, rect.top + t.applyY(n.y) - r, r * 2, r * 2));
+      }
       setState({ selectedId: n ? n.id : null });
     };
     canvas.addEventListener("pointermove", onMove);
@@ -1486,20 +1515,14 @@ function Legend({
   const items =
     ringMode === "status"
       ? [
-          ["#42CAFF", "Join me"],
-          ["#51E57E", "Online"],
-          ["#E88134", "Ask me"],
-          ["#DE3A3A", "Busy"],
-          ["#C6C24A", "Website/app"],
-          ["#6b7783", "Offline"],
+          [STATUS_COLORS["join me"], "Join me"],
+          [STATUS_COLORS.active, "Online"],
+          [STATUS_COLORS["ask me"], "Ask me"],
+          [STATUS_COLORS.busy, "Busy"],
+          [STATUS_COLORS.web, "Website/app"],
+          [STATUS_COLORS.offline, "Offline"],
         ]
-      : [
-          ["#8143E6", "Trusted"],
-          ["#FF7B42", "Known"],
-          ["#2BCF5C", "User"],
-          ["#1778FF", "New"],
-          ["#CCCCCC", "Visitor"],
-        ];
+      : [...TRUST_RANKS].reverse().map((r) => [r.color, r.label.replace(" User", "")]);
   const colored = showLines && (lineMode === "shared" || lineMode === "together");
   return (
     <div className="legend">

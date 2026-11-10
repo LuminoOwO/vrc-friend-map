@@ -3,7 +3,8 @@
 // links on the left, and status, badges, groups and this app's own info
 // (circles, time together, shared friends) on the right. One column on
 // narrow screens.
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { playIntoProfile } from "../flip";
 import { imgSrc } from "../backend";
 import { listMemberIds } from "../derived";
 import { fmtHours, naiveToDate, personTime } from "../logs";
@@ -84,6 +85,12 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const [newCircle, setNewCircle] = useState("");
   const [allGroups, setAllGroups] = useState(false);
   const f = cache.friends[id];
+  const rootRef = useRef<HTMLElement>(null);
+
+  useLayoutEffect(() => {
+    if (popup) playIntoProfile(id, rootRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   useEffect(() => {
     setAllGroups(false);
@@ -135,42 +142,54 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const shownGroups = groups ? (allGroups ? groups.list : groups.list.slice(0, 5)) : [];
 
   return (
-    <aside className={`profile ${popup ? "popup" : ""}`} role={popup ? "dialog" : undefined} aria-label={`Profile of ${f.displayName}`}>
-      <button className="icon-btn profile-close" title="Close (Esc)" onClick={close}>
+    <aside ref={rootRef} className={`profile ${popup ? "popup" : ""}`} role={popup ? "dialog" : undefined} aria-label={`Profile of ${f.displayName}`}>
+      <button className="icon-btn profile-close" data-flip-fade title="Close (Esc)" onClick={close}>
         <Icon name="close" />
       </button>
       <div className="profile-cols">
         <div className="profile-col">
           <section className="pcard profile-main">
-            <div className="profile-banner" style={{ background: f.bannerColor || "#2a9fcc" }}>
+            <div className="profile-banner" data-flip="banner" style={{ background: f.bannerColor || "#2a9fcc" }}>
               {banner && <img src={banner} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />}
             </div>
             <div className="profile-id">
-              <div className="profile-icon" style={{ borderColor: sColor }}>
+              <div className="profile-icon" data-flip="icon" style={{ borderColor: sColor }}>
                 {icon ? <img src={icon} alt="" /> : <span>{f.displayName.slice(0, 1).toUpperCase()}</span>}
               </div>
-              <span className="status-pill">
+              <span className="status-pill" {...(f.statusDescription ? { "data-flip-fade": "" } : { "data-flip": "status" })}>
                 <span className="dot" style={{ background: sColor }} />
                 {presenceLabel(f, p)}
               </span>
             </div>
             <div className="profile-text">
-              <h2>{f.displayName}</h2>
+              <h2 data-flip="name">{f.displayName}</h2>
               <div className="profile-sub">
-                {f.statusDescription && <span className="muted">{f.statusDescription}</span>}
-                <span className="trust" style={{ color: trust.color }}>
+                {f.statusDescription && (
+                  <span className="muted" data-flip="status">
+                    {f.statusDescription}
+                  </span>
+                )}
+                <span className="trust" data-flip-fade style={{ color: trust.color }}>
                   <Icon name="shield" size={14} /> {trust.label}
                 </span>
                 {representing && (
-                  <span className="group-pill">
+                  <span className="group-pill" data-flip-fade>
                     {representing.iconUrl && <img src={imgSrc(representing.iconUrl)} alt="" />}
                     {representing.name}
                   </span>
                 )}
-                {supporter && <span className="pill vrcplus">VRC+</span>}
-                {detail?.pronouns && <span className="muted">{detail.pronouns}</span>}
+                {supporter && (
+                  <span className="pill vrcplus" data-flip-fade>
+                    VRC+
+                  </span>
+                )}
+                {detail?.pronouns && (
+                  <span className="muted" data-flip-fade>
+                    {detail.pronouns}
+                  </span>
+                )}
               </div>
-              <div className="profile-actions">
+              <div className="profile-actions" data-flip-fade>
                 {!demo && (
                   <button className="btn" onClick={() => refreshPerson(id).then(() => loadGroups(id, true))} title="Load this profile again from VRChat">
                     <Icon name="refresh" size={16} /> Refresh
@@ -181,12 +200,12 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 </button>
               </div>
 
-              <div className="profile-block">
+              <div className="profile-block" data-flip-fade>
                 <h3>About me</h3>
                 {detail?.bio ? <p className="bio">{detail.bio}</p> : <p className="muted small">{detail ? "Nothing written." : "Loading…"}</p>}
               </div>
               {languages.length > 0 && (
-                <div className="profile-block">
+                <div className="profile-block" data-flip-fade>
                   <h3>Languages</h3>
                   <div className="chips">
                     {languages.map((l) => (
@@ -198,7 +217,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 </div>
               )}
               {links.length > 0 && (
-                <div className="profile-block">
+                <div className="profile-block" data-flip-fade>
                   <h3>Links</h3>
                   <ul className="link-list">
                     {links.map((l) => (
@@ -212,12 +231,12 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 </div>
               )}
               {detail?.note && (
-                <div className="profile-block">
+                <div className="profile-block" data-flip-fade>
                   <h3>Your note</h3>
                   <p className="note-text">{detail.note}</p>
                 </div>
               )}
-              <div className="profile-block">
+              <div className="profile-block" data-flip-fade>
                 <h3>Profile</h3>
                 <dl className="facts">
                   <dt>Platform</dt>
@@ -246,7 +265,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
           </section>
         </div>
 
-        <div className="profile-col">
+        <div className="profile-col" data-flip-fade>
           <section className={`pcard status-card ${p}`}>
             <StatusArt kind={loc.icon} />
             <div className="status-text">{loc.text}</div>

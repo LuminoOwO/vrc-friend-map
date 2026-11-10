@@ -38,6 +38,19 @@ export const STATUS_COLORS: Record<UserStatus | "web", string> = {
   web: "#C6C24A",
 };
 
+const DEFAULT_STATUS = { ...STATUS_COLORS };
+const DEFAULT_TRUST = Object.fromEntries([...TRUST_RANKS, TEAM].map((r) => [r.key, r.color]));
+const STATUS_VAR: Record<string, string> = { "join me": "joinme", active: "active", "ask me": "askme", busy: "busy", offline: "offline", web: "web" };
+
+/** Use the color theme's status and rank colors (CSS variables --status-* and
+ *  --trust-*); themes without them keep VRChat's own colors. */
+export function applyThemeColors(read: (cssVar: string) => string) {
+  for (const k of Object.keys(STATUS_COLORS) as (keyof typeof STATUS_COLORS)[]) {
+    STATUS_COLORS[k] = read(`--status-${STATUS_VAR[k]}`) || DEFAULT_STATUS[k];
+  }
+  for (const r of [...TRUST_RANKS, TEAM]) r.color = read(`--trust-${r.key}`) || DEFAULT_TRUST[r.key];
+}
+
 export const STATUS_LABEL: Record<UserStatus, string> = {
   "join me": "Join Me",
   active: "Online",
