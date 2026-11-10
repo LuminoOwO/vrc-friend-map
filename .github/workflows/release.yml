@@ -1,46 +1,81 @@
-# Builds every platform and attaches the files to a GitHub Release.
+# Builds every platform and publishes them as a GitHub Release.
 #
-# Runs when a release is published (GitHub web UI: Releases -> Draft a new
-# release -> pick or create a tag like v0.3.0 -> Publish), or by hand from the
-# Actions tab ("Run workflow", optionally with a tag to attach the files to).
+# Start it in one of two ways:
+#   - Actions tab -> "Release builds" -> Run workflow -> enter the tag, e.g. v0.3.0.
+#     If that release doesn't exist yet, it's created (tag on the commit you run
+#     it from, notes from CHANGELOG.md). If it exists, its tagged commit is
+#     rebuilt and the files are replaced.
+#   - Push a tag: git tag v0.3.0 && git push origin v0.3.0
+#     (also happens when you publish a release with a new tag on the website).
+#
+# Pushing a branch named build-check/<anything> runs the same builds without
+# releasing anything (files end up as workflow artifacts), to test changes to
+# the build itself.
 #
 # Android needs four repository secrets so every version is signed with the
 # same key (otherwise phones refuse to update and you'd have to reinstall):
 #   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
-# See README -> "Releases" for how to make them.
+# See README -> "Releases" for how to make them. Without them only the
+# Android job fails; re-run it after adding the secrets.
 name: Release builds
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
+    branches: ["build-check/**"]
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing release tag to attach the files to (e.g. v0.3.0). Empty = just build."
-        required: false
-        default: ""
+        description: "Version tag, e.g. v0.3.0 (must match package.json)"
+        required: true
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.event.release.tag_name || inputs.tag || github.ref }}
+  group: release-${{ inputs.tag || github.ref_name }}
   cancel-in-progress: false
 
 env:
   CARGO_TERM_COLOR: always
+  TAG: ${{ inputs.tag || github.ref_name }}
+  # "check" = build only, no release.
+  MODE: ${{ startsWith(github.ref, 'refs/heads/build-check/') && 'check' || 'release' }}
 
 jobs:
   test:
     runs-on: ubuntu-22.04
+    outputs:
+      sha: ${{ steps.pick.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
+          fetch-depth: 0
+      - name: Commit to build
+        id: pick
+        run: |
+          SHA="$GITHUB_SHA"
+          if [ "$MODE" = release ]; then
+            case "$TAG" in v[0-9]*) ;; *) echo "::error::Tag must look like v1.2.3, got '$TAG'"; exit 1 ;; esac
+            if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then SHA=$(git rev-list -n1 "$TAG"); fi
+          fi
+          git checkout -q "$SHA"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Building $TAG ($MODE) from $SHA"
       - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+      - name: Tag matches the app version
+        if: env.MODE == 'release'
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          CARGO=$(sed -n 's/^version *= *"\(.*\)"/\1/p' src-tauri/Cargo.toml | head -n1)
+          TAURI=$(node -p 'require("./src-tauri/tauri.conf.json").version')
+          if [ "${TAG#v}" != "$VERSION" ] || [ "$VERSION" != "$CARGO" ] || [ "$VERSION" != "$TAURI" ]; then
+            echo "::error::Tag $TAG, package.json $VERSION, Cargo.toml $CARGO and tauri.conf.json $TAURI must all match"
+            exit 1
+          fi
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
@@ -51,14 +86,18 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit && npm test
       - run: cargo test --manifest-path src-tauri/Cargo.toml --lib
-      - name: Tag matches the app version
-        if: github.event.release.tag_name || inputs.tag
+      - name: Create the release if it doesn't exist
+        if: env.MODE == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${{ github.event.release.tag_name || inputs.tag }}"
-          VERSION=$(node -p 'require("./package.json").version')
-          if [ "${TAG#v}" != "$VERSION" ]; then
-            echo "::error::Tag $TAG doesn't match the app version $VERSION in package.json"
-            exit 1
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release $TAG exists; files will be added to it."
+          else
+            # Created as a draft; the last job publishes it once the files are attached.
+            node scripts/release-notes.mjs "$TAG" > "$RUNNER_TEMP/notes.md"
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "${{ steps.pick.outputs.sha }}" \
+              --title "VRC Friend Map ${TAG#v}" --notes-file "$RUNNER_TEMP/notes.md" --draft
           fi
 
   linux:
@@ -73,7 +112,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
+          ref: ${{ needs.test.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -88,21 +127,29 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file
       - name: Build deb, rpm, AppImage and tarball
-        run: CI=true ./scripts/build-linux.sh all
+        run: |
+          set -o pipefail
+          CI=true ./scripts/build-linux.sh all 2>&1 | tee "$RUNNER_TEMP/build.log"
       - run: rm -f release/SHA256SUMS
       - uses: actions/upload-artifact@v4
         with:
           name: linux-${{ matrix.runner }}
           path: release/*
           if-no-files-found: error
+      - name: Show the end of the build log
+        if: failure()
+        run: node scripts/log-tail.mjs "$RUNNER_TEMP/build.log"
 
   windows:
     needs: test
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
+          ref: ${{ needs.test.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -113,13 +160,18 @@ jobs:
           workspaces: src-tauri -> target
       - run: npm ci
       - name: Build installer (NSIS), MSI and portable exe
-        run: npx tauri build --bundles nsis,msi
+        run: |
+          set -o pipefail
+          npx tauri build --bundles nsis,msi 2>&1 | tee "$RUNNER_TEMP/build.log"
       - run: node scripts/collect-release.mjs windows
       - uses: actions/upload-artifact@v4
         with:
           name: windows
           path: release/*
           if-no-files-found: error
+      - name: Show the end of the build log
+        if: failure()
+        run: node scripts/log-tail.mjs "$RUNNER_TEMP/build.log"
 
   macos:
     needs: test
@@ -127,7 +179,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
+          ref: ${{ needs.test.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -140,13 +192,18 @@ jobs:
           workspaces: src-tauri -> target
       - run: npm ci
       - name: Build universal dmg (unsigned)
-        run: npx tauri build --target universal-apple-darwin --bundles dmg
+        run: |
+          set -o pipefail
+          npx tauri build --target universal-apple-darwin --bundles dmg 2>&1 | tee "$RUNNER_TEMP/build.log"
       - run: node scripts/collect-release.mjs macos
       - uses: actions/upload-artifact@v4
         with:
           name: macos
           path: release/*
           if-no-files-found: error
+      - name: Show the end of the build log
+        if: failure()
+        run: node scripts/log-tail.mjs "$RUNNER_TEMP/build.log"
 
   android:
     needs: test
@@ -160,12 +217,16 @@ jobs:
       - name: Signing key present
         run: |
           if [ -z "$ANDROID_KEYSTORE_BASE64" ] || [ -z "$ANDROID_KEYSTORE_PASSWORD" ] || [ -z "$ANDROID_KEY_ALIAS" ]; then
-            echo "::error::Android signing secrets are missing. Add ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD (README -> Releases), then re-run this job."
-            exit 1
+            if [ "$MODE" = check ]; then
+              echo "::warning::No Android signing secrets; the check build stays unsigned."
+            else
+              echo "::error::Android signing secrets are missing. Add ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS and ANDROID_KEY_PASSWORD (README -> Releases), then re-run this job."
+              exit 1
+            fi
           fi
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
+          ref: ${{ needs.test.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -183,30 +244,40 @@ jobs:
       - run: npm ci
       - name: Build APK (arm64, armv7, x86_64)
         run: |
+          set -o pipefail
           export NDK_HOME="$ANDROID_NDK_LATEST_HOME"
-          npx tauri android init --ci
-          npx tauri android build --apk --ci --target aarch64 --target armv7 --target x86_64
+          {
+            npx tauri android init --ci
+            npx tauri android build --apk --ci --target aarch64 --target armv7 --target x86_64
+          } 2>&1 | tee "$RUNNER_TEMP/build.log"
       - name: Sign APK
         run: |
           APK=$(find src-tauri/gen/android -name "*-release-unsigned.apk" | head -n1)
-          [ -n "$APK" ] || { echo "::error::No unsigned APK found"; find src-tauri/gen/android -name "*.apk"; exit 1; }
+          [ -n "$APK" ] || { echo "::error::No unsigned APK found: $(find src-tauri/gen/android -name '*.apk' | tr '\n' ' ')"; exit 1; }
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n1)
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
           "$BT/zipalign" -p -f 4 "$APK" "$RUNNER_TEMP/aligned.apk"
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            node scripts/collect-release.mjs android "$RUNNER_TEMP/aligned.apk"
+            exit 0
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
           export KEY_PASS="${ANDROID_KEY_PASSWORD:-$ANDROID_KEYSTORE_PASSWORD}"
           "$BT/apksigner" sign --ks "$RUNNER_TEMP/release.keystore" \
             --ks-pass env:ANDROID_KEYSTORE_PASSWORD \
             --ks-key-alias "$ANDROID_KEY_ALIAS" \
             --key-pass env:KEY_PASS \
             --out "$RUNNER_TEMP/signed.apk" "$RUNNER_TEMP/aligned.apk"
-          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/signed.apk" | head -n 3
           rm -f "$RUNNER_TEMP/release.keystore"
+          "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/signed.apk" | head -n 3
           node scripts/collect-release.mjs android "$RUNNER_TEMP/signed.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: android
           path: release/*
           if-no-files-found: error
+      - name: Show the end of the build log
+        if: failure()
+        run: node scripts/log-tail.mjs "$RUNNER_TEMP/build.log"
 
   ios:
     needs: test
@@ -214,7 +285,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
+          ref: ${{ needs.test.outputs.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -229,19 +300,25 @@ jobs:
       - run: brew install xcodegen || true
       - name: Build unsigned IPA (for sideloading)
         run: |
-          npx tauri ios init --ci
-          npx tauri ios build --ci --no-sign --target aarch64
+          set -o pipefail
+          {
+            npx tauri ios init --ci
+            npx tauri ios build --ci --no-sign --target aarch64
+          } 2>&1 | tee "$RUNNER_TEMP/build.log"
       - run: node scripts/collect-release.mjs ios
       - uses: actions/upload-artifact@v4
         with:
           name: ios
           path: release/*
           if-no-files-found: error
+      - name: Show the end of the build log
+        if: failure()
+        run: node scripts/log-tail.mjs "$RUNNER_TEMP/build.log"
 
   publish:
     needs: [test, linux, windows, macos, android, ios]
     # Attach whatever finished, even if one platform failed.
-    if: ${{ always() && needs.test.result == 'success' && (github.event.release.tag_name || inputs.tag) }}
+    if: ${{ always() && needs.test.result == 'success' && !startsWith(github.ref, 'refs/heads/build-check/') }}
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/download-artifact@v4
@@ -252,11 +329,12 @@ jobs:
           mkdir -p upload
           find artifacts -type f ! -name SHA256SUMS -exec cp {} upload/ \;
           cd upload && sha256sum * > SHA256SUMS && cat SHA256SUMS
-      - name: Upload to the release
+      - name: Upload to the release and publish it
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: gh release upload "$TAG" upload/* --clobber --repo "$GITHUB_REPOSITORY"
+        run: |
+          gh release upload "$TAG" upload/* --clobber --repo "$GITHUB_REPOSITORY"
+          gh release edit "$TAG" --draft=false --repo "$GITHUB_REPOSITORY"
       - name: Summary
         if: always()
         run: |

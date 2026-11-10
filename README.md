@@ -275,18 +275,22 @@ at http://localhost:1420 in a browser. Only demo mode works there, since login n
 ## Releases (for maintainers)
 
 `.github/workflows/release.yml` builds everything on GitHub's machines: Linux x86_64 (and
-ARM64 once the repository is public), Windows, macOS, Android and iOS. It runs when a release
-is **published** and attaches the files to it with a combined `SHA256SUMS`. It can also be
-started by hand from the Actions tab with an existing tag.
+ARM64 once the repository is public), Windows, macOS, Android and iOS. Then it publishes a
+GitHub Release with all files, a combined `SHA256SUMS`, and notes taken from `CHANGELOG.md`.
 
 To release a version:
 
 1. Bump the version with `npm version X.Y.Z --no-git-tag-version`.
 2. Set the same version in `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
 3. Add a section for it to `CHANGELOG.md`, then commit and push.
-4. On GitHub, go to Releases → Draft a new release, type the tag `vX.Y.Z` (the workflow checks
-   that it matches the version), paste the changelog section, and publish.
-5. Wait about 20–30 minutes for every platform's files to appear on the release.
+4. Start the build in one of two ways:
+   - **In the browser:** go to Actions → *Release builds* → *Run workflow*, and enter `vX.Y.Z`.
+   - **From a terminal:** run `git tag vX.Y.Z && git push origin vX.Y.Z`.
+5. Wait about 20–40 minutes. The release stays a draft until the files are attached, then it's published.
+
+The workflow refuses to run if the tag and the three version numbers don't match. If one platform
+fails, the others are still published; fix the problem and use *Re-run failed jobs*. Running it again
+for a tag that already exists rebuilds that tag's commit and replaces the files.
 
 **Android signing key (one-time setup).** Android only installs an update if it's signed with
 the same key as the installed app, so the key must never change. Make one keystore, keep a
