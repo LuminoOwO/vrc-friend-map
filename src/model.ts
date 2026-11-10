@@ -193,8 +193,6 @@ export function mutualEdges(friendIds: Set<string>, mutuals: Record<string, Mutu
   return edges;
 }
 
-export const CIRCLE_COLORS = ["#2dd4bf", "#f472b6", "#fbbf24", "#a78bfa", "#60a5fa", "#fb7185", "#4ade80", "#f97316"];
-
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }

@@ -1,8 +1,10 @@
 [package]
 name = "vrc-friend-map"
-version = "0.2.0"
+version = "0.3.0"
 description = "Map your VRChat friends, mutuals and circles"
 edition = "2021"
+license = "MIT"
+repository = "https://github.com/LuminoOwO/vrc-friend-map"
 rust-version = "1.77"
 
 [lib]

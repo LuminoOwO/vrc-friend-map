@@ -6,20 +6,48 @@ overlapping friend circles, filters, live updates, and comparisons with friend l
 people share with you.
 
 One codebase, built with [Tauri 2](https://v2.tauri.app): a web UI (React + TypeScript + d3)
-on top of a small Rust core. It builds for **Linux, Windows and Android** (and macOS).
+on top of a small Rust core. Releases are built for **Windows, Linux, Android, iOS
+(sideload) and macOS**. Free and open source under the [MIT license](LICENSE).
+
+## Download
+
+Get the newest version from the [Releases page](https://github.com/LuminoOwO/vrc-friend-map/releases).
+File names follow one pattern: `vrc-friend-map_<version>_<platform>-<arch>`, except the Linux
+packages, which follow each package format's own naming rules.
+
+| You have | Take | Notes |
+|---|---|---|
+| Windows 10/11 | `…_windows-x64-setup.exe` | Normal installer. The `.msi` is the same thing for managed PCs; `…-portable.exe` runs without installing. Windows may warn that the app is unrecognized (it isn't code-signed): *More info → Run anyway*. |
+| Linux | see [Installing on Linux](#installing-on-linux) | `.deb`, `.rpm`, AppImage or tarball; x86_64 and ARM64. |
+| Android 7+ | `…_android.apk` | Allow installing from your browser/file manager when asked. Updates install over the old version and keep your data. |
+| iPhone / iPad | `…_ios-unsigned.ipa` | Apple only allows signed apps, so this needs a sideloading tool that signs it with your own Apple ID (AltStore, SideStore, Sideloadly). With a free Apple ID it has to be refreshed every 7 days. Untested on real devices so far. |
+| Mac | `…_macos-universal.dmg` | Not notarized: right-click the app → Open the first time. VRChat itself doesn't run on macOS, so game-log features don't apply. |
+
+`SHA256SUMS` lists checksums for every file.
 
 ## What it does
 
+- **Friend groups from your game logs** (Windows/Linux PC): the app reads VRChat's own log
+  files to learn who was in the same instance as whom and for how long, and suggests friend
+  groups from that. Accept a suggestion as a circle, add the missing people to a circle you
+  already have, dismiss it, or let the app create and update circles automatically.
+  [How it works](#friend-groups-from-game-logs).
 - **Map**: every friend is a node, and a line joins two friends when VRChat lists them as
-  mutual friends.
+  mutual friends (or, optionally, when they spent time together in your instances).
   - **Line color** shows how many friends the two connected people have in common (among
     your friends): cool blue-gray = few, teal/yellow = more, pink = a tight-knit pair. The
     bands adapt to your friend list, and the legend shows the actual numbers.
   - **Node size** = number of mutual friends with you. **Ring** = online status (or trust
     rank). ★ = in one of your VRChat favorite groups. **Dashed outline** = they hide their
     mutuals.
+  - **Map options**: draw people as dots, round pictures, compact cards or the **full
+    VRChat player card**; change size, what size means, line style/thickness/visibility,
+    show lines only for the person you point at, spacing, how strongly circles pull their
+    members together, and circle outlines. Avatar preview pictures are cropped, not stretched.
 - **Circles**: your own groups, drawn as soft outlines that can overlap. Drag a person into
-  an outline, or onto a circle in the sidebar, to add them. Remove people from the detail panel.
+  an outline, or onto a circle in the sidebar, to add them. Remove people from the detail
+  panel. 24 distinct colors; new circles always get a color nobody uses yet (after 24, new
+  distinct colors are generated), and the color picker shows which ones are taken.
 - **Cards view**: VRChat-style cards (banner, icon, status, trust rank, platform, online for /
   last seen, mutual count), grouped by online status, sortable, draggable onto circles.
 - **Filters**: online/offline, last online (24 h … 90 days+), trust rank, platform, circle,
@@ -37,12 +65,43 @@ on top of a small Rust core. It builds for **Linux, Windows and Android** (and m
   - *Full list*: IDs and names. This also reveals friends who turned off "Show mutual
     connections", so only use it with people you trust.
 
-### Why not the game's log files?
+### Why live updates don't come from the game's log files
 
 VRChat's `output_log` files record incoming friend requests and the moment *you* accept one
 in-game, but not when someone accepts *your* request. They also only cover sessions played
 on that PC (not Quest or phone). The live event stream covers every case on every device,
-so the app uses that instead.
+so the app uses that for friend changes, and the logs only for "who was where together".
+
+## Friend groups from game logs
+
+VRChat writes `output_log_*.txt` while it runs, including every instance you join and every
+player who joins or leaves it. The desktop app reads those files (it never changes them):
+
+1. **Finding the logs.** On Windows they're in `%USERPROFILE%\AppData\LocalLow\VRChat\VRChat`.
+   On Linux (Proton) the app looks through every Steam library listed in Steam's
+   `libraryfolders.vdf`, so games on other drives are found too, including Flatpak and Snap
+   Steam. Other folders can be added in Settings → Game logs.
+2. **History.** Each file becomes a list of instance visits with who was present when. This
+   history is kept in the app's data folder, so it survives VRChat deleting old logs. New
+   entries are read every few minutes (only changed files are re-read). You choose how long
+   history is kept, and can forget it at any time.
+3. **Time together.** For every pair of your friends, the app adds up the time both were in
+   the same instance as you, and on how many different days. Time in big instances counts
+   less (by default 1/n for n other people present, so 2 hours in an 80-person public world
+   counts far less than 2 hours with four friends).
+4. **Groups.** Pairs with enough time together on enough different days (default: 30 min on
+   2+ days) form a weighted graph. [Louvain community detection](https://en.wikipedia.org/wiki/Louvain_method)
+   splits it into groups that are much more connected inside than outside; people with only
+   a weak tie to a group are left out, and people who are nearly as close to a second group
+   are added to it too (circles can overlap).
+5. **Suggestions.** Groups you already have as a circle are hidden; close matches turn into
+   "add these people to *circle*". Automatic mode creates circles marked *auto* and keeps
+   adding people to them; renaming one or changing who's in it makes it yours, and the app
+   never changes circles you made yourself.
+
+All of this stays on your PC. Quest and phone sessions don't write logs the app can read, so
+time spent there isn't counted. The detail panel also shows your time together with each
+person and who they're most often with; the map can draw lines and sizes from it.
 
 ## How login works (and what's stored)
 
@@ -82,12 +141,14 @@ as data arrives, and later syncs only refresh what's stale.
 
 Every release comes in four formats. Pick the one for your distro:
 
-| File | For | Install |
+| File (example: 0.3.0 on x86_64) | For | Install |
 |---|---|---|
-| `vrc-friend-map_0.2.0_amd64.deb` | Debian, Ubuntu, Linux Mint, Pop!_OS | `sudo apt install ./vrc-friend-map_0.2.0_amd64.deb` |
-| `vrc-friend-map-0.2.0-1.x86_64.rpm` | Fedora, RHEL/Alma/Rocky, openSUSE | `sudo dnf install ./vrc-friend-map-0.2.0-1.x86_64.rpm` (openSUSE: `sudo zypper install …`) |
-| `vrc-friend-map-0.2.0-x86_64.AppImage` | any distro, no install | `chmod +x` it, then run it |
-| `vrc-friend-map-0.2.0-linux-x86_64.tar.gz` | Arch and anything else | unpack, then `./install.sh` (per-user, no root; `./install.sh --uninstall` removes it) |
+| `vrc-friend-map_0.3.0_amd64.deb` | Debian, Ubuntu, Linux Mint, Pop!_OS | `sudo apt install ./vrc-friend-map_0.3.0_amd64.deb` |
+| `vrc-friend-map-0.3.0-1.x86_64.rpm` | Fedora, RHEL/Alma/Rocky, openSUSE | `sudo dnf install ./vrc-friend-map-0.3.0-1.x86_64.rpm` (openSUSE: `sudo zypper install …`) |
+| `vrc-friend-map-0.3.0-x86_64.AppImage` | any distro, no install | `chmod +x` it, then run it |
+| `vrc-friend-map-0.3.0-linux-x86_64.tar.gz` | Arch and anything else | unpack, then `./install.sh` (per-user, no root; `./install.sh --uninstall` removes it) |
+
+ARM64 builds use `arm64` (deb) or `aarch64` (everything else) in place of `amd64`/`x86_64`.
 
 `SHA256SUMS` lists the checksums: `sha256sum -c SHA256SUMS --ignore-missing`.
 
@@ -109,6 +170,25 @@ Files are named the way each format expects:
 - `name-version-arch` for the AppImage and the tarball.
 
 Versions follow [Semantic Versioning](https://semver.org). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
+
+## Updating, downgrading and switching versions
+
+Install a newer (or older) version over the old one. Your circles, cache and settings stay
+where they are (see [Where data lives](#where-data-lives)), whatever the format:
+
+- **Upgrading**: every stored file carries a format number. When a new version changes a
+  format, it first saves a copy of the old file in `store/backups/`, then converts it.
+  The app tells you what's new after an update.
+- **Going back to an older version** (or skipping versions back and forth): the older app
+  still loads the data. Anything it doesn't understand (settings or circle details added
+  later) is written back unchanged, so returning to the newer version loses nothing. You get
+  a note that the data came from a newer version, and a backup copy is made first.
+- **Game-log history** has its own format number; a version that finds history from a newer
+  format leaves it untouched instead of rewriting it.
+- **Packages**: `.deb`/`.rpm` upgrade in place (`sudo apt install ./older.deb
+  --allow-downgrades` to go back). The Windows installer upgrades in place; uninstall first
+  to go back to an older version (your data stays). Android updates install over the old app
+  as long as both are official release builds (same signing key).
 
 ## Building on Linux
 
@@ -192,6 +272,41 @@ To release a new version, follow these steps:
 For development with hot reload: `npm run tauri dev`. `npm run dev` alone starts just the UI
 at http://localhost:1420 in a browser. Only demo mode works there, since login needs the app.
 
+## Releases (for maintainers)
+
+`.github/workflows/release.yml` builds everything on GitHub's machines: Linux x86_64 (and
+ARM64 once the repository is public), Windows, macOS, Android and iOS. It runs when a release
+is **published** and attaches the files to it with a combined `SHA256SUMS`. It can also be
+started by hand from the Actions tab with an existing tag.
+
+To release a version:
+
+1. Bump the version with `npm version X.Y.Z --no-git-tag-version`.
+2. Set the same version in `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
+3. Add a section for it to `CHANGELOG.md`, then commit and push.
+4. On GitHub, go to Releases → Draft a new release, type the tag `vX.Y.Z` (the workflow checks
+   that it matches the version), paste the changelog section, and publish.
+5. Wait about 20–30 minutes for every platform's files to appear on the release.
+
+**Android signing key (one-time setup).** Android only installs an update if it's signed with
+the same key as the installed app, so the key must never change. Make one keystore, keep a
+backup, and add it as four repository secrets (Settings → Secrets and variables → Actions):
+
+```bash
+keytool -genkeypair -v -storetype PKCS12 -keystore vrc-friend-map.keystore \
+  -alias vrc-friend-map -keyalg RSA -keysize 4096 -validity 10000 \
+  -dname "CN=VRC Friend Map"
+base64 -w0 vrc-friend-map.keystore   # -> ANDROID_KEYSTORE_BASE64
+```
+
+- `ANDROID_KEYSTORE_BASE64`: the base64 output.
+- `ANDROID_KEYSTORE_PASSWORD`: the password you typed.
+- `ANDROID_KEY_ALIAS`: `vrc-friend-map`.
+- `ANDROID_KEY_PASSWORD`: the same password.
+
+Without these secrets the Android job stops with an explanation; the other platforms still
+publish. After adding them, re-run the failed job from the Actions tab.
+
 ## Building on Windows
 
 Install the "Desktop development with C++" workload from Visual Studio Build Tools,
@@ -199,7 +314,13 @@ Install the "Desktop development with C++" workload from Visual Studio Build Too
 Windows 10/11. Then `npm ci` and `npx tauri build`. The installers end up in
 `src-tauri\target\release\bundle\` (`.msi` and NSIS `.exe`).
 
-## Building for Android
+## Building for Android and iOS
+
+**iOS** needs a Mac with Xcode: `rustup target add aarch64-apple-ios`, `brew install xcodegen`,
+then `npx tauri ios init` and `npx tauri ios build --no-sign` for an unsigned `.ipa`
+(or set `APPLE_DEVELOPMENT_TEAM` and drop `--no-sign` to sign with your developer account).
+
+### Android
 
 1. Install Android Studio, then SDK Platform 34+, NDK, build-tools and command-line tools
    from its SDK Manager.
@@ -227,13 +348,16 @@ All under the app's data folder (Settings shows the exact path; on Linux
 - `store/cache.json`: friends, profiles, mutuals, favorites (cache, safe to delete).
 - `store/local.json`: your circles, imported lists, friend change log.
 - `store/settings.json`: preferences.
+- `store/backups/`: copies made before a format change or when data came from a newer version.
+- `gamelogs/history.json`: instance visits read from VRChat's logs (desktop).
 - Images are cached separately in the app cache folder (pruned at 600 MB).
 
 ## Project layout
 
 ```
 src/                     UI (React + TypeScript)
-  components/GraphView   canvas map: d3-force layout, line colors, zoom, drag-into-circle
+  components/GraphView   canvas map: d3-force layout, node styles, line colors, zoom, drag-into-circle
+  components/MapOptions  the map options panel
   components/CardsView   VRChat-style friend cards
   components/SharedLists export/import/compare
   sync.ts                API sync engine (queue, caching, backoff) + live event handling
@@ -244,7 +368,15 @@ src-tauri/src/
   pipeline.rs            live event stream (wss://pipeline.vrchat.cloud) with reconnect
   images.rs              vrcimg:// image proxy with disk cache
   storage.rs             JSON store, hashing for shared lists
+  gamelogs.rs            VRChat log folder detection, parser, history, time-together stats
+src/groups.ts            friend group detection (Louvain + overlap + matching circles)
+src/logs.ts              log scanning schedule, suggestions, automatic circles
+src/colors.ts            circle palette and color picking
+src/store.ts             state, saving, data format versions and migrations
+src/__tests__/           frontend tests (npm test); Rust tests: cargo test --lib
 scripts/build-linux.sh   prerequisite check + Linux packages into release/
+scripts/collect-release.mjs  names Windows/macOS/Android/iOS build outputs
+.github/workflows/       CI tests and release builds
 packaging/linux/         desktop entry, tarball installer and README
 ```
 
@@ -255,3 +387,11 @@ packaging/linux/         desktop entry, tarball installer and README
 - Live updates only arrive while the app is running. Changes that happen while it's closed
   are picked up by the sync when it starts.
 - People who hide their mutual connections show up without lines, by design.
+- Game-log features need the desktop app on the PC that runs VRChat. Quest/phone sessions
+  aren't in any log the app can read.
+- The iOS build is unsigned and hasn't been tested on a device yet; the Android build has
+  been built but not widely tested.
+
+## License
+
+MIT. See [LICENSE](LICENSE). Not affiliated with or endorsed by VRChat Inc.

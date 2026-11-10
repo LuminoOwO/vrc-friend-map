@@ -1,5 +1,6 @@
 mod api;
 mod auth;
+mod gamelogs;
 mod images;
 mod pipeline;
 mod storage;
@@ -13,6 +14,7 @@ pub struct AppState {
     pub login: auth::LoginState,
     pub pipeline: pipeline::PipelineState,
     pub store: storage::Store,
+    pub logs: gamelogs::LogStore,
     pub image_dir: PathBuf,
     pub data_dir: PathBuf,
 }
@@ -94,6 +96,57 @@ async fn store_write(state: AppStateRef<'_>, name: String, contents: String) -> 
     state.store.write(&name, &contents)
 }
 
+/// Copy a store file into store/backups before a migration or when it was
+/// written by a newer version. Keeps the newest 12 backups per file.
+#[tauri::command]
+async fn store_backup(state: AppStateRef<'_>, name: String, tag: String) -> Result<Option<String>, String> {
+    state.store.backup(&name, &tag)
+}
+
+#[tauri::command]
+fn app_platform() -> &'static str {
+    std::env::consts::OS
+}
+
+// ---------- VRChat game logs (desktop) ----------
+
+#[tauri::command]
+async fn logs_detect() -> Result<Vec<String>, String> {
+    Ok(tauri::async_runtime::spawn_blocking(|| {
+        gamelogs::detect_dirs().into_iter().map(|p| p.display().to_string()).collect::<Vec<_>>()
+    })
+    .await
+    .map_err(|e| e.to_string())?)
+}
+
+#[tauri::command]
+async fn logs_scan(state: AppStateRef<'_>, dirs: Vec<String>, retention_days: u32) -> Result<gamelogs::ScanReport, String> {
+    let st = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let dirs = gamelogs::dirs_from_strings(&dirs);
+        st.logs.scan(&dirs, retention_days, gamelogs::now_naive_fallback())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn logs_info(state: AppStateRef<'_>) -> Result<gamelogs::ScanReport, String> {
+    let st = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || st.logs.info()).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn logs_stats(state: AppStateRef<'_>, query: gamelogs::StatsQuery) -> Result<gamelogs::Stats, String> {
+    let st = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || st.logs.stats(&query)).await.map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+async fn logs_clear(state: AppStateRef<'_>) -> Result<(), String> {
+    state.logs.clear()
+}
+
 #[derive(serde::Serialize)]
 struct StorageInfo {
     data_dir: String,
@@ -162,6 +215,7 @@ pub fn run() {
                 login: auth::LoginState::default(),
                 pipeline: pipeline::PipelineState::default(),
                 store: storage::Store { dir: data_dir.join("store") },
+                logs: gamelogs::LogStore::new(data_dir.join("gamelogs").join("history.json")),
                 image_dir,
                 data_dir,
             }));
@@ -179,6 +233,13 @@ pub fn run() {
             vrc_get,
             store_read,
             store_write,
+            store_backup,
+            app_platform,
+            logs_detect,
+            logs_scan,
+            logs_info,
+            logs_stats,
+            logs_clear,
             storage_info,
             clear_image_cache,
             hash_ids,

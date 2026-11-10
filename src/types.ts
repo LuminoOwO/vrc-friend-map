@@ -61,6 +61,8 @@ export interface Circle {
   color: string;
   members: string[];
   hidden?: boolean;
+  /** Created by group detection and still managed by it (until you edit it). */
+  auto?: boolean;
 }
 
 export interface ImportedList {
@@ -102,6 +104,64 @@ export interface LocalData {
   circles: Circle[];
   imports: ImportedList[];
   friendLog: FriendLogEntry[];
+  /** Suggested groups you dismissed (member IDs), so they don't come back. */
+  dismissedGroups: string[][];
+}
+
+export type NodeStyle = "dot" | "icon" | "card" | "fullcard";
+export type LineMode = "shared" | "plain" | "together" | "none";
+
+export interface MapSettings {
+  /** How people are drawn: dot, round picture, compact card, full player card. */
+  nodeStyle: NodeStyle;
+  /** 0.6 – 2 */
+  nodeScale: number;
+  sizeBy: "mutuals" | "together" | "same";
+  lines: LineMode;
+  /** Multipliers, 0.3 – 3 */
+  lineWidth: number;
+  lineOpacity: number;
+  /** Only draw lines for the person you hover or select. */
+  focusLinesOnly: boolean;
+  /** Layout spread, 0.6 – 2 */
+  spacing: number;
+  /** How strongly circle members are pulled together, 0 – 2 */
+  groupPull: number;
+  hulls: boolean;
+  /** 0.3 – 2 */
+  hullOpacity: number;
+  showStars: boolean;
+}
+
+export interface LogSettings {
+  /** Read VRChat's log files on this computer. */
+  enabled: boolean;
+  autoDetect: boolean;
+  /** Extra folders added by hand. */
+  dirs: string[];
+  scanMinutes: number;
+  /** 0 = keep forever */
+  retentionDays: number;
+}
+
+export interface GroupSettings {
+  /** How much time in big instances counts: strong = 1/n, mild = 1/√n. */
+  crowd: "strong" | "mild" | "off";
+  /** Minimum time two people must have spent together, in minutes. */
+  minMinutes: number;
+  /** …on at least this many different days. */
+  minDays: number;
+  /** Higher = smaller, tighter groups. 0.5 – 2 */
+  resolution: number;
+  minSize: number;
+  /** Let someone appear in more than one suggested group. */
+  overlap: boolean;
+  /** Count time together more when the two are VRChat friends with each other. */
+  mutualBoost: boolean;
+  /** Only use the last N days of history (0 = all). */
+  sinceDays: number;
+  /** Create and update circles from suggestions automatically. */
+  auto: boolean;
 }
 
 export interface Settings {
@@ -113,7 +173,56 @@ export interface Settings {
   ringMode: "status" | "trust";
   showLabels: "auto" | "always" | "never";
   dimMode: "dim" | "hide";
-  lineColors: "shared" | "plain";
+  map: MapSettings;
+  logs: LogSettings;
+  groups: GroupSettings;
+  /** App version that last ran with this data (for upgrade/downgrade notes). */
+  lastVersion: string;
+}
+
+// ---- game log statistics (from the Rust side) ----
+
+export interface PersonTime {
+  id: string;
+  secs: number;
+  weighted: number;
+  visits: number;
+  days: number;
+  /** Naive local timestamp (seconds, wall clock read as UTC). */
+  last: number;
+  worlds: [string, number][];
+}
+
+export interface PairTime {
+  a: string;
+  b: string;
+  secs: number;
+  weighted: number;
+  visits: number;
+  days: number;
+  last: number;
+}
+
+export interface PresenceStats {
+  people: PersonTime[];
+  pairs: PairTime[];
+  visits: number;
+  play_secs: number;
+  first: number;
+  last: number;
+}
+
+export interface LogScanReport {
+  dirs: string[];
+  files_seen: number;
+  files_read: number;
+  files_stored: number;
+  visits: number;
+  first: number;
+  last: number;
+  bytes: number;
+  newer_version: number | null;
+  errors: string[];
 }
 
 export interface Filters {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { imgSrc } from "../backend";
 import { listMemberIds } from "../derived";
+import { fmtHours, naiveToDate, personTime } from "../logs";
 import {
   PLATFORM_LABEL,
   bannerUrl,
@@ -24,6 +25,7 @@ export function DetailPanel({ id }: { id: string }) {
   const cache = useApp((s) => s.cache);
   const local = useApp((s) => s.local);
   const demo = useApp((s) => s.demo);
+  const stats = useApp((s) => s.logs.stats);
   const [newCircle, setNewCircle] = useState("");
   const f = cache.friends[id];
   if (!f) return null;
@@ -39,6 +41,11 @@ export function DetailPanel({ id }: { id: string }) {
   const supporter = detail?.tags.includes("system_supporter");
   const mutualFriends = (mutual?.ids ?? []).map((m) => cache.friends[m]).filter(Boolean);
   const inLists = local.imports.filter((l) => listMemberIds(l, cache).includes(id));
+  const time = personTime(stats, id);
+  const oftenWith = (stats?.pairs ?? [])
+    .filter((p) => (p.a === id || p.b === id) && cache.friends[p.a === id ? p.b : p.a])
+    .sort((a, b) => b.secs - a.secs)
+    .slice(0, 8);
 
   const close = () => setState({ selectedId: null });
 
@@ -103,6 +110,15 @@ export function DetailPanel({ id }: { id: string }) {
             <dd>{cache.favorites[id].join(", ")}</dd>
           </>
         ) : null}
+        {time && (
+          <>
+            <dt>Time together</dt>
+            <dd title="From your VRChat game logs: time you were both in the same instance">
+              {fmtHours(time.secs)} on {time.days} day{time.days === 1 ? "" : "s"}
+              <span className="muted"> · last {naiveToDate(time.last).toLocaleDateString()}</span>
+            </dd>
+          </>
+        )}
         {inLists.length > 0 && (
           <>
             <dt>Also in lists of</dt>
@@ -147,6 +163,28 @@ export function DetailPanel({ id }: { id: string }) {
           </button>
         </form>
       </section>
+
+      {oftenWith.length > 0 && (
+        <section className="detail-section">
+          <h3>
+            Often with <span className="muted small">in your instances</span>
+          </h3>
+          <div className="mini-list">
+            {oftenWith.map((p) => {
+              const other = cache.friends[p.a === id ? p.b : p.a];
+              return (
+                <button key={other.id} className="mini" onClick={() => setState({ selectedId: other.id })} title={`${p.days} day${p.days === 1 ? "" : "s"}`}>
+                  <span className="dot" style={{ background: statusColor(other, presenceOf(other, cache.presence)) }} />
+                  {other.displayName}
+                  <span className="muted" style={{ marginLeft: 5 }}>
+                    {fmtHours(p.secs)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {mutualFriends.length > 0 && (
         <section className="detail-section">

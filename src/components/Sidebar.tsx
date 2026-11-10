@@ -1,8 +1,11 @@
 import { useMemo, useState } from "react";
+import { duplicateColorIds, pickCircleColor } from "../colors";
 import { useDerived } from "../derived";
-import { CIRCLE_COLORS, fmtDate, relTime } from "../model";
-import { addToCircle, createCircle, deleteCircle, patchCircle, setState, updateFilters, useApp } from "../store";
+import { fmtDate, relTime } from "../model";
+import { addToCircle, createCircle, deleteCircle, getState, patchCircle, setState, updateFilters, updateLocal, useApp } from "../store";
+import { ColorPicker } from "./ColorPicker";
 import { Icon } from "./Icon";
+import { SuggestedGroups } from "./SuggestedGroups";
 
 export function Sidebar() {
   const circles = useApp((s) => s.local.circles);
@@ -13,6 +16,24 @@ export function Sidebar() {
   const { friends, edges } = useDerived();
   const [name, setName] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
+  const [picking, setPicking] = useState<string | null>(null);
+  const dupes = useMemo(() => duplicateColorIds(circles), [circles]);
+
+  const fixDuplicates = () => {
+    updateLocal((l) => {
+      const ids = new Set(duplicateColorIds(l.circles));
+      const used = l.circles.filter((c) => !ids.has(c.id)).map((c) => c.color);
+      return {
+        ...l,
+        circles: l.circles.map((c) => {
+          if (!ids.has(c.id)) return c;
+          const color = pickCircleColor(used);
+          used.push(color);
+          return { ...c, color };
+        }),
+      };
+    });
+  };
 
   const stats = useMemo(() => {
     let online = 0;
@@ -73,8 +94,16 @@ export function Sidebar() {
           )}
         </div>
         <p className="muted small">Your own groups. They can overlap. Drag people onto a circle here, or into its outline on the map.</p>
+        {dupes.length > 0 && (
+          <p className="small dupe-note">
+            {dupes.length === 1 ? "One circle shares" : `${dupes.length} circles share`} a color with another.{" "}
+            <button className="btn link small" onClick={fixDuplicates}>
+              Give each its own color
+            </button>
+          </p>
+        )}
         <ul className="circle-list">
-          {circles.map((c, i) => (
+          {circles.map((c) => (
             <li
               key={c.id}
               className={`circle-item ${filters.circleId === c.id ? "active" : ""}`}
@@ -88,12 +117,17 @@ export function Sidebar() {
               onDragLeave={(e) => e.currentTarget.classList.remove("drop-hover")}
               onDrop={onDrop(c.id)}
             >
-              <button
-                className="swatch"
-                style={{ background: c.color }}
-                title="Change color"
-                onClick={() => patchCircle(c.id, { color: CIRCLE_COLORS[(CIRCLE_COLORS.indexOf(c.color) + 1) % CIRCLE_COLORS.length] ?? CIRCLE_COLORS[i % CIRCLE_COLORS.length] })}
-              />
+              <span className="swatch-wrap">
+                <button className="swatch" style={{ background: c.color }} title="Change color" onClick={() => setPicking(picking === c.id ? null : c.id)} />
+                {picking === c.id && (
+                  <ColorPicker
+                    value={c.color}
+                    others={getState().local.circles.filter((o) => o.id !== c.id).map((o) => o.color)}
+                    onPick={(color) => patchCircle(c.id, { color })}
+                    onClose={() => setPicking(null)}
+                  />
+                )}
+              </span>
               {editing === c.id ? (
                 <input
                   className="rename"
@@ -116,6 +150,11 @@ export function Sidebar() {
                   onDoubleClick={() => setEditing(c.id)}
                 >
                   {c.name}
+                  {c.auto && (
+                    <span className="auto-tag" title="Made from your game logs. It keeps updating until you rename it or change who's in it.">
+                      auto
+                    </span>
+                  )}
                 </button>
               )}
               <span className="count">{c.members.filter((m) => cache.friends[m]).length}</span>
@@ -146,6 +185,8 @@ export function Sidebar() {
           </button>
         </form>
       </section>
+
+      <SuggestedGroups />
 
       <section>
         <h3>Friend changes</h3>

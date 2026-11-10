@@ -23,6 +23,8 @@ const PATHS: Record<string, string> = {
   download: "M12 4v12M7 11l5 5l5 -5M5 20h14",
   upload: "M12 20v-12M7 13l5 -5l5 5M5 4h14",
   info: "M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0M12 8h.01M11 12h1v4h1",
+  sliders: "M4 6h9M17 6h3M15 6m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M4 12h3M11 12h9M9 12m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0M4 18h11M19 18h1M17 18m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0",
+  users: "M9 8m-3 0a3 3 0 1 0 6 0a3 3 0 1 0 -6 0M3 20v-1a5 5 0 0 1 5 -5h2a5 5 0 0 1 5 5v1M16 4.5a3 3 0 0 1 0 6M21 20v-1a5 5 0 0 0 -3.5 -4.8",
 };
 
 export function Icon({ name, size = 18, title }: { name: keyof typeof PATHS | string; size?: number; title?: string }) {

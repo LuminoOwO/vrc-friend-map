@@ -46,6 +46,38 @@ impl Store {
         }
     }
 
+    /// Copy `name.json` to `backups/name-<tag>.json`. Returns the backup file
+    /// name, or None when there was nothing to back up.
+    pub fn backup(&self, name: &str, tag: &str) -> Result<Option<String>, String> {
+        let src = self.path(name)?;
+        if !src.exists() {
+            return Ok(None);
+        }
+        let tag: String = tag
+            .chars()
+            .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '-' { c } else { '_' })
+            .take(60)
+            .collect();
+        let dir = self.dir.join("backups");
+        std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+        let file = format!("{name}-{tag}.json");
+        let bytes = std::fs::read(&src).map_err(|e| e.to_string())?;
+        write_private(&dir.join(&file), &bytes)?;
+        // Keep the newest 12 backups of this file.
+        let prefix = format!("{name}-");
+        let mut old: Vec<(std::time::SystemTime, PathBuf)> = std::fs::read_dir(&dir)
+            .map_err(|e| e.to_string())?
+            .flatten()
+            .filter(|e| e.file_name().to_string_lossy().starts_with(&prefix))
+            .filter_map(|e| Some((e.metadata().ok()?.modified().ok()?, e.path())))
+            .collect();
+        old.sort_by(|a, b| b.0.cmp(&a.0));
+        for (_, p) in old.into_iter().skip(12) {
+            let _ = std::fs::remove_file(p);
+        }
+        Ok(Some(file))
+    }
+
     pub fn write(&self, name: &str, contents: &str) -> Result<(), String> {
         if contents.len() > 64 * 1024 * 1024 {
             return Err("store entry too large".into());

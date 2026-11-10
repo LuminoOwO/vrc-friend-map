@@ -3,6 +3,7 @@
 // localStorage.
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import type { LogScanReport, PresenceStats } from "./types";
 
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
@@ -84,6 +85,37 @@ export const backend = {
       return;
     }
     await invoke("store_write", { name, contents });
+  },
+  /** Copy a store file to store/backups before a migration. */
+  async storeBackup(name: string, tag: string): Promise<string | null> {
+    if (!isTauri) {
+      const v = localStorage.getItem(lsKey(name));
+      if (v) localStorage.setItem(lsKey(`backup-${name}-${tag}`), v);
+      return v ? tag : null;
+    }
+    return invoke<string | null>("store_backup", { name, tag });
+  },
+  /** linux, windows, macos, android, ios — or "browser". */
+  async platform(): Promise<string> {
+    if (!isTauri) return "browser";
+    return invoke<string>("app_platform");
+  },
+  async logsDetect(): Promise<string[]> {
+    if (!isTauri) return [];
+    return invoke<string[]>("logs_detect");
+  },
+  async logsScan(dirs: string[], retentionDays: number): Promise<LogScanReport> {
+    return invoke<LogScanReport>("logs_scan", { dirs, retentionDays });
+  },
+  async logsInfo(): Promise<LogScanReport | null> {
+    if (!isTauri) return null;
+    return invoke<LogScanReport>("logs_info");
+  },
+  async logsStats(query: { friend_ids: string[]; self_id: string | null; crowd: string; since: number | null }): Promise<PresenceStats> {
+    return invoke<PresenceStats>("logs_stats", { query });
+  },
+  async logsClear(): Promise<void> {
+    if (isTauri) await invoke("logs_clear");
   },
   async storageInfo(): Promise<{ data_dir: string; image_cache_bytes: number } | null> {
     if (!isTauri) return null;

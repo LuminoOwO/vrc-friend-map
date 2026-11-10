@@ -1,19 +1,37 @@
 // Relationship map: one node per friend, a line between two friends when they
-// are friends with each other (VRChat mutuals), and soft "circle" outlines
-// around the groups you create. Circles can overlap. Drag a person into a
-// circle outline (or onto a circle in the sidebar) to add them.
+// are friends with each other (VRChat mutuals) or spent time together (game
+// logs), and soft "circle" outlines around the groups you create. Circles can
+// overlap. Drag a person into a circle outline (or onto a circle in the
+// sidebar) to add them. Map options change how people and lines are drawn.
 import * as d3 from "d3";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
+import { hexA } from "../colors";
 import { useDerived } from "../derived";
-import { iconUrl, presenceLabel, presenceOf, statusColor, trustRank } from "../model";
+import { fmtHours, personTime } from "../logs";
+import {
+  bannerUrl,
+  iconUrl,
+  lastSeen,
+  platformKey,
+  presenceLabel,
+  presenceOf,
+  relTime,
+  statusColor,
+  trustRank,
+} from "../model";
 import { addToCircle, getState, setState, updateSettings, useApp } from "../store";
-import type { Circle } from "../types";
+import type { Circle, Friend, MapSettings, Presence } from "../types";
 import { Icon } from "./Icon";
+import { MapOptions } from "./MapOptions";
 
 interface GNode extends d3.SimulationNodeDatum {
   id: string;
+  /** Radius for round styles; half height for cards. */
   r: number;
+  /** Half width / half height of the drawn shape. */
+  hw: number;
+  hh: number;
   deg: number;
 }
 type GLink = d3.SimulationLinkDatum<GNode> & { source: GNode | string; target: GNode | string };
@@ -28,12 +46,35 @@ const imageCache = new Map<string, HTMLImageElement | "error">();
 const savedPositions = new Map<string, { x: number; y: number }>();
 let savedTransform: d3.ZoomTransform | null = null;
 
-function nodeRadius(mutualCount: number) {
+function mutualRadius(mutualCount: number) {
   return 9 + Math.min(19, Math.sqrt(mutualCount) * 2.4);
 }
 
-// Line colors: how many friends the two connected people have in common
-// (among your friends). Five bands, cool = few, hot = many.
+function togetherRadius(secs: number) {
+  return 9 + Math.min(19, Math.sqrt(secs / 3600) * 3.2);
+}
+
+/** Shape size for a node in the current style. */
+function geometry(style: MapSettings["nodeStyle"], base: number, scale: number) {
+  switch (style) {
+    case "dot": {
+      const r = (4 + (base - 9) * 0.4) * scale;
+      return { r, hw: r, hh: r };
+    }
+    case "card":
+      return { r: 24 * scale, hw: 82 * scale, hh: 24 * scale };
+    case "fullcard":
+      return { r: 74 * scale, hw: 90 * scale, hh: 74 * scale };
+    default: {
+      const r = base * scale;
+      return { r, hw: r, hh: r };
+    }
+  }
+}
+
+const isCard = (style: MapSettings["nodeStyle"]) => style === "card" || style === "fullcard";
+
+// Line colors: five bands, cool = few, hot = many.
 const EDGE_RGB: [number, number, number][] = [
   [110, 130, 150],
   [56, 140, 230],
@@ -45,7 +86,7 @@ const EDGE_ALPHA = [0.16, 0.26, 0.34, 0.46, 0.62];
 const EDGE_WIDTH = [1, 1.15, 1.35, 1.7, 2.2];
 
 const edgeKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
-const rgba = ([r, g, b]: [number, number, number], a: number) => `rgba(${r},${g},${b},${a})`;
+const rgba = ([r, g, b]: [number, number, number], a: number) => `rgba(${r},${g},${b},${Math.min(1, a)})`;
 
 /** Band edges from the actual distribution so the colors spread out for
  *  small and large friend lists alike. Returns 4 inclusive upper bounds. */
@@ -74,6 +115,107 @@ function bucketLabel(i: number, t: number[]): string {
   return lo === hi ? `${lo}` : `${lo}–${hi}`;
 }
 
+/** Draw an image to fill a box, cropping instead of stretching (like CSS
+ *  object-fit: cover). Avatar thumbnails are 4:3, profile icons are square. */
+function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
+  const iw = img.naturalWidth;
+  const ih = img.naturalHeight;
+  if (!iw || !ih) return;
+  const scale = Math.max(w / iw, h / ih);
+  const sw = w / scale;
+  const sh = h / scale;
+  ctx.drawImage(img, (iw - sw) / 2, (ih - sh) / 2, sw, sh, x, y, w, h);
+}
+
+const fitCache = new Map<string, string>();
+function fitText(ctx: CanvasRenderingContext2D, text: string, maxW: number): string {
+  const key = `${ctx.font}|${Math.round(maxW)}|${text}`;
+  const hit = fitCache.get(key);
+  if (hit !== undefined) return hit;
+  if (fitCache.size > 6000) fitCache.clear();
+  let out = text;
+  if (ctx.measureText(text).width > maxW) {
+    let lo = 0;
+    let hi = text.length;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (ctx.measureText(text.slice(0, mid) + "…").width <= maxW) lo = mid;
+      else hi = mid - 1;
+    }
+    out = text.slice(0, lo).trimEnd() + "…";
+  }
+  fitCache.set(key, out);
+  return out;
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+/** Keeps rectangular cards from overlapping (d3's collide force is round). */
+function rectCollide(pad: number, strength = 0.7) {
+  let nodes: GNode[] = [];
+  const force = () => {
+    if (nodes.length < 2) return;
+    let maxW = 0;
+    let maxH = 0;
+    for (const n of nodes) {
+      maxW = Math.max(maxW, n.hw);
+      maxH = Math.max(maxH, n.hh);
+    }
+    const tree = d3.quadtree(
+      nodes,
+      (d) => d.x! + d.vx!,
+      (d) => d.y! + d.vy!,
+    );
+    for (const a of nodes) {
+      const ax = a.x! + a.vx!;
+      const ay = a.y! + a.vy!;
+      const rx = a.hw + maxW + pad;
+      const ry = a.hh + maxH + pad;
+      tree.visit((q, x0, y0, x1, y1) => {
+        if (!("length" in q)) {
+          let leaf: d3.QuadtreeLeaf<GNode> | undefined = q as d3.QuadtreeLeaf<GNode>;
+          while (leaf) {
+            const b = leaf.data;
+            if (b.index! > a.index!) {
+              const dx = b.x! + b.vx! - ax || 0.01;
+              const dy = b.y! + b.vy! - ay || 0.01;
+              const ox = a.hw + b.hw + pad - Math.abs(dx);
+              const oy = a.hh + b.hh + pad - Math.abs(dy);
+              if (ox > 0 && oy > 0) {
+                if (ox / (a.hw + b.hw) < oy / (a.hh + b.hh)) {
+                  const s = Math.sign(dx) * ox * 0.5 * strength;
+                  a.vx! -= s;
+                  b.vx! += s;
+                } else {
+                  const s = Math.sign(dy) * oy * 0.5 * strength;
+                  a.vy! -= s;
+                  b.vy! += s;
+                }
+              }
+            }
+            leaf = leaf.next;
+          }
+        }
+        return x0 > ax + rx || x1 < ax - rx || y0 > ay + ry || y1 < ay - ry;
+      });
+    }
+  };
+  force.initialize = (n: GNode[]) => {
+    nodes = n;
+  };
+  return force;
+}
+
+const PLAT_SHORT: Record<string, string> = { pc: "PC", android: "Quest", ios: "iOS", web: "Web", unknown: "" };
+
 export function GraphView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -88,47 +230,72 @@ export function GraphView() {
   const dragTargetRef = useRef<string | null>(null);
   const fittedRef = useRef(false);
   const [tooltip, setTooltip] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [optionsOpen, setOptionsOpen] = useState(false);
 
   const cache = useApp((s) => s.cache);
   const circles = useApp((s) => s.local.circles);
   const settings = useApp((s) => s.settings);
   const selectedId = useApp((s) => s.selectedId);
+  const stats = useApp((s) => s.logs.stats);
+  const minMinutes = useApp((s) => s.settings.groups.minMinutes);
+  const map = settings.map;
   const derived = useDerived();
-  const { friends, idsKey, matched, edges, degree } = derived;
+  const { friends, idsKey, matched, edges: mutualEdgeList, degree: mutualDegree } = derived;
 
-  // Everything the draw function needs, refreshed every render.
-  const viewRef = useRef({
-    cache,
-    circles,
-    settings,
-    selectedId,
-    matched,
-    neighbors: new Map<string, Set<string>>(),
-    strength: { shared: new Map<string, number>(), thresholds: [0, 1, 2, 3] },
-  });
-  const neighbors = useMemo(() => {
+  const mutualNeighbors = useMemo(() => {
     const m = new Map<string, Set<string>>();
-    for (const [a, b] of edges) {
+    for (const [a, b] of mutualEdgeList) {
       if (!m.has(a)) m.set(a, new Set());
       if (!m.has(b)) m.set(b, new Set());
       m.get(a)!.add(b);
       m.get(b)!.add(a);
     }
     return m;
-  }, [edges]);
-  const strength = useMemo(() => {
-    const shared = new Map<string, number>();
-    for (const [a, b] of edges) {
-      let small = neighbors.get(a) ?? new Set<string>();
-      let big = neighbors.get(b) ?? new Set<string>();
-      if (small.size > big.size) [small, big] = [big, small];
-      let c = 0;
-      for (const x of small) if (big.has(x)) c++;
-      shared.set(edgeKey(a, b), c);
+  }, [mutualEdgeList]);
+
+  const together = map.lines === "together" && !!stats && stats.pairs.length > 0;
+
+  // The lines shown (and used for the layout), each with a value for its color band.
+  const lineData = useMemo(() => {
+    const value = new Map<string, number>();
+    let list: [string, string][];
+    if (together) {
+      list = [];
+      for (const p of stats!.pairs) {
+        if (p.secs < minMinutes * 60 || !cache.friends[p.a] || !cache.friends[p.b]) continue;
+        list.push(p.a < p.b ? [p.a, p.b] : [p.b, p.a]);
+        value.set(edgeKey(p.a, p.b), Math.round(p.secs / 3600));
+      }
+    } else {
+      list = mutualEdgeList;
+      for (const [a, b] of list) {
+        let small = mutualNeighbors.get(a) ?? new Set<string>();
+        let big = mutualNeighbors.get(b) ?? new Set<string>();
+        if (small.size > big.size) [small, big] = [big, small];
+        let c = 0;
+        for (const x of small) if (big.has(x)) c++;
+        value.set(edgeKey(a, b), c);
+      }
     }
-    return { shared, thresholds: sharedThresholds([...shared.values()]) };
-  }, [edges, neighbors]);
-  viewRef.current = { cache, circles, settings, selectedId, matched, neighbors, strength };
+    const neighbors = new Map<string, Set<string>>();
+    const degree = new Map<string, number>();
+    for (const [a, b] of list) {
+      if (!neighbors.has(a)) neighbors.set(a, new Set());
+      if (!neighbors.has(b)) neighbors.set(b, new Set());
+      neighbors.get(a)!.add(b);
+      neighbors.get(b)!.add(a);
+      degree.set(a, (degree.get(a) ?? 0) + 1);
+      degree.set(b, (degree.get(b) ?? 0) + 1);
+    }
+    return { list, value, thresholds: sharedThresholds([...value.values()]), neighbors, degree };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [together, stats, minMinutes, mutualEdgeList, mutualNeighbors, idsKey]);
+
+  const secsById = useMemo(() => new Map((stats?.people ?? []).map((p) => [p.id, p.secs])), [stats]);
+
+  // Everything the draw function needs, refreshed every render.
+  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById });
+  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById };
 
   const requestDraw = () => {
     if (rafRef.current) return;
@@ -154,6 +321,7 @@ export function GraphView() {
 
   function computeHulls(): Hull[] {
     const { circles, matched, settings } = viewRef.current;
+    const card = isCard(settings.map.nodeStyle);
     const hulls: Hull[] = [];
     for (const circle of circles) {
       if (circle.hidden) continue;
@@ -162,16 +330,290 @@ export function GraphView() {
         const n = nodesRef.current.get(id);
         if (!n || n.x == null || n.y == null) continue;
         if (settings.dimMode === "hide" && !matched.has(id)) continue;
-        const pad = n.r + 16;
-        for (let i = 0; i < 10; i++) {
-          const a = (i / 10) * Math.PI * 2;
-          pts.push([n.x + Math.cos(a) * pad, n.y + Math.sin(a) * pad]);
+        if (card) {
+          const pad = 14;
+          for (const [sx, sy] of [
+            [-1, -1],
+            [1, -1],
+            [1, 1],
+            [-1, 1],
+          ]) {
+            pts.push([n.x + sx * (n.hw + pad), n.y + sy * (n.hh + pad)]);
+          }
+        } else {
+          const pad = n.r + 16;
+          for (let i = 0; i < 10; i++) {
+            const a = (i / 10) * Math.PI * 2;
+            pts.push([n.x + Math.cos(a) * pad, n.y + Math.sin(a) * pad]);
+          }
         }
       }
       const hull = pts.length >= 3 ? d3.polygonHull(pts) : null;
       if (hull) hulls.push({ circle, points: hull });
     }
     return hulls;
+  }
+
+  function drawRound(ctx: CanvasRenderingContext2D, n: GNode, f: Friend, ring: string, p: Presence, style: MapSettings["nodeStyle"], selected: boolean, alpha: number) {
+    const { cache, settings } = viewRef.current;
+    const x = n.x!;
+    const y = n.y!;
+    if (style === "dot") {
+      ctx.beginPath();
+      ctx.arc(x, y, n.r, 0, Math.PI * 2);
+      ctx.fillStyle = ring;
+      if (p === "offline" && settings.ringMode === "status") ctx.globalAlpha = alpha * 0.75;
+      ctx.fill();
+      ctx.globalAlpha = alpha;
+      if (selected) {
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+      }
+      return;
+    }
+    const img = getImage(iconUrl(f));
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, n.r, 0, Math.PI * 2);
+    ctx.closePath();
+    if (img) {
+      ctx.clip();
+      ctx.fillStyle = "#22313d";
+      ctx.fill();
+      drawCover(ctx, img, x - n.r, y - n.r, n.r * 2, n.r * 2);
+    } else {
+      ctx.fillStyle = "#2a3946";
+      ctx.fill();
+      ctx.fillStyle = "#c9d6e0";
+      ctx.font = `600 ${n.r * 0.8}px system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(f.displayName.slice(0, 1).toUpperCase(), x, y + 1);
+      ctx.textBaseline = "alphabetic";
+    }
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(x, y, n.r + 1.2, 0, Math.PI * 2);
+    ctx.lineWidth = selected ? 4 : 2.4;
+    ctx.strokeStyle = selected ? "#ffffff" : ring;
+    if (p === "offline" && settings.ringMode === "status") ctx.globalAlpha = alpha * 0.7;
+    ctx.stroke();
+    ctx.globalAlpha = alpha;
+    if (cache.mutuals[n.id]?.hidden) {
+      ctx.beginPath();
+      ctx.setLineDash([3, 3]);
+      ctx.arc(x, y, n.r + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(200,210,220,0.6)";
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    if (settings.map.showStars && cache.favorites[n.id]?.length) {
+      ctx.font = `${Math.max(10, n.r * 0.75)}px system-ui, sans-serif`;
+      ctx.fillStyle = "#ffd34d";
+      ctx.textAlign = "center";
+      ctx.fillText("★", x + n.r * 0.78, y - n.r * 0.6);
+    }
+  }
+
+  function drawCard(ctx: CanvasRenderingContext2D, n: GNode, f: Friend, ring: string, p: Presence, full: boolean, selected: boolean, k: number) {
+    const { cache, settings, circles } = viewRef.current;
+    const s = settings.map.nodeScale;
+    const x0 = n.x! - n.hw;
+    const y0 = n.y! - n.hh;
+    const W = n.hw * 2;
+    const H = n.hh * 2;
+    const trust = trustRank(cache.details[n.id]?.tags, f.developerType);
+    const screenW = W * k;
+    const radius = (full ? 10 : 8) * s;
+    const offline = p === "offline";
+
+    const icon = getImage(iconUrl(f));
+
+    // Very zoomed out: a tile with the picture in the middle is enough.
+    if (screenW < 54) {
+      roundRect(ctx, x0, y0, W, H, radius);
+      ctx.fillStyle = offline ? "#1b242c" : "#1d2a35";
+      ctx.fill();
+      const r = Math.min(n.hw, n.hh) * 0.62;
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(n.x!, n.y!, r, 0, Math.PI * 2);
+      ctx.fillStyle = "#2a3946";
+      ctx.fill();
+      if (icon) {
+        ctx.clip();
+        drawCover(ctx, icon, n.x! - r, n.y! - r, r * 2, r * 2);
+      }
+      ctx.restore();
+      roundRect(ctx, x0, y0, W, H, radius);
+      ctx.lineWidth = Math.max(2 / k, 3 * s);
+      ctx.strokeStyle = selected ? "#ffffff" : ring;
+      ctx.stroke();
+      return;
+    }
+
+    roundRect(ctx, x0, y0, W, H, radius);
+    ctx.fillStyle = "#151e26";
+    ctx.fill();
+
+    const drawIcon = (cx: number, cy: number, r: number, ringW: number) => {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fillStyle = "#22313d";
+      ctx.fill();
+      if (icon) {
+        ctx.clip();
+        drawCover(ctx, icon, cx - r, cy - r, r * 2, r * 2);
+      } else {
+        ctx.fillStyle = "#c9d6e0";
+        ctx.font = `700 ${r * 0.9}px system-ui, sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(f.displayName.slice(0, 1).toUpperCase(), cx, cy + 1);
+        ctx.textBaseline = "alphabetic";
+      }
+      ctx.restore();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + ringW / 2, 0, Math.PI * 2);
+      ctx.lineWidth = ringW;
+      ctx.strokeStyle = ring;
+      ctx.stroke();
+    };
+
+    if (!full) {
+      // Compact card: status bar, round picture, name and status.
+      ctx.save();
+      roundRect(ctx, x0, y0, W, H, radius);
+      ctx.clip();
+      ctx.fillStyle = ring;
+      ctx.fillRect(x0, y0, 3.5 * s, H);
+      ctx.restore();
+      const r = n.hh - 7 * s;
+      drawIcon(x0 + 7 * s + r + 3 * s, n.y!, r, 2 * s);
+      const tx = x0 + 2 * r + 18 * s;
+      const maxW = x0 + W - tx - 8 * s;
+      ctx.textAlign = "left";
+      ctx.font = `600 ${12.5 * s}px system-ui, sans-serif`;
+      ctx.fillStyle = trust.color;
+      ctx.fillText(fitText(ctx, f.displayName, maxW), tx, n.y! - 2 * s);
+      ctx.font = `${10.5 * s}px system-ui, sans-serif`;
+      ctx.fillStyle = offline ? "#7d8b97" : "#a9b8c4";
+      ctx.fillText(fitText(ctx, f.statusDescription || presenceLabel(f, p), maxW), tx, n.y! + 12 * s);
+      if (settings.map.showStars && cache.favorites[n.id]?.length) {
+        ctx.font = `${10 * s}px system-ui, sans-serif`;
+        ctx.fillStyle = "#ffd34d";
+        ctx.textAlign = "right";
+        ctx.fillText("★", x0 + W - 5 * s, y0 + 11 * s);
+      }
+    } else {
+      // Full player card, laid out like VRChat's social menu tile.
+      const bannerH = 54 * s;
+      ctx.save();
+      roundRect(ctx, x0, y0, W, H, radius);
+      ctx.clip();
+      ctx.fillStyle = f.bannerColor || "#1e2a33";
+      ctx.fillRect(x0, y0, W, bannerH);
+      const banner = getImage(bannerUrl(f));
+      if (banner) drawCover(ctx, banner, x0, y0, W, bannerH);
+      if (offline) {
+        ctx.fillStyle = "rgba(11,16,21,0.45)";
+        ctx.fillRect(x0, y0, W, bannerH);
+      }
+      ctx.restore();
+
+      const r = 21 * s;
+      const cx = x0 + 12 * s + r;
+      const cy = y0 + bannerH;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r + 4 * s, 0, Math.PI * 2);
+      ctx.fillStyle = "#151e26";
+      ctx.fill();
+      drawIcon(cx, cy, r, 3 * s);
+      // Status dot on the picture.
+      ctx.beginPath();
+      ctx.arc(cx + r * 0.72, cy + r * 0.72, 5.5 * s, 0, Math.PI * 2);
+      ctx.fillStyle = statusColor(f, p);
+      ctx.fill();
+      ctx.lineWidth = 2.5 * s;
+      ctx.strokeStyle = "#151e26";
+      ctx.stroke();
+
+      const plat = PLAT_SHORT[platformKey(f)];
+      if (plat && screenW > 110) {
+        ctx.font = `700 ${8.5 * s}px system-ui, sans-serif`;
+        const tw = ctx.measureText(plat).width;
+        roundRect(ctx, x0 + W - tw - 14 * s, y0 + 6 * s, tw + 8 * s, 13 * s, 4 * s);
+        ctx.fillStyle = "rgba(0,0,0,0.6)";
+        ctx.fill();
+        ctx.fillStyle = "#e6edf3";
+        ctx.textAlign = "left";
+        ctx.fillText(plat, x0 + W - tw - 10 * s, y0 + 15.5 * s);
+      }
+      if (settings.map.showStars && cache.favorites[n.id]?.length) {
+        ctx.font = `${12 * s}px system-ui, sans-serif`;
+        ctx.fillStyle = "#ffd34d";
+        ctx.textAlign = "left";
+        ctx.fillText("★", x0 + 7 * s, y0 + 16 * s);
+      }
+
+      if (screenW > 110) {
+        const tx = cx + r + 9 * s;
+        ctx.textAlign = "left";
+        ctx.font = `650 ${13 * s}px system-ui, sans-serif`;
+        ctx.fillStyle = trust.color;
+        ctx.fillText(fitText(ctx, f.displayName, x0 + W - tx - 8 * s), tx, y0 + bannerH + 16 * s);
+
+        const left = x0 + 11 * s;
+        const inner = W - 22 * s;
+        ctx.font = `${10.5 * s}px system-ui, sans-serif`;
+        ctx.fillStyle = offline ? "#7d8b97" : "#b4c2cd";
+        ctx.fillText(fitText(ctx, f.statusDescription || presenceLabel(f, p), inner), left, y0 + bannerH + 39 * s);
+
+        // Trust rank pill + last seen.
+        ctx.font = `600 ${9 * s}px system-ui, sans-serif`;
+        const label = trust.label;
+        const lw = ctx.measureText(label).width;
+        const py = y0 + bannerH + 47 * s;
+        roundRect(ctx, left, py, lw + 10 * s, 14 * s, 7 * s);
+        ctx.fillStyle = hexA(trust.color, 0.18);
+        ctx.fill();
+        ctx.lineWidth = 1 * s;
+        ctx.strokeStyle = hexA(trust.color, 0.7);
+        ctx.stroke();
+        ctx.fillStyle = trust.color;
+        ctx.fillText(label, left + 5 * s, py + 10 * s);
+        ctx.font = `${9.5 * s}px system-ui, sans-serif`;
+        ctx.fillStyle = "#8495a3";
+        ctx.textAlign = "right";
+        const when = offline ? `seen ${relTime(lastSeen(f))}` : p === "web" ? "on website" : "in VRChat";
+        ctx.fillText(fitText(ctx, when, inner - lw - 18 * s), x0 + W - 11 * s, py + 10 * s);
+
+        // Footer: mutuals + circle dots.
+        const fy = y0 + H - 9 * s;
+        const mi = cache.mutuals[n.id];
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#8495a3";
+        ctx.fillText(mi ? (mi.hidden ? "mutuals hidden" : `${mi.count} mutual${mi.count === 1 ? "" : "s"}`) : "mutuals …", left, fy);
+        let dx = x0 + W - 11 * s;
+        for (const c of circles) {
+          if (!c.members.includes(n.id)) continue;
+          ctx.beginPath();
+          ctx.arc(dx - 3.5 * s, fy - 3.5 * s, 3.5 * s, 0, Math.PI * 2);
+          ctx.fillStyle = c.color;
+          ctx.fill();
+          dx -= 10 * s;
+          if (dx < x0 + W / 2) break;
+        }
+      }
+    }
+
+    roundRect(ctx, x0, y0, W, H, radius);
+    ctx.lineWidth = selected ? 3 * s : 1 * s;
+    ctx.strokeStyle = selected ? "#ffffff" : "rgba(255,255,255,0.10)";
+    ctx.stroke();
   }
 
   function draw() {
@@ -181,11 +623,15 @@ export function GraphView() {
     if (!ctx) return;
     const { w, h, dpr } = sizeRef.current;
     const t = transformRef.current;
-    const { cache, settings, selectedId, matched, neighbors, strength } = viewRef.current;
+    const { cache, settings, selectedId, matched, lineData } = viewRef.current;
+    const map = settings.map;
     const hover = hoverRef.current;
     const focus = selectedId ?? hover;
+    const neighbors = lineData.neighbors;
     const focusSet = focus ? new Set([focus, ...(neighbors.get(focus) ?? [])]) : null;
     const hideMode = settings.dimMode === "hide";
+    const style = map.nodeStyle;
+    const card = isCard(style);
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
@@ -194,67 +640,77 @@ export function GraphView() {
     ctx.scale(t.k, t.k);
 
     // Circles (hulls)
-    const hulls = computeHulls();
+    const hulls = map.hulls ? computeHulls() : [];
     hullsRef.current = hulls;
     const line = d3.line().curve(d3.curveCatmullRomClosed.alpha(0.5)).context(ctx);
     for (const hull of hulls) {
       const isTarget = dragTargetRef.current === hull.circle.id;
       ctx.beginPath();
       line(hull.points);
-      ctx.fillStyle = hexA(hull.circle.color, isTarget ? 0.22 : 0.09);
+      ctx.fillStyle = hexA(hull.circle.color, Math.min(0.5, (isTarget ? 0.22 : 0.09) * map.hullOpacity));
       ctx.fill();
       ctx.lineWidth = (isTarget ? 3 : 1.5) / Math.max(0.5, t.k);
-      ctx.strokeStyle = hexA(hull.circle.color, isTarget ? 0.95 : 0.55);
+      ctx.strokeStyle = hexA(hull.circle.color, Math.min(1, (isTarget ? 0.95 : 0.55) * map.hullOpacity));
       ctx.stroke();
     }
 
-    // Edges, grouped into color bands so each band is one stroke call.
-    const visible = (id: string) => !hideMode || matched.has(id);
-    const colorLines = settings.lineColors !== "plain";
-    const band = (a: string, b: string) => (colorLines ? bucketOf(strength.shared.get(edgeKey(a, b)) ?? 0, strength.thresholds) : 0);
-    const paths = EDGE_RGB.map(() => new Path2D());
-    for (const link of simRef.current ? (simRef.current.force("link") as d3.ForceLink<GNode, GLink>).links() : []) {
-      const s = link.source as GNode;
-      const d = link.target as GNode;
-      if (!visible(s.id) || !visible(d.id)) continue;
-      if (focusSet && (s.id === focus || d.id === focus)) continue;
-      if (!matched.has(s.id) || !matched.has(d.id)) continue;
-      const p = paths[band(s.id, d.id)];
-      p.moveTo(s.x!, s.y!);
-      p.lineTo(d.x!, d.y!);
-    }
-    paths.forEach((p, i) => {
-      if (colorLines) {
-        ctx.strokeStyle = rgba(EDGE_RGB[i], EDGE_ALPHA[i] * (focusSet ? 0.3 : 1));
-        ctx.lineWidth = EDGE_WIDTH[i] / t.k;
-      } else {
-        ctx.strokeStyle = focusSet ? "rgba(160,190,210,0.06)" : "rgba(160,190,210,0.16)";
-        ctx.lineWidth = 1 / t.k;
-      }
-      ctx.stroke(p);
-    });
-    if (focus) {
-      const fNode = nodesRef.current.get(focus);
-      if (fNode) {
-        const focusPaths = EDGE_RGB.map(() => new Path2D());
-        for (const nb of neighbors.get(focus) ?? []) {
-          const n = nodesRef.current.get(nb);
-          if (!n || !visible(nb)) continue;
-          const p = focusPaths[band(focus, nb)];
-          p.moveTo(fNode.x!, fNode.y!);
-          p.lineTo(n.x!, n.y!);
+    // Lines, grouped into color bands so each band is one stroke call.
+    if (map.lines !== "none") {
+      const visible = (id: string) => !hideMode || matched.has(id);
+      const colorLines = map.lines !== "plain";
+      const band = (a: string, b: string) => (colorLines ? bucketOf(lineData.value.get(edgeKey(a, b)) ?? 0, lineData.thresholds) : 0);
+      if (!map.focusLinesOnly) {
+        const paths = EDGE_RGB.map(() => new Path2D());
+        for (const [a, b] of lineData.list) {
+          const s = nodesRef.current.get(a);
+          const d = nodesRef.current.get(b);
+          if (!s || !d || s.x == null || d.x == null) continue;
+          if (!visible(a) || !visible(b)) continue;
+          if (focusSet && (a === focus || b === focus)) continue;
+          if (!matched.has(a) || !matched.has(b)) continue;
+          const p = paths[band(a, b)];
+          p.moveTo(s.x, s.y!);
+          p.lineTo(d.x, d.y!);
         }
-        focusPaths.forEach((p, i) => {
-          ctx.strokeStyle = colorLines ? rgba(EDGE_RGB[i], 0.95) : "rgba(45,212,191,0.75)";
-          ctx.lineWidth = ((colorLines ? EDGE_WIDTH[i] : 1) * 1.8) / t.k;
+        paths.forEach((p, i) => {
+          if (colorLines) {
+            ctx.strokeStyle = rgba(EDGE_RGB[i], EDGE_ALPHA[i] * map.lineOpacity * (focusSet ? 0.3 : 1));
+            ctx.lineWidth = (EDGE_WIDTH[i] * map.lineWidth) / t.k;
+          } else {
+            ctx.strokeStyle = `rgba(160,190,210,${Math.min(1, (focusSet ? 0.06 : 0.16) * map.lineOpacity)})`;
+            ctx.lineWidth = map.lineWidth / t.k;
+          }
           ctx.stroke(p);
         });
       }
+      if (focus) {
+        const fNode = nodesRef.current.get(focus);
+        if (fNode && fNode.x != null) {
+          const focusPaths = EDGE_RGB.map(() => new Path2D());
+          for (const nb of neighbors.get(focus) ?? []) {
+            const n = nodesRef.current.get(nb);
+            if (!n || n.x == null || !visible(nb)) continue;
+            const p = focusPaths[band(focus, nb)];
+            p.moveTo(fNode.x, fNode.y!);
+            p.lineTo(n.x, n.y!);
+          }
+          focusPaths.forEach((p, i) => {
+            ctx.strokeStyle = colorLines ? rgba(EDGE_RGB[i], 0.95) : "rgba(45,212,191,0.75)";
+            ctx.lineWidth = ((colorLines ? EDGE_WIDTH[i] : 1) * 1.8 * map.lineWidth) / t.k;
+            ctx.stroke(p);
+          });
+        }
+      }
     }
 
-    // Nodes
+    // People. The hovered/selected person is drawn last so nothing covers them.
+    const order = [...nodesRef.current.values()];
+    if (focus) {
+      const i = order.findIndex((n) => n.id === focus);
+      if (i >= 0) order.push(order.splice(i, 1)[0]);
+    }
     const showLabelsAuto = settings.showLabels === "always" || (settings.showLabels === "auto" && t.k >= 1.15);
-    for (const n of nodesRef.current.values()) {
+    for (const n of order) {
       const f = cache.friends[n.id];
       if (!f || n.x == null || n.y == null) continue;
       const isMatch = matched.has(n.id);
@@ -263,51 +719,12 @@ export function GraphView() {
       if (focusSet && !focusSet.has(n.id)) alpha *= 0.35;
       ctx.globalAlpha = alpha;
       const p = presenceOf(f, cache.presence);
-      const ring =
-        settings.ringMode === "trust" ? trustRank(cache.details[n.id]?.tags, f.developerType).color : statusColor(f, p);
-      const img = getImage(iconUrl(f));
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-      ctx.closePath();
-      if (img) {
-        ctx.clip();
-        ctx.drawImage(img, n.x - n.r, n.y - n.r, n.r * 2, n.r * 2);
-      } else {
-        ctx.fillStyle = "#2a3946";
-        ctx.fill();
-        ctx.fillStyle = "#c9d6e0";
-        ctx.font = `600 ${n.r * 0.8}px system-ui, sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(f.displayName.slice(0, 1).toUpperCase(), n.x, n.y + 1);
-        ctx.textBaseline = "alphabetic";
-      }
-      ctx.restore();
-      ctx.beginPath();
-      ctx.arc(n.x, n.y, n.r + 1.2, 0, Math.PI * 2);
-      ctx.lineWidth = n.id === selectedId ? 4 : 2.4;
-      ctx.strokeStyle = n.id === selectedId ? "#ffffff" : ring;
-      if (p === "offline" && settings.ringMode === "status") ctx.globalAlpha = alpha * 0.7;
-      ctx.stroke();
+      const ring = settings.ringMode === "trust" ? trustRank(cache.details[n.id]?.tags, f.developerType).color : statusColor(f, p);
+      const selected = n.id === selectedId;
+      if (card) drawCard(ctx, n, f, ring, p, style === "fullcard", selected, t.k);
+      else drawRound(ctx, n, f, ring, p, style, selected, alpha);
       ctx.globalAlpha = alpha;
-      const mi = cache.mutuals[n.id];
-      if (mi?.hidden) {
-        ctx.beginPath();
-        ctx.setLineDash([3, 3]);
-        ctx.arc(n.x, n.y, n.r + 5, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(200,210,220,0.6)";
-        ctx.lineWidth = 1.2;
-        ctx.stroke();
-        ctx.setLineDash([]);
-      }
-      if (cache.favorites[n.id]?.length) {
-        ctx.font = `${Math.max(10, n.r * 0.75)}px system-ui, sans-serif`;
-        ctx.fillStyle = "#ffd34d";
-        ctx.textAlign = "center";
-        ctx.fillText("★", n.x + n.r * 0.78, n.y - n.r * 0.6);
-      }
-      const labelled = showLabelsAuto || (focusSet?.has(n.id) && settings.showLabels !== "never") || n.id === selectedId;
+      const labelled = !card && (showLabelsAuto || (focusSet?.has(n.id) && settings.showLabels !== "never") || selected);
       if (labelled && isMatch) {
         const fs = 12 / t.k;
         ctx.font = `500 ${fs}px system-ui, sans-serif`;
@@ -343,43 +760,51 @@ export function GraphView() {
     const { matched, settings } = viewRef.current;
     const pts = [...nodesRef.current.values()].filter((n) => n.x != null && (settings.dimMode !== "hide" || matched.has(n.id)));
     if (!pts.length) return;
-    const [x0, x1] = d3.extent(pts, (n) => n.x!) as [number, number];
-    const [y0, y1] = d3.extent(pts, (n) => n.y!) as [number, number];
+    const x0 = d3.min(pts, (n) => n.x! - n.hw)!;
+    const x1 = d3.max(pts, (n) => n.x! + n.hw)!;
+    const y0 = d3.min(pts, (n) => n.y! - n.hh)!;
+    const y1 = d3.max(pts, (n) => n.y! + n.hh)!;
     const { w, h } = sizeRef.current;
-    const k = Math.min(2, 0.9 / Math.max((x1 - x0 + 80) / w, (y1 - y0 + 80) / h));
+    const k = Math.min(2, 0.92 / Math.max((x1 - x0 + 60) / w, (y1 - y0 + 60) / h));
     const tr = d3.zoomIdentity.translate(w / 2, h / 2).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
     const sel = d3.select(canvas);
     if (animate) sel.transition().duration(500).call(zoom.transform, tr);
     else sel.call(zoom.transform, tr);
   }
 
-  // Build/refresh the simulation when the set of people or connections changes.
+  // Build/refresh the simulation when people, lines or node shapes change.
+  const layoutKey = `${idsKey}#${lineData.list.length}#${map.nodeStyle}#${map.nodeScale}#${map.sizeBy}#${map.spacing}`;
   useEffect(() => {
     const prev = nodesRef.current;
     const next = new Map<string, GNode>();
+    const { secsById } = viewRef.current;
+    const style = map.nodeStyle;
+    const card = isCard(style);
     let added = 0;
     for (const f of friends) {
-      const mi = cache.mutuals[f.id];
-      const r = nodeRadius(mi?.count ?? 0);
+      const base =
+        map.sizeBy === "same" ? 14 : map.sizeBy === "together" ? togetherRadius(secsById.get(f.id) ?? 0) : mutualRadius(cache.mutuals[f.id]?.count ?? 0);
+      const g = geometry(style, base, map.nodeScale);
+      const deg = lineData.degree.get(f.id) ?? mutualDegree.get(f.id) ?? 0;
       const old = prev.get(f.id);
       const remembered = !old ? savedPositions.get(f.id) : undefined;
       if (remembered) {
-        next.set(f.id, { id: f.id, r, deg: degree.get(f.id) ?? 0, x: remembered.x, y: remembered.y });
+        next.set(f.id, { id: f.id, ...g, deg, x: remembered.x, y: remembered.y });
       } else if (old) {
-        old.r = r;
-        old.deg = degree.get(f.id) ?? 0;
+        Object.assign(old, g, { deg });
         next.set(f.id, old);
       } else {
         added++;
         const a = Math.random() * Math.PI * 2;
-        const dist = 50 + Math.random() * 250;
-        next.set(f.id, { id: f.id, r, deg: degree.get(f.id) ?? 0, x: Math.cos(a) * dist, y: Math.sin(a) * dist });
+        const dist = (50 + Math.random() * 250) * (card ? 2.5 : 1);
+        next.set(f.id, { id: f.id, ...g, deg, x: Math.cos(a) * dist, y: Math.sin(a) * dist });
       }
     }
     nodesRef.current = next;
     const nodes = [...next.values()];
-    const links: GLink[] = edges.map(([a, b]) => ({ source: a, target: b }));
-    const ringRadius = 160 + Math.sqrt(nodes.length) * 30;
+    const links: GLink[] = lineData.list.map(([a, b]) => ({ source: a, target: b }));
+    const sp = map.spacing;
+    const ringRadius = (160 + Math.sqrt(nodes.length) * (card ? 90 : 30)) * sp;
 
     let sim = simRef.current;
     if (!sim) {
@@ -394,11 +819,22 @@ export function GraphView() {
         d3
           .forceLink<GNode, GLink>(links)
           .id((d) => d.id)
-          .distance((l) => 40 + (l.source as GNode).r + (l.target as GNode).r)
+          .distance((l) => {
+            const s = l.source as GNode;
+            const d = l.target as GNode;
+            return card ? (30 + s.hw + d.hw) * 0.85 * sp : (40 + s.r + d.r) * sp;
+          })
           .strength((l) => 0.6 / Math.max(1, Math.min((l.source as GNode).deg, (l.target as GNode).deg))),
       )
-      .force("charge", d3.forceManyBody<GNode>().strength((n) => -50 - n.r * 7).distanceMax(520))
-      .force("collide", d3.forceCollide<GNode>((n) => n.r + 5))
+      .force(
+        "charge",
+        d3
+          .forceManyBody<GNode>()
+          .strength((n) => (card ? -(60 + n.hw * 5) : -(50 + n.r * 7)) * sp)
+          .distanceMax((card ? 900 : 520) * sp),
+      )
+      .force("collide", card ? null : d3.forceCollide<GNode>((n) => n.r + 5 * map.nodeScale))
+      .force("rect", card ? (rectCollide(8 * map.nodeScale) as unknown as d3.Force<GNode, GLink>) : null)
       .force("x", d3.forceX<GNode>(0).strength(0.035))
       .force("y", d3.forceY<GNode>(0).strength(0.035))
       .force("lonely", d3.forceRadial<GNode>(ringRadius, 0, 0).strength((n) => (n.deg === 0 ? 0.06 : 0)));
@@ -418,19 +854,31 @@ export function GraphView() {
       requestAnimationFrame(() => fit(false));
       sim.alpha(0.25).restart();
     } else {
-      sim.alpha(added > 0 ? 0.5 : 0.15).restart();
+      sim.alpha(added > 0 ? 0.5 : 0.35).restart();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idsKey, edges]);
+  }, [layoutKey]);
+
+  // Refit when the node style changes size a lot (e.g. switching to cards).
+  const styleRef = useRef(map.nodeStyle);
+  useEffect(() => {
+    if (styleRef.current === map.nodeStyle) return;
+    styleRef.current = map.nodeStyle;
+    const timer = setTimeout(() => fit(), 700);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map.nodeStyle]);
 
   // Pull members of each circle together; people in two circles sit between them.
   useEffect(() => {
     const sim = simRef.current;
     if (!sim) return;
+    const pull = 0.09 * map.groupPull;
     const groups = circles
       .filter((c) => !c.hidden && c.members.length > 1)
       .map((c) => c.members.map((id) => nodesRef.current.get(id)).filter(Boolean) as GNode[]);
     const force = (alpha: number) => {
+      if (!pull) return;
       for (const g of groups) {
         let cx = 0;
         let cy = 0;
@@ -441,14 +889,14 @@ export function GraphView() {
         cx /= g.length;
         cy /= g.length;
         for (const n of g) {
-          n.vx! += (cx - n.x!) * 0.09 * alpha;
-          n.vy! += (cy - n.y!) * 0.09 * alpha;
+          n.vx! += (cx - n.x!) * pull * alpha;
+          n.vy! += (cy - n.y!) * pull * alpha;
         }
       }
     };
     sim.force("circles", force as unknown as d3.Force<GNode, GLink>);
     sim.alpha(Math.max(sim.alpha(), 0.3)).restart();
-  }, [circles, idsKey]);
+  }, [circles, layoutKey, map.groupPull]);
 
   // Keep the selected person in view (the detail panel narrows the canvas).
   useEffect(() => {
@@ -474,7 +922,7 @@ export function GraphView() {
   useEffect(() => {
     requestDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cache, circles, settings, selectedId, matched]);
+  }, [cache, circles, settings, selectedId, matched, lineData]);
 
   // Canvas size, zoom and drag.
   useEffect(() => {
@@ -499,10 +947,15 @@ export function GraphView() {
       let best: GNode | undefined;
       let bestD = Infinity;
       const { matched, settings } = viewRef.current;
+      const card = isCard(settings.map.nodeStyle);
+      const slack = 4 / transformRef.current.k;
       for (const n of nodesRef.current.values()) {
         if (settings.dimMode === "hide" && !matched.has(n.id)) continue;
-        const d = Math.hypot(n.x! - x, n.y! - y);
-        if (d < n.r + 4 / transformRef.current.k && d < bestD) {
+        const dx = Math.abs(n.x! - x);
+        const dy = Math.abs(n.y! - y);
+        const inside = card ? dx <= n.hw + slack && dy <= n.hh + slack : Math.hypot(dx, dy) < n.r + slack;
+        const d = Math.hypot(dx, dy);
+        if (inside && d < bestD) {
           best = n;
           bestD = d;
         }
@@ -570,7 +1023,7 @@ export function GraphView() {
 
     const zoom = d3
       .zoom<HTMLCanvasElement, unknown>()
-      .scaleExtent([0.08, 6])
+      .scaleExtent([0.04, 6])
       .on("zoom", (event) => {
         transformRef.current = event.transform;
         setTooltip(null);
@@ -623,17 +1076,23 @@ export function GraphView() {
   }, []);
 
   const tipFriend = tooltip ? cache.friends[tooltip.id] : null;
+  const tipTime = tipFriend ? personTime(stats, tipFriend.id) : null;
   const empty = friends.length === 0;
-  const noMutualData = !empty && Object.keys(cache.mutuals).length === 0;
+  const noMutualData = !empty && Object.keys(cache.mutuals).length === 0 && !together;
+  const wantsTogether = map.lines === "together" && !together;
+  const card = isCard(map.nodeStyle);
 
   return (
     <div className="graph" ref={containerRef}>
       <canvas ref={canvasRef} className="graph-canvas" />
       {empty && <div className="graph-empty">No friends loaded yet. They'll appear here after the first sync.</div>}
-      {noMutualData && (
+      {noMutualData && !wantsTogether && (
         <div className="graph-hint">Connections appear as mutual-friend data loads (one request per friend, about a second each).</div>
       )}
-      {tipFriend && tooltip && (
+      {wantsTogether && !empty && (
+        <div className="graph-hint">No time-together data from game logs yet, so lines show mutual friends for now.</div>
+      )}
+      {tipFriend && tooltip && !(card && map.nodeStyle === "fullcard") && (
         <div className="tooltip" style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}>
           <div className="tt-name" style={{ color: trustRank(cache.details[tipFriend.id]?.tags, tipFriend.developerType).color }}>
             {tipFriend.displayName}
@@ -645,8 +1104,13 @@ export function GraphView() {
           <div className="tt-line muted">
             {cache.mutuals[tipFriend.id]?.hidden
               ? "Mutuals hidden"
-              : `${cache.mutuals[tipFriend.id]?.count ?? "?"} mutual friends · ${neighbors.get(tipFriend.id)?.size ?? 0} shown`}
+              : `${cache.mutuals[tipFriend.id]?.count ?? "?"} mutual friends · ${lineData.neighbors.get(tipFriend.id)?.size ?? 0} lines`}
           </div>
+          {tipTime && (
+            <div className="tt-line muted">
+              {fmtHours(tipTime.secs)} together · {tipTime.days} day{tipTime.days === 1 ? "" : "s"}
+            </div>
+          )}
         </div>
       )}
       <div className="graph-controls">
@@ -660,24 +1124,51 @@ export function GraphView() {
         >
           Ring: {settings.ringMode === "status" ? "status" : "trust rank"}
         </button>
-        <button
-          className="btn small"
-          title="Name labels"
-          onClick={() => {
-            const order = ["auto", "always", "never"] as const;
-            const next = order[(order.indexOf(getState().settings.showLabels) + 1) % 3];
-            updateSettings({ showLabels: next });
-          }}
-        >
-          Names: {settings.showLabels}
+        {!card && (
+          <button
+            className="btn small"
+            title="Name labels"
+            onClick={() => {
+              const order = ["auto", "always", "never"] as const;
+              const next = order[(order.indexOf(getState().settings.showLabels) + 1) % 3];
+              updateSettings({ showLabels: next });
+            }}
+          >
+            Names: {settings.showLabels}
+          </button>
+        )}
+        <button className={`btn small keep ${optionsOpen ? "active" : ""}`} title="Map options" onClick={() => setOptionsOpen(!optionsOpen)}>
+          <Icon name="sliders" size={15} /> Map options
         </button>
       </div>
-      <Legend ringMode={settings.ringMode} thresholds={strength.thresholds} showLines={settings.lineColors !== "plain" && edges.length > 0} />
+      {optionsOpen && <MapOptions onClose={() => setOptionsOpen(false)} onFit={() => fit()} hasLogData={!!stats?.pairs.length} />}
+      <Legend
+        ringMode={settings.ringMode}
+        thresholds={lineData.thresholds}
+        lineMode={together ? "together" : map.lines === "together" ? "shared" : map.lines}
+        showLines={lineData.list.length > 0}
+        sizeBy={map.nodeStyle === "icon" || map.nodeStyle === "dot" ? map.sizeBy : "same"}
+        showStars={map.showStars}
+      />
     </div>
   );
 }
 
-function Legend({ ringMode, thresholds, showLines }: { ringMode: "status" | "trust"; thresholds: number[]; showLines: boolean }) {
+function Legend({
+  ringMode,
+  thresholds,
+  lineMode,
+  showLines,
+  sizeBy,
+  showStars,
+}: {
+  ringMode: "status" | "trust";
+  thresholds: number[];
+  lineMode: MapSettings["lines"];
+  showLines: boolean;
+  sizeBy: MapSettings["sizeBy"];
+  showStars: boolean;
+}) {
   const items =
     ringMode === "status"
       ? [
@@ -695,6 +1186,7 @@ function Legend({ ringMode, thresholds, showLines }: { ringMode: "status" | "tru
           ["#1778FF", "New"],
           ["#CCCCCC", "Visitor"],
         ];
+  const colored = showLines && (lineMode === "shared" || lineMode === "together");
   return (
     <div className="legend">
       <div className="legend-row">
@@ -704,14 +1196,23 @@ function Legend({ ringMode, thresholds, showLines }: { ringMode: "status" | "tru
             {l}
           </span>
         ))}
-        <span>
-          <span className="star">★</span>Favorite
-        </span>
-        <span title="Bigger = more mutual friends">◯ size = mutuals</span>
+        {showStars && (
+          <span>
+            <span className="star">★</span>Favorite
+          </span>
+        )}
+        {sizeBy !== "same" && <span title="Bigger = more">◯ size = {sizeBy === "mutuals" ? "mutuals" : "time together"}</span>}
       </div>
-      {showLines && (
-        <div className="legend-row" title="Line color = how many friends the two connected people have in common (among your friends)">
-          <span className="legend-title">Lines · friends in common</span>
+      {colored && (
+        <div
+          className="legend-row"
+          title={
+            lineMode === "together"
+              ? "Line color = hours the two spent in the same instance (from your game logs)"
+              : "Line color = how many friends the two connected people have in common (among your friends)"
+          }
+        >
+          <span className="legend-title">{lineMode === "together" ? "Lines · hours together" : "Lines · friends in common"}</span>
           {EDGE_RGB.map((c, i) => (
             <span key={i}>
               <span className="swatch-line" style={{ background: rgba(c, 0.95) }} />
@@ -722,10 +1223,4 @@ function Legend({ ringMode, thresholds, showLines }: { ringMode: "status" | "tru
       )}
     </div>
   );
-}
-
-function hexA(hex: string, a: number) {
-  const h = hex.replace("#", "");
-  const n = parseInt(h.length === 3 ? h.split("").map((c) => c + c).join("") : h, 16);
-  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
 }

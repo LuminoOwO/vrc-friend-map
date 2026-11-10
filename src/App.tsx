@@ -1,5 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { backend, isTauri } from "./backend";
+import { useDerived } from "./derived";
 import { CardsView } from "./components/CardsView";
 import { DetailPanel } from "./components/DetailPanel";
 import { GraphView } from "./components/GraphView";
@@ -9,6 +10,8 @@ import { SharedLists } from "./components/SharedLists";
 import { Sidebar } from "./components/Sidebar";
 import { ToastView } from "./components/ToastView";
 import { TopBar } from "./components/TopBar";
+import { Icon } from "./components/Icon";
+import { applyAutoGroups, initLogs, refreshStats, scheduleLogScans, useGroupSuggestions } from "./logs";
 import { flushSaves, getState, loadPersisted, setState, useApp } from "./store";
 import { applyPipelineEvent, startAutoRefresh, syncAll } from "./sync";
 
@@ -28,6 +31,7 @@ export default function App() {
     let unlisten: (() => void)[] = [];
     (async () => {
       await loadPersisted();
+      initLogs();
       const info = await backend.sessionInfo().catch(() => ({ logged_in: false, user_id: null, display_name: null }));
       setState({ session: info, mode: info.logged_in ? "app" : "login" });
       if (info.logged_in) goLive();
@@ -91,7 +95,9 @@ export default function App() {
 
   return (
     <div className={`app ${sidebarOpen ? "with-sidebar" : ""}`}>
+      <LogsAndGroups />
       <TopBar />
+      <Notice />
       <div className="main">
         {sidebarOpen && <Sidebar />}
         <div className="content">
@@ -103,6 +109,51 @@ export default function App() {
       </div>
       {settingsOpen && <SettingsModal />}
       <ToastView />
+    </div>
+  );
+}
+
+/** Keeps log scanning, time-together stats and automatic groups in step with settings. */
+function LogsAndGroups() {
+  const { idsKey } = useDerived();
+  const meId = useApp((s) => s.cache.me?.id);
+  const crowd = useApp((s) => s.settings.groups.crowd);
+  const sinceDays = useApp((s) => s.settings.groups.sinceDays);
+  const logSettings = useApp((s) => s.settings.logs);
+  const platform = useApp((s) => s.logs.platform);
+  const demo = useApp((s) => s.demo);
+  const auto = useApp((s) => s.settings.groups.auto);
+  const { suggestions } = useGroupSuggestions();
+  const lastApplied = useRef("");
+
+  useEffect(() => {
+    refreshStats();
+  }, [idsKey, meId, crowd, sinceDays]);
+
+  useEffect(() => {
+    scheduleLogScans();
+  }, [logSettings, platform, demo]);
+
+  useEffect(() => {
+    if (!auto || !suggestions.length) return;
+    const key = suggestions.map((s) => s.key + (s.match?.add.join(",") ?? "")).join(";");
+    if (key === lastApplied.current) return;
+    lastApplied.current = key;
+    applyAutoGroups(suggestions);
+  }, [auto, suggestions]);
+
+  return null;
+}
+
+function Notice() {
+  const notice = useApp((s) => s.notice);
+  if (!notice) return null;
+  return (
+    <div className="notice" role="status">
+      <span>{notice}</span>
+      <button className="icon-btn tiny" title="Dismiss" onClick={() => setState({ notice: null })}>
+        <Icon name="close" size={14} />
+      </button>
     </div>
   );
 }
