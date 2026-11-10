@@ -3,6 +3,22 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.7.2 (2026-11-10)
+
+### Fixed
+- **Much smoother map on Linux.** WebKitGTK's DMA-BUF renderer made the map's canvas about
+  three times slower (measured 17–22 fps → 52–67 fps with the same drawing) and is known to
+  misbehave with NVIDIA drivers. The app now uses WebKit's other GPU path. To get WebKit's
+  default back, start the app with `VRC_FRIEND_MAP_DMABUF=1`. A `WEBKIT_DISABLE_DMABUF_RENDERER`
+  you set yourself is left alone.
+- The orbit animation drew the map twice per frame. Now it's once, and only every other frame
+  while nothing but the orbit moves: it's under a pixel per frame either way, and it halves the
+  cost, which helps laptop batteries. Panning, zooming and dragging stay at full rate.
+
+### Added
+- Map options → **Show frame rate**: frames per second, draw time and slowest frame, in the
+  corner of the map.
+
 ## 0.7.1 (2026-11-10)
 
 ### Added
