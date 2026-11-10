@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useDerived } from "../derived";
-import { PLATFORM_LABEL, TRUST_RANKS } from "../model";
+import { STATUS_COLORS, PLATFORM_LABEL, TRUST_RANKS } from "../model";
 import { exitDemo } from "../session";
 import { defaultFilters, setState, updateFilters, useApp, type View } from "../store";
 import { syncAll, togglePause } from "../sync";
@@ -17,6 +17,7 @@ function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {
   if (f.presence !== "all") n++;
   if (f.lastSeen !== "any") n++;
   if (f.trust.length) n++;
+  if (f.statuses.length) n++;
   if (f.platform.length) n++;
   if (f.circleId) n++;
   if (f.favoritesOnly) n++;
@@ -193,6 +194,30 @@ function FilterPopover({ onClose }: { onClose: () => void }) {
           <option value="90d">Within 90 days</option>
           <option value="older">More than 90 days ago</option>
         </select>
+      </div>
+      <div className="frow">
+        <span className="flabel">Status</span>
+        <div className="chips">
+          {(
+            [
+              ["join me", "Join me"],
+              ["active", "Online"],
+              ["ask me", "Ask me"],
+              ["busy", "Busy"],
+              ["web", "Website/app"],
+              ["offline", "Offline"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              className={`chip ${f.statuses.includes(key) ? "on" : ""}`}
+              style={{ ["--chip" as string]: STATUS_COLORS[key as keyof typeof STATUS_COLORS] }}
+              onClick={() => updateFilters({ statuses: toggleIn(f.statuses, key) })}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
       <div className="frow">
         <span className="flabel">Trust rank</span>

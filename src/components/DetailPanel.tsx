@@ -1,12 +1,13 @@
-// Profile view, laid out like a VRChat profile page: banner, big picture with
-// a status pill, name, status and trust rank, then "About me", languages and
-// links on the left, and status, badges, groups and this app's own info
-// (circles, time together, shared friends) on the right. One column on
-// narrow screens.
+// Profile view, laid out like a profile on vrchat.com: banner, big picture with
+// a status pill, name with VRC+, pronouns / 18+ / trust rank / represented
+// group, mutual friends and groups, about me, links, languages; on the right
+// the current world (who's there, open or launch it), badges and groups, plus
+// this app's circles, time together and shared friends. One column on narrow
+// screens.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { playIntoProfile } from "../flip";
-import { imgSrc } from "../backend";
+import { backend, imgSrc } from "../backend";
 import { listMemberIds } from "../derived";
+import { playIntoProfile } from "../flip";
 import { fmtHours, naiveToDate, personTime } from "../logs";
 import {
   PLATFORM_LABEL,
@@ -26,27 +27,35 @@ import {
   trustRank,
 } from "../model";
 import { addToCircle, createCircle, removeFromCircle, setState, showToast, useApp } from "../store";
-import { loadGroups, refreshPerson } from "../sync";
+import { freshenProfile, loadGroups, loadInstance, loadWorld, refreshPerson } from "../sync";
 import type { Friend, Presence } from "../types";
+import { GroupsModal } from "./GroupsModal";
 import { Icon } from "./Icon";
 
-function locationText(f: Friend, p: Presence, now: number): { icon: string; text: string; sub?: string } {
-  if (p === "offline") {
-    const seen = lastSeen(f);
-    return { icon: "moon", text: seen ? `Offline for ${duration(now - seen)}` : "Offline" };
+const REGION_FLAG: Record<string, string> = { us: "🇺🇸", use: "🇺🇸", usw: "🇺🇸", eu: "🇪🇺", jp: "🇯🇵" };
+
+/** "wrld_…:58693~hidden(usr_…)~region(us)" -> pieces for display. */
+export function parseLocation(loc: string) {
+  const [world, rest = ""] = loc.split(":");
+  const [instance, ...tags] = rest.split("~");
+  const tag = (name: string) => tags.find((t) => t.startsWith(`${name}(`))?.slice(name.length + 1, -1);
+  let type = "Public";
+  if (tags.some((t) => t.startsWith("hidden("))) type = "Friends+";
+  else if (tags.some((t) => t.startsWith("friends("))) type = "Friends";
+  else if (tags.some((t) => t.startsWith("private("))) type = tags.includes("canRequestInvite") ? "Invite+" : "Invite";
+  else if (tags.some((t) => t.startsWith("group("))) {
+    const access = tag("groupAccessType");
+    type = access === "public" ? "Group Public" : access === "plus" ? "Group+" : "Group";
   }
-  if (p === "web") return { icon: "globe", text: "Active on the website or app", sub: "Not in VRChat right now" };
-  const since = toTime(f.last_login);
-  const sub = since ? `Online for ${duration(now - since)}` : undefined;
-  const loc = f.location || "";
-  if (loc === "private") return { icon: "lock", text: "In a private world", sub };
-  if (loc === "traveling") return { icon: "plane", text: "Traveling to a world", sub };
-  if (loc.startsWith("wrld_")) return { icon: "globe", text: "In a world", sub };
-  return { icon: "globe", text: "Online", sub };
+  const region = tag("region") ?? "us";
+  return { world, instance, type, region, flag: REGION_FLAG[region] ?? "🌐" };
+}
+
+function PlatformIcon({ plat }: { plat: string }) {
+  return <Icon name={plat === "pc" ? "desktop" : plat === "android" ? "headset" : plat === "ios" ? "phone" : "globe"} size={15} />;
 }
 
 function StatusArt({ kind }: { kind: string }) {
-  // Simple line drawings in the spirit of VRChat's status card.
   const common = { fill: "none", stroke: "currentColor", strokeWidth: 3, strokeLinecap: "round" as const, strokeLinejoin: "round" as const };
   if (kind === "moon")
     return (
@@ -63,12 +72,6 @@ function StatusArt({ kind }: { kind: string }) {
         <path {...common} d="M48 44v-10a12 12 0 0 1 24 0v10" />
       </svg>
     );
-  if (kind === "plane")
-    return (
-      <svg viewBox="0 0 120 100" className="status-art" aria-hidden>
-        <path {...common} d="M20 56l80 -30l-30 60l-10 -24z M60 62l40 -36" />
-      </svg>
-    );
   return (
     <svg viewBox="0 0 120 100" className="status-art" aria-hidden>
       <circle {...common} cx="60" cy="50" r="32" />
@@ -77,15 +80,32 @@ function StatusArt({ kind }: { kind: string }) {
   );
 }
 
+function statusCard(f: Friend, p: Presence, now: number): { icon: string; text: string; sub?: string } {
+  if (p === "offline") {
+    const seen = lastSeen(f);
+    return { icon: "moon", text: seen ? `Offline for ${duration(now - seen)}` : "Offline" };
+  }
+  if (p === "web") return { icon: "globe", text: "Active on the website or app", sub: "Not in VRChat right now" };
+  const since = toTime(f.last_login);
+  const sub = since ? `Online for ${duration(now - since)}` : undefined;
+  if (f.location === "private") return { icon: "lock", text: "In a private world", sub };
+  if (f.location === "traveling") return { icon: "globe", text: "Traveling to a world", sub };
+  return { icon: "globe", text: "Online", sub };
+}
+
 export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean }) {
   const cache = useApp((s) => s.cache);
   const local = useApp((s) => s.local);
   const demo = useApp((s) => s.demo);
   const stats = useApp((s) => s.logs.stats);
   const [newCircle, setNewCircle] = useState("");
-  const [allGroups, setAllGroups] = useState(false);
+  const [groupsOpen, setGroupsOpen] = useState(false);
+  const [bioOpen, setBioOpen] = useState(false);
+  const [instance, setInstance] = useState<{ users: number; capacity?: number } | null>(null);
   const f = cache.friends[id];
   const rootRef = useRef<HTMLElement>(null);
+  const location = f?.location ?? "";
+  const inWorld = location.startsWith("wrld_");
 
   useLayoutEffect(() => {
     if (popup) playIntoProfile(id, rootRef.current);
@@ -93,10 +113,22 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   }, [id]);
 
   useEffect(() => {
-    setAllGroups(false);
-    if (f) loadGroups(id);
+    setGroupsOpen(false);
+    setBioOpen(false);
+    if (!f) return;
+    freshenProfile(id).then(() => loadGroups(id));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    setInstance(null);
+    if (!inWorld) return;
+    let alive = true;
+    loadWorld(location.split(":")[0]).then(() => loadInstance(location).then((i) => alive && setInstance(i)));
+    return () => {
+      alive = false;
+    };
+  }, [location, inWorld]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -121,7 +153,10 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const languages = languagesOf(detail?.tags);
   const links = detail?.bioLinks ?? [];
   const badges = detail?.badges ?? [];
-  const representing = groups?.list.find((g) => g.isRepresenting);
+  // Representing group first, like on vrchat.com; otherwise VRChat's order.
+  const groupList = groups ? [...groups.list].sort((a, b) => Number(!!b.isRepresenting) - Number(!!a.isRepresenting)) : [];
+  const representing = groupList.find((g) => g.isRepresenting);
+  const mutualGroups = groupList.filter((g) => g.mutual).length;
   const mutualFriends = (mutual?.ids ?? []).map((m) => cache.friends[m]).filter(Boolean);
   const inLists = local.imports.filter((l) => listMemberIds(l, cache).includes(id));
   const time = personTime(stats, id);
@@ -129,17 +164,20 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
     .filter((x) => (x.a === id || x.b === id) && cache.friends[x.a === id ? x.b : x.a])
     .sort((a, b) => b.secs - a.secs)
     .slice(0, 8);
-  const loc = locationText(f, p, now);
+  const status = statusCard(f, p, now);
   const sColor = statusColor(f, p);
+  const loc = inWorld ? parseLocation(location) : null;
+  const world = loc ? cache.worlds?.[loc.world] : undefined;
+  const withThem = inWorld ? Object.values(cache.friends).filter((o) => o.id !== id && o.location === location) : [];
   const close = () => setState({ selectedId: null });
+  const open = (url: string) => backend.openUrl(url).catch(() => showToast("Couldn't open the link"));
   const copy = (text: string) => {
     navigator.clipboard?.writeText(text).then(
       () => showToast("Link copied"),
       () => showToast("Couldn't copy the link"),
     );
   };
-
-  const shownGroups = groups ? (allGroups ? groups.list : groups.list.slice(0, 5)) : [];
+  const longBio = (detail?.bio ?? "").split("\n").length > 4 || (detail?.bio ?? "").length > 260;
 
   return (
     <aside ref={rootRef} className={`profile ${popup ? "popup" : ""}`} role={popup ? "dialog" : undefined} aria-label={`Profile of ${f.displayName}`}>
@@ -156,53 +194,99 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               <div className="profile-icon" data-flip="icon" style={{ borderColor: sColor }}>
                 {icon ? <img src={icon} alt="" /> : <span>{f.displayName.slice(0, 1).toUpperCase()}</span>}
               </div>
-              <span className="status-pill" {...(f.statusDescription ? { "data-flip-fade": "" } : { "data-flip": "status" })}>
+              <span className="status-pill" data-flip="status">
                 <span className="dot" style={{ background: sColor }} />
-                {presenceLabel(f, p)}
+                <span>{f.statusDescription || presenceLabel(f, p)}</span>
               </span>
             </div>
             <div className="profile-text">
-              <h2 data-flip="name">{f.displayName}</h2>
-              <div className="profile-sub">
-                {f.statusDescription && (
-                  <span className="muted" data-flip="status">
-                    {f.statusDescription}
-                  </span>
-                )}
-                <span className="trust" data-flip-fade style={{ color: trust.color }}>
-                  <Icon name="shield" size={14} /> {trust.label}
-                </span>
-                {representing && (
-                  <span className="group-pill" data-flip-fade>
-                    {representing.iconUrl && <img src={imgSrc(representing.iconUrl)} alt="" />}
-                    {representing.name}
-                  </span>
-                )}
+              <h2>
+                <span data-flip="name">{f.displayName}</span>
                 {supporter && (
-                  <span className="pill vrcplus" data-flip-fade>
+                  <span className="vrcplus-badge" data-flip-fade title="VRC+ supporter">
                     VRC+
                   </span>
                 )}
+              </h2>
+              <div className="profile-sub">
                 {detail?.pronouns && (
                   <span className="muted" data-flip-fade>
                     {detail.pronouns}
                   </span>
                 )}
+                {detail?.ageVerified && (
+                  <span className="verified" data-flip-fade title="Age verified by VRChat">
+                    <Icon name="idcard" size={15} /> Verified 18+
+                  </span>
+                )}
+                <span className="trust" data-flip="trust" style={{ color: trust.color }}>
+                  <Icon name="shield" size={14} /> {trust.label}
+                </span>
+                {representing && (
+                  <button className="group-pill" data-flip-fade title="Representing this group" onClick={() => open(`https://vrchat.com/home/group/${representing.groupId}`)}>
+                    {representing.iconUrl && <img src={imgSrc(representing.iconUrl)} alt="" />}
+                    {representing.name}
+                  </button>
+                )}
               </div>
+              {(mutualFriends.length > 0 || mutualGroups > 0) && (
+                <div className="mutual-row">
+                  <span className="face-stack" data-flip-fade>
+                    {mutualFriends.slice(0, 3).map((m) => {
+                      const src = imgSrc(iconUrl(m));
+                      return <span key={m.id} className="face">{src ? <img src={src} alt="" /> : m.displayName.slice(0, 1)}</span>;
+                    })}
+                  </span>
+                  {mutualFriends.length > 0 && (
+                    <span data-flip="mutuals">
+                      {mutualFriends.length} mutual friend{mutualFriends.length === 1 ? "" : "s"}
+                    </span>
+                  )}
+                  {mutualGroups > 0 && (
+                    <span data-flip-fade>
+                      {mutualGroups} mutual group{mutualGroups === 1 ? "" : "s"}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className="profile-actions" data-flip-fade>
                 {!demo && (
                   <button className="btn" onClick={() => refreshPerson(id).then(() => loadGroups(id, true))} title="Load this profile again from VRChat">
                     <Icon name="refresh" size={16} /> Refresh
                   </button>
                 )}
-                <button className="btn" onClick={() => copy(`https://vrchat.com/home/user/${id}`)} title="Copy the vrchat.com link to this profile">
-                  <Icon name="link" size={16} /> Copy profile link
+                <button className="btn" onClick={() => open(`https://vrchat.com/home/user/${id}`)} title="Open on vrchat.com in your browser">
+                  <Icon name="external" size={16} /> Open on vrchat.com
+                </button>
+                <button className="btn" onClick={() => copy(`https://vrchat.com/home/user/${id}`)} title="Copy the profile link">
+                  <Icon name="link" size={16} />
                 </button>
               </div>
 
               <div className="profile-block" data-flip-fade>
                 <h3>About me</h3>
-                {detail?.bio ? <p className="bio">{detail.bio}</p> : <p className="muted small">{detail ? "Nothing written." : "Loading…"}</p>}
+                {detail?.bio ? (
+                  <>
+                    <p className={`bio ${longBio && !bioOpen ? "clamped" : ""}`}>{detail.bio}</p>
+                    {longBio && (
+                      <button className="btn link small" onClick={() => setBioOpen(!bioOpen)}>
+                        {bioOpen ? "Show less" : "Read more"}
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <p className="muted small">{detail ? "Nothing written." : "Loading…"}</p>
+                )}
+                {links.length > 0 && (
+                  <div className="bio-links">
+                    {links.map((l) => (
+                      <button key={l} className="bio-link" title={l} onClick={() => open(l)}>
+                        <Icon name="link" size={14} />
+                        {shortLink(l)}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               {languages.length > 0 && (
                 <div className="profile-block" data-flip-fade>
@@ -216,47 +300,45 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   </div>
                 </div>
               )}
-              {links.length > 0 && (
-                <div className="profile-block" data-flip-fade>
-                  <h3>Links</h3>
-                  <ul className="link-list">
-                    {links.map((l) => (
-                      <li key={l}>
-                        <button className="btn link small" title="Copy link" onClick={() => copy(l)}>
-                          <Icon name="link" size={13} /> {shortLink(l)}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
               {detail?.note && (
                 <div className="profile-block" data-flip-fade>
                   <h3>Your note</h3>
                   <p className="note-text">{detail.note}</p>
                 </div>
               )}
-              <div className="profile-block" data-flip-fade>
-                <h3>Profile</h3>
-                <dl className="facts">
-                  <dt>Platform</dt>
-                  <dd>{PLATFORM_LABEL[plat]}</dd>
-                  <dt>Last login</dt>
-                  <dd>{toTime(f.last_login) ? new Date(toTime(f.last_login)).toLocaleString() : "unknown"}</dd>
-                  <dt>Joined VRChat</dt>
-                  <dd>{detail?.date_joined ? fmtDate(detail.date_joined) : "loading…"}</dd>
-                  <dt>Mutual friends</dt>
-                  <dd>{mutual ? (mutual.hidden ? "hidden by them" : mutual.count) : "loading…"}</dd>
+              <div className="profile-block">
+                <h3 data-flip-fade>Profile</h3>
+                <dl className="facts with-icons">
+                  <dt data-flip-fade>
+                    <PlatformIcon plat={plat} /> Platform
+                  </dt>
+                  <dd data-flip="plat">{PLATFORM_LABEL[plat]}</dd>
+                  <dt data-flip-fade>
+                    <Icon name="clock" size={15} /> Last login
+                  </dt>
+                  <dd data-flip-fade>{toTime(f.last_login) ? new Date(toTime(f.last_login)).toLocaleString() : "unknown"}</dd>
+                  <dt data-flip-fade>
+                    <Icon name="calendar" size={15} /> Joined VRChat
+                  </dt>
+                  <dd data-flip-fade>{detail?.date_joined ? fmtDate(detail.date_joined) : "loading…"}</dd>
+                  <dt data-flip-fade>
+                    <Icon name="users" size={15} /> Mutual friends
+                  </dt>
+                  <dd data-flip-fade>{mutual ? (mutual.hidden ? "hidden by them" : mutual.count) : "loading…"}</dd>
                   {cache.favorites[id]?.length ? (
                     <>
-                      <dt>Your favorites</dt>
-                      <dd>{cache.favorites[id].join(", ")}</dd>
+                      <dt data-flip-fade>
+                        <Icon name="star" size={15} /> Your favorites
+                      </dt>
+                      <dd data-flip-fade>{cache.favorites[id].join(", ")}</dd>
                     </>
                   ) : null}
                   {inLists.length > 0 && (
                     <>
-                      <dt>Also in lists of</dt>
-                      <dd>{inLists.map((l) => l.owner.displayName).join(", ")}</dd>
+                      <dt data-flip-fade>
+                        <Icon name="share" size={15} /> Also in lists of
+                      </dt>
+                      <dd data-flip-fade>{inLists.map((l) => l.owner.displayName).join(", ")}</dd>
                     </>
                   )}
                 </dl>
@@ -266,11 +348,61 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
         </div>
 
         <div className="profile-col" data-flip-fade>
-          <section className={`pcard status-card ${p}`}>
-            <StatusArt kind={loc.icon} />
-            <div className="status-text">{loc.text}</div>
-            {loc.sub && <div className="muted small">{loc.sub}</div>}
-          </section>
+          {loc ? (
+            <section className="pcard world-card">
+              <button className="world-banner" title="Open this world on vrchat.com" onClick={() => open(`https://vrchat.com/home/world/${loc.world}`)}>
+                {world?.imageUrl || world?.thumbnailImageUrl ? <img src={imgSrc(world.imageUrl || world.thumbnailImageUrl)} alt="" /> : <StatusArt kind="globe" />}
+                <span className="loc-pill">
+                  <Icon name="pin" size={14} /> Current Location
+                </span>
+              </button>
+              <div className="world-info">
+                <h3 className="world-name">{world?.name ?? (demo ? "Demo World" : "Loading world…")}</h3>
+                <div className="world-line">
+                  <span className="flag">{loc.flag}</span> {loc.instance} - {loc.type}
+                </div>
+                <div className="world-line">
+                  <Icon name="users" size={15} /> {instance ? `${instance.users} / ${instance.capacity ?? world?.capacity ?? "?"}` : world?.capacity ? `? / ${world.capacity}` : "…"}
+                  {withThem.length > 0 && (
+                    <>
+                      {" · "}
+                      <span className="face-stack small-faces">
+                        {withThem.slice(0, 5).map((o) => {
+                          const src = imgSrc(iconUrl(o));
+                          return <span key={o.id} className="face">{src ? <img src={src} alt="" /> : o.displayName.slice(0, 1)}</span>;
+                        })}
+                      </span>
+                      {withThem.length} of your friends
+                    </>
+                  )}
+                </div>
+                {withThem.length > 0 && (
+                  <div className="mini-list with-them">
+                    {withThem.map((o) => (
+                      <button key={o.id} className="mini" onClick={() => setState({ selectedId: o.id })}>
+                        <span className="dot" style={{ background: statusColor(o, presenceOf(o, cache.presence)) }} />
+                        {o.displayName}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="world-actions">
+                  <button className="btn launch" onClick={() => open(`vrchat://launch?ref=vrchat.com&id=${location}`)} title="Opens VRChat on this device and goes to this instance (you may need an invite)">
+                    <Icon name="rocket" size={16} /> Launch in VRChat
+                  </button>
+                  <button className="btn" onClick={() => open(`https://vrchat.com/home/launch?worldId=${loc.world}&instanceId=${location.split(":")[1] ?? ""}`)} title="Open the instance page on vrchat.com">
+                    <Icon name="external" size={16} /> Instance page
+                  </button>
+                </div>
+              </div>
+            </section>
+          ) : (
+            <section className={`pcard status-card ${p}`}>
+              <StatusArt kind={status.icon} />
+              <div className="status-text">{status.text}</div>
+              {status.sub && <div className="muted small">{status.sub}</div>}
+            </section>
+          )}
 
           {badges.length > 0 && (
             <section className="pcard">
@@ -283,25 +415,27 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
             </section>
           )}
 
-          {groups && groups.list.length > 0 && (
+          {groupList.length > 0 && (
             <section className="pcard">
               <h3>Groups</h3>
               <ul className="group-list">
-                {shownGroups.map((g) => (
+                {groupList.slice(0, 5).map((g) => (
                   <li key={g.groupId}>
-                    <span className="group-icon">{g.iconUrl ? <img src={imgSrc(g.iconUrl)} alt="" /> : g.name.slice(0, 1)}</span>
-                    <span className="group-name">{g.name}</span>
-                    {g.isRepresenting && (
-                      <span className="rep" title="Representing">
-                        <Icon name="bookmark" size={16} />
-                      </span>
-                    )}
+                    <button className="group-row" onClick={() => open(`https://vrchat.com/home/group/${g.groupId}`)} title="Open the group on vrchat.com">
+                      <span className="group-icon">{g.iconUrl ? <img src={imgSrc(g.iconUrl)} alt="" /> : g.name.slice(0, 1)}</span>
+                      <span className="group-name">{g.name}</span>
+                      {g.isRepresenting && (
+                        <span className="rep" title="Representing">
+                          <Icon name="bookmark" size={16} />
+                        </span>
+                      )}
+                    </button>
                   </li>
                 ))}
               </ul>
-              {groups.list.length > 5 && (
-                <button className="btn wide" onClick={() => setAllGroups(!allGroups)}>
-                  {allGroups ? "Show fewer" : `View all ${groups.list.length}`}
+              {groupList.length > 5 && (
+                <button className="btn wide" onClick={() => setGroupsOpen(true)}>
+                  View all {groupList.length}
                 </button>
               )}
             </section>
@@ -393,6 +527,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
           </p>
         </div>
       </div>
+      {groupsOpen && groups && <GroupsModal name={f.displayName} groups={groupList} onClose={() => setGroupsOpen(false)} />}
     </aside>
   );
 }

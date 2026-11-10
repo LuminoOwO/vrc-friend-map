@@ -201,6 +201,7 @@ pub fn run() {
     // One TLS crypto backend for both HTTPS and the WebSocket connection.
     let _ = rustls::crypto::ring::default_provider().install_default();
     tauri::Builder::default()
+        .plugin(tauri_plugin_opener::init())
         .register_asynchronous_uri_scheme_protocol("vrcimg", images::handle)
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;

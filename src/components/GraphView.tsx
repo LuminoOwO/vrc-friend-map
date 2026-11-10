@@ -23,10 +23,11 @@ import {
   trustRank,
 } from "../model";
 import { addToCircle, getState, setState, updateSettings, useApp } from "../store";
-import type { Circle, Friend, MapSettings, Presence } from "../types";
+import type { Circle, Filters, Friend, MapSettings, Presence } from "../types";
 import { captureCard, capturePicture } from "../flip";
 import { FRESH_MS } from "../notify";
 import { FriendCard } from "./FriendCard";
+import { FilterChip, statusToggle, trustToggle } from "./FilterChip";
 import { Icon } from "./Icon";
 import { MapOptions } from "./MapOptions";
 
@@ -161,6 +162,26 @@ function fitText(ctx: CanvasRenderingContext2D, text: string, maxW: number): str
   }
   fitCache.set(key, out);
   return out;
+}
+
+/** Trust-rank shield (same shape as the "shield" icon), top-left at x,y. */
+function drawShield(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string) {
+  const u = size / 24;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(u, u);
+  ctx.beginPath();
+  ctx.moveTo(12, 3);
+  ctx.lineTo(20, 6);
+  ctx.lineTo(20, 12);
+  ctx.bezierCurveTo(20, 17, 16.5, 20, 12, 21);
+  ctx.bezierCurveTo(7.5, 20, 4, 17, 4, 12);
+  ctx.lineTo(4, 6);
+  ctx.closePath();
+  ctx.fillStyle = color;
+  ctx.globalAlpha *= 0.9;
+  ctx.fill();
+  ctx.restore();
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -564,7 +585,7 @@ export function GraphView() {
     const key = [
       n.id, full ? "F" : "C", lod, sc, W, H, f.displayName, f.statusDescription, p, ring, f.status, f.bannerColor,
       iconOk, bannerOk, trustRank(cache.details[n.id]?.tags, f.developerType).label, mi ? `${mi.count}${mi.hidden}` : "-",
-      settings.map.showStars && cache.favorites[n.id]?.length ? 1 : 0, platformKey(f),
+      settings.map.showStars && cache.favorites[n.id]?.length ? 1 : 0, platformKey(f), settings.map.showShield ? 1 : 0,
       full ? circles.filter((c) => c.members.includes(n.id)).map((c) => c.color).join() : "",
       full && p === "offline" ? Math.floor(lastSeen(f) / 3600000) : 0,
     ].join("|");
@@ -664,7 +685,12 @@ export function GraphView() {
       ctx.textAlign = "left";
       ctx.font = `600 ${12.5 * s}px system-ui, sans-serif`;
       ctx.fillStyle = trust.color;
-      ctx.fillText(fitText(ctx, f.displayName, maxW), tx, n.y! - 2 * s);
+      let nx = tx;
+      if (settings.map.showShield) {
+        drawShield(ctx, tx, n.y! - 11 * s, 10 * s, trust.color);
+        nx += 13 * s;
+      }
+      ctx.fillText(fitText(ctx, f.displayName, maxW - (nx - tx)), nx, n.y! - 2 * s);
       ctx.font = `${10.5 * s}px system-ui, sans-serif`;
       ctx.fillStyle = offline ? PAL.dim : PAL.sub;
       ctx.fillText(fitText(ctx, f.statusDescription || presenceLabel(f, p), maxW), tx, n.y! + 12 * s);
@@ -730,7 +756,12 @@ export function GraphView() {
         ctx.textAlign = "left";
         ctx.font = `650 ${13 * s}px system-ui, sans-serif`;
         ctx.fillStyle = trust.color;
-        ctx.fillText(fitText(ctx, f.displayName, x0 + W - tx - 8 * s), tx, y0 + bannerH + 16 * s);
+        let nx = tx;
+        if (settings.map.showShield) {
+          drawShield(ctx, tx, y0 + bannerH + 5.5 * s, 11 * s, trust.color);
+          nx += 14 * s;
+        }
+        ctx.fillText(fitText(ctx, f.displayName, x0 + W - nx - 8 * s), nx, y0 + bannerH + 16 * s);
 
         const left = x0 + 11 * s;
         const inner = W - 22 * s;
@@ -1432,6 +1463,7 @@ export function GraphView() {
             circles={circles.filter((c) => c.members.includes(tipFriend.id))}
             now={Date.now()}
             onSelect={() => {}}
+            shield={map.showShield}
           />
           {tipTime && (
             <div className="hover-extra">
@@ -1512,31 +1544,50 @@ function Legend({
   sizeBy: MapSettings["sizeBy"];
   showStars: boolean;
 }) {
-  const items =
+  const filters = useApp((s) => s.filters);
+  const items: { color: string; label: string; patch: () => Partial<Filters>; active: boolean }[] =
     ringMode === "status"
-      ? [
-          [STATUS_COLORS["join me"], "Join me"],
-          [STATUS_COLORS.active, "Online"],
-          [STATUS_COLORS["ask me"], "Ask me"],
-          [STATUS_COLORS.busy, "Busy"],
-          [STATUS_COLORS.web, "Website/app"],
-          [STATUS_COLORS.offline, "Offline"],
-        ]
-      : [...TRUST_RANKS].reverse().map((r) => [r.color, r.label.replace(" User", "")]);
+      ? (
+          [
+            ["join me", "Join me"],
+            ["active", "Online"],
+            ["ask me", "Ask me"],
+            ["busy", "Busy"],
+            ["web", "Website/app"],
+            ["offline", "Offline"],
+          ] as const
+        ).map(([key, label]) => ({
+          color: STATUS_COLORS[key as keyof typeof STATUS_COLORS],
+          label,
+          patch: () => statusToggle([key], "toggle"),
+          active: filters.statuses.includes(key),
+        }))
+      : [...TRUST_RANKS].reverse().map((r) => ({
+          color: r.color,
+          label: r.label.replace(" User", ""),
+          patch: () => trustToggle(r.key),
+          active: filters.trust.includes(r.key),
+        }));
+  const anyActive = items.some((i) => i.active);
   const colored = showLines && (lineMode === "shared" || lineMode === "together");
   return (
     <div className="legend">
-      <div className="legend-row">
-        {items.map(([c, l]) => (
-          <span key={l}>
-            <span className="dot" style={{ background: c }} />
-            {l}
-          </span>
+      <div className={`legend-row ${anyActive ? "filtering" : ""}`}>
+        {items.map((it) => (
+          <FilterChip key={it.label} patch={it.patch} active={it.active} className="legend-item" title={`Show only ${it.label} (click to toggle)`}>
+            <span className="dot" style={{ background: it.color }} />
+            {it.label}
+          </FilterChip>
         ))}
         {showStars && (
-          <span>
+          <FilterChip
+            patch={() => ({ favoritesOnly: !getState().filters.favoritesOnly })}
+            active={filters.favoritesOnly}
+            className="legend-item"
+            title="Only favorites (click to toggle)"
+          >
             <span className="star">★</span>Favorite
-          </span>
+          </FilterChip>
         )}
         {sizeBy !== "same" && <span title="Bigger = more">◯ size = {sizeBy === "mutuals" ? "mutuals" : "time together"}</span>}
       </div>

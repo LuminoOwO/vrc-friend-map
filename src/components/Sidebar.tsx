@@ -3,7 +3,9 @@ import { duplicateColorIds, pickCircleColor } from "../colors";
 import { useDerived } from "../derived";
 import { fmtDate, relTime } from "../model";
 import { addToCircle, createCircle, deleteCircle, getState, patchCircle, setState, updateFilters, updateLocal, useApp } from "../store";
+import { IN_GAME_STATUSES } from "../model";
 import { ColorPicker } from "./ColorPicker";
+import { FilterChip, clearAll, statusToggle } from "./FilterChip";
 import { Icon } from "./Icon";
 import { SuggestedGroups } from "./SuggestedGroups";
 
@@ -60,19 +62,27 @@ export function Sidebar() {
       <section>
         <h3>Overview</h3>
         <div className="stat-grid">
-          <div>
+          <FilterChip patch={clearAll} active={false} title="Show everyone (clears all filters)">
             <b>{friends.length}</b>
             <span>friends</span>
-          </div>
-          <div>
+          </FilterChip>
+          <FilterChip
+            patch={() => statusToggle(IN_GAME_STATUSES, "set")}
+            active={IN_GAME_STATUSES.every((k) => filters.statuses.includes(k)) && filters.statuses.length === IN_GAME_STATUSES.length}
+            title="Only people in VRChat right now (click again to undo)"
+          >
             <b className="online">{stats.online}</b>
             <span>in VRChat</span>
-          </div>
-          <div>
+          </FilterChip>
+          <FilterChip
+            patch={() => statusToggle(["web"], "set")}
+            active={filters.statuses.length === 1 && filters.statuses[0] === "web"}
+            title="Only people on the website or app (click again to undo)"
+          >
             <b>{stats.web}</b>
             <span>web / app</span>
-          </div>
-          <div>
+          </FilterChip>
+          <div className="stat-static">
             <b>{edges.length}</b>
             <span>connections</span>
           </div>

@@ -12,6 +12,7 @@ import type {
   LogScanReport,
   LogSettings,
   MapSettings,
+  PairTime,
   PresenceStats,
   Settings,
   SoundSettings,
@@ -60,6 +61,10 @@ export interface AppState {
   /** Live connection to VRChat's event stream. */
   live: { connected: boolean; message: string };
   logs: LogsState;
+  /** Filters shown while pointing at a tile or legend entry (not applied yet). */
+  previewFilters: Partial<Filters> | null;
+  /** Friend-to-friend time from live locations (see together.ts). */
+  observed: { pairs: PairTime[]; since: number } | null;
   /** Friends added in the last few seconds (id -> time), for the animation. */
   fresh: Record<string, number>;
 }
@@ -110,6 +115,7 @@ export const defaultMap = (): MapSettings => ({
   orbit: 2,
   hoverCard: true,
   orbitDir: 1,
+  showShield: true,
 });
 
 export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
@@ -132,6 +138,8 @@ export const defaultGroupSettings = (): GroupSettings => ({
   mutualBoost: true,
   sinceDays: 0,
   auto: false,
+  useLogs: true,
+  useLive: true,
 });
 
 export const defaultSettings = (): Settings => ({
@@ -157,6 +165,7 @@ export const defaultFilters = (): Filters => ({
   presence: "all",
   lastSeen: "any",
   trust: [],
+  statuses: [],
   platform: [],
   circleId: null,
   favoritesOnly: false,
@@ -205,6 +214,8 @@ let state: AppState = {
   sidebarOpen: typeof window !== "undefined" ? window.innerWidth > 900 : true,
   live: { connected: false, message: "" },
   logs: idleLogs(),
+  previewFilters: null,
+  observed: null,
   fresh: {},
 };
 
@@ -296,6 +307,15 @@ export function updateFilters(patch: Partial<Filters>) {
   setState((s) => ({ filters: { ...s.filters, ...patch } }));
 }
 
+export function previewFilters(patch: Partial<Filters> | null) {
+  setState({ previewFilters: patch });
+}
+
+/** Apply a filter change from a tile or legend click (and end the preview). */
+export function applyFilterPatch(patch: Partial<Filters>) {
+  setState((s) => ({ filters: { ...s.filters, ...patch }, previewFilters: null }));
+}
+
 export function setSync(patch: Partial<SyncState>) {
   setState((s) => ({ sync: { ...s.sync, ...patch } }));
 }
@@ -372,6 +392,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       orbit: num(m.orbit, d.map.orbit, 0, 3),
       hoverCard: typeof m.hoverCard === "boolean" ? m.hoverCard : d.map.hoverCard,
       orbitDir: m.orbitDir === -1 ? -1 : 1,
+      showShield: typeof m.showShield === "boolean" ? m.showShield : d.map.showShield,
     },
     sounds: {
       ...snd,
@@ -398,6 +419,8 @@ export function normalizeSettings(raw: Raw | null): Settings {
       mutualBoost: typeof g.mutualBoost === "boolean" ? g.mutualBoost : d.groups.mutualBoost,
       sinceDays: num(g.sinceDays, d.groups.sinceDays, 0, 3650),
       auto: typeof g.auto === "boolean" ? g.auto : d.groups.auto,
+      useLogs: typeof g.useLogs === "boolean" ? g.useLogs : d.groups.useLogs,
+      useLive: typeof g.useLive === "boolean" ? g.useLive : d.groups.useLive,
     },
     theme: oneOf(raw.theme, ["dark", "oled", "light", "mocha", "macchiato", "latte", "nord", "dracula"] as const, d.theme),
     profileAs: oneOf(raw.profileAs, ["popup", "sidebar"] as const, d.profileAs),
@@ -478,6 +501,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.6.0": "groups also learned from where your friends hang out together (even without you), profiles like on vrchat.com with the current world and who's there, clickable overview tiles and legend as filters, and more of the card flies into the profile.",
   "0.5.0": "color themes (light, OLED, Catppuccin, Nord, Dracula), profiles open as a popup, the hover card sits right on the person's picture, the map turns slowly by default and circles (and loners) each get their own spot.",
   "0.4.0": "profiles laid out like VRChat's, the full player card when you point at someone, layout gravity options and a slow orbit animation, a sound and animation when someone becomes your friend, and a faster map.",
   "0.3.0": "friend groups suggested from your game logs, map options (including full player cards), 24 circle colors and a color picker.",

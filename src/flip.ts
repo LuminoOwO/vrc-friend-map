@@ -5,9 +5,11 @@
 
 type Rects = Record<string, DOMRect>;
 
-let pending: { id: string; root: DOMRect; parts: Rects; at: number } | null = null;
+let pending: { id: string; root: DOMRect; parts: Rects; fonts: Record<string, number>; at: number } | null = null;
 
-const PARTS = ["banner", "icon", "name", "status"];
+const PARTS = ["banner", "icon", "name", "status", "trust", "mutuals", "plat"];
+/** Text parts scale by font size, so they never get squashed. */
+const TEXT = new Set(["name", "status", "trust", "mutuals", "plat"]);
 
 function reduced(): boolean {
   return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -20,17 +22,20 @@ export function captureCard(id: string, root: Element | null) {
     return;
   }
   const parts: Rects = {};
+  const fonts: Record<string, number> = {};
   for (const name of PARTS) {
     const el = root.querySelector(`[data-flip="${name}"]`);
-    if (el) parts[name] = el.getBoundingClientRect();
+    if (!el) continue;
+    parts[name] = el.getBoundingClientRect();
+    fonts[name] = parseFloat(getComputedStyle(el).fontSize) || 14;
   }
-  pending = { id, root: root.getBoundingClientRect(), parts, at: performance.now() };
+  pending = { id, root: root.getBoundingClientRect(), parts, fonts, at: performance.now() };
 }
 
 /** Same, from a bare picture on the map (phones have no hover card). */
 export function capturePicture(id: string, pic: DOMRect) {
   if (reduced()) return;
-  pending = { id, root: pic, parts: { icon: pic }, at: performance.now() };
+  pending = { id, root: pic, parts: { icon: pic }, fonts: {}, at: performance.now() };
 }
 
 /** Run the transition into a freshly shown profile, if one was captured for it. */
@@ -62,17 +67,33 @@ export function playIntoProfile(id: string, profile: HTMLElement | null) {
     if (!src || !el) continue;
     const dst = el.getBoundingClientRect();
     if (!dst.width || !dst.height) continue;
-    const sx = src.width / dst.width;
-    const sy = name === "banner" ? src.height / dst.height : sx;
     const dx = src.left - dst.left;
     const dy = src.top - dst.top;
-    el.animate(
-      [
-        { transformOrigin: "0 0", transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${name === "name" || name === "status" ? src.height / dst.height : sy})` },
+    let frames: Keyframe[];
+    if (TEXT.has(name)) {
+      // Same text, smaller font: scale evenly by the font-size ratio.
+      const k = (from.fonts[name] ?? 14) / (parseFloat(getComputedStyle(el).fontSize) || 14);
+      frames = [
+        { transformOrigin: "0 0", transform: `translate(${dx}px, ${dy}px) scale(${k})` },
         { transformOrigin: "0 0", transform: "none" },
-      ],
-      { duration, easing },
-    );
+      ];
+    } else if (name === "banner") {
+      // Scale evenly to the card's banner width and cut off the extra height,
+      // so the picture moves without being stretched.
+      const k = src.width / dst.width;
+      const cut = Math.max(0, dst.height - src.height / k);
+      frames = [
+        { transformOrigin: "0 0", transform: `translate(${dx}px, ${dy}px) scale(${k})`, clipPath: `inset(0px 0px ${cut}px 0px)` },
+        { transformOrigin: "0 0", transform: "none", clipPath: "inset(0px 0px 0px 0px)" },
+      ];
+    } else {
+      const k = src.width / dst.width;
+      frames = [
+        { transformOrigin: "0 0", transform: `translate(${dx}px, ${dy}px) scale(${k})` },
+        { transformOrigin: "0 0", transform: "none" },
+      ];
+    }
+    el.animate(frames, { duration, easing });
   }
 
   // Everything else fades in after the parts have mostly arrived.

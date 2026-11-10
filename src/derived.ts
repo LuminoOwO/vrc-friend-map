@@ -23,7 +23,9 @@ export interface Derived {
 export function useDerived(): Derived {
   const cache = useApp((s) => s.cache);
   const local = useApp((s) => s.local);
-  const filters = useApp((s) => s.filters);
+  const baseFilters = useApp((s) => s.filters);
+  const preview = useApp((s) => s.previewFilters);
+  const filters = useMemo(() => (preview ? { ...baseFilters, ...preview } : baseFilters), [baseFilters, preview]);
 
   const friends = useMemo(() => Object.values(cache.friends), [cache.friends]);
   const idsKey = useMemo(() => friends.map((f) => f.id).sort().join("|"), [friends]);

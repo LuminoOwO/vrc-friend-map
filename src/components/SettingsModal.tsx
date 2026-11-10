@@ -4,6 +4,7 @@ import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs"
 import { exitDemo, logoutAll, wipeEverything } from "../session";
 import { getState, setState, updateCache, updateGroupSettings, updateSounds, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
 import { celebrateNewFriends, playSound, SOUNDS } from "../notify";
+import { forgetObserved } from "../together";
 import type { GroupSettings, MapSettings, SoundSettings, Theme } from "../types";
 
 const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: string }[] = [
@@ -346,8 +347,20 @@ function GroupSection() {
   return (
     <>
       <h3>Friend group detection</h3>
+      <label className="check">
+        <input type="checkbox" checked={g.useLogs} onChange={(e) => set({ useLogs: e.target.checked })} />
+        Use my game logs (time friends spent in instances with me, PC only)
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={g.useLive} onChange={(e) => set({ useLive: e.target.checked })} />
+        Use friends' live locations (time friends spend in the same instance, even without me; counted while this app is open, any
+        device; private instances can't be seen)
+      </label>
+      <button className="btn small" onClick={() => forgetObserved()}>
+        Forget friend-location history
+      </button>
       <p className="small muted">
-        Suggestions come from who you've been in the same instance with. Two people count as connected when they spent enough time together on
+        Suggestions come from who spends time in the same instance. Two people count as connected when they spent enough time together on
         enough different days; then groups are found that are much more connected inside than outside.
       </p>
       <div className="row">

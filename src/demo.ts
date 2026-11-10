@@ -102,7 +102,7 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
         displayName: name,
         status,
         statusDescription: STATUS_TEXT[Math.floor(r() * STATUS_TEXT.length)],
-        location: p === "online" ? (r() < 0.5 ? "private" : "wrld_demo:1234") : "offline",
+        location: p === "online" ? (r() < 0.4 ? "private" : `wrld_demo${ci}:${58690 + ci}~hidden(usr_demo)~region(${["eu", "us", "jp", "use", "eu"][ci]})`) : "offline",
         platform: p === "online" ? (quest ? "android" : "standalonewindows") : p === "web" ? "web" : "offline",
         last_platform: quest ? "android" : "standalonewindows",
         last_login: new Date(now - loginAgo).toISOString(),
@@ -129,6 +129,7 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
         ][Math.floor(r() * 5)],
         bioLinks: r() < 0.4 ? [`https://example.com/${name.toLowerCase()}`] : [],
         badges: r() < 0.5 ? demoBadges(r) : [],
+        ageVerified: r() < 0.5,
         fetchedAt: now,
       };
       community[id] = ci;
@@ -226,7 +227,18 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
   for (const id of ids) {
     const list = demoGroups
       .filter(() => r() < 0.35)
-      .map(([name, hue], i) => ({ groupId: `grp_demo_${hue}`, name, iconUrl: groupIcon(name.split(" ").map((w) => w[0]).join("").slice(0, 2), hue), memberCount: 40 + i * 13, isRepresenting: false }));
+      .map(([name, hue], i) => ({
+        groupId: `grp_demo_${hue}`,
+        name,
+        iconUrl: groupIcon(name.split(" ").map((w) => w[0]).join("").slice(0, 2), hue),
+        bannerUrl: bannerFor(hue, r),
+        description: `A cozy demo group for ${name.toLowerCase()} fans. Events every weekend.`,
+        shortCode: name.replace(/[^A-Za-z]/g, "").slice(0, 5).toUpperCase(),
+        discriminator: String(1000 + hue * 7),
+        memberCount: 40 + i * 13,
+        isRepresenting: false,
+        mutual: r() < 0.3,
+      }));
     if (list.length) list[0].isRepresenting = r() < 0.6;
     groups[id] = { list, hidden: false, fetchedAt: now };
   }
@@ -261,6 +273,12 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
       favorites,
       lastFriendsSync: now,
       groups,
+      worlds: Object.fromEntries(
+        ["The Black Cat", "Movie & Chill", "Avatar Testing Chamber", "Midnight Rooftop", "Quest Hangout"].map((name, ci) => [
+          `wrld_demo${ci}`,
+          { id: `wrld_demo${ci}`, name, imageUrl: bannerFor(ci * 70 + 20, r), capacity: [32, 40, 16, 24, 20][ci], authorName: "Demo", fetchedAt: now },
+        ]),
+      ),
     },
     local: {
       logSince: now - 20 * 864e5,

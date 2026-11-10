@@ -95,6 +95,15 @@ export const backend = {
     }
     return invoke<string | null>("store_backup", { name, tag });
   },
+  /** Open a link in the system browser (or VRChat for vrchat:// links). */
+  async openUrl(url: string): Promise<void> {
+    if (!isTauri) {
+      window.open(url, "_blank", "noopener");
+      return;
+    }
+    const { openUrl } = await import("@tauri-apps/plugin-opener");
+    await openUrl(url);
+  },
   /** linux, windows, macos, android, ios — or "browser". */
   async platform(): Promise<string> {
     if (!isTauri) return "browser";

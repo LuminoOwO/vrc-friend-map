@@ -165,6 +165,15 @@ export interface MatchContext {
   now: number;
 }
 
+/** "join me" | "active" | "ask me" | "busy" | "web" | "offline" */
+export function statusKey(f: Friend, p: Presence): string {
+  if (p === "offline") return "offline";
+  if (p === "web") return "web";
+  return f.status === "offline" ? "active" : f.status;
+}
+
+export const IN_GAME_STATUSES = ["join me", "active", "ask me", "busy"];
+
 export function matchesFilters(f: Friend, filters: Filters, ctx: MatchContext): boolean {
   const p = presenceOf(f, ctx.presence);
   if (filters.search) {
@@ -179,6 +188,7 @@ export function matchesFilters(f: Friend, filters: Filters, ctx: MatchContext): 
       if (seen && ctx.now - seen < LAST_SEEN_MS["90d"]) return false;
     } else if (!seen || ctx.now - seen > LAST_SEEN_MS[filters.lastSeen]) return false;
   }
+  if (filters.statuses?.length && !filters.statuses.includes(statusKey(f, p))) return false;
   if (filters.trust.length) {
     const r = trustRank(ctx.details[f.id]?.tags, f.developerType);
     if (!filters.trust.includes(r.key)) return false;

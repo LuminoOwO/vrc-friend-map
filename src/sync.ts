@@ -176,6 +176,7 @@ async function fetchDetail(id: string) {
             showcased: b.showcased,
           }))
       : [],
+    ageVerified: d.ageVerificationStatus === "18+" || d.ageVerified === true,
     fetchedAt: Date.now(),
   };
   updateCache((c) => {
@@ -267,6 +268,60 @@ export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
 }
 
 const groupsLoading = new Set<string>();
+const profileLoading = new Set<string>();
+
+/** When a profile is opened: reload it if it's missing fields newer versions
+ *  show (links, badges, 18+), or is more than a day old. One request. */
+export async function freshenProfile(id: string) {
+  const s = getState();
+  if (s.demo || profileLoading.has(id)) return;
+  const d = s.cache.details[id];
+  if (d && d.bioLinks !== undefined && d.ageVerified !== undefined && Date.now() - d.fetchedAt < 86400000) return;
+  profileLoading.add(id);
+  try {
+    await fetchDetail(id);
+  } catch {
+    // shown as-is
+  } finally {
+    profileLoading.delete(id);
+  }
+}
+
+const worldLoading = new Set<string>();
+
+/** World name/picture for a location, cached a week. */
+export async function loadWorld(worldId: string) {
+  const s = getState();
+  if (s.demo || !worldId.startsWith("wrld_") || worldLoading.has(worldId)) return;
+  const have = s.cache.worlds?.[worldId];
+  if (have && Date.now() - have.fetchedAt < 7 * 86400000) return;
+  worldLoading.add(worldId);
+  try {
+    const r = await backend.vrcGet(`/worlds/${encodeURIComponent(worldId)}`);
+    if (r.status !== 200 || !r.data?.id) return;
+    const w = r.data;
+    const info = { id: worldId, name: String(w.name ?? "World"), imageUrl: w.imageUrl, thumbnailImageUrl: w.thumbnailImageUrl, capacity: w.capacity, authorName: w.authorName, fetchedAt: Date.now() };
+    updateCache((c) => ({ ...c, worlds: { ...(c.worlds ?? {}), [worldId]: info } }));
+  } catch {
+    // the card shows the world id instead
+  } finally {
+    worldLoading.delete(worldId);
+  }
+}
+
+/** How many people are in an instance right now (not cached). */
+export async function loadInstance(location: string): Promise<{ users: number; capacity?: number } | null> {
+  if (getState().demo || !location.startsWith("wrld_") || !/^[A-Za-z0-9_\-:~().,]+$/.test(location)) return null;
+  try {
+    // VRChat expects the location as-is in the path (world:instance~tags).
+    const r = await backend.vrcGet(`/instances/${location}`);
+    if (r.status !== 200 || !r.data) return null;
+    const users = typeof r.data.n_users === "number" ? r.data.n_users : typeof r.data.userCount === "number" ? r.data.userCount : NaN;
+    return Number.isFinite(users) ? { users, capacity: r.data.capacity } : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Load someone's VRChat groups for their profile (one request, cached a week). */
 export async function loadGroups(id: string, force = false) {
@@ -283,8 +338,13 @@ export async function loadGroups(id: string, force = false) {
           groupId: String(g.groupId ?? g.id ?? ""),
           name: String(g.name ?? "Group"),
           iconUrl: typeof g.iconUrl === "string" ? g.iconUrl : undefined,
+          bannerUrl: typeof g.bannerUrl === "string" ? g.bannerUrl : undefined,
+          description: typeof g.description === "string" ? g.description : undefined,
+          shortCode: typeof g.shortCode === "string" ? g.shortCode : undefined,
+          discriminator: typeof g.discriminator === "string" ? g.discriminator : undefined,
           memberCount: typeof g.memberCount === "number" ? g.memberCount : undefined,
           isRepresenting: !!g.isRepresenting,
+          mutual: !!g.mutualGroup,
         }))
       : [];
     if (r.status === 401 || r.status === 429 || r.status >= 500) return;
@@ -419,8 +479,20 @@ export function applyPipelineEvent(type: string, content: any) {
         ...c,
         friends: { ...c.friends, [id]: friend },
         presence: { ...c.presence, [id]: presenceFromUser(u) ?? (friend.location !== "offline" ? "online" : "offline") },
+        // Merge (the event's user object is partial) and mark stale so the full profile is loaded.
         details: Array.isArray(u.tags)
-          ? { ...c.details, [id]: { tags: u.tags, date_joined: u.date_joined, pronouns: u.pronouns, bio: u.bio, note: u.note, fetchedAt: Date.now() } }
+          ? {
+              ...c.details,
+              [id]: {
+                ...c.details[id],
+                tags: u.tags,
+                date_joined: u.date_joined ?? c.details[id]?.date_joined,
+                pronouns: u.pronouns ?? c.details[id]?.pronouns,
+                bio: u.bio ?? c.details[id]?.bio,
+                note: u.note ?? c.details[id]?.note,
+                fetchedAt: 0,
+              },
+            }
           : c.details,
         me: c.me && !c.me.friends.includes(id) ? { ...c.me, friends: [...c.me.friends, id] } : c.me,
       }));

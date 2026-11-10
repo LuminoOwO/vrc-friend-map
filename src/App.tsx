@@ -13,6 +13,7 @@ import { TopBar } from "./components/TopBar";
 import { Icon } from "./components/Icon";
 import { applyThemeColors } from "./model";
 import { applyAutoGroups, initLogs, refreshStats, scheduleLogScans, useGroupSuggestions } from "./logs";
+import { startObserving, stopObserving } from "./together";
 import { flushSaves, getState, loadPersisted, setState, useApp } from "./store";
 import { applyPipelineEvent, startAutoRefresh, syncAll } from "./sync";
 
@@ -153,6 +154,12 @@ function LogsAndGroups() {
   const auto = useApp((s) => s.settings.groups.auto);
   const { suggestions } = useGroupSuggestions();
   const lastApplied = useRef("");
+  const mode = useApp((s) => s.mode);
+
+  useEffect(() => {
+    if (mode === "app" && !demo) startObserving();
+    else stopObserving();
+  }, [mode, demo]);
 
   useEffect(() => {
     refreshStats();

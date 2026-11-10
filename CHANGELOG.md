@@ -3,6 +3,36 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.6.0 (2026-11-10)
+
+### Added
+- Friend groups from friends' live locations: while the app is open (any device), it notes
+  which friends are in the same instance, even when you aren't there, and uses that time
+  together for group suggestions alongside your game logs. Both sources can be switched
+  off. Private instances are hidden by VRChat and don't count.
+- Overview tiles filter: point at "in VRChat" or "web / app" to preview, click to apply or
+  undo; "friends" clears every filter. Legend entries (statuses, ranks, favorites) work the
+  same way, and the Filters menu has a status filter.
+- Profiles closer to vrchat.com: VRC+ next to the name, pronouns, "Verified 18+", trust
+  rank, represented group, mutual friends and mutual groups, bio with "Read more", linked
+  profiles, icons for platform / last login / join date / mutuals.
+- Current world card: picture, name, region, instance number and type, how full it is,
+  which of your friends are there; click the picture to open the world on vrchat.com, or
+  "Launch in VRChat".
+- Groups: the represented group is pinned on top; "View all" opens a grid of group cards
+  like on the website (banner, icon, description, members, short code). Clicking a group
+  opens it in your browser.
+- Trust-rank shield next to names on cards (map option, on by default).
+- Links open in your browser (world, group, profile and bio links).
+
+### Changed
+- Opening a profile from a card now also moves the trust rank, mutual friends, platform and
+  status into place; text scales by font size and the banner keeps its proportions.
+
+### Fixed
+- Bios and links could go missing: a live "new friend" event replaced the stored profile
+  with a partial one. Profiles are now merged, and older ones load again when opened.
+
 ## 0.5.1 (2026-11-10)
 
 ### Added

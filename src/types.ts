@@ -35,6 +35,18 @@ export interface UserDetail {
   note?: string;
   bioLinks?: string[];
   badges?: Badge[];
+  /** VRChat's 18+ age verification. */
+  ageVerified?: boolean;
+  fetchedAt: number;
+}
+
+export interface WorldInfo {
+  id: string;
+  name: string;
+  imageUrl?: string;
+  thumbnailImageUrl?: string;
+  capacity?: number;
+  authorName?: string;
   fetchedAt: number;
 }
 
@@ -51,8 +63,14 @@ export interface UserGroup {
   groupId: string;
   name: string;
   iconUrl?: string;
+  bannerUrl?: string;
+  description?: string;
+  shortCode?: string;
+  discriminator?: string;
   memberCount?: number;
   isRepresenting?: boolean;
+  /** You're in this group too. */
+  mutual?: boolean;
 }
 
 export interface UserGroups {
@@ -120,6 +138,8 @@ export interface Cache {
   favorites: Record<string, string[]>;
   /** Loaded on demand when a profile is opened. */
   groups?: Record<string, UserGroups>;
+  /** World names and pictures, loaded when a profile shows someone's location. */
+  worlds?: Record<string, WorldInfo>;
   lastFriendsSync: number;
 }
 
@@ -175,6 +195,8 @@ export interface MapSettings {
   hoverCard: boolean;
   /** 1 = clockwise, -1 = counter-clockwise */
   orbitDir: 1 | -1;
+  /** Small trust-rank shield next to names on cards. */
+  showShield: boolean;
 }
 
 export type Theme = "dark" | "oled" | "light" | "mocha" | "macchiato" | "latte" | "nord" | "dracula";
@@ -208,6 +230,10 @@ export interface GroupSettings {
   sinceDays: number;
   /** Create and update circles from suggestions automatically. */
   auto: boolean;
+  /** Use your game logs (time with you). */
+  useLogs: boolean;
+  /** Use friends' live locations (time friends spend together, even without you). */
+  useLive: boolean;
 }
 
 export interface Settings {
@@ -280,6 +306,8 @@ export interface Filters {
   presence: "all" | "online" | "offline";
   lastSeen: "any" | "24h" | "7d" | "30d" | "90d" | "older";
   trust: string[];
+  /** Status keys: "join me", "active", "ask me", "busy", "web", "offline". Empty = any. */
+  statuses: string[];
   platform: string[];
   circleId: string | null;
   favoritesOnly: boolean;

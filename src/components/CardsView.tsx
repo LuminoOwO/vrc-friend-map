@@ -17,6 +17,7 @@ const SORTS: [SortKey, string][] = [
 
 export function CardsView() {
   const fresh = useApp((s) => s.fresh);
+  const showShield = useApp((s) => s.settings.map.showShield);
   const cache = useApp((s) => s.cache);
   const local = useApp((s) => s.local);
   const selectedId = useApp((s) => s.selectedId);
@@ -98,6 +99,7 @@ export function CardsView() {
                 dimmed={!matched.has(f.id)}
                 selected={selectedId === f.id}
                 fresh={!!fresh[f.id]}
+                shield={showShield}
                 now={now}
                 onSelect={select}
               />

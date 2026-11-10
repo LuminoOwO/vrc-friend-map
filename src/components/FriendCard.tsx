@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { imgSrc } from "../backend";
 import { captureCard } from "../flip";
+import { Icon } from "./Icon";
 import {
   PLATFORM_LABEL,
   bannerUrl,
@@ -27,6 +28,8 @@ export interface FriendCardProps {
   selected?: boolean;
   /** Just became a friend: plays the pop-in animation. */
   fresh?: boolean;
+  /** Trust-rank shield before the name. */
+  shield?: boolean;
   now: number;
   onSelect: (id: string) => void;
 }
@@ -73,7 +76,7 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
             ★
           </span>
         ) : null}
-        <span className="plat" title={PLATFORM_LABEL[plat]}>
+        <span className="plat" data-flip="plat" title={PLATFORM_LABEL[plat]}>
           {plat === "pc" ? "PC" : plat === "android" ? "Quest" : plat === "ios" ? "iOS" : plat === "web" ? "Web" : ""}
         </span>
       </div>
@@ -87,8 +90,13 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
           <span className="status-dot" style={{ background: sColor }} />
         </div>
         <div className="fcard-text">
-          <div className="fcard-name" data-flip="name" title={`${f.displayName} · ${trust.label}`}>
-            {f.displayName}
+          <div className="fcard-name" title={`${f.displayName} · ${trust.label}`}>
+            {p.shield && (
+              <span className="trust-shield" style={{ color: trust.color }} aria-label={trust.label}>
+                <Icon name="shield" size={13} />
+              </span>
+            )}
+            <span data-flip="name">{f.displayName}</span>
           </div>
           <div className="fcard-status" data-flip="status" title={f.statusDescription}>
             {f.statusDescription || presenceLabel(f, p.presence)}
@@ -96,11 +104,13 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
         </div>
       </div>
       <div className="fcard-meta">
-        <span className="trust-tag">{trust.label}</span>
+        <span className="trust-tag" data-flip="trust">
+          {trust.label}
+        </span>
         <span>{timeText}</span>
       </div>
       <div className="fcard-foot">
-        <span title="Mutual friends">
+        <span title="Mutual friends" data-flip="mutuals">
           {p.mutual ? (p.mutual.hidden ? "mutuals hidden" : `${p.mutual.count} mutual${p.mutual.count === 1 ? "" : "s"}`) : "mutuals …"}
         </span>
         <span className="circle-dots">

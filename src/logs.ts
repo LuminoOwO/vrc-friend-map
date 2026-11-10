@@ -6,6 +6,7 @@ import { backend, isTauri } from "./backend";
 import { useDerived } from "./derived";
 import { detectGroups, suggestionName, toSuggestions, type Suggestion } from "./groups";
 import { createCircle, getState, patchCircle, setLogs, showToast, updateLocal, useApp } from "./store";
+import { combineStats } from "./together";
 import type { PresenceStats } from "./types";
 
 let timer: ReturnType<typeof setInterval> | null = null;
@@ -129,7 +130,15 @@ export async function forgetLogHistory() {
 // ---------- suggestions ----------
 
 export function useGroupSuggestions(): { suggestions: Suggestion[]; pairsUsable: number } {
-  const stats = useApp((s) => s.logs.stats);
+  const logStats = useApp((s) => s.logs.stats);
+  const observed = useApp((s) => s.observed);
+  const useLogs = useApp((s) => s.settings.groups.useLogs);
+  const useLive = useApp((s) => s.settings.groups.useLive);
+  const demo = useApp((s) => s.demo);
+  const stats = useMemo(
+    () => combineStats(useLogs || demo ? logStats : null, useLive && !demo ? (observed?.pairs ?? null) : null),
+    [logStats, observed, useLogs, useLive, demo],
+  );
   const circles = useApp((s) => s.local.circles);
   const dismissed = useApp((s) => s.local.dismissedGroups);
   const g = useApp((s) => s.settings.groups);

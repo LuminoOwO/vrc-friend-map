@@ -15,13 +15,14 @@ pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const API_BASES: [&str; 2] = ["https://api.vrchat.cloud/api/1", "https://vrchat.com/api/1"];
 
 /// Only read-only endpoints the app actually needs are reachable from the UI.
-const ALLOWED_GET_PREFIXES: [&str; 6] = [
+const ALLOWED_GET_PREFIXES: [&str; 7] = [
     "/auth/user",
     "/users/",
     "/favorites",
     "/favorite/groups",
     "/worlds/",
     "/groups/",
+    "/instances/",
 ];
 
 #[derive(Clone, Serialize, Deserialize)]

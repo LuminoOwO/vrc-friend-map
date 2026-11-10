@@ -103,6 +103,10 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
           <input type="checkbox" checked={map.showStars} onChange={(e) => set({ showStars: e.target.checked })} />
           Star on favorites
         </label>
+        <label className="check small">
+          <input type="checkbox" checked={map.showShield} onChange={(e) => set({ showShield: e.target.checked })} />
+          Trust-rank shield next to names on cards
+        </label>
         {map.nodeStyle !== "fullcard" && (
           <label className="check small">
             <input type="checkbox" checked={map.hoverCard} onChange={(e) => set({ hoverCard: e.target.checked })} />

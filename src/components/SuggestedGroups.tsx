@@ -14,7 +14,10 @@ export function SuggestedGroups() {
   const enabled = useApp((s) => s.settings.logs.enabled);
   const circles = useApp((s) => s.local.circles);
   const { suggestions, pairsUsable } = useGroupSuggestions();
-  const supported = demo || logsSupported(logs.platform);
+  const useLive = useApp((s) => s.settings.groups.useLive);
+  const observedPairs = useApp((s) => s.observed?.pairs.length ?? 0);
+  const logsHere = logsSupported(logs.platform);
+  const supported = demo || logsHere || useLive;
 
   const openSettings = () => setState({ settingsOpen: true, settingsTab: "groups" });
   const report = logs.report;
@@ -40,7 +43,7 @@ export function SuggestedGroups() {
           Groups are suggested from VRChat's log files, which only exist on the PC that runs VRChat. Use the desktop app on that PC for
           suggestions.
         </p>
-      ) : !enabled && !demo ? (
+      ) : !enabled && !demo && !useLive ? (
         <p className="muted small">
           Reading game logs is turned off.{" "}
           <button className="btn link small" onClick={openSettings}>
@@ -50,16 +53,17 @@ export function SuggestedGroups() {
       ) : (
         <>
           <p className="muted small">
-            From who you've been in the same instance with, according to your VRChat logs
-            {report && report.visits > 0 ? ` (${report.visits} visits over ${spanDays} day${spanDays === 1 ? "" : "s"})` : ""}.
+            From time spent in the same instance
+            {logsHere && enabled ? `: with you (game logs${report && report.visits > 0 ? `, ${report.visits} visits over ${spanDays} day${spanDays === 1 ? "" : "s"}` : ""})` : ""}
+            {useLive ? `${logsHere && enabled ? " and" : ":"} between friends (their live locations while this app is open${observedPairs ? `, ${observedPairs} pairs so far` : ""})` : ""}.
           </p>
           {logs.error && <p className="small warn">{logs.error}</p>}
           {suggestions.length === 0 ? (
             <p className="muted small">
-              {!report || report.visits === 0
+              {(!report || report.visits === 0) && !observedPairs
                 ? logs.scanning
                   ? "Reading logs…"
-                  : "No log history yet. Play a bit with the app installed on the same PC, and groups show up over time."
+                  : "Nothing collected yet. Keep the app open for a while (and play on this PC for game logs), and groups show up over time."
                 : pairsUsable === 0
                   ? `Nothing yet: suggestions need people seen together for ${g.minMinutes}+ minutes on ${g.minDays}+ different days.`
                   : "No new groups. Everything found is already in your circles."}

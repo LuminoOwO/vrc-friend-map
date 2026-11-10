@@ -99,6 +99,12 @@ player who joins or leaves it. The desktop app reads those files (it never chang
    adding people to them; renaming one or changing who's in it makes it yours, and the app
    never changes circles you made yourself.
 
+**Without you, from live locations.** Independently of the logs, the app (on any device,
+while it's open) notes every minute which friends are in the same instance according to
+VRChat's live friend updates, whether or not you're there, and adds that time to the
+pairs. Private and invite-only instances are hidden by VRChat, so they don't count. Both
+sources can be switched off in Settings; the location history is in `store/observed.json`.
+
 All of this stays on your PC. Quest and phone sessions don't write logs the app can read, so
 time spent there isn't counted. The detail panel also shows your time together with each
 person and who they're most often with; the map can draw lines and sizes from it.

@@ -44,6 +44,7 @@ export async function wipeEverything() {
   await backend.storeWrite("local", JSON.stringify(emptyLocal()));
   await backend.clearImageCache();
   await backend.logsClear().catch(() => {});
+  await backend.storeWrite("observed", "{}").catch(() => {});
   setLogs({ stats: null, report: null });
   setState({ cache: emptyCache(), local: emptyLocal(), mode: "login", session: null, selectedId: null, settingsOpen: false, loginMessage: "All local data deleted.", live: { connected: false, message: "" } });
 }
