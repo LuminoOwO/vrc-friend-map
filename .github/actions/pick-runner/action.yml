@@ -1,0 +1,74 @@
+name: Pick a runner
+description: >
+  Use the self-hosted runner on my PC when it's online and idle, otherwise
+  GitHub's runners. Needs a token that may read the repo's runners
+  (fine-grained: Administration read-only), stored as the RUNNER_STATUS_TOKEN secret.
+inputs:
+  token:
+    description: Token that can list this repo's self-hosted runners
+    default: ""
+  mode:
+    description: "Repository variable USE_MY_PC: unset/auto = when online, true = always, false = never"
+    default: ""
+  allowed:
+    description: "'false' to never use the PC for this run (e.g. pull requests from forks)"
+    default: "true"
+  labels:
+    description: Labels the self-hosted runner must have (comma-separated)
+    default: self-hosted,Linux,X64
+  fallback:
+    description: GitHub-hosted runner to use otherwise
+    default: ubuntu-22.04
+outputs:
+  runs-on:
+    description: JSON for runs-on (use with fromJSON)
+    value: ${{ steps.pick.outputs.runs-on }}
+  where:
+    description: "'pc' or 'github'"
+    value: ${{ steps.pick.outputs.where }}
+runs:
+  using: composite
+  steps:
+    - id: pick
+      shell: bash
+      env:
+        TOKEN: ${{ inputs.token }}
+        MODE: ${{ inputs.mode }}
+        ALLOWED: ${{ inputs.allowed }}
+        LABELS: ${{ inputs.labels }}
+        FALLBACK: ${{ inputs.fallback }}
+        REPO: ${{ github.repository }}
+      run: |
+        self=$(jq -cn --arg l "$LABELS" '$l | split(",")')
+        cloud=$(jq -cn --arg f "$FALLBACK" '$f')
+        use() { # where, json, reason
+          echo "where=$1" >> "$GITHUB_OUTPUT"
+          echo "runs-on=$2" >> "$GITHUB_OUTPUT"
+          echo "::notice title=Runner::$3"
+          echo "**Runner:** $3" >> "$GITHUB_STEP_SUMMARY"
+        }
+        mode=$(echo "$MODE" | tr '[:upper:]' '[:lower:]')
+        if [ "$ALLOWED" != "true" ]; then use github "$cloud" "GitHub's runners (pull request from a fork: never on the PC)"; exit 0; fi
+        case "$mode" in
+          false|never|off|no) use github "$cloud" "GitHub's runners (USE_MY_PC=false)"; exit 0 ;;
+          true|always|on|yes) use pc "$self" "My PC (USE_MY_PC=true: waits for it if it's off)"; exit 0 ;;
+        esac
+        if [ -z "$TOKEN" ]; then
+          use github "$cloud" "GitHub's runners (add the RUNNER_STATUS_TOKEN secret to use the PC when it's online)"
+          exit 0
+        fi
+        if ! runners=$(curl -fsS --max-time 15 -H "Authorization: Bearer $TOKEN" -H "Accept: application/vnd.github+json" \
+             "https://api.github.com/repos/$REPO/actions/runners?per_page=100"); then
+          use github "$cloud" "GitHub's runners (couldn't check the PC: is RUNNER_STATUS_TOKEN still valid?)"
+          exit 0
+        fi
+        # Online runners that have every label; idle ones first.
+        pick=$(echo "$runners" | jq -r --argjson want "$self" '
+          [.runners[] | select(.status == "online")
+                      | select([.labels[].name] as $have | all($want[]; . as $w | $have | index($w)))]
+          | if length == 0 then "offline" elif any(.busy | not) then "idle:" + (map(select(.busy | not))[0].name) else "busy" end')
+        case "$pick" in
+          idle:*) use pc "$self" "My PC (${pick#idle:} is online and idle)" ;;
+          busy) use github "$cloud" "GitHub's runners (the PC is busy with another job)" ;;
+          *) use github "$cloud" "GitHub's runners (the PC is offline or paused)" ;;
+        esac

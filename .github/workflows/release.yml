@@ -43,11 +43,28 @@ env:
   MODE: ${{ startsWith(github.ref, 'refs/heads/build-check/') && 'check' || 'release' }}
 
 jobs:
+  # Decides where the tests run: my PC when it's online and idle, else GitHub.
+  pick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      runs-on: ${{ steps.pick.outputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/actions
+      - id: pick
+        uses: ./.github/actions/pick-runner
+        with:
+          token: ${{ secrets.RUNNER_STATUS_TOKEN }}
+          mode: ${{ vars.USE_MY_PC }}
+
   test:
-    # Tests run on your own PC (RunnerDock); set the repository variable USE_MY_PC to false to use
-    # GitHub's runners. The builds below stay on GitHub: ubuntu-22.04 keeps Linux packages
-    # compatible with older distros, and Windows/macOS/iOS/ARM need their own machines.
-    runs-on: ${{ vars.USE_MY_PC != 'false' && fromJSON('["self-hosted", "Linux", "X64"]') || 'ubuntu-22.04' }}
+    # Tests: my PC (RunnerDock) if it's online and idle, otherwise GitHub's runners. The builds
+    # below always stay on GitHub: ubuntu-22.04 keeps Linux packages compatible with older
+    # distros, and Windows/macOS/iOS/ARM need their own machines.
+    needs: pick
+    runs-on: ${{ fromJSON(needs.pick.outputs.runs-on) }}
     outputs:
       sha: ${{ steps.pick.outputs.sha }}
     steps:

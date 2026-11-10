@@ -10,11 +10,28 @@ permissions:
   contents: read
 
 jobs:
+  # Decides where the tests run: my PC when it's online and idle, else GitHub.
+  pick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      runs-on: ${{ steps.pick.outputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/actions
+      - id: pick
+        uses: ./.github/actions/pick-runner
+        with:
+          token: ${{ secrets.RUNNER_STATUS_TOKEN }}
+          mode: ${{ vars.USE_MY_PC }}
+          allowed: ${{ !github.event.pull_request.head.repo.fork }}
+
   test:
-    # Runs on your own PC (self-hosted runner via RunnerDock) for pushes and pull requests from
-    # this repo; pull requests from forks always use GitHub's runners. To send everything back to
-    # GitHub's runners, set the repository variable USE_MY_PC to false.
-    runs-on: ${{ (vars.USE_MY_PC != 'false' && !github.event.pull_request.head.repo.fork) && fromJSON('["self-hosted", "Linux", "X64"]') || 'ubuntu-22.04' }}
+    # My PC (RunnerDock) if it's online and idle, otherwise GitHub's runners; see the pick job.
+    # Pull requests from forks always use GitHub's runners.
+    needs: pick
+    runs-on: ${{ fromJSON(needs.pick.outputs.runs-on) }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
