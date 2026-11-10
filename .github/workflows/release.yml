@@ -44,7 +44,10 @@ env:
 
 jobs:
   test:
-    runs-on: ubuntu-22.04
+    # Tests run on your own PC (RunnerDock); set the repository variable USE_MY_PC to false to use
+    # GitHub's runners. The builds below stay on GitHub: ubuntu-22.04 keeps Linux packages
+    # compatible with older distros, and Windows/macOS/iOS/ARM need their own machines.
+    runs-on: ${{ vars.USE_MY_PC != 'false' && fromJSON('["self-hosted", "Linux", "X64"]') || 'ubuntu-22.04' }}
     outputs:
       sha: ${{ steps.pick.outputs.sha }}
     steps:
@@ -80,9 +83,19 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
-      - run: |
+      - name: System libraries
+        run: |
+          PKGS="libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev"
+          MISSING=$(for p in $PKGS; do dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "ok installed" || printf '%s ' "$p"; done)
+          MISSING=${MISSING% }
+          if [ -z "$MISSING" ]; then echo "All system libraries present"; exit 0; fi
+          if [ "$RUNNER_ENVIRONMENT" = self-hosted ]; then
+            # no sudo on your own PC: install them once yourself
+            echo "::error::Missing on this machine: $MISSING. Run once: sudo apt install $MISSING"
+            exit 1
+          fi
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev
+          sudo apt-get install -y $MISSING
       - run: npm ci
       - run: npx tsc --noEmit && npm test
       - run: cargo test --manifest-path src-tauri/Cargo.toml --lib
