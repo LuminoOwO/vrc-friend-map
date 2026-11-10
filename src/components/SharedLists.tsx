@@ -287,8 +287,13 @@ export function SharedLists() {
                   <span className="pill">{list.mode === "full" ? "full list" : "overlap only"}</span>
                 </div>
                 <p className="small muted">
-                  {size} friends · exported {fmtDate(list.exportedAt)} {includesMe ? "· includes you" : ""}
+                  {size} friends · {list.via ? "shared" : "exported"} {fmtDate(list.exportedAt)} {includesMe ? "· includes you" : ""}
                 </p>
+                {list.via && (
+                  <p className="via">
+                    <Icon name="server" size={12} /> via {list.via.join(", ")} · updates on every sync
+                  </p>
+                )}
                 <div className="big-num">
                   <b>{known.size}</b> people you both know
                   {size > 0 && <span className="muted"> ({Math.round((known.size / size) * 100)}% of their list)</span>}

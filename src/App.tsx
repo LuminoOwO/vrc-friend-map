@@ -6,6 +6,8 @@ import { DetailPanel } from "./components/DetailPanel";
 import { GraphView } from "./components/GraphView";
 import { LoginScreen } from "./components/LoginScreen";
 import { SettingsModal } from "./components/SettingsModal";
+import { ConfirmUnencrypted, ServersModal } from "./components/ServersModal";
+import { loadShared, startSharing, stopSharing } from "./share";
 import { SharedLists } from "./components/SharedLists";
 import { Sidebar } from "./components/Sidebar";
 import { ToastView } from "./components/ToastView";
@@ -29,12 +31,14 @@ export default function App() {
   const theme = useApp((s) => s.settings.theme);
   const profileAs = useApp((s) => s.settings.profileAs);
   const settingsOpen = useApp((s) => s.settingsOpen);
+  const serversOpen = useApp((s) => s.serversOpen);
   const sidebarOpen = useApp((s) => s.sidebarOpen);
 
   useEffect(() => {
     let unlisten: (() => void)[] = [];
     (async () => {
       await loadPersisted();
+      await loadShared();
       initLogs();
       const info = await backend.sessionInfo().catch(() => ({ logged_in: false, user_id: null, display_name: null }));
       setState({ session: info, mode: info.logged_in ? "app" : "login" });
@@ -124,6 +128,8 @@ export default function App() {
         </div>
       )}
       {settingsOpen && <SettingsModal />}
+      {serversOpen && <ServersModal />}
+      <ConfirmUnencrypted />
       <ToastView />
     </div>
   );
@@ -157,8 +163,13 @@ function LogsAndGroups() {
   const mode = useApp((s) => s.mode);
 
   useEffect(() => {
-    if (mode === "app" && !demo) startObserving();
-    else stopObserving();
+    if (mode === "app" && !demo) {
+      startObserving();
+      startSharing();
+    } else {
+      stopObserving();
+      stopSharing();
+    }
   }, [mode, demo]);
 
   useEffect(() => {

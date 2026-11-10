@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>vfm-server admin</title>
+<style>
+  :root { color-scheme: dark; --bg:#14151b; --panel:#1d1f28; --line:#2c2f3b; --text:#e6e6ee; --dim:#9a9cab; --accent:#7aa2ff; --ok:#5fd38d; --warn:#f2b84b; --bad:#ff6b6b; }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--text); }
+  main { max-width: 880px; margin: 0 auto; padding: 20px 16px 60px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 0 0 12px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-top: 16px; }
+  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
+  .stat { background: #23263200; border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .stat b { display:block; font-size: 22px; }
+  .stat span { color: var(--dim); font-size: 13px; }
+  label { display:block; font-size: 13px; color: var(--dim); margin: 10px 0 4px; }
+  input, select, textarea { width:100%; background:#12131a; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; }
+  textarea { min-height: 60px; resize: vertical; }
+  button { background: var(--accent); color:#0c1020; border:0; border-radius:8px; padding:8px 14px; font:inherit; font-weight:600; cursor:pointer; }
+  button.ghost { background: transparent; color: var(--text); border:1px solid var(--line); }
+  button.danger { background: transparent; color: var(--bad); border:1px solid #5a2a30; }
+  table { width:100%; border-collapse: collapse; font-size: 14px; }
+  td, th { text-align:left; padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--dim); font-weight: 500; }
+  code, .mono { font-family: ui-monospace, monospace; font-size: 13px; }
+  .pill { display:inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; border:1px solid var(--line); }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); } .dim { color: var(--dim); }
+  .big { font-size: 34px; letter-spacing: .15em; font-family: ui-monospace, monospace; }
+  .hint { color: var(--dim); font-size: 13px; margin-top: 6px; }
+  #login { max-width: 420px; margin: 12vh auto; }
+  .hidden { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <section id="login">
+    <h1>vfm-server admin</h1>
+    <p class="dim">Enter the admin token. It's the <code>token</code> line in <code>vfm-server.toml</code>, and the server prints it when it starts.</p>
+    <form id="loginForm"><input id="token" type="password" autocomplete="current-password" placeholder="Admin token"><div class="row" style="margin-top:10px"><button>Open</button><span id="loginErr" class="bad"></span></div></form>
+  </section>
+
+  <div id="app" class="hidden">
+    <div class="row" style="justify-content:space-between">
+      <div><h1 id="name">…</h1><div class="dim" id="sub"></div></div>
+      <div class="row"><button class="ghost" id="refresh">Refresh</button><button class="ghost" id="logout">Lock</button></div>
+    </div>
+
+    <section>
+      <h2>Overview</h2>
+      <div class="grid" id="stats"></div>
+      <p class="hint">In the app: Settings → Servers → Add server, then enter <code id="addr"></code></p>
+    </section>
+
+    <section>
+      <h2>Logger</h2>
+      <div id="logger"></div>
+      <div class="row" style="margin-top:12px">
+        <button id="pairBtn">Make pairing code</button>
+        <button class="danger hidden" id="unpairBtn">Unpair</button>
+        <button class="danger hidden" id="forgetBtn">Unpair and delete history</button>
+      </div>
+      <div id="pairOut" class="hidden" style="margin-top:12px"><div class="big" id="pairCode"></div><div class="hint">Enter this in the app (Settings → Servers → this server → Pair logger). Valid 15 minutes, works once.</div></div>
+    </section>
+
+    <section>
+      <h2>Settings</h2>
+      <form id="settings">
+        <label>Server name</label><input name="name" maxlength="80">
+        <label>Note for people (rules, contact)</label><textarea name="motd" maxlength="500"></textarea>
+        <div class="grid">
+          <div><label>New accounts</label><select name="registration"><option value="open">Open to anyone</option><option value="invite">Invite code needed</option><option value="closed">Closed</option></select></div>
+          <div><label>Encryption of uploads</label><select name="encryption">
+            <option value="force-off">Force off: readable only</option>
+            <option value="optional">Optional, off by default</option>
+            <option value="recommended">Optional, on by default (recommended)</option>
+            <option value="force-on">Force on: encrypted only</option></select></div>
+          <div><label>Largest upload (KB)</label><input name="maxItemKb" type="number" min="16" max="16384"></div>
+          <div><label>Max accounts</label><input name="maxUsers" type="number" min="1"></div>
+        </div>
+        <label><input type="checkbox" name="loggerEnabled" style="width:auto"> Logger enabled</label>
+        <p class="hint" id="encHint"></p>
+        <div class="row" style="margin-top:8px"><button>Save</button><span id="saved" class="ok"></span></div>
+      </form>
+    </section>
+
+    <section>
+      <h2>Invite codes</h2>
+      <form id="inviteForm" class="row">
+        <input name="note" placeholder="Note (who it's for)" style="flex:2;min-width:160px">
+        <input name="uses" type="number" min="1" value="1" title="Uses" style="width:80px">
+        <select name="days" style="width:130px"><option value="1">1 day</option><option value="7" selected>7 days</option><option value="30">30 days</option><option value="0">Never expires</option></select>
+        <button>Create</button>
+      </form>
+      <div id="newInvite" class="hidden" style="margin-top:10px"><span class="big" style="font-size:22px" id="inviteCode"></span></div>
+      <table style="margin-top:10px"><thead><tr><th>Code</th><th>Uses left</th><th>Expires</th><th>Note</th><th></th></tr></thead><tbody id="invites"></tbody></table>
+    </section>
+
+    <section>
+      <h2>People</h2>
+      <p class="hint">Only public keys are stored. Encrypted items can't be read here; you see who shares with how many people, and the size.</p>
+      <table><thead><tr><th>VRChat ID / key</th><th>Shared</th><th>Joined</th><th>Last seen</th><th></th></tr></thead><tbody id="users"></tbody></table>
+    </section>
+  </div>
+</main>
+<script>
+const $ = (s) => document.querySelector(s);
+let token = sessionStorage.getItem("vfm-admin") || "";
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const when = (t) => (t ? new Date(t * 1000).toLocaleString() : "–");
+const ago = (t) => { if (!t) return "never"; const s = Date.now() / 1000 - t; if (s < 90) return "just now"; if (s < 5400) return Math.round(s / 60) + " min ago"; if (s < 129600) return Math.round(s / 3600) + " h ago"; return Math.round(s / 86400) + " days ago"; };
+const kb = (b) => (b > 1024 * 1024 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB");
+const ENC = { "force-off": "Uploads must be readable. The app warns people before every upload that the server can read their data.", optional: "People choose; the switch starts off.", recommended: "People choose; the switch starts on.", "force-on": "Only end-to-end encrypted uploads. This server can't read anything people share." };
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, { ...opts, headers: { "x-admin-token": token, "content-type": "application/json", ...(opts.headers || {}) } });
+  if (res.status === 401) { lock("Wrong token"); throw new Error("401"); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function lock(msg) { token = ""; sessionStorage.removeItem("vfm-admin"); $("#app").classList.add("hidden"); $("#login").classList.remove("hidden"); $("#loginErr").textContent = msg || ""; }
+
+$("#loginForm").onsubmit = async (e) => { e.preventDefault(); token = $("#token").value.trim(); try { await load(); sessionStorage.setItem("vfm-admin", token); } catch {} };
+$("#logout").onclick = () => lock("");
+$("#refresh").onclick = () => load();
+
+async function load() {
+  const s = await api("/admin/api/status");
+  $("#login").classList.add("hidden"); $("#app").classList.remove("hidden");
+  $("#name").textContent = s.info.name;
+  $("#sub").textContent = `vfm-server ${s.info.version} · listening on ${s.settings.listen}`;
+  $("#addr").textContent = location.origin;
+  const encLabel = { "force-off": "Force off", optional: "Optional", recommended: "Recommended", "force-on": "Force on" }[s.info.encryption];
+  $("#stats").innerHTML = [
+    [s.counts.users, "accounts"], [s.counts.items, "shared items"], [s.counts.sealed, "of them encrypted"], [encLabel, "encryption"], [s.info.registration, "new accounts"],
+  ].map(([v, l]) => `<div class="stat"><b>${esc(v)}</b><span>${esc(l)}</span></div>`).join("");
+
+  const L = s.logger;
+  let lh;
+  if (!s.settings.loggerEnabled) lh = `<p class="dim">The logger is turned off in the settings below.</p>`;
+  else if (!L.paired) lh = `<p>Not paired. Make a pairing code and enter it in the app to start logging your friends' instance hopping.</p>`;
+  else lh = `<div class="grid">
+      <div class="stat"><b class="${L.connected ? "ok" : "warn"}">${L.connected ? "Logging" : "Not connected"}</b><span>${esc(L.message)}</span></div>
+      <div class="stat"><b>${esc(L.displayName || L.owner)}</b><span>paired ${ago(L.pairedAt)}</span></div>
+      <div class="stat"><b>${L.online} / ${L.friends}</b><span>friends online now</span></div>
+      <div class="stat"><b>${L.inVisibleInstances}</b><span>in instances VRChat shows</span></div>
+      <div class="stat"><b>${L.pairs}</b><span>friend pairs seen together</span></div>
+      <div class="stat"><b>${L.events}</b><span>live events since start (last ${ago(L.lastEvent)})</span></div>
+    </div><p class="hint">Counting since ${when(L.since)}.</p>`;
+  $("#logger").innerHTML = lh;
+  $("#pairBtn").classList.toggle("hidden", !s.settings.loggerEnabled || L.paired);
+  $("#unpairBtn").classList.toggle("hidden", !L.paired);
+  $("#forgetBtn").classList.toggle("hidden", !L.paired);
+
+  const f = $("#settings");
+  for (const k of ["name", "motd", "registration", "encryption", "maxItemKb", "maxUsers"]) f[k].value = s.settings[k];
+  f.loggerEnabled.checked = s.settings.loggerEnabled;
+  $("#encHint").textContent = ENC[f.encryption.value];
+
+  $("#invites").innerHTML = Object.entries(s.invites).map(([code, i]) => `<tr><td class="mono">${esc(code)}</td><td>${i.uses_left}</td><td>${i.expires ? when(i.expires) : "never"}</td><td>${esc(i.note)}</td><td><button class="danger" data-inv="${esc(code)}">Delete</button></td></tr>`).join("") || `<tr><td colspan=5 class="dim">No open invite codes.</td></tr>`;
+  $("#users").innerHTML = s.users.map((u) => `<tr><td><div class="mono">${esc(u.id)}</div><div class="dim mono">${esc(u.fingerprint)}</div></td>
+      <td>${u.items.map((i) => `<div>${esc(i.kind)} <span class="pill ${i.sealed ? "ok" : "warn"}">${i.sealed ? "encrypted" : "readable"}</span> <span class="dim">→ ${i.recipients} · ${kb(i.bytes)} · ${ago(i.created)}</span></div>`).join("") || `<span class="dim">nothing</span>`}</td>
+      <td>${ago(u.registered)}${u.invite ? `<div class="dim mono">${esc(u.invite)}</div>` : ""}</td><td>${ago(u.lastSeen)}</td>
+      <td><button class="danger" data-user="${esc(u.id)}" title="Delete the account and what it shared. They can sign up again with a new key.">Remove</button></td></tr>`).join("") || `<tr><td colspan=5 class="dim">Nobody yet.</td></tr>`;
+}
+
+$("#settings").encryption.onchange = (e) => ($("#encHint").textContent = ENC[e.target.value]);
+$("#settings").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  await api("/admin/api/settings", { method: "POST", body: JSON.stringify({ name: f.name.value, motd: f.motd.value, registration: f.registration.value, encryption: f.encryption.value, maxItemKb: +f.maxItemKb.value, maxUsers: +f.maxUsers.value, loggerEnabled: f.loggerEnabled.checked }) });
+  $("#saved").textContent = "Saved"; setTimeout(() => ($("#saved").textContent = ""), 2000);
+  load();
+};
+$("#inviteForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  const r = await api("/admin/api/invites", { method: "POST", body: JSON.stringify({ note: f.note.value, uses: +f.uses.value || 1, days: +f.days.value }) });
+  $("#inviteCode").textContent = r.code; $("#newInvite").classList.remove("hidden"); f.note.value = "";
+  load();
+};
+document.addEventListener("click", async (e) => {
+  const inv = e.target.closest("[data-inv]");
+  if (inv) { await api("/admin/api/invites/" + encodeURIComponent(inv.dataset.inv), { method: "DELETE" }); load(); }
+  const user = e.target.closest("[data-user]");
+  if (user && confirm(`Remove ${user.dataset.user} and everything they shared here?`)) { await api("/admin/api/users/" + encodeURIComponent(user.dataset.user), { method: "DELETE" }); load(); }
+});
+$("#pairBtn").onclick = async () => { const r = await api("/admin/api/pair-code", { method: "POST" }); $("#pairCode").textContent = r.code; $("#pairOut").classList.remove("hidden"); };
+$("#unpairBtn").onclick = async () => { if (confirm("Stop logging and unpair? The history so far is kept.")) { await api("/admin/api/logger/unpair", { method: "POST", body: "{}" }); load(); } };
+$("#forgetBtn").onclick = async () => { if (confirm("Unpair and delete all logged history?")) { await api("/admin/api/logger/unpair", { method: "POST", body: '{"forget":true}' }); load(); } };
+
+if (token) load().catch(() => {});
+</script>
+</body>
+</html>

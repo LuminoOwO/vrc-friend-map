@@ -1,6 +1,6 @@
 // Global app state: a tiny external store + debounced persistence to disk.
 import { useSyncExternalStore } from "react";
-import { backend, type SessionInfo } from "./backend";
+import { backend, type KeyPin, type SessionInfo } from "./backend";
 import { pickCircleColor } from "./colors";
 import { uid } from "./model";
 import type {
@@ -15,6 +15,9 @@ import type {
   PairTime,
   PresenceStats,
   Settings,
+  SharedData,
+  SharingSettings,
+  ShareServer,
   SoundSettings,
   SyncState,
 } from "./types";
@@ -67,6 +70,15 @@ export interface AppState {
   observed: { pairs: PairTime[]; since: number } | null;
   /** Friends added in the last few seconds (id -> time), for the animation. */
   fresh: Record<string, number>;
+  /** Received through vfm-servers (see share.ts). */
+  shared: SharedData | null;
+  serversOpen: boolean;
+  /** Sync with servers in progress. */
+  shareBusy: boolean;
+  /** Server waiting for the "not encrypted" confirmation before uploading. */
+  confirmUnencrypted: string | null;
+  /** Friends' sharing keys as first seen (fingerprints), from share.rs. */
+  keyPins: Record<string, KeyPin> | null;
 }
 
 // ---------- data format versions ----------
@@ -142,6 +154,38 @@ export const defaultGroupSettings = (): GroupSettings => ({
   useLive: true,
 });
 
+export const defaultSharing = (): SharingSettings => ({
+  encDefault: "server",
+  autoSync: true,
+  intervalMin: 30,
+  useShared: true,
+  useLogger: true,
+  servers: [],
+});
+
+export const newServer = (url: string): ShareServer => ({
+  id: uid(),
+  url,
+  addedAt: Date.now(),
+  info: null,
+  infoAt: 0,
+  keyChanged: false,
+  registered: false,
+  upload: true,
+  encrypt: null,
+  shareFriends: true,
+  shareActivity: true,
+  audience: "all",
+  circleIds: [],
+  download: true,
+  loggerOwner: false,
+  ackUnencrypted: false,
+  published: [],
+  lastSync: 0,
+  lastError: "",
+  lastNote: "",
+});
+
 export const defaultSettings = (): Settings => ({
   contact: "",
   intervalMs: 1200,
@@ -157,6 +201,7 @@ export const defaultSettings = (): Settings => ({
   sounds: defaultSounds(),
   theme: "dark",
   profileAs: "popup",
+  sharing: defaultSharing(),
   lastVersion: "",
 });
 
@@ -217,6 +262,11 @@ let state: AppState = {
   previewFilters: null,
   observed: null,
   fresh: {},
+  shared: null,
+  serversOpen: false,
+  shareBusy: false,
+  confirmUnencrypted: null,
+  keyPins: null,
 };
 
 const listeners = new Set<() => void>();
@@ -297,6 +347,16 @@ export function updateLogSettings(patch: Partial<LogSettings>) {
 
 export function updateSounds(patch: Partial<SoundSettings>) {
   updateSettings({ sounds: { ...state.settings.sounds, ...patch } });
+}
+
+export function updateSharing(patch: Partial<SharingSettings>) {
+  updateSettings({ sharing: { ...state.settings.sharing, ...patch } });
+}
+
+export function updateServer(id: string, patch: Partial<ShareServer> | ((s: ShareServer) => Partial<ShareServer>)) {
+  updateSharing({
+    servers: state.settings.sharing.servers.map((s) => (s.id === id ? { ...s, ...(typeof patch === "function" ? patch(s) : patch) } : s)),
+  });
 }
 
 export function updateGroupSettings(patch: Partial<GroupSettings>) {
@@ -424,6 +484,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
     },
     theme: oneOf(raw.theme, ["dark", "oled", "light", "mocha", "macchiato", "latte", "nord", "dracula"] as const, d.theme),
     profileAs: oneOf(raw.profileAs, ["popup", "sidebar"] as const, d.profileAs),
+    sharing: normalizeSharing(raw.sharing),
     lastVersion: typeof raw.lastVersion === "string" ? raw.lastVersion : "",
   };
   // Format 2 (0.4.0) defaulted to no turning and ring gravity; 0.5.0 changed
@@ -435,6 +496,46 @@ export function normalizeSettings(raw: Raw | null): Settings {
   delete (out as Raw).lineColors;
   delete (out as Raw).schema;
   return out;
+}
+
+function normalizeSharing(raw: unknown): SharingSettings {
+  const d = defaultSharing();
+  if (!isObj(raw)) return d;
+  const r = raw as Raw;
+  const bool = (v: unknown, def: boolean) => (typeof v === "boolean" ? v : def);
+  const servers: ShareServer[] = Array.isArray(r.servers)
+    ? r.servers
+        .filter((x: Raw) => isObj(x) && typeof x.id === "string" && typeof x.url === "string")
+        .map((x: Raw): ShareServer => {
+          const n = newServer(x.url);
+          return {
+            ...n,
+            ...x,
+            info: isObj(x.info) ? (x.info as unknown as ShareServer["info"]) : null,
+            encrypt: typeof x.encrypt === "boolean" ? x.encrypt : null,
+            audience: oneOf(x.audience, ["all", "circles"] as const, "all"),
+            circleIds: Array.isArray(x.circleIds) ? x.circleIds.filter((c: unknown) => typeof c === "string") : [],
+            published: Array.isArray(x.published) ? x.published.filter((c: unknown) => typeof c === "string") : [],
+            upload: bool(x.upload, n.upload),
+            download: bool(x.download, n.download),
+            shareFriends: bool(x.shareFriends, n.shareFriends),
+            shareActivity: bool(x.shareActivity, n.shareActivity),
+            registered: bool(x.registered, false),
+            loggerOwner: bool(x.loggerOwner, false),
+            ackUnencrypted: bool(x.ackUnencrypted, false),
+            keyChanged: bool(x.keyChanged, false),
+          };
+        })
+    : [];
+  return {
+    ...r,
+    encDefault: oneOf(r.encDefault, ["server", "on", "off"] as const, d.encDefault),
+    autoSync: bool(r.autoSync, d.autoSync),
+    intervalMin: num(r.intervalMin, d.intervalMin, 10, 24 * 60),
+    useShared: bool(r.useShared, d.useShared),
+    useLogger: bool(r.useLogger, d.useLogger),
+    servers,
+  };
 }
 
 export function normalizeLocal(raw: Raw | null): LocalData {
@@ -501,6 +602,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.7.0": "share friend lists and activity with friends through your own or a friend's server (end-to-end encrypted), and run vfm-server on a spare device to log your friends' instance hopping 24/7 for better circle suggestions. Settings → Servers.",
   "0.6.0": "groups also learned from where your friends hang out together (even without you), profiles like on vrchat.com with the current world and who's there, clickable overview tiles and legend as filters, and more of the card flies into the profile.",
   "0.5.0": "color themes (light, OLED, Catppuccin, Nord, Dracula), profiles open as a popup, the hover card sits right on the person's picture, the map turns slowly by default and circles (and loners) each get their own spot.",
   "0.4.0": "profiles laid out like VRChat's, the full player card when you point at someone, layout gravity options and a slow orbit animation, a sound and animation when someone becomes your friend, and a faster map.",

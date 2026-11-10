@@ -1,0 +1,26 @@
+[Unit]
+Description=vfm-server (VRC Friend Map logger and exchange)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=vfm
+WorkingDirectory=/var/lib/vfm-server
+ExecStart=/usr/local/bin/vfm-server --config /var/lib/vfm-server/vfm-server.toml
+Restart=on-failure
+RestartSec=10
+# Hardening: it only needs its own folder and the network.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/vfm-server
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=128M
+
+[Install]
+WantedBy=multi-user.target

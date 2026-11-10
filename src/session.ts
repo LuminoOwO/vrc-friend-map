@@ -1,7 +1,8 @@
 import { backend } from "./backend";
 import { makeDemo } from "./demo";
 import { initLogs, stopLogScans } from "./logs";
-import { defaultFilters, emptyCache, emptyLocal, flushSaves, loadPersisted, setLogs, setState } from "./store";
+import { stopSharing } from "./share";
+import { defaultFilters, emptyCache, emptyLocal, flushSaves, getState, loadPersisted, setLogs, setState } from "./store";
 import { stopSync, syncAll } from "./sync";
 
 export function enterDemo() {
@@ -28,23 +29,31 @@ export async function exitDemo() {
 /** Log out of VRChat. Keeps circles and imported lists; optionally wipes the friend cache. */
 export async function logoutAll(wipeCache: boolean) {
   stopSync();
+  stopSharing();
   await flushSaves();
-  await backend.logout();
+  // A paired logger uses this VRChat login: only forget it here, don't end it.
+  const loggers = getState().settings.sharing.servers.filter((s) => s.loggerOwner);
+  await backend.logout(loggers.length > 0);
   if (wipeCache) {
     setState({ cache: emptyCache() });
     await backend.storeWrite("cache", JSON.stringify(emptyCache()));
   }
-  setState({ mode: "login", session: null, selectedId: null, settingsOpen: false, loginMessage: "Logged out.", live: { connected: false, message: "" } });
+  const note = loggers.length
+    ? ` Your logger on ${loggers.map((s) => s.info?.name ?? s.url).join(", ")} keeps running with this VRChat login; unpair it in Settings → Servers to stop it.`
+    : "";
+  setState({ mode: "login", session: null, selectedId: null, settingsOpen: false, serversOpen: false, loginMessage: "Logged out." + note, live: { connected: false, message: "" } });
 }
 
 export async function wipeEverything() {
   stopSync();
+  stopSharing();
   await backend.logout();
   await backend.storeWrite("cache", JSON.stringify(emptyCache()));
   await backend.storeWrite("local", JSON.stringify(emptyLocal()));
   await backend.clearImageCache();
   await backend.logsClear().catch(() => {});
   await backend.storeWrite("observed", "{}").catch(() => {});
+  await backend.storeWrite("shared", "{}").catch(() => {});
   setLogs({ stats: null, report: null });
   setState({ cache: emptyCache(), local: emptyLocal(), mode: "login", session: null, selectedId: null, settingsOpen: false, loginMessage: "All local data deleted.", live: { connected: false, message: "" } });
 }

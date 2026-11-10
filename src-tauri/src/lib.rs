@@ -3,6 +3,7 @@ mod auth;
 mod gamelogs;
 mod images;
 mod pipeline;
+mod share;
 mod storage;
 
 use std::path::PathBuf;
@@ -15,11 +16,123 @@ pub struct AppState {
     pub pipeline: pipeline::PipelineState,
     pub store: storage::Store,
     pub logs: gamelogs::LogStore,
+    pub share: share::ShareState,
     pub image_dir: PathBuf,
     pub data_dir: PathBuf,
 }
 
 type AppStateRef<'a> = State<'a, Arc<AppState>>;
+
+// ---------- sharing through vfm-servers (see share.rs) ----------
+
+async fn me_id(state: &AppState) -> Result<String, String> {
+    state.api.session_info().await.user_id.ok_or_else(|| "log in first".to_string())
+}
+
+#[tauri::command]
+async fn share_identity(state: AppStateRef<'_>) -> Result<share::MyIdentity, String> {
+    let me = me_id(&state).await?;
+    state.share.my_identity(&me).await
+}
+
+#[tauri::command]
+async fn share_export_key(state: AppStateRef<'_>) -> Result<String, String> {
+    let me = me_id(&state).await?;
+    state.share.export_key(&me).await
+}
+
+#[tauri::command]
+async fn share_import_key(state: AppStateRef<'_>, text: String) -> Result<share::MyIdentity, String> {
+    let me = me_id(&state).await?;
+    state.share.import_key(&me, &text).await
+}
+
+#[tauri::command]
+async fn share_info(state: AppStateRef<'_>, url: String) -> Result<share::InfoResult, String> {
+    state.share.info(&url).await
+}
+
+#[tauri::command]
+async fn share_trust_server(state: AppStateRef<'_>, url: String) -> Result<(), String> {
+    state.share.trust_server(&url).await
+}
+
+#[tauri::command]
+async fn share_register(state: AppStateRef<'_>, url: String, invite: Option<String>) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.register(&url, &me, invite).await
+}
+
+#[tauri::command]
+async fn share_me(state: AppStateRef<'_>, url: String) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.me(&url, &me).await
+}
+
+#[tauri::command]
+async fn share_leave(state: AppStateRef<'_>, url: String) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.leave(&url, &me).await
+}
+
+#[tauri::command]
+async fn share_publish(
+    state: AppStateRef<'_>,
+    url: String,
+    kind: String,
+    payload: String,
+    recipients: Vec<String>,
+    encrypt: bool,
+) -> Result<share::PublishResult, String> {
+    let me = me_id(&state).await?;
+    state.share.publish(&url, &me, &kind, &payload, recipients, encrypt).await
+}
+
+#[tauri::command]
+async fn share_unpublish(state: AppStateRef<'_>, url: String, kind: String) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.unpublish(&url, &me, &kind).await
+}
+
+#[tauri::command]
+async fn share_inbox(state: AppStateRef<'_>, url: String) -> Result<Vec<share::InboxItem>, String> {
+    let me = me_id(&state).await?;
+    state.share.inbox(&url, &me).await
+}
+
+#[tauri::command]
+async fn share_pins(state: AppStateRef<'_>) -> Result<serde_json::Value, String> {
+    Ok(state.share.pins().await)
+}
+
+#[tauri::command]
+async fn share_trust_key(state: AppStateRef<'_>, user: String) -> Result<(), String> {
+    state.share.trust_key(&user).await
+}
+
+#[tauri::command]
+async fn logger_pair(state: AppStateRef<'_>, url: String, code: String) -> Result<serde_json::Value, String> {
+    let session = state.api.session().await.ok_or("log in first")?;
+    state.share.logger_pair(&url, &session.user_id, &code, &session.auth, session.two_factor.clone()).await
+}
+
+#[tauri::command]
+async fn logger_unpair(state: AppStateRef<'_>, url: String, forget: bool) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.logger_unpair(&url, &me, forget).await
+}
+
+#[tauri::command]
+async fn logger_status(state: AppStateRef<'_>, url: String) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.logger_status(&url, &me).await
+}
+
+#[tauri::command]
+async fn logger_stats(state: AppStateRef<'_>, url: String) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.logger_stats(&url, &me).await
+}
 
 #[tauri::command]
 async fn session_info(state: AppStateRef<'_>) -> Result<api::SessionInfo, String> {
@@ -38,9 +151,13 @@ async fn login_cancel(app: AppHandle, state: AppStateRef<'_>) -> Result<(), Stri
 }
 
 #[tauri::command]
-async fn logout(app: AppHandle, state: AppStateRef<'_>) -> Result<(), String> {
+async fn logout(app: AppHandle, state: AppStateRef<'_>, keep_server_session: Option<bool>) -> Result<(), String> {
     pipeline::stop(&app, &state);
-    state.api.server_logout().await;
+    // A paired vfm-server logger uses this same VRChat session; ending it
+    // on VRChat's side would stop the logger too.
+    if !keep_server_session.unwrap_or(false) {
+        state.api.server_logout().await;
+    }
     state.api.clear_session().await;
     // Forget the vrchat.com session in the embedded browser too, so the next
     // login asks for credentials again.
@@ -217,6 +334,7 @@ pub fn run() {
                 pipeline: pipeline::PipelineState::default(),
                 store: storage::Store { dir: data_dir.join("store") },
                 logs: gamelogs::LogStore::new(data_dir.join("gamelogs").join("history.json")),
+                share: share::ShareState::new(&data_dir, format!("vrc-friend-map/{}", env!("CARGO_PKG_VERSION"))),
                 image_dir,
                 data_dir,
             }));
@@ -245,6 +363,23 @@ pub fn run() {
             clear_image_cache,
             hash_ids,
             save_export,
+            share_identity,
+            share_export_key,
+            share_import_key,
+            share_info,
+            share_trust_server,
+            share_register,
+            share_me,
+            share_leave,
+            share_publish,
+            share_unpublish,
+            share_inbox,
+            share_pins,
+            share_trust_key,
+            logger_pair,
+            logger_unpair,
+            logger_status,
+            logger_stats,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VRC Friend Map");

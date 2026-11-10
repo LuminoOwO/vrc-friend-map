@@ -119,6 +119,8 @@ export interface ImportedList {
   hashes?: string[];
   /** For hashed lists: which of the IDs we know match (computed on import). */
   resolved?: string[];
+  /** Received through vfm-servers (names of the servers), kept up to date by syncing. */
+  via?: string[];
 }
 
 export interface FriendLogEntry {
@@ -236,6 +238,84 @@ export interface GroupSettings {
   useLive: boolean;
 }
 
+// ---- sharing through vfm-servers ----
+
+/** What a server allows for uploads. */
+export type EncPolicy = "force-off" | "optional" | "recommended" | "force-on";
+/** Your default for the encryption switch on servers that let you choose. */
+export type EncDefault = "server" | "on" | "off";
+
+export interface ServerInfoLite {
+  name: string;
+  version: string;
+  encryption: EncPolicy;
+  registration: "open" | "invite" | "closed";
+  motd: string;
+  loggerEnabled: boolean;
+  loggerPaired: boolean;
+  maxItemBytes: number;
+}
+
+export interface ShareServer {
+  id: string;
+  url: string;
+  addedAt: number;
+  info: ServerInfoLite | null;
+  infoAt: number;
+  /** The server's own key differs from when it was added. */
+  keyChanged: boolean;
+  registered: boolean;
+  /** Upload my data here. */
+  upload: boolean;
+  /** Your choice for the encryption switch; null = the default. */
+  encrypt: boolean | null;
+  shareFriends: boolean;
+  shareActivity: boolean;
+  /** Who may receive it: all friends, or the members of some circles. */
+  audience: "all" | "circles";
+  circleIds: string[];
+  /** Fetch what others share with me here. */
+  download: boolean;
+  /** You paired this server's logger. */
+  loggerOwner: boolean;
+  /** You confirmed uploading unencrypted to this server ("don't ask again"). */
+  ackUnencrypted: boolean;
+  /** Kinds currently uploaded, to remove them when you stop sharing. */
+  published: string[];
+  lastSync: number;
+  lastError: string;
+  lastNote: string;
+}
+
+export interface SharingSettings {
+  encDefault: EncDefault;
+  autoSync: boolean;
+  /** Minutes between syncs while the app is open. */
+  intervalMin: number;
+  /** Use activity friends shared with you for group suggestions. */
+  useShared: boolean;
+  /** Use your own loggers' totals for group suggestions. */
+  useLogger: boolean;
+  servers: ShareServer[];
+}
+
+export interface SharedItem {
+  owner: string;
+  kind: string;
+  created: number;
+  sealed: boolean;
+  /** Server IDs it came from. */
+  servers: string[];
+  payload: unknown;
+}
+
+/** What came from servers (store/shared.json). */
+export interface SharedData {
+  items: Record<string, SharedItem>;
+  /** server id -> logger totals */
+  logger: Record<string, { pairs: PairTime[]; since: number; updated: number; people: number }>;
+}
+
 export interface Settings {
   contact: string;
   intervalMs: number;
@@ -252,6 +332,7 @@ export interface Settings {
   theme: Theme;
   /** Open profiles as a popup over everything, or as a panel at the side. */
   profileAs: "popup" | "sidebar";
+  sharing: SharingSettings;
   /** App version that last ran with this data (for upgrade/downgrade notes). */
   lastVersion: string;
 }

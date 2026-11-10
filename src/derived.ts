@@ -31,7 +31,22 @@ export function useDerived(): Derived {
   const idsKey = useMemo(() => friends.map((f) => f.id).sort().join("|"), [friends]);
 
   const { edges, degree } = useMemo(() => {
-    const edges = mutualEdges(new Set(Object.keys(cache.friends)), cache.mutuals);
+    const friendSet = new Set(Object.keys(cache.friends));
+    const edges = mutualEdges(friendSet, cache.mutuals);
+    // Friend lists your friends shared (file or server) fill in mutuals that
+    // VRChat doesn't show (hidden mutuals, not fetched yet).
+    const seen = new Set(edges.map(([a, b]) => (a < b ? `${a}|${b}` : `${b}|${a}`)));
+    for (const list of local.imports) {
+      const owner = list.owner.id;
+      if (!owner || list.mode !== "full" || !friendSet.has(owner)) continue;
+      for (const f of list.friends ?? []) {
+        if (f.id === owner || !friendSet.has(f.id)) continue;
+        const k = owner < f.id ? `${owner}|${f.id}` : `${f.id}|${owner}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        edges.push(owner < f.id ? [owner, f.id] : [f.id, owner]);
+      }
+    }
     const degree = new Map<string, number>();
     for (const [a, b] of edges) {
       degree.set(a, (degree.get(a) ?? 0) + 1);
@@ -39,7 +54,7 @@ export function useDerived(): Derived {
     }
     return { edges, degree };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idsKey, cache.mutuals]);
+  }, [idsKey, cache.mutuals, local.imports]);
 
   const circleCount = useMemo(() => {
     const m = new Map<string, number>();

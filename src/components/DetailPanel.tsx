@@ -27,6 +27,7 @@ import {
   trustRank,
 } from "../model";
 import { addToCircle, createCircle, removeFromCircle, setState, showToast, useApp } from "../store";
+import { bioKeyState } from "../share";
 import { freshenProfile, loadGroups, loadInstance, loadWorld, refreshPerson } from "../sync";
 import type { Friend, Presence } from "../types";
 import { GroupsModal } from "./GroupsModal";
@@ -277,6 +278,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 ) : (
                   <p className="muted small">{detail ? "Nothing written." : "Loading…"}</p>
                 )}
+                <BioKey bio={detail?.bio} userId={f.id} />
                 {links.length > 0 && (
                   <div className="bio-links">
                     {links.map((l) => (
@@ -529,5 +531,30 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
       </div>
       {groupsOpen && groups && <GroupsModal name={f.displayName} groups={groupList} onClose={() => setGroupsOpen(false)} />}
     </aside>
+  );
+}
+
+/** A friend's "vfm-key:…" bio line checked against the key servers gave you. */
+function BioKey({ bio, userId }: { bio?: string; userId: string }) {
+  const pin = useApp((s) => s.keyPins?.[userId]);
+  const st = bioKeyState(bio, pin);
+  if (!st) return null;
+  if (st === "match")
+    return (
+      <p className="key-check ok-text">
+        <Icon name="key" size={14} /> Sharing key confirmed by their bio
+      </p>
+    );
+  if (st === "mismatch")
+    return (
+      <p className="key-check warn-text">
+        <Icon name="warn" size={14} /> The sharing key in their bio doesn't match the one a server gave you. Don't trust what you get from them
+        through servers until this is sorted out (ask them).
+      </p>
+    );
+  return (
+    <p className="key-check muted">
+      <Icon name="key" size={14} /> Has a sharing key in their bio (you haven't received anything from them yet).
+    </p>
   );
 }

@@ -48,6 +48,91 @@ async function sha256Hex(text: string): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+function need<T>(cmd: string, args?: Record<string, unknown>): Promise<T> {
+  if (!isTauri) return Promise.reject(new Error(NO_BACKEND));
+  return invoke<T>(cmd, args);
+}
+
+export interface MyIdentity {
+  userId: string;
+  fingerprint: string;
+  /** Put in your VRChat bio so friends' apps can confirm your key. */
+  proof: string;
+}
+
+export interface RawServerInfo {
+  software: string;
+  version: string;
+  protocol: number;
+  name: string;
+  encryption: "force-off" | "optional" | "recommended" | "force-on";
+  registration: "open" | "invite" | "closed";
+  box_pk: string;
+  sign_pk: string;
+  max_item_bytes: number;
+  kinds: string[];
+  logger: { enabled: boolean; paired: boolean };
+  motd: string;
+}
+
+export interface InfoResult {
+  url: string;
+  info: RawServerInfo;
+  keyChanged: boolean;
+}
+
+export interface PublishResult {
+  sealed: boolean;
+  recipients: number;
+  notOnServer: string[];
+  keyChanged: string[];
+}
+
+export interface InboxItem {
+  owner: string;
+  kind: string;
+  created: number;
+  sealed: boolean;
+  fingerprint: string;
+  payload: unknown;
+  error: string | null;
+}
+
+export interface KeyPin {
+  signPk: string;
+  boxPk: string;
+  fingerprint: string;
+  firstSeen: number;
+  servers: string[];
+  offered?: { user_id: string; sign_pk: string; box_pk: string } | null;
+}
+
+export interface LoggerStatus {
+  paired: boolean;
+  owner: string | null;
+  displayName: string;
+  pairedAt: number;
+  connected: boolean;
+  message: string;
+  connectedSince: number;
+  lastEvent: number;
+  events: number;
+  friends: number;
+  online: number;
+  inVisibleInstances: number;
+  since: number;
+  pairs: number;
+  lastResync: number;
+}
+
+export interface LoggerStats {
+  since: number;
+  updated: number;
+  pairs: { a: string; b: string; secs: number; weighted: number; visits: number; days: number; last: number }[];
+  people: { id: string; secs: number; hops: number; last: number }[];
+  worlds: [string, number][];
+}
+
 export const backend = {
   async sessionInfo(): Promise<SessionInfo> {
     if (!isTauri) return { logged_in: false, user_id: null, display_name: null };
@@ -60,8 +145,8 @@ export const backend = {
   async loginCancel(): Promise<void> {
     if (isTauri) await invoke("login_cancel");
   },
-  async logout(): Promise<void> {
-    if (isTauri) await invoke("logout");
+  async logout(keepServerSession = false): Promise<void> {
+    if (isTauri) await invoke("logout", { keepServerSession });
   },
   async setApiSettings(contact: string, intervalMs: number): Promise<void> {
     if (isTauri) await invoke("set_api_settings", { settings: { contact, interval_ms: intervalMs } });
@@ -170,6 +255,27 @@ export const backend = {
   onLoginFinished(cb: (e: LoginEvent) => void): Promise<UnlistenFn> {
     if (!isTauri) return Promise.resolve(() => {});
     return listen<LoginEvent>("login-finished", (e) => cb(e.payload));
+  },
+  // ---- vfm-servers (src-tauri/src/share.rs) ----
+  share: {
+    identity: () => need<MyIdentity>("share_identity"),
+    exportKey: () => need<string>("share_export_key"),
+    importKey: (text: string) => need<MyIdentity>("share_import_key", { text }),
+    info: (url: string) => need<InfoResult>("share_info", { url }),
+    trustServer: (url: string) => need<void>("share_trust_server", { url }),
+    register: (url: string, invite?: string) => need<{ ok: boolean; existing: boolean }>("share_register", { url, invite: invite || null }),
+    me: (url: string) => need<{ user: unknown; items: { kind: string; sealed: boolean; recipients: string[]; created: number }[]; loggerOwner: boolean }>("share_me", { url }),
+    leave: (url: string) => need<unknown>("share_leave", { url }),
+    publish: (url: string, kind: string, payload: string, recipients: string[], encrypt: boolean) =>
+      need<PublishResult>("share_publish", { url, kind, payload, recipients, encrypt }),
+    unpublish: (url: string, kind: string) => need<unknown>("share_unpublish", { url, kind }),
+    inbox: (url: string) => need<InboxItem[]>("share_inbox", { url }),
+    pins: () => need<Record<string, KeyPin>>("share_pins"),
+    trustKey: (user: string) => need<void>("share_trust_key", { user }),
+    loggerPair: (url: string, code: string) => need<unknown>("logger_pair", { url, code }),
+    loggerUnpair: (url: string, forget: boolean) => need<unknown>("logger_unpair", { url, forget }),
+    loggerStatus: (url: string) => need<LoggerStatus>("logger_status", { url }),
+    loggerStats: (url: string) => need<LoggerStats>("logger_stats", { url }),
   },
   onLoginProgress(cb: (e: LoginEvent) => void): Promise<UnlistenFn> {
     if (!isTauri) return Promise.resolve(() => {});

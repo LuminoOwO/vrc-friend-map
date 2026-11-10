@@ -135,6 +135,11 @@ impl ApiClient {
         }
     }
 
+    /// The whole session (cookies), for pairing a vfm-server logger.
+    pub async fn session(&self) -> Option<Session> {
+        self.session.read().await.clone()
+    }
+
     /// The session token, for the live-updates connection.
     pub async fn auth_token(&self) -> Option<String> {
         self.session.read().await.as_ref().map(|s| s.auth.clone())

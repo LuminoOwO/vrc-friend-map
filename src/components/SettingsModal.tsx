@@ -18,6 +18,8 @@ const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: 
   { value: "dracula", label: "Dracula", bg: "#21222c", panel: "#44475a", accent: "#bd93f9" },
 ];
 import { Icon } from "./Icon";
+import { openServers } from "./ServersModal";
+import { serverName } from "../share";
 
 export function SettingsModal() {
   const settings = useApp((s) => s.settings);
@@ -73,6 +75,13 @@ export function SettingsModal() {
               </button>
             </div>
           )}
+        </section>
+
+        <section>
+          <h3>
+            <Icon name="server" size={16} /> Servers and sharing
+          </h3>
+          <ServersSummary />
         </section>
 
         <section>
@@ -497,6 +506,25 @@ function SoundSection() {
           </button>
         )}
       </div>
+    </>
+  );
+}
+
+function ServersSummary() {
+  const servers = useApp((s) => s.settings.sharing.servers);
+  const shared = useApp((s) => s.shared);
+  const people = new Set(Object.values(shared?.items ?? {}).map((i) => i.owner)).size;
+  const loggers = servers.filter((s) => s.loggerOwner);
+  return (
+    <>
+      <p className="small">
+        {servers.length
+          ? `${servers.length} server${servers.length === 1 ? "" : "s"}: ${servers.map(serverName).join(", ")}. ${people} ${people === 1 ? "person shares" : "people share"} with you${loggers.length ? `; logging on ${loggers.map(serverName).join(", ")}` : ""}.`
+          : "Share friend lists and activity with friends through vfm-servers (end-to-end encrypted), and let a spare device log your friends' instance hopping 24/7 for better circle suggestions."}
+      </p>
+      <button className="btn" onClick={openServers}>
+        <Icon name="server" size={16} /> {servers.length ? "Manage servers" : "Set up"}
+      </button>
     </>
   );
 }

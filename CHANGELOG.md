@@ -3,6 +3,37 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.7.0 (2026-11-10)
+
+### Added
+- **vfm-server**, a small program for a spare or always-on device (Raspberry Pi, old PC,
+  NAS, Windows, Mac, Android phone with Termux). It's one file of about 3 MB with no
+  dependencies, and its admin page is built in. See [server/README.md](server/README.md).
+  - **Logger:** pair it with the app once. It then follows your friends' locations through
+    VRChat's live feed 24/7 and counts who is in the same instance as whom. The app merges
+    that into circle suggestions.
+  - **Exchange:** upload your friend list and activity, download what friends share with
+    you. Use any number of servers at once (your own, a friend's, a public one) for
+    redundancy.
+- Settings → Servers: add servers, join with an invite code, and choose per server what you
+  share (friend list, activity) and with whom (all friends, or chosen circles). Friend
+  lists you receive appear under Shared lists, update on every sync, and add the mutual
+  lines VRChat hides.
+- End-to-end encryption, set per server. When it's on, uploads are sealed on your device for
+  exactly the people you share with, and the server can't read them. Servers choose
+  force-off, optional, recommended or force-on, and the switch follows that: the side a
+  server doesn't allow is greyed out, and a (?) explains why. Force-off servers ask before
+  every upload, unless you tick "don't ask again". Your own default (server-based, always
+  on, always off) applies wherever a server lets you choose.
+- Keys stay on the device. Each friend's key is pinned the first time it's seen. A changed
+  key is held back until you accept it. A `vfm-key:…` line in a VRChat bio confirms a key
+  in their profile. "Copy key to another device" lets your phone and PC read the same
+  shares.
+
+### Changed
+- Logging out keeps your VRChat login valid when a logger is paired with it, so the logger
+  keeps running. Unpair it to stop it.
+
 ## 0.6.0 (2026-11-10)
 
 ### Added

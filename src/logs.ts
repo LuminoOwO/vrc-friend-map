@@ -7,7 +7,8 @@ import { useDerived } from "./derived";
 import { detectGroups, suggestionName, toSuggestions, type Suggestion } from "./groups";
 import { createCircle, getState, patchCircle, setLogs, showToast, updateLocal, useApp } from "./store";
 import { combineStats } from "./together";
-import type { PresenceStats } from "./types";
+import { loggerPairs, maxPairs, receivedPairs } from "./share";
+import type { PairTime, PresenceStats } from "./types";
 
 let timer: ReturnType<typeof setInterval> | null = null;
 let timerMinutes = 0;
@@ -135,10 +136,18 @@ export function useGroupSuggestions(): { suggestions: Suggestion[]; pairsUsable:
   const useLogs = useApp((s) => s.settings.groups.useLogs);
   const useLive = useApp((s) => s.settings.groups.useLive);
   const demo = useApp((s) => s.demo);
-  const stats = useMemo(
-    () => combineStats(useLogs || demo ? logStats : null, useLive && !demo ? (observed?.pairs ?? null) : null),
-    [logStats, observed, useLogs, useLive, demo],
-  );
+  const shared = useApp((s) => s.shared);
+  const useShared = useApp((s) => s.settings.sharing.useShared);
+  const useLogger = useApp((s) => s.settings.sharing.useLogger);
+  const stats = useMemo(() => {
+    // Live-type sources see the same time together from different places
+    // (this app, your loggers, friends' apps), so they're merged by maximum.
+    const live: PairTime[][] = [];
+    if (useLive && !demo && observed?.pairs) live.push(observed.pairs);
+    if (useLogger && !demo) live.push(...loggerPairs(shared));
+    if (useShared && !demo) live.push(...receivedPairs(shared));
+    return combineStats(useLogs || demo ? logStats : null, live.length ? maxPairs(live) : null);
+  }, [logStats, observed, useLogs, useLive, demo, shared, useShared, useLogger]);
   const circles = useApp((s) => s.local.circles);
   const dismissed = useApp((s) => s.local.dismissedGroups);
   const g = useApp((s) => s.settings.groups);

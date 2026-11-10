@@ -23,6 +23,8 @@ packages, which follow each package format's own naming rules.
 | iPhone / iPad | `…_ios-unsigned.ipa` | Apple only allows signed apps, so this needs a sideloading tool that signs it with your own Apple ID (AltStore, SideStore, Sideloadly). With a free Apple ID it has to be refreshed every 7 days. Untested on real devices so far. |
 | Mac | `…_macos-universal.dmg` | Not notarized: right-click the app → Open the first time. VRChat itself doesn't run on macOS, so game-log features don't apply. |
 
+Running a server on a spare device (Pi, old PC, NAS, Android phone)? Take `vfm-server-<version>-<platform>`; see [server/README.md](server/README.md).
+
 `SHA256SUMS` lists checksums for every file.
 
 ## What it does
@@ -108,6 +110,27 @@ sources can be switched off in Settings; the location history is in `store/obser
 All of this stays on your PC. Quest and phone sessions don't write logs the app can read, so
 time spent there isn't counted. The detail panel also shows your time together with each
 person and who they're most often with; the map can draw lines and sizes from it.
+
+## Servers: sharing and 24/7 logging
+
+[vfm-server](server/README.md) is an optional small program for a device that's on anyway. It
+does two jobs:
+
+- **Logger:** it follows your friends' locations through VRChat's live feed around the
+  clock, and the app uses that time together for circle suggestions. The app itself only
+  sees what happens while it's open.
+- **Exchange:** you and friends share friend lists and activity with each other.
+
+In the app: **Settings → Servers**. Add as many servers as you like. The app uploads to all
+of them and merges what comes back, so one server going away loses nothing.
+
+Encryption is end to end and set per server. With it on, the app seals your upload on your
+device, separately for each friend allowed to read it, and the server stores ciphertext
+it can't open. A server owner chooses whether encryption is forced off, optional,
+recommended or forced on. The app's switch follows that, and a (?) explains it. A
+force-off server makes the app warn before every upload. Your own default (server-based,
+always on, always off) applies wherever a server lets you choose. Details, threat model and
+setup for every platform: [server/README.md](server/README.md).
 
 ## How login works (and what's stored)
 
@@ -360,6 +383,8 @@ All under the app's data folder (Settings shows the exact path; on Linux
 - `store/settings.json`: preferences.
 - `store/backups/`: copies made before a format change or when data came from a newer version.
 - `gamelogs/history.json`: instance visits read from VRChat's logs (desktop).
+- `share/identity.json`: your sharing keys (secret, owner-only). `share/pins.json`: friends'
+  and servers' public keys as first seen. `store/shared.json`: what friends shared with you.
 - Images are cached separately in the app cache folder (pruned at 600 MB).
 
 ## Project layout
@@ -386,6 +411,11 @@ src/store.ts             state, saving, data format versions and migrations
 src/__tests__/           frontend tests (npm test); Rust tests: cargo test --lib
 scripts/build-linux.sh   prerequisite check + Linux packages into release/
 scripts/collect-release.mjs  names Windows/macOS/Android/iOS build outputs
+src/share.ts             server sync: what to upload where, encryption switch rules, merging
+src/components/ServersModal  Settings → Servers
+src-tauri/src/share.rs   keys, key pinning, signed requests to servers, sealing/opening
+crates/vfm-share/        protocol shared by app and server (identities, envelopes, policy)
+server/                  vfm-server: exchange + logger + admin page (see server/README.md)
 .github/workflows/       CI tests and release builds
 packaging/linux/         desktop entry, tarball installer and README
 ```
@@ -395,7 +425,9 @@ packaging/linux/         desktop entry, tarball installer and README
 - VRChat's API is unofficial and can change without notice. If something breaks after a
   VRChat update, the community docs at https://vrchat.community are the place to check.
 - Live updates only arrive while the app is running. Changes that happen while it's closed
-  are picked up by the sync when it starts.
+  are picked up by the sync when it starts. A [vfm-server](server/README.md) logger fills
+  that gap for time-together.
+- iPhones can't run vfm-server (iOS stops background programs); they can use servers.
 - People who hide their mutual connections show up without lines, by design.
 - Game-log features need the desktop app on the PC that runs VRChat. Quest/phone sessions
   aren't in any log the app can read.

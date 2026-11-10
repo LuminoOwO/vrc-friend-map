@@ -1,6 +1,6 @@
 [package]
 name = "vrc-friend-map"
-version = "0.6.0"
+version = "0.7.0"
 description = "Map your VRChat friends, mutuals and circles"
 edition = "2021"
 license = "MIT"
@@ -16,6 +16,7 @@ tauri-build = { version = "2", features = [] }
 
 [dependencies]
 tauri-plugin-opener = "2"
+vfm-share = { path = "../crates/vfm-share" }
 tauri = { version = "2", features = [] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
