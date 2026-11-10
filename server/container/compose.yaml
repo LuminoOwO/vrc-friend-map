@@ -1,0 +1,36 @@
+# vfm-server with Docker Compose or Podman Compose:
+#   docker compose up -d        (or: podman compose up -d)
+#   docker compose logs         shows the admin token and the logger pairing code
+#   docker compose exec vfm-server /vfm-server invite
+services:
+  vfm-server:
+    image: ghcr.io/luminoowo/vfm-server:latest
+    container_name: vfm-server
+    restart: unless-stopped
+    ports:
+      - "8787:8787"
+    volumes:
+      - vfm-data:/data
+    environment:
+      # Optional. These win over the settings file on every start, and the
+      # admin page shows them as fixed. Leave them out to manage everything on
+      # the admin page instead.
+      VFM_NAME: "My VRC Friend Map server"
+      # The address the app should use, only for the startup message:
+      # VFM_PUBLIC_URL: "http://192.168.1.20:8787"
+      # VFM_ENCRYPTION: "recommended"   # force-off | optional | recommended | force-on
+      # VFM_REGISTRATION: "invite"      # open | invite | closed
+      # VFM_LOGGER: "true"
+      # VFM_CONTACT: "your Discord name"  # added to the User-Agent VRChat sees
+      # VFM_ADMIN_ALLOW: "lan"          # off | local | lan | any
+    healthcheck:
+      test: ["CMD", "/vfm-server", "healthcheck"]
+      interval: 60s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    # It's tiny; this is just a safety net.
+    mem_limit: 128m
+
+volumes:
+  vfm-data:

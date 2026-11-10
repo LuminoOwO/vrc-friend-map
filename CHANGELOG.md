@@ -15,6 +15,10 @@ minor releases can change behavior.
   - **Exchange:** upload your friend list and activity, download what friends share with
     you. Use any number of servers at once (your own, a friend's, a public one) for
     redundancy.
+  - **Container image** for Docker and Podman: `ghcr.io/luminoowo/vfm-server`, covering
+    amd64, arm64, arm/v7, arm/v6 and 386. It's about 7 MB, runs as an unprivileged user and
+    has a health check. Also: a compose file, a Podman Quadlet for systemd, and settings
+    through `VFM_*` environment variables.
 - Settings → Servers: add servers, join with an invite code, and choose per server what you
   share (friend list, activity) and with whom (all friends, or chosen circles). Friend
   lists you receive appear under Shared lists, update on every sync, and add the mutual

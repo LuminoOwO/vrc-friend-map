@@ -120,6 +120,7 @@ async fn status(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
         "users": list,
         "invites": invites.codes,
         "logger": app.logger.status(),
+        "envLocked": app.env_locked,
     }))
     .into_response()
 }
@@ -140,10 +141,19 @@ async fn settings(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<So
     if let Err(r) = check(&app, &addr, &headers) {
         return r;
     }
-    let b: SettingsBody = match serde_json::from_slice(&body) {
+    let mut b: SettingsBody = match serde_json::from_slice(&body) {
         Ok(b) => b,
         Err(e) => return (StatusCode::BAD_REQUEST, Json(json!({ "error": e.to_string() }))).into_response(),
     };
+    // Settings fixed by VFM_* variables stay as the environment says.
+    let locked = |k: &str| app.env_locked.iter().any(|e| e == k);
+    if locked("VFM_NAME") { b.name = None; }
+    if locked("VFM_MOTD") { b.motd = None; }
+    if locked("VFM_REGISTRATION") { b.registration = None; }
+    if locked("VFM_ENCRYPTION") { b.encryption = None; }
+    if locked("VFM_MAX_ITEM_KB") { b.max_item_kb = None; }
+    if locked("VFM_MAX_USERS") { b.max_users = None; }
+    if locked("VFM_LOGGER") { b.logger_enabled = None; }
     let (was_enabled, now_enabled) = {
         let mut c = app.cfg.write().unwrap();
         let was = c.logger.enabled;

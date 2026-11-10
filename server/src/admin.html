@@ -83,6 +83,7 @@
         </div>
         <label><input type="checkbox" name="loggerEnabled" style="width:auto"> Logger enabled</label>
         <p class="hint" id="encHint"></p>
+        <p class="hint warn" id="envNote"></p>
         <div class="row" style="margin-top:8px"><button>Save</button><span id="saved" class="ok"></span></div>
       </form>
     </section>
@@ -160,6 +161,14 @@ async function load() {
   const f = $("#settings");
   for (const k of ["name", "motd", "registration", "encryption", "maxItemKb", "maxUsers"]) f[k].value = s.settings[k];
   f.loggerEnabled.checked = s.settings.loggerEnabled;
+  // Fields fixed by VFM_* environment variables (container setups).
+  const ENV = { name: "VFM_NAME", motd: "VFM_MOTD", registration: "VFM_REGISTRATION", encryption: "VFM_ENCRYPTION", maxItemKb: "VFM_MAX_ITEM_KB", maxUsers: "VFM_MAX_USERS", loggerEnabled: "VFM_LOGGER" };
+  for (const [k, v] of Object.entries(ENV)) {
+    const locked = (s.envLocked || []).includes(v);
+    f[k].disabled = locked;
+    f[k].title = locked ? `Set by ${v} (container / environment); change it there` : "";
+  }
+  $("#envNote").textContent = (s.envLocked || []).length ? `Fixed by environment variables: ${s.envLocked.join(", ")}. Change those in your container settings.` : "";
   $("#encHint").textContent = ENC[f.encryption.value];
 
   $("#invites").innerHTML = Object.entries(s.invites).map(([code, i]) => `<tr><td class="mono">${esc(code)}</td><td>${i.uses_left}</td><td>${i.expires ? when(i.expires) : "never"}</td><td>${esc(i.note)}</td><td><button class="danger" data-inv="${esc(code)}">Delete</button></td></tr>`).join("") || `<tr><td colspan=5 class="dim">No open invite codes.</td></tr>`;

@@ -29,12 +29,14 @@ pub struct App {
     pub cfg_path: PathBuf,
     pub store: Mutex<Store>,
     pub logger: Arc<Logger>,
+    /// Settings fixed by VFM_* variables (the admin page shows them locked).
+    pub env_locked: Vec<String>,
     rate: Mutex<HashMap<String, (i64, u32)>>,
 }
 
 impl App {
-    pub fn new(cfg: Config, cfg_path: PathBuf, store: Store, logger: Arc<Logger>) -> Arc<App> {
-        Arc::new(App { cfg: RwLock::new(cfg), cfg_path, store: Mutex::new(store), logger, rate: Mutex::new(HashMap::new()) })
+    pub fn new(cfg: Config, cfg_path: PathBuf, store: Store, logger: Arc<Logger>, env_locked: Vec<String>) -> Arc<App> {
+        Arc::new(App { cfg: RwLock::new(cfg), cfg_path, store: Mutex::new(store), logger, env_locked, rate: Mutex::new(HashMap::new()) })
     }
 
     pub fn cfg(&self) -> Config {

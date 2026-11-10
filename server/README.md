@@ -75,6 +75,7 @@ Logger:     not paired. Pairing code 441974 (valid 15 min; `vfm-server pair-code
 | Android phone or tablet | `android-termux-arm64` (or `-armv7`) | See below. |
 | Windows | `windows-x64.zip` | Allow it through the firewall when Windows asks (private networks). |
 | Mac | `macos-universal` | First start: right-click → Open (not notarized). |
+| Docker / Podman (NAS, home server) | `ghcr.io/luminoowo/vfm-server` | See [Container](#container). |
 
 **iPhone / iPad:** iOS stops background programs, so it can't run a server. The app on an
 iPhone can still upload to and download from servers, and its own live tracking works
@@ -111,9 +112,7 @@ with a script in `~/.termux/boot/`.
 `shell:startup`. You can also create a Task Scheduler task "At log on" that starts in
 that folder.
 
-**Docker.** From the repository root: `docker build -f server/Dockerfile -t vfm-server .`,
-then `docker run -d --restart unless-stopped -p 8787:8787 -v vfm:/data vfm-server`.
-Read the admin token from `docker logs`.
+**Docker / Podman.** See [Container](#container) below.
 
 ### Reaching it from outside your home
 
@@ -135,6 +134,64 @@ Behind a proxy every request comes from 127.0.0.1, so the admin page's `allow = 
 would let anyone through the proxy reach the page (they still need the token). Set
 `allow = "local"` and open the admin page on the machine itself, or block `/admin` in the
 proxy.
+
+## Container
+
+A ready-made image for amd64, arm64 (Pi 3/4/5 on a 64-bit OS), arm/v7, arm/v6 (Pi Zero/1)
+and 386:
+
+```
+ghcr.io/luminoowo/vfm-server:latest        (or a version: :0.7.0)
+```
+
+It's about 7 MB: just the static server binary, built on nothing (`FROM scratch`). It runs
+as an unprivileged user (65532) and keeps everything in the `/data` volume. A health
+check is built in, and it stops cleanly on `docker stop` (it saves first).
+
+**Docker:**
+
+```sh
+docker run -d --name vfm-server --restart unless-stopped -p 8787:8787 -v vfm-data:/data ghcr.io/luminoowo/vfm-server
+docker logs vfm-server                       # admin token + logger pairing code
+docker exec vfm-server /vfm-server invite    # every command works like this
+```
+
+**Podman:** the same command with `podman` instead of `docker`. Rootless works.
+
+**Compose (Docker or Podman):** [`container/compose.yaml`](container/compose.yaml) has every
+setting, commented. Run `docker compose up -d`, or `podman compose up -d`.
+
+**Podman as a systemd service:** [`container/vfm-server.container`](container/vfm-server.container)
+is a Quadlet file. Copy it to `~/.config/containers/systemd/`, then run
+`systemctl --user daemon-reload && systemctl --user start vfm-server`. With
+`AutoUpdate=registry` and the `podman-auto-update.timer` enabled, it updates itself.
+
+**Settings by environment variable.** These win over `vfm-server.toml` on every start. The
+admin page shows them as fixed. Leave them out to manage everything on the admin page.
+
+| Variable | Example |
+|---|---|
+| `VFM_NAME`, `VFM_MOTD` | `"Lumi's Pi"` |
+| `VFM_ENCRYPTION` | `force-off`, `optional`, `recommended`, `force-on` |
+| `VFM_REGISTRATION` | `open`, `invite`, `closed` |
+| `VFM_LOGGER` | `true` / `false` |
+| `VFM_CONTACT` | added to the User-Agent VRChat sees |
+| `VFM_ADMIN_ALLOW` | `off`, `local`, `lan`, `any` |
+| `VFM_ADMIN_TOKEN` | at least 16 characters (otherwise one is generated) |
+| `VFM_MAX_ITEM_KB`, `VFM_MAX_USERS`, `VFM_RESYNC_MINUTES`, `VFM_KEEP_HOPS_MONTHS` | numbers |
+| `VFM_PUBLIC_URL` | only changes what the startup message tells you to enter in the app |
+
+**Binding a folder instead of a volume:** the server runs as user 65532, so give it the
+folder: `sudo chown 65532:65532 ./data`. With rootless Podman, add `:U` instead
+(`-v ./data:/data:U`).
+
+**Admin page in a container:** Docker's port forwarding makes visitors appear to come from
+a private address, so `allow = "lan"` lets in anyone who can reach the port. That's fine
+at home. If the port is open to the internet, set `VFM_ADMIN_ALLOW=off` and use
+`docker exec`. The page still needs the token either way.
+
+**Building it yourself** from the repository root:
+`docker build -f server/Dockerfile -t vfm-server .` (or `podman build`).
 
 ## Admin page
 
@@ -159,6 +216,7 @@ vfm-server pair-code             one-time logger pairing code (15 minutes)
 vfm-server status                accounts, shared items, logger
 vfm-server remove-user usr_…     delete an account and what it shared
 vfm-server token [--new]         show or replace the admin token
+vfm-server healthcheck           exit 0 if the running server answers
 --config FILE                    use another settings file (also $VFM_CONFIG)
 ```
 

@@ -116,6 +116,58 @@ impl Config {
         Ok(c)
     }
 
+    /// Settings from `VFM_*` environment variables (handy in containers).
+    /// They win over the file on every start; returns the names that were
+    /// applied, so the admin page can show those fields as fixed.
+    pub fn apply_env(&mut self) -> Result<Vec<&'static str>, String> {
+        self.apply_vars(|k| std::env::var(k).ok().filter(|v| !v.trim().is_empty()))
+    }
+
+    pub fn apply_vars(&mut self, get: impl Fn(&str) -> Option<String>) -> Result<Vec<&'static str>, String> {
+        let mut used = Vec::new();
+        let parse_bool = |k: &str, v: &str| match v.trim().to_ascii_lowercase().as_str() {
+            "1" | "true" | "yes" | "on" => Ok(true),
+            "0" | "false" | "no" | "off" => Ok(false),
+            _ => Err(format!("{k}={v}: use true or false")),
+        };
+        let parse_num = |k: &str, v: &str| v.trim().parse::<u64>().map_err(|_| format!("{k}={v}: not a number"));
+        let quoted = |v: &str| format!("\"{}\"", v.trim());
+        for key in [
+            "VFM_NAME", "VFM_LISTEN", "VFM_MOTD", "VFM_DATA_DIR", "VFM_REGISTRATION", "VFM_ENCRYPTION", "VFM_MAX_ITEM_KB", "VFM_MAX_USERS",
+            "VFM_LOGGER", "VFM_RESYNC_MINUTES", "VFM_CONTACT", "VFM_KEEP_HOPS_MONTHS", "VFM_ADMIN_ALLOW", "VFM_ADMIN_TOKEN",
+        ] {
+            let Some(v) = get(key) else { continue };
+            match key {
+                "VFM_NAME" => self.server.name = v,
+                "VFM_LISTEN" => self.server.listen = v.trim().into(),
+                "VFM_MOTD" => self.server.motd = v,
+                "VFM_DATA_DIR" => self.server.data_dir = v.trim().into(),
+                "VFM_REGISTRATION" => {
+                    self.access.registration = serde_json::from_str(&quoted(&v.to_ascii_lowercase())).map_err(|_| format!("{key}={v}: use open, invite or closed"))?
+                }
+                "VFM_ENCRYPTION" => {
+                    self.access.encryption = serde_json::from_str(&quoted(&v.to_ascii_lowercase())).map_err(|_| format!("{key}={v}: use force-off, optional, recommended or force-on"))?
+                }
+                "VFM_MAX_ITEM_KB" => self.access.max_item_kb = parse_num(key, &v)?.clamp(16, 16 * 1024) as usize,
+                "VFM_MAX_USERS" => self.access.max_users = parse_num(key, &v)?.clamp(1, 100_000) as usize,
+                "VFM_LOGGER" => self.logger.enabled = parse_bool(key, &v)?,
+                "VFM_RESYNC_MINUTES" => self.logger.resync_minutes = parse_num(key, &v)?.max(10),
+                "VFM_CONTACT" => self.logger.contact = v,
+                "VFM_KEEP_HOPS_MONTHS" => self.logger.keep_hops_months = parse_num(key, &v)?.min(1200) as u32,
+                "VFM_ADMIN_ALLOW" => self.admin.allow = serde_json::from_str(&quoted(&v.to_ascii_lowercase())).map_err(|_| format!("{key}={v}: use off, local, lan or any"))?,
+                "VFM_ADMIN_TOKEN" => {
+                    if v.trim().len() < 16 {
+                        return Err("VFM_ADMIN_TOKEN must be at least 16 characters".into());
+                    }
+                    self.admin.token = v.trim().into()
+                }
+                _ => {}
+            }
+            used.push(key);
+        }
+        Ok(used)
+    }
+
     pub fn data_dir(&self, config_path: &Path) -> PathBuf {
         let p = PathBuf::from(&self.server.data_dir);
         if p.is_absolute() {
@@ -222,6 +274,28 @@ mod tests {
         assert_eq!(back.access.registration, Registration::Open);
         assert_eq!(back.admin.allow, AdminAllow::Lan);
         assert_eq!(back.admin.token, c.admin.token);
+    }
+
+    #[test]
+    fn environment_overrides() {
+        let mut c = Config::default();
+        let env = |k: &str| match k {
+            "VFM_ENCRYPTION" => Some("force-on".to_string()),
+            "VFM_REGISTRATION" => Some("open".to_string()),
+            "VFM_LOGGER" => Some("false".to_string()),
+            "VFM_ADMIN_ALLOW" => Some("any".to_string()),
+            "VFM_NAME" => Some("Box".to_string()),
+            _ => None,
+        };
+        let used = c.apply_vars(env).unwrap();
+        assert_eq!(used.len(), 5);
+        assert_eq!(c.access.encryption, EncryptionPolicy::ForceOn);
+        assert_eq!(c.access.registration, Registration::Open);
+        assert!(!c.logger.enabled);
+        assert_eq!(c.admin.allow, AdminAllow::Any);
+        assert_eq!(c.server.name, "Box");
+        assert!(Config::default().apply_vars(|k| (k == "VFM_ENCRYPTION").then(|| "maybe".into())).is_err());
+        assert!(Config::default().apply_vars(|k| (k == "VFM_ADMIN_TOKEN").then(|| "short".into())).is_err());
     }
 
     #[test]

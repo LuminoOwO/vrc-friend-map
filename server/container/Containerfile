@@ -1,0 +1,22 @@
+# vfm-server image from the release binaries (used by CI: one image for
+# amd64, arm64, arm/v7, arm/v6 and 386). Expects bin/<arch><variant>/vfm-server,
+# e.g. bin/amd64/, bin/arm64/, bin/armv7/, bin/armv6/, bin/386/.
+# To build from source instead, use server/Dockerfile.
+FROM scratch
+ARG TARGETARCH
+ARG TARGETVARIANT
+# /data, owned by the unprivileged user the server runs as.
+COPY --chown=65532:65532 rootfs/ /
+COPY --chmod=0755 bin/${TARGETARCH}${TARGETVARIANT}/vfm-server /vfm-server
+ENV VFM_CONFIG=/data/vfm-server.toml \
+    VFM_CONTAINER=1
+USER 65532:65532
+VOLUME /data
+EXPOSE 8787
+HEALTHCHECK --interval=60s --timeout=5s --start-period=10s --retries=3 CMD ["/vfm-server", "healthcheck"]
+ENTRYPOINT ["/vfm-server"]
+CMD ["run"]
+LABEL org.opencontainers.image.title="vfm-server" \
+      org.opencontainers.image.description="Logger and end-to-end encrypted exchange server for VRC Friend Map" \
+      org.opencontainers.image.source="https://github.com/LuminoOwO/vrc-friend-map" \
+      org.opencontainers.image.licenses="MIT"

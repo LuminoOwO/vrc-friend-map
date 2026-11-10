@@ -1,0 +1,33 @@
+# Podman Quadlet: runs vfm-server as a systemd service, rootless.
+#   mkdir -p ~/.config/containers/systemd
+#   cp vfm-server.container ~/.config/containers/systemd/
+#   systemctl --user daemon-reload
+#   systemctl --user start vfm-server
+#   journalctl --user -u vfm-server     # admin token and pairing code
+#   loginctl enable-linger $USER        # keep running when you're logged out
+# (System-wide: put it in /etc/containers/systemd/ and drop --user.)
+[Unit]
+Description=vfm-server (VRC Friend Map logger and exchange)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=ghcr.io/luminoowo/vfm-server:latest
+ContainerName=vfm-server
+PublishPort=8787:8787
+Volume=vfm-data:/data
+Environment=VFM_NAME=My VRC Friend Map server
+# Environment=VFM_PUBLIC_URL=http://192.168.1.20:8787
+# Environment=VFM_ENCRYPTION=recommended
+HealthCmd=/vfm-server healthcheck
+HealthInterval=60s
+HealthStartPeriod=10s
+# `podman auto-update` pulls new versions (enable podman-auto-update.timer).
+AutoUpdate=registry
+
+[Service]
+Restart=always
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

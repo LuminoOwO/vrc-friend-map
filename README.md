@@ -23,7 +23,7 @@ packages, which follow each package format's own naming rules.
 | iPhone / iPad | `…_ios-unsigned.ipa` | Apple only allows signed apps, so this needs a sideloading tool that signs it with your own Apple ID (AltStore, SideStore, Sideloadly). With a free Apple ID it has to be refreshed every 7 days. Untested on real devices so far. |
 | Mac | `…_macos-universal.dmg` | Not notarized: right-click the app → Open the first time. VRChat itself doesn't run on macOS, so game-log features don't apply. |
 
-Running a server on a spare device (Pi, old PC, NAS, Android phone)? Take `vfm-server-<version>-<platform>`; see [server/README.md](server/README.md).
+Running a server on a spare device (Pi, old PC, NAS, Android phone)? Take `vfm-server-<version>-<platform>`, or the container image `ghcr.io/luminoowo/vfm-server` for Docker / Podman; see [server/README.md](server/README.md).
 
 `SHA256SUMS` lists checksums for every file.
 
