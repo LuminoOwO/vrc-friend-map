@@ -40,6 +40,19 @@ describe("loading data from other versions", () => {
     expect(l.dismissedGroups).toEqual([]);
   });
 
+  it("moves 0.4.0's old defaults to the new ones, but keeps real choices", () => {
+    const old = normalizeSettings({ schema: 2, map: { gravity: "mutuals", orbit: 0 } });
+    expect(old.map.gravity).toBe("circles");
+    expect(old.map.orbit).toBe(2);
+    const chosen = normalizeSettings({ schema: 2, map: { gravity: "center", orbit: 0 } });
+    expect(chosen.map.gravity).toBe("center");
+    expect(chosen.map.orbit).toBe(0);
+    const current = normalizeSettings({ schema: 3, map: { gravity: "mutuals", orbit: 0 } });
+    expect(current.map.gravity).toBe("mutuals");
+    expect(normalizeSettings(null).profileAs).toBe("popup");
+    expect(normalizeSettings({ theme: "nope" }).theme).toBe("dark");
+  });
+
   it("compares versions numerically", () => {
     expect(compareVersions("0.10.0", "0.9.9")).toBe(1);
     expect(compareVersions("0.3.0", "0.3.0")).toBe(0);

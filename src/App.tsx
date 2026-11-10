@@ -24,6 +24,7 @@ export default function App() {
   const mode = useApp((s) => s.mode);
   const view = useApp((s) => s.view);
   const selectedId = useApp((s) => s.selectedId);
+  const profileAs = useApp((s) => s.settings.profileAs);
   const settingsOpen = useApp((s) => s.settingsOpen);
   const sidebarOpen = useApp((s) => s.sidebarOpen);
 
@@ -87,6 +88,7 @@ export default function App() {
   if (mode === "login") {
     return (
       <>
+        <ThemeSync />
         <LoginScreen canLogin={isTauri} />
         <ToastView />
       </>
@@ -96,6 +98,7 @@ export default function App() {
   return (
     <div className={`app ${sidebarOpen ? "with-sidebar" : ""}`}>
       <LogsAndGroups />
+      <ThemeSync />
       <TopBar />
       <Notice />
       <div className="main">
@@ -105,8 +108,18 @@ export default function App() {
           {view === "cards" && <CardsView />}
           {view === "lists" && <SharedLists />}
         </div>
-        {selectedId && <DetailPanel id={selectedId} />}
+        {selectedId && profileAs === "sidebar" && <DetailPanel id={selectedId} />}
       </div>
+      {selectedId && profileAs === "popup" && (
+        <div
+          className="profile-backdrop"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setState({ selectedId: null });
+          }}
+        >
+          <DetailPanel id={selectedId} popup />
+        </div>
+      )}
       {settingsOpen && <SettingsModal />}
       <ToastView />
     </div>
@@ -114,6 +127,16 @@ export default function App() {
 }
 
 /** Keeps log scanning, time-together stats and automatic groups in step with settings. */
+/** Applies the color theme to the whole page. */
+function ThemeSync() {
+  const theme = useApp((s) => s.settings.theme);
+  useEffect(() => {
+    if (theme === "dark") delete document.documentElement.dataset.theme;
+    else document.documentElement.dataset.theme = theme;
+  }, [theme]);
+  return null;
+}
+
 function LogsAndGroups() {
   const { idsKey } = useDerived();
   const meId = useApp((s) => s.cache.me?.id);

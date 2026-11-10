@@ -138,7 +138,7 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
             <option value="mutuals">Loners float in a ring</option>
             <option value="loners">Loners gather in one spot</option>
             <option value="center">Everyone close together</option>
-            <option value="circles">Each circle in its own spot</option>
+            <option value="circles">Each circle (and loners) in its own spot</option>
           </select>
         </label>
         <label className="opt-row">
@@ -150,6 +150,15 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
             <option value={3}>Fast</option>
           </select>
         </label>
+        {map.orbit > 0 && (
+          <label className="opt-row">
+            <span>Direction</span>
+            <select value={map.orbitDir} onChange={(e) => set({ orbitDir: Number(e.target.value) === -1 ? -1 : 1 })}>
+              <option value={1}>Clockwise</option>
+              <option value={-1}>Counter-clockwise</option>
+            </select>
+          </label>
+        )}
         <Slider label="Spacing" value={map.spacing} min={0.5} max={2.5} step={0.05} onChange={(v) => set({ spacing: v })} />
         <Slider label="Pull circle members together" value={map.groupPull} min={0} max={3} step={0.1} onChange={(v) => set({ groupPull: v })} format={(v) => (v === 0 ? "off" : `${Math.round(v * 100)}%`)} />
         <label className="check small">

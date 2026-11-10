@@ -70,7 +70,7 @@ export interface AppState {
 // - files from a newer app version are used as far as this version
 //   understands them, and fields it doesn't know are written back unchanged,
 //   so going back to the newer version later loses nothing it stored.
-export const SCHEMA = { cache: 1, local: 2, settings: 2 } as const;
+export const SCHEMA = { cache: 1, local: 2, settings: 3 } as const;
 type StoreName = keyof typeof SCHEMA;
 const loadedSchema: Record<StoreName, number> = { cache: SCHEMA.cache, local: SCHEMA.local, settings: SCHEMA.settings };
 
@@ -106,9 +106,10 @@ export const defaultMap = (): MapSettings => ({
   hulls: true,
   hullOpacity: 1,
   showStars: true,
-  gravity: "mutuals",
-  orbit: 0,
+  gravity: "circles",
+  orbit: 2,
   hoverCard: true,
+  orbitDir: 1,
 });
 
 export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
@@ -146,6 +147,8 @@ export const defaultSettings = (): Settings => ({
   logs: defaultLogSettings(),
   groups: defaultGroupSettings(),
   sounds: defaultSounds(),
+  theme: "dark",
+  profileAs: "popup",
   lastVersion: "",
 });
 
@@ -368,6 +371,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       gravity: oneOf(m.gravity, ["mutuals", "loners", "center", "circles"] as const, d.map.gravity),
       orbit: num(m.orbit, d.map.orbit, 0, 3),
       hoverCard: typeof m.hoverCard === "boolean" ? m.hoverCard : d.map.hoverCard,
+      orbitDir: m.orbitDir === -1 ? -1 : 1,
     },
     sounds: {
       ...snd,
@@ -395,8 +399,16 @@ export function normalizeSettings(raw: Raw | null): Settings {
       sinceDays: num(g.sinceDays, d.groups.sinceDays, 0, 3650),
       auto: typeof g.auto === "boolean" ? g.auto : d.groups.auto,
     },
+    theme: oneOf(raw.theme, ["dark", "oled", "light", "mocha", "macchiato", "latte", "nord", "dracula"] as const, d.theme),
+    profileAs: oneOf(raw.profileAs, ["popup", "sidebar"] as const, d.profileAs),
     lastVersion: typeof raw.lastVersion === "string" ? raw.lastVersion : "",
   };
+  // Format 2 (0.4.0) defaulted to no turning and ring gravity; 0.5.0 changed
+  // the defaults. Only switch people who still had those defaults.
+  if ((typeof raw.schema === "number" ? raw.schema : 1) < 3 && out.map.gravity === "mutuals" && out.map.orbit === 0) {
+    out.map.gravity = d.map.gravity;
+    out.map.orbit = d.map.orbit;
+  }
   delete (out as Raw).lineColors;
   delete (out as Raw).schema;
   return out;
@@ -466,6 +478,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.5.0": "color themes (light, OLED, Catppuccin, Nord, Dracula), profiles open as a popup, the hover card sits right on the person's picture, the map turns slowly by default and circles (and loners) each get their own spot.",
   "0.4.0": "profiles laid out like VRChat's, the full player card when you point at someone, layout gravity options and a slow orbit animation, a sound and animation when someone becomes your friend, and a faster map.",
   "0.3.0": "friend groups suggested from your game logs, map options (including full player cards), 24 circle colors and a color picker.",
 };

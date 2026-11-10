@@ -3,6 +3,23 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.5.0 (2026-11-10)
+
+### Added
+- Color themes: Dark, OLED black, Light, Catppuccin Mocha / Macchiato / Latte, Nord and
+  Dracula (Settings → Display). The map follows the theme too.
+- Profiles open as a popup by default (better on phones); the side panel is still
+  available under Settings → Display → Open profiles.
+- Turning direction for the slowly turning map.
+
+### Changed
+- The hover card now grows out of the person's picture: its round picture sits exactly on
+  their picture on the map, and it follows them while the map turns or zooms.
+- "Each circle in its own spot" also gives people without any lines a spot of their own.
+- New defaults: the map turns slowly (medium) and each circle gets its own spot. If you
+  still had the old defaults, you get the new ones; choices you made are kept.
+- Background gradients are dithered so they don't show bands.
+
 ## 0.4.0 (2026-11-10)
 
 ### Added

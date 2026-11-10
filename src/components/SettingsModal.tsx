@@ -4,7 +4,18 @@ import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs"
 import { exitDemo, logoutAll, wipeEverything } from "../session";
 import { getState, setState, updateCache, updateGroupSettings, updateSounds, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
 import { celebrateNewFriends, playSound, SOUNDS } from "../notify";
-import type { GroupSettings, MapSettings, SoundSettings } from "../types";
+import type { GroupSettings, MapSettings, SoundSettings, Theme } from "../types";
+
+const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: string }[] = [
+  { value: "dark", label: "Dark", bg: "#0b1015", panel: "#18242e", accent: "#19c3b1" },
+  { value: "oled", label: "OLED black", bg: "#000000", panel: "#0e1215", accent: "#19c3b1" },
+  { value: "light", label: "Light", bg: "#eef2f5", panel: "#ffffff", accent: "#0f9d8f" },
+  { value: "mocha", label: "Catppuccin Mocha", bg: "#1e1e2e", panel: "#313244", accent: "#94e2d5" },
+  { value: "macchiato", label: "Catppuccin Macchiato", bg: "#24273a", panel: "#363a4f", accent: "#8bd5ca" },
+  { value: "latte", label: "Catppuccin Latte", bg: "#eff1f5", panel: "#ccd0da", accent: "#179299" },
+  { value: "nord", label: "Nord", bg: "#2e3440", panel: "#3b4252", accent: "#88c0d0" },
+  { value: "dracula", label: "Dracula", bg: "#21222c", panel: "#44475a", accent: "#bd93f9" },
+];
 import { Icon } from "./Icon";
 
 export function SettingsModal() {
@@ -93,6 +104,33 @@ export function SettingsModal() {
 
         <section>
           <h3>Display</h3>
+          <div className="field">
+            <span>Color theme</span>
+            <div className="theme-grid" role="radiogroup" aria-label="Color theme">
+              {THEMES.map((t) => (
+                <button
+                  key={t.value}
+                  role="radio"
+                  aria-checked={settings.theme === t.value}
+                  className={`theme-chip ${settings.theme === t.value ? "on" : ""}`}
+                  onClick={() => updateSettings({ theme: t.value })}
+                >
+                  <span className="theme-swatch" style={{ background: t.bg }}>
+                    <span style={{ background: t.panel }} />
+                    <span style={{ background: t.accent }} />
+                  </span>
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <label className="field narrow">
+            <span>Open profiles</span>
+            <select value={settings.profileAs} onChange={(e) => updateSettings({ profileAs: e.target.value as "popup" | "sidebar" })}>
+              <option value="popup">As a popup (best on phones)</option>
+              <option value="sidebar">In a panel next to the map</option>
+            </select>
+          </label>
           <div className="row">
             <label className="field narrow">
               <span>People who don't match filters</span>

@@ -173,7 +173,11 @@ export interface MapSettings {
   orbit: number;
   /** Show the full player card when pointing at someone. */
   hoverCard: boolean;
+  /** 1 = clockwise, -1 = counter-clockwise */
+  orbitDir: 1 | -1;
 }
+
+export type Theme = "dark" | "oled" | "light" | "mocha" | "macchiato" | "latte" | "nord" | "dracula";
 
 export interface LogSettings {
   /** Read VRChat's log files on this computer. */
@@ -219,6 +223,9 @@ export interface Settings {
   logs: LogSettings;
   groups: GroupSettings;
   sounds: SoundSettings;
+  theme: Theme;
+  /** Open profiles as a popup over everything, or as a panel at the side. */
+  profileAs: "popup" | "sidebar";
   /** App version that last ran with this data (for upgrade/downgrade notes). */
   lastVersion: string;
 }

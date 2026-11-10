@@ -4,7 +4,7 @@
 // overlap. Drag a person into a circle outline (or onto a circle in the
 // sidebar) to add them. Map options change how people and lines are drawn.
 import * as d3 from "d3";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
 import { hexA } from "../colors";
 import { useDerived } from "../derived";
@@ -187,6 +187,24 @@ class SpriteCache {
     this.map.clear();
   }
 }
+/** Map colors that follow the color theme (read from CSS variables). */
+interface Palette { card: string; nodeBg: string; label: string; outline: string; sub: string; dim: string; line: string; border: string }
+function readPalette(): Palette {
+  const cs = getComputedStyle(document.documentElement);
+  const v = (name: string, fallback: string) => cs.getPropertyValue(name).trim() || fallback;
+  return {
+    card: v("--canvas-card", "#151e26"),
+    nodeBg: v("--node-bg", "#22313d"),
+    label: v("--canvas-label", "#e6edf3"),
+    outline: v("--canvas-outline", "rgba(11,16,21,0.85)"),
+    sub: v("--canvas-sub", "#a9b8c4"),
+    dim: v("--canvas-dim", "#7d8b97"),
+    line: v("--canvas-line", "160, 190, 210"),
+    border: v("--border-strong", "#31455a"),
+  };
+}
+let PAL: Palette = typeof document !== "undefined" ? readPalette() : ({} as Palette);
+
 const iconSprites = new SpriteCache(900);
 const cardSprites = new SpriteCache(450);
 
@@ -270,6 +288,53 @@ export function GraphView() {
   const [tooltip, setTooltip] = useState<{ id: string; x: number; y: number } | null>(null);
   const fresh = useApp((s) => s.fresh);
   const orbitRef = useRef({ angle: 0, last: 0 });
+  const hoverCardRef = useRef<HTMLDivElement>(null);
+  const tooltipIdRef = useRef<string | null>(null);
+
+  /** Put the hover card so its round picture sits exactly on the person's picture on the map. */
+  function placeHoverCard() {
+    const el = hoverCardRef.current;
+    const id = hoverRef.current;
+    if (!el || !id) return;
+    const n = nodesRef.current.get(id);
+    if (!n || n.x == null || n.y == null) return;
+    const t = transformRef.current;
+    const map = viewRef.current.settings.map;
+    let wx = n.x;
+    if (map.nodeStyle === "card") {
+      const s = map.nodeScale;
+      wx = n.x - n.hw + 10 * s + (n.hh - 7 * s);
+    }
+    const icon = el.querySelector(".fcard-icon") as HTMLElement | null;
+    if (!icon) return;
+    // Layout offsets (not getBoundingClientRect, which includes the pop-in scale).
+    let ox = icon.offsetWidth / 2;
+    let oy = icon.offsetHeight / 2;
+    for (let node: HTMLElement | null = icon; node && node !== el; node = node.offsetParent as HTMLElement | null) {
+      ox += node.offsetLeft;
+      oy += node.offsetTop;
+      if (node.offsetParent === el.offsetParent) {
+        ox -= el.offsetLeft;
+        oy -= el.offsetTop;
+        break;
+      }
+    }
+    el.style.left = `${t.applyX(wx) - ox}px`;
+    el.style.top = `${t.applyY(n.y) - oy}px`;
+    el.style.transformOrigin = `${ox}px ${oy}px`;
+  }
+  const theme = useApp((s) => s.settings.theme);
+  useEffect(() => {
+    // Wait a frame so the new theme's CSS variables are in place.
+    const id = requestAnimationFrame(() => {
+      PAL = readPalette();
+      iconSprites.clear();
+      cardSprites.clear();
+      requestDraw();
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [theme]);
   const [optionsOpen, setOptionsOpen] = useState(false);
 
   const cache = useApp((s) => s.cache);
@@ -423,16 +488,16 @@ export function GraphView() {
       const sprite = iconSprites.get(`${url}|${px}`, px, px, (g) => {
         g.beginPath();
         g.arc(px / 2, px / 2, px / 2, 0, Math.PI * 2);
-        g.fillStyle = "#22313d";
+        g.fillStyle = PAL.nodeBg;
         g.fill();
         g.clip();
         drawCover(g, img, 0, 0, px, px);
       });
       ctx.drawImage(sprite, x - n.r, y - n.r, n.r * 2, n.r * 2);
     } else {
-      ctx.fillStyle = "#2a3946";
+      ctx.fillStyle = PAL.nodeBg;
       ctx.fill();
-      ctx.fillStyle = "#c9d6e0";
+      ctx.fillStyle = PAL.sub;
       ctx.font = `600 ${n.r * 0.8}px system-ui, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -443,7 +508,7 @@ export function GraphView() {
     ctx.beginPath();
     ctx.arc(x, y, n.r + 1.2, 0, Math.PI * 2);
     ctx.lineWidth = selected ? 4 : 2.4;
-    ctx.strokeStyle = selected ? "#ffffff" : ring;
+    ctx.strokeStyle = selected ? PAL.label : ring;
     if (p === "offline" && settings.ringMode === "status") ctx.globalAlpha = alpha * 0.7;
     ctx.stroke();
     ctx.globalAlpha = alpha;
@@ -497,7 +562,7 @@ export function GraphView() {
       const s = settings.map.nodeScale;
       roundRect(ctx, n.x! - n.hw, n.y! - n.hh, W, H, (full ? 10 : 8) * s);
       ctx.lineWidth = 3 * s;
-      ctx.strokeStyle = "#ffffff";
+      ctx.strokeStyle = PAL.label;
       ctx.stroke();
     }
   }
@@ -519,13 +584,13 @@ export function GraphView() {
     // Very zoomed out: a tile with the picture in the middle is enough.
     if (screenW < 54) {
       roundRect(ctx, x0, y0, W, H, radius);
-      ctx.fillStyle = offline ? "#1b242c" : "#1d2a35";
+      ctx.fillStyle = PAL.card;
       ctx.fill();
       const r = Math.min(n.hw, n.hh) * 0.62;
       ctx.save();
       ctx.beginPath();
       ctx.arc(n.x!, n.y!, r, 0, Math.PI * 2);
-      ctx.fillStyle = "#2a3946";
+      ctx.fillStyle = PAL.nodeBg;
       ctx.fill();
       if (icon) {
         ctx.clip();
@@ -534,26 +599,26 @@ export function GraphView() {
       ctx.restore();
       roundRect(ctx, x0, y0, W, H, radius);
       ctx.lineWidth = Math.max(2 / k, 3 * s);
-      ctx.strokeStyle = selected ? "#ffffff" : ring;
+      ctx.strokeStyle = selected ? PAL.label : ring;
       ctx.stroke();
       return;
     }
 
     roundRect(ctx, x0, y0, W, H, radius);
-    ctx.fillStyle = "#151e26";
+    ctx.fillStyle = PAL.card;
     ctx.fill();
 
     const drawIcon = (cx: number, cy: number, r: number, ringW: number) => {
       ctx.save();
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fillStyle = "#22313d";
+      ctx.fillStyle = PAL.nodeBg;
       ctx.fill();
       if (icon) {
         ctx.clip();
         drawCover(ctx, icon, cx - r, cy - r, r * 2, r * 2);
       } else {
-        ctx.fillStyle = "#c9d6e0";
+        ctx.fillStyle = PAL.sub;
         ctx.font = `700 ${r * 0.9}px system-ui, sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
@@ -585,7 +650,7 @@ export function GraphView() {
       ctx.fillStyle = trust.color;
       ctx.fillText(fitText(ctx, f.displayName, maxW), tx, n.y! - 2 * s);
       ctx.font = `${10.5 * s}px system-ui, sans-serif`;
-      ctx.fillStyle = offline ? "#7d8b97" : "#a9b8c4";
+      ctx.fillStyle = offline ? PAL.dim : PAL.sub;
       ctx.fillText(fitText(ctx, f.statusDescription || presenceLabel(f, p), maxW), tx, n.y! + 12 * s);
       if (settings.map.showStars && cache.favorites[n.id]?.length) {
         ctx.font = `${10 * s}px system-ui, sans-serif`;
@@ -614,7 +679,7 @@ export function GraphView() {
       const cy = y0 + bannerH;
       ctx.beginPath();
       ctx.arc(cx, cy, r + 4 * s, 0, Math.PI * 2);
-      ctx.fillStyle = "#151e26";
+      ctx.fillStyle = PAL.card;
       ctx.fill();
       drawIcon(cx, cy, r, 3 * s);
       // Status dot on the picture.
@@ -623,7 +688,7 @@ export function GraphView() {
       ctx.fillStyle = statusColor(f, p);
       ctx.fill();
       ctx.lineWidth = 2.5 * s;
-      ctx.strokeStyle = "#151e26";
+      ctx.strokeStyle = PAL.card;
       ctx.stroke();
 
       const plat = PLAT_SHORT[platformKey(f)];
@@ -654,7 +719,7 @@ export function GraphView() {
         const left = x0 + 11 * s;
         const inner = W - 22 * s;
         ctx.font = `${10.5 * s}px system-ui, sans-serif`;
-        ctx.fillStyle = offline ? "#7d8b97" : "#b4c2cd";
+        ctx.fillStyle = offline ? PAL.dim : PAL.sub;
         ctx.fillText(fitText(ctx, f.statusDescription || presenceLabel(f, p), inner), left, y0 + bannerH + 39 * s);
 
         // Trust rank pill + last seen.
@@ -671,7 +736,7 @@ export function GraphView() {
         ctx.fillStyle = trust.color;
         ctx.fillText(label, left + 5 * s, py + 10 * s);
         ctx.font = `${9.5 * s}px system-ui, sans-serif`;
-        ctx.fillStyle = "#8495a3";
+        ctx.fillStyle = PAL.dim;
         ctx.textAlign = "right";
         const when = offline ? `seen ${relTime(lastSeen(f))}` : p === "web" ? "on website" : "in VRChat";
         ctx.fillText(fitText(ctx, when, inner - lw - 18 * s), x0 + W - 11 * s, py + 10 * s);
@@ -680,7 +745,7 @@ export function GraphView() {
         const fy = y0 + H - 9 * s;
         const mi = cache.mutuals[n.id];
         ctx.textAlign = "left";
-        ctx.fillStyle = "#8495a3";
+        ctx.fillStyle = PAL.dim;
         ctx.fillText(mi ? (mi.hidden ? "mutuals hidden" : `${mi.count} mutual${mi.count === 1 ? "" : "s"}`) : "mutuals …", left, fy);
         let dx = x0 + W - 11 * s;
         for (const c of circles) {
@@ -697,7 +762,7 @@ export function GraphView() {
 
     roundRect(ctx, x0, y0, W, H, radius);
     ctx.lineWidth = selected ? 3 * s : 1 * s;
-    ctx.strokeStyle = selected ? "#ffffff" : "rgba(255,255,255,0.10)";
+    ctx.strokeStyle = selected ? PAL.label : PAL.border;
     ctx.stroke();
   }
 
@@ -767,7 +832,7 @@ export function GraphView() {
             ctx.strokeStyle = rgba(EDGE_RGB[i], EDGE_ALPHA[i] * map.lineOpacity * (focusSet ? 0.3 : 1));
             ctx.lineWidth = (EDGE_WIDTH[i] * map.lineWidth) / t.k;
           } else {
-            ctx.strokeStyle = `rgba(160,190,210,${Math.min(1, (focusSet ? 0.06 : 0.16) * map.lineOpacity)})`;
+            ctx.strokeStyle = `rgba(${PAL.line},${Math.min(1, (focusSet ? 0.06 : 0.16) * map.lineOpacity)})`;
             ctx.lineWidth = map.lineWidth / t.k;
           }
           ctx.stroke(p);
@@ -848,14 +913,15 @@ export function GraphView() {
         ctx.font = `500 ${fs}px system-ui, sans-serif`;
         ctx.textAlign = "center";
         ctx.lineWidth = 3 / t.k;
-        ctx.strokeStyle = "rgba(11,16,21,0.85)";
+        ctx.strokeStyle = PAL.outline;
         ctx.strokeText(f.displayName, n.x, n.y + n.r + 4 / t.k + fs);
-        ctx.fillStyle = "#e6edf3";
+        ctx.fillStyle = PAL.label;
         ctx.fillText(f.displayName, n.x, n.y + n.r + 4 / t.k + fs);
       }
     }
     ctx.globalAlpha = 1;
     if (animating) requestDraw();
+    placeHoverCard();
 
     // Circle names last, so people never cover them.
     for (const hull of hulls) {
@@ -864,7 +930,7 @@ export function GraphView() {
       ctx.font = `600 ${13 / t.k}px system-ui, sans-serif`;
       ctx.textAlign = "center";
       ctx.lineWidth = 4 / t.k;
-      ctx.strokeStyle = "rgba(11,16,21,0.9)";
+      ctx.strokeStyle = PAL.outline;
       ctx.strokeText(hull.circle.name, top[0], y);
       ctx.fillStyle = hexA(hull.circle.color, 1);
       ctx.fillText(hull.circle.name, top[0], y);
@@ -1027,6 +1093,15 @@ export function GraphView() {
         circleIndex.get(id)!.push(i);
       }
     });
+    let loners = false;
+    for (const n of nodesRef.current.values()) {
+      if (n.deg === 0 && !circleIndex.has(n.id)) {
+        loners = true;
+        break;
+      }
+    }
+    // In "each circle in its own spot", loners get a spot of their own too.
+    const slots = Math.max(1, visibleCircles.length + (loners ? 1 : 0));
     const force = (alpha: number) => {
       const R = ringRef.current;
       const turn = orbitRef.current.angle;
@@ -1041,13 +1116,18 @@ export function GraphView() {
           k = 0.11;
         } else if (gravity === "circles" && mine) {
           for (const i of mine) {
-            const a = turn + (i / Math.max(1, visibleCircles.length)) * Math.PI * 2;
+            const a = turn + (i / slots) * Math.PI * 2;
             tx += Math.cos(a) * R * 1.1;
             ty += Math.sin(a) * R * 1.1;
           }
           tx /= mine.length;
           ty /= mine.length;
           k = 0.14;
+        } else if (lonely && gravity === "circles" && visibleCircles.length) {
+          const a = turn + (visibleCircles.length / slots) * Math.PI * 2;
+          tx = Math.cos(a) * R * 1.1;
+          ty = Math.sin(a) * R * 1.1;
+          k = 0.12;
         } else if (lonely && gravity === "loners") {
           tx = Math.cos(turn) * R * 1.15;
           ty = Math.sin(turn) * R * 1.15;
@@ -1086,7 +1166,7 @@ export function GraphView() {
   // names stay upright and dragging still works.
   useEffect(() => {
     if (!map.orbit) return;
-    const speed = [0, 0.012, 0.03, 0.07][Math.round(map.orbit)] ?? 0.012; // radians per second
+    const speed = ([0, 0.012, 0.03, 0.07][Math.round(map.orbit)] ?? 0.012) * (map.orbitDir === -1 ? -1 : 1); // radians per second
     let raf = 0;
     orbitRef.current.last = performance.now();
     const step = (now: number) => {
@@ -1108,7 +1188,7 @@ export function GraphView() {
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map.orbit]);
+  }, [map.orbit, map.orbitDir]);
 
   // Keep the selected person in view (the detail panel narrows the canvas).
   useEffect(() => {
@@ -1200,6 +1280,7 @@ export function GraphView() {
         n.fx = n.x;
         n.fy = n.y;
         simRef.current?.alphaTarget(0.15).restart();
+        tooltipIdRef.current = null;
         setTooltip(null);
       })
       .on("drag", (event) => {
@@ -1238,7 +1319,6 @@ export function GraphView() {
       .scaleExtent([0.04, 6])
       .on("zoom", (event) => {
         transformRef.current = event.transform;
-        setTooltip(null);
         requestDraw();
       });
     zoomRef.current = zoom;
@@ -1255,10 +1335,14 @@ export function GraphView() {
         canvas.style.cursor = id ? "pointer" : "grab";
         requestDraw();
       }
-      setTooltip(id ? { id, x: e.clientX - rect.left, y: e.clientY - rect.top } : null);
+      if (id !== (tooltipIdRef.current ?? null)) {
+        tooltipIdRef.current = id;
+        setTooltip(id ? { id, x: e.clientX - rect.left, y: e.clientY - rect.top } : null);
+      }
     };
     const onLeave = () => {
       hoverRef.current = null;
+      tooltipIdRef.current = null;
       setTooltip(null);
       requestDraw();
     };
@@ -1287,6 +1371,10 @@ export function GraphView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useLayoutEffect(() => {
+    placeHoverCard();
+  });
+
   const tipFriend = tooltip ? cache.friends[tooltip.id] : null;
   const tipTime = tipFriend ? personTime(stats, tipFriend.id) : null;
   const empty = friends.length === 0;
@@ -1305,13 +1393,7 @@ export function GraphView() {
         <div className="graph-hint">No time-together data from game logs yet, so lines show mutual friends for now.</div>
       )}
       {tipFriend && tooltip && map.hoverCard && map.nodeStyle !== "fullcard" && (
-        <div
-          className="hover-card"
-          style={{
-            left: Math.max(4, Math.min(tooltip.x + 18, sizeRef.current.w - 238)),
-            top: tooltip.y + 250 > sizeRef.current.h ? Math.max(4, tooltip.y - 250) : tooltip.y + 18,
-          }}
-        >
+        <div className="hover-card" ref={hoverCardRef} style={{ left: -9999, top: -9999 }}>
           <FriendCard
             friend={tipFriend}
             presence={presenceOf(tipFriend, cache.presence)}

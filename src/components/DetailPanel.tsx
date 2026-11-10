@@ -76,7 +76,7 @@ function StatusArt({ kind }: { kind: string }) {
   );
 }
 
-export function DetailPanel({ id }: { id: string }) {
+export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean }) {
   const cache = useApp((s) => s.cache);
   const local = useApp((s) => s.local);
   const demo = useApp((s) => s.demo);
@@ -135,7 +135,7 @@ export function DetailPanel({ id }: { id: string }) {
   const shownGroups = groups ? (allGroups ? groups.list : groups.list.slice(0, 5)) : [];
 
   return (
-    <aside className="profile" aria-label={`Profile of ${f.displayName}`}>
+    <aside className={`profile ${popup ? "popup" : ""}`} role={popup ? "dialog" : undefined} aria-label={`Profile of ${f.displayName}`}>
       <button className="icon-btn profile-close" title="Close (Esc)" onClick={close}>
         <Icon name="close" />
       </button>
