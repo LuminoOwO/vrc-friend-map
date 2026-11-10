@@ -71,12 +71,44 @@ cache, back off on errors, and identify themselves. This app:
   refresh about every 30 minutes while live (every ~5 minutes if the live connection is
   down), and reconnects with backoff,
 - caches profiles and mutual lists for 7 days (configurable),
-- sends `User-Agent: VRCFriendMap/0.1.0 <your contact>`. Set the contact on the login screen
+- sends `User-Agent: VRCFriendMap/<version> <your contact>`. Set the contact on the login screen
   or in Settings.
 
 The first full sync makes roughly *2 × number of friends* requests (one profile + one mutual
 list each). With 300 friends that's about 12–15 minutes in the background. The map fills in
 as data arrives, and later syncs only refresh what's stale.
+
+## Installing on Linux
+
+Every release comes in four formats. Pick the one for your distro:
+
+| File | For | Install |
+|---|---|---|
+| `vrc-friend-map_0.2.0_amd64.deb` | Debian, Ubuntu, Linux Mint, Pop!_OS | `sudo apt install ./vrc-friend-map_0.2.0_amd64.deb` |
+| `vrc-friend-map-0.2.0-1.x86_64.rpm` | Fedora, RHEL/Alma/Rocky, openSUSE | `sudo dnf install ./vrc-friend-map-0.2.0-1.x86_64.rpm` (openSUSE: `sudo zypper install …`) |
+| `vrc-friend-map-0.2.0-x86_64.AppImage` | any distro, no install | `chmod +x` it, then run it |
+| `vrc-friend-map-0.2.0-linux-x86_64.tar.gz` | Arch and anything else | unpack, then `./install.sh` (per-user, no root; `./install.sh --uninstall` removes it) |
+
+`SHA256SUMS` lists the checksums: `sha256sum -c SHA256SUMS --ignore-missing`.
+
+Runtime dependencies (the .deb and .rpm pull these in by themselves):
+
+- **WebKitGTK 4.1**:
+  - `libwebkit2gtk-4.1-0` on Debian, Ubuntu and Mint
+  - `webkit2gtk4.1` on Fedora
+  - `webkit2gtk-4.1` on Arch
+  - `libwebkit2gtk-4_1-0` on openSUSE
+- **The AppImage** also needs FUSE 2: `sudo apt install libfuse2t64` on Ubuntu 24.04 / Mint 22 (older releases: `libfuse2`). Without FUSE you can run it as `./vrc-friend-map-….AppImage --appimage-extract-and-run`.
+
+The AppImage bundles WebKit, so it's much bigger (~80 MB vs ~5 MB).
+
+Files are named the way each format expects:
+
+- `name_version_arch.deb`, using Debian architecture names like `amd64`.
+- `name-version-release.arch.rpm`, using RPM architecture names like `x86_64`.
+- `name-version-arch` for the AppImage and the tarball.
+
+Versions follow [Semantic Versioning](https://semver.org). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ## Building on Linux
 
@@ -125,10 +157,16 @@ cd vrc-friend-map
 ./scripts/build-linux.sh          # checks prerequisites, then builds a package for your distro
 ```
 
-The script picks `.deb` on Debian-based systems, `.rpm` on Fedora/openSUSE, a plain binary
-on Arch and an AppImage elsewhere. Override with `./scripts/build-linux.sh deb|rpm|appimage|none`.
-Results land in `src-tauri/target/release/bundle/` (or `src-tauri/target/release/vrc-friend-map`
-for `none`). Install a `.deb` with `sudo apt install ./src-tauri/target/release/bundle/deb/*.deb`.
+The script picks the format that fits your distro:
+
+- `.deb` on Debian-based systems
+- `.rpm` on Fedora and openSUSE
+- the tarball on Arch
+- an AppImage elsewhere
+
+To choose yourself, pass one or more formats: `./scripts/build-linux.sh deb rpm appimage tarball`. `all` builds every format, and `none` builds just the binary.
+
+Finished packages are copied to `release/`, named as in the table above, along with a `SHA256SUMS` file. The script then prints the install command for each one.
 
 By hand, the script runs:
 
@@ -136,6 +174,20 @@ By hand, the script runs:
 npm ci
 npx tauri build --bundles deb     # or rpm / appimage, or --no-bundle
 ```
+
+On Linux, `src-tauri/tauri.linux.conf.json` overrides a few settings:
+
+- the package and file name (`vrc-friend-map`, so there are no spaces)
+- the icon sizes
+- the desktop entry, which comes from `packaging/linux/`
+
+To release a new version, follow these steps:
+
+1. Bump the version with `npm version X.Y.Z --no-git-tag-version`.
+2. Set the same version in `src-tauri/Cargo.toml` and `src-tauri/tauri.conf.json`.
+3. Add a section for it to `CHANGELOG.md`.
+4. Run `./scripts/build-linux.sh all`.
+5. Tag the commit `vX.Y.Z`.
 
 For development with hot reload: `npm run tauri dev`. `npm run dev` alone starts just the UI
 at http://localhost:1420 in a browser. Only demo mode works there, since login needs the app.
@@ -192,7 +244,8 @@ src-tauri/src/
   pipeline.rs            live event stream (wss://pipeline.vrchat.cloud) with reconnect
   images.rs              vrcimg:// image proxy with disk cache
   storage.rs             JSON store, hashing for shared lists
-scripts/build-linux.sh   prerequisite check + Linux build
+scripts/build-linux.sh   prerequisite check + Linux packages into release/
+packaging/linux/         desktop entry, tarball installer and README
 ```
 
 ## Known limits

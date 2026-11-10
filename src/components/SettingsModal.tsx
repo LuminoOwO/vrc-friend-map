@@ -134,6 +134,10 @@ export function SettingsModal() {
             <p className="small muted">Running in a browser: data is kept in this browser's local storage.</p>
           )}
         </section>
+        <section>
+          <h3>About</h3>
+          <p className="small muted">VRC Friend Map {__APP_VERSION__}. Not affiliated with VRChat Inc.</p>
+        </section>
       </div>
     </div>
   );

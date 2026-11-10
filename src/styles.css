@@ -101,6 +101,7 @@ textarea { width: 100%; resize: vertical; }
 .login-actions { display: flex; gap: 10px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
 .login-msg { color: #ffcf7a; }
 .note { color: var(--muted); font-size: 13px; }
+.note.version { margin-left: auto; }
 .login-footer { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 
 /* ---------- layout ---------- */

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "VRC Friend Map",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "identifier": "app.vrcfriendmap",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -28,7 +28,10 @@
     "active": true,
     "targets": "all",
     "category": "Utility",
+    "publisher": "LuminoOwO",
+    "homepage": "https://github.com/LuminoOwO/vrc-friend-map",
     "shortDescription": "Map your VRChat friends, mutuals and circles",
+    "longDescription": "Draws your VRChat friends as cards and a graph, links people who are friends with each other, lets you sort them into overlapping circles and compare friend lists that others share with you. Uses your own VRChat sign-in and updates live.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

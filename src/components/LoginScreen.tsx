@@ -64,6 +64,7 @@ export function LoginScreen({ canLogin }: { canLogin: boolean }) {
             Try it with demo data
           </button>
           {hasCache && <span className="note">Your last synced data is kept and will show again after login.</span>}
+          <span className="note version">v{__APP_VERSION__}</span>
         </div>
       </div>
     </div>

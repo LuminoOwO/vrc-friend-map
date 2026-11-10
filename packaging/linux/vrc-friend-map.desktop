@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=VRC Friend Map
+GenericName=VRChat friend map
+Comment=Map your VRChat friends, mutuals and circles
+Exec=vrc-friend-map
+Icon=vrc-friend-map
+Terminal=false
+Categories=Utility;
+StartupWMClass=vrc-friend-map
