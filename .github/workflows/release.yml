@@ -248,12 +248,18 @@ jobs:
           export NDK_HOME="$ANDROID_NDK_LATEST_HOME"
           {
             npx tauri android init --ci
+            cat packaging/android/proguard-extra.pro >> src-tauri/gen/android/app/proguard-rules.pro
             npx tauri android build --apk --ci --target aarch64 --target armv7 --target x86_64
           } 2>&1 | tee "$RUNNER_TEMP/build.log"
       - name: Sign APK
         run: |
           APK=$(find src-tauri/gen/android -name "*-release-unsigned.apk" | head -n1)
           [ -n "$APK" ] || { echo "::error::No unsigned APK found: $(find src-tauri/gen/android -name '*.apk' | tr '\n' ' ')"; exit 1; }
+          # Methods the Rust side calls by name must survive the shrinker.
+          mkdir -p "$RUNNER_TEMP/dex" && unzip -q -o "$APK" 'classes*.dex' -d "$RUNNER_TEMP/dex"
+          for m in getCookies clearAllBrowsingData loadUrlMainThread evalScript; do
+            grep -aq "$m" "$RUNNER_TEMP"/dex/classes*.dex || { echo "::error::$m was stripped from the APK; the app would crash. Check packaging/android/proguard-extra.pro"; exit 1; }
+          done
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n1)
           "$BT/zipalign" -p -f 4 "$APK" "$RUNNER_TEMP/aligned.apk"
           if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then

@@ -3,6 +3,14 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.3.1 (2026-11-10)
+
+### Fixed
+- Android: the app crashed about a second after the VRChat sign-in page opened
+  (`NoSuchMethodError: getCookies`). The release build's code shrinker removed
+  methods the app calls from Rust; they're now kept, and the build checks for them.
+  Logging out on Android had the same problem.
+
 ## 0.3.0 (2026-11-10)
 
 ### Added
