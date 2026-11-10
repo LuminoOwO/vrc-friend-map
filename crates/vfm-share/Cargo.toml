@@ -1,6 +1,6 @@
 [package]
 name = "vfm-share"
-version = "0.7.0"
+version = "0.7.1"
 description = "Protocol shared by VRC Friend Map and its server: identities, signed requests, end-to-end sealed envelopes"
 edition = "2021"
 license = "MIT"

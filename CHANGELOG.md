@@ -3,6 +3,19 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.7.1 (2026-11-10)
+
+### Added
+- vfm-server **container image** for Docker and Podman: `ghcr.io/luminoowo/vfm-server`,
+  covering amd64, arm64, arm/v7, arm/v6 and 386. It's about 7 MB, runs as an unprivileged
+  user and has a health check. Also: a compose file, a Podman Quadlet for systemd, and
+  settings through `VFM_*` environment variables (the admin page shows those as fixed).
+- `vfm-server healthcheck` command.
+
+### Changed
+- In a container, the server's startup message no longer shows the container's internal
+  address (set `VFM_PUBLIC_URL` to show the real one).
+
 ## 0.7.0 (2026-11-10)
 
 ### Added
@@ -15,10 +28,6 @@ minor releases can change behavior.
   - **Exchange:** upload your friend list and activity, download what friends share with
     you. Use any number of servers at once (your own, a friend's, a public one) for
     redundancy.
-  - **Container image** for Docker and Podman: `ghcr.io/luminoowo/vfm-server`, covering
-    amd64, arm64, arm/v7, arm/v6 and 386. It's about 7 MB, runs as an unprivileged user and
-    has a health check. Also: a compose file, a Podman Quadlet for systemd, and settings
-    through `VFM_*` environment variables.
 - Settings → Servers: add servers, join with an invite code, and choose per server what you
   share (friend list, activity) and with whom (all friends, or chosen circles). Friend
   lists you receive appear under Shared lists, update on every sync, and add the mutual
