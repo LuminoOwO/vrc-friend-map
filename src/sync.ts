@@ -2,6 +2,7 @@
 // spaces requests out (>= 1 s apart) and backs off on 429. Profiles and mutuals
 // are cached and only refetched when older than the configured age.
 import { backend, type ApiResponse } from "./backend";
+import { celebrateNewFriends } from "./notify";
 import { getState, resetSync, setState, setSync, showToast, updateCache, updateLocal } from "./store";
 import type { Friend, Me, MutualInfo, Presence, UserDetail } from "./types";
 
@@ -114,6 +115,11 @@ async function fetchFriends(me: Me, gen: number) {
 /** Keep a small log of friends added and removed since the first sync. */
 export function recordFriendChanges(current: string[], prevFriends: Record<string, Friend>) {
   const now = Date.now();
+  const before = getState().local;
+  if (before.logSince) {
+    const prevIds = new Set(before.lastFriendIds);
+    celebrateNewFriends(current.filter((id) => !prevIds.has(id)));
+  }
   updateLocal((l) => {
     const firstRun = !l.logSince;
     const prev = new Set(l.lastFriendIds);
@@ -158,6 +164,18 @@ async function fetchDetail(id: string) {
     pronouns: d.pronouns,
     bio: d.bio,
     note: d.note,
+    bioLinks: Array.isArray(d.bioLinks) ? d.bioLinks.filter((x: unknown) => typeof x === "string" && x) : [],
+    badges: Array.isArray(d.badges)
+      ? d.badges
+          .filter((b: { badgeImageUrl?: string }) => b && b.badgeImageUrl)
+          .map((b: { badgeId?: string; badgeName?: string; badgeDescription?: string; badgeImageUrl: string; showcased?: boolean }) => ({
+            id: b.badgeId ?? b.badgeImageUrl,
+            name: b.badgeName ?? "Badge",
+            description: b.badgeDescription,
+            imageUrl: b.badgeImageUrl,
+            showcased: b.showcased,
+          }))
+      : [],
     fetchedAt: Date.now(),
   };
   updateCache((c) => {
@@ -245,6 +263,36 @@ export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
     }
   } catch (e) {
     handleError(e);
+  }
+}
+
+const groupsLoading = new Set<string>();
+
+/** Load someone's VRChat groups for their profile (one request, cached a week). */
+export async function loadGroups(id: string, force = false) {
+  const s = getState();
+  if (s.demo || groupsLoading.has(id)) return;
+  const have = s.cache.groups?.[id];
+  if (!force && have && Date.now() - have.fetchedAt < 7 * 86400000) return;
+  groupsLoading.add(id);
+  try {
+    const r = await backend.vrcGet(`/users/${encodeURIComponent(id)}/groups`);
+    const ok = r.status === 200 && Array.isArray(r.data);
+    const list = ok
+      ? (r.data as Record<string, unknown>[]).map((g) => ({
+          groupId: String(g.groupId ?? g.id ?? ""),
+          name: String(g.name ?? "Group"),
+          iconUrl: typeof g.iconUrl === "string" ? g.iconUrl : undefined,
+          memberCount: typeof g.memberCount === "number" ? g.memberCount : undefined,
+          isRepresenting: !!g.isRepresenting,
+        }))
+      : [];
+    if (r.status === 401 || r.status === 429 || r.status >= 500) return;
+    updateCache((c) => ({ ...c, groups: { ...(c.groups ?? {}), [id]: { list, hidden: !ok, fetchedAt: Date.now() } } }));
+  } catch {
+    // Not important enough to bother the user; the profile just shows no groups.
+  } finally {
+    groupsLoading.delete(id);
   }
 }
 

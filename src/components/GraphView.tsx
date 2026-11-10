@@ -22,6 +22,8 @@ import {
 } from "../model";
 import { addToCircle, getState, setState, updateSettings, useApp } from "../store";
 import type { Circle, Friend, MapSettings, Presence } from "../types";
+import { FRESH_MS } from "../notify";
+import { FriendCard } from "./FriendCard";
 import { Icon } from "./Icon";
 import { MapOptions } from "./MapOptions";
 
@@ -158,6 +160,42 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
+/** Small LRU of pre-drawn bitmaps. Clipping and drawing pictures for every
+ *  person on every frame is the slowest part of the map (especially in
+ *  WebKitGTK on Linux), so pictures and whole cards are drawn once per zoom
+ *  level and then copied. */
+class SpriteCache {
+  private map = new Map<string, HTMLCanvasElement>();
+  constructor(private max: number) {}
+  get(key: string, w: number, h: number, paint: (c: CanvasRenderingContext2D) => void): HTMLCanvasElement {
+    const hit = this.map.get(key);
+    if (hit) {
+      this.map.delete(key);
+      this.map.set(key, hit);
+      return hit;
+    }
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.ceil(w));
+    c.height = Math.max(1, Math.ceil(h));
+    const g = c.getContext("2d")!;
+    paint(g);
+    this.map.set(key, c);
+    if (this.map.size > this.max) this.map.delete(this.map.keys().next().value!);
+    return c;
+  }
+  clear() {
+    this.map.clear();
+  }
+}
+const iconSprites = new SpriteCache(900);
+const cardSprites = new SpriteCache(450);
+
+/** Power-of-two pixel scale for a sprite, so zooming doesn't redraw constantly. */
+function spriteScale(k: number, dpr: number, max: number) {
+  const want = k * dpr;
+  return Math.min(max, Math.max(0.25, 2 ** Math.ceil(Math.log2(Math.max(want, 0.01)))));
+}
+
 /** Keeps rectangular cards from overlapping (d3's collide force is round). */
 function rectCollide(pad: number, strength = 0.7) {
   let nodes: GNode[] = [];
@@ -230,6 +268,8 @@ export function GraphView() {
   const dragTargetRef = useRef<string | null>(null);
   const fittedRef = useRef(false);
   const [tooltip, setTooltip] = useState<{ id: string; x: number; y: number } | null>(null);
+  const fresh = useApp((s) => s.fresh);
+  const orbitRef = useRef({ angle: 0, last: 0 });
   const [optionsOpen, setOptionsOpen] = useState(false);
 
   const cache = useApp((s) => s.cache);
@@ -294,8 +334,8 @@ export function GraphView() {
   const secsById = useMemo(() => new Map((stats?.people ?? []).map((p) => [p.id, p.secs])), [stats]);
 
   // Everything the draw function needs, refreshed every render.
-  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById });
-  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById };
+  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById, fresh });
+  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById, fresh };
 
   const requestDraw = () => {
     if (rafRef.current) return;
@@ -372,16 +412,23 @@ export function GraphView() {
       }
       return;
     }
-    const img = getImage(iconUrl(f));
+    const url = iconUrl(f);
+    const img = getImage(url);
     ctx.save();
     ctx.beginPath();
     ctx.arc(x, y, n.r, 0, Math.PI * 2);
     ctx.closePath();
     if (img) {
-      ctx.clip();
-      ctx.fillStyle = "#22313d";
-      ctx.fill();
-      drawCover(ctx, img, x - n.r, y - n.r, n.r * 2, n.r * 2);
+      const px = Math.min(256, Math.max(16, 2 ** Math.ceil(Math.log2(Math.max(1, n.r * 2 * transformRef.current.k * sizeRef.current.dpr)))));
+      const sprite = iconSprites.get(`${url}|${px}`, px, px, (g) => {
+        g.beginPath();
+        g.arc(px / 2, px / 2, px / 2, 0, Math.PI * 2);
+        g.fillStyle = "#22313d";
+        g.fill();
+        g.clip();
+        drawCover(g, img, 0, 0, px, px);
+      });
+      ctx.drawImage(sprite, x - n.r, y - n.r, n.r * 2, n.r * 2);
     } else {
       ctx.fillStyle = "#2a3946";
       ctx.fill();
@@ -417,7 +464,45 @@ export function GraphView() {
     }
   }
 
+  /** Draw a card, from the sprite cache when the zoom allows it. */
   function drawCard(ctx: CanvasRenderingContext2D, n: GNode, f: Friend, ring: string, p: Presence, full: boolean, selected: boolean, k: number) {
+    const { cache, settings, circles } = viewRef.current;
+    const dpr = sizeRef.current.dpr;
+    if (k * dpr > 2.01) {
+      paintCard(ctx, n, f, ring, p, full, selected, k);
+      return;
+    }
+    const sc = spriteScale(k, dpr, 2);
+    const W = n.hw * 2;
+    const H = n.hh * 2;
+    const screenW = W * k;
+    const lod = screenW < 54 ? 0 : screenW <= 110 ? 1 : 2;
+    const iconOk = !!getImage(iconUrl(f));
+    const bannerOk = full && lod > 0 && !!getImage(bannerUrl(f));
+    const mi = cache.mutuals[n.id];
+    const key = [
+      n.id, full ? "F" : "C", lod, sc, W, H, f.displayName, f.statusDescription, p, ring, f.status, f.bannerColor,
+      iconOk, bannerOk, trustRank(cache.details[n.id]?.tags, f.developerType).label, mi ? `${mi.count}${mi.hidden}` : "-",
+      settings.map.showStars && cache.favorites[n.id]?.length ? 1 : 0, platformKey(f),
+      full ? circles.filter((c) => c.members.includes(n.id)).map((c) => c.color).join() : "",
+      full && p === "offline" ? Math.floor(lastSeen(f) / 3600000) : 0,
+    ].join("|");
+    const pad = 4;
+    const sprite = cardSprites.get(key, (W + pad * 2) * sc, (H + pad * 2) * sc, (g) => {
+      g.scale(sc, sc);
+      paintCard(g, { ...n, x: n.hw + pad, y: n.hh + pad }, f, ring, p, full, false, lod === 0 ? 50 / W : lod === 1 ? 54.5 / W : 999);
+    });
+    ctx.drawImage(sprite, n.x! - n.hw - pad, n.y! - n.hh - pad, W + pad * 2, H + pad * 2);
+    if (selected) {
+      const s = settings.map.nodeScale;
+      roundRect(ctx, n.x! - n.hw, n.y! - n.hh, W, H, (full ? 10 : 8) * s);
+      ctx.lineWidth = 3 * s;
+      ctx.strokeStyle = "#ffffff";
+      ctx.stroke();
+    }
+  }
+
+  function paintCard(ctx: CanvasRenderingContext2D, n: GNode, f: Friend, ring: string, p: Presence, full: boolean, selected: boolean, k: number) {
     const { cache, settings, circles } = viewRef.current;
     const s = settings.map.nodeScale;
     const x0 = n.x! - n.hw;
@@ -639,6 +724,10 @@ export function GraphView() {
     ctx.translate(t.x, t.y);
     ctx.scale(t.k, t.k);
 
+    // Visible part of the world; anything outside is skipped.
+    const [vx0, vy0] = t.invert([0, 0]);
+    const [vx1, vy1] = t.invert([w, h]);
+
     // Circles (hulls)
     const hulls = map.hulls ? computeHulls() : [];
     hullsRef.current = hulls;
@@ -667,6 +756,7 @@ export function GraphView() {
           if (!s || !d || s.x == null || d.x == null) continue;
           if (!visible(a) || !visible(b)) continue;
           if (focusSet && (a === focus || b === focus)) continue;
+          if ((s.x < vx0 && d.x < vx0) || (s.x > vx1 && d.x > vx1) || (s.y! < vy0 && d.y! < vy0) || (s.y! > vy1 && d.y! > vy1)) continue;
           if (!matched.has(a) || !matched.has(b)) continue;
           const p = paths[band(a, b)];
           p.moveTo(s.x, s.y!);
@@ -710,9 +800,14 @@ export function GraphView() {
       if (i >= 0) order.push(order.splice(i, 1)[0]);
     }
     const showLabelsAuto = settings.showLabels === "always" || (settings.showLabels === "auto" && t.k >= 1.15);
+    const margin = 30 / t.k;
+    const nowMs = Date.now();
+    const { fresh } = viewRef.current;
+    let animating = false;
     for (const n of order) {
       const f = cache.friends[n.id];
       if (!f || n.x == null || n.y == null) continue;
+      if (n.x + n.hw < vx0 - margin || n.x - n.hw > vx1 + margin || n.y + n.hh < vy0 - margin || n.y - n.hh > vy1 + margin + 20 / t.k) continue;
       const isMatch = matched.has(n.id);
       if (hideMode && !isMatch) continue;
       let alpha = isMatch ? 1 : 0.13;
@@ -721,7 +816,30 @@ export function GraphView() {
       const p = presenceOf(f, cache.presence);
       const ring = settings.ringMode === "trust" ? trustRank(cache.details[n.id]?.tags, f.developerType).color : statusColor(f, p);
       const selected = n.id === selectedId;
-      if (card) drawCard(ctx, n, f, ring, p, style === "fullcard", selected, t.k);
+      // A new friend pops in and sends out rings for a few seconds.
+      const born = fresh[n.id];
+      const age = born ? nowMs - born : Infinity;
+      if (age < FRESH_MS) {
+        animating = true;
+        const grow = Math.min(1, age / 650);
+        const pop = 1 + Math.sin(grow * Math.PI) * 0.35;
+        for (let i = 0; i < 3; i++) {
+          const phase = ((age / 1400 + i / 3) % 1);
+          const fade = 1 - age / FRESH_MS;
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, Math.max(n.hw, n.hh) * (1 + phase * 1.8), 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(81,229,126,${(1 - phase) * 0.8 * fade})`;
+          ctx.lineWidth = 3 / t.k;
+          ctx.stroke();
+        }
+        ctx.save();
+        ctx.translate(n.x, n.y);
+        ctx.scale(grow * pop, grow * pop);
+        ctx.translate(-n.x, -n.y);
+        if (card) drawCard(ctx, n, f, ring, p, style === "fullcard", selected, t.k);
+        else drawRound(ctx, n, f, ring, p, style, selected, alpha);
+        ctx.restore();
+      } else if (card) drawCard(ctx, n, f, ring, p, style === "fullcard", selected, t.k);
       else drawRound(ctx, n, f, ring, p, style, selected, alpha);
       ctx.globalAlpha = alpha;
       const labelled = !card && (showLabelsAuto || (focusSet?.has(n.id) && settings.showLabels !== "never") || selected);
@@ -737,6 +855,7 @@ export function GraphView() {
       }
     }
     ctx.globalAlpha = 1;
+    if (animating) requestDraw();
 
     // Circle names last, so people never cover them.
     for (const hull of hulls) {
@@ -773,7 +892,8 @@ export function GraphView() {
   }
 
   // Build/refresh the simulation when people, lines or node shapes change.
-  const layoutKey = `${idsKey}#${lineData.list.length}#${map.nodeStyle}#${map.nodeScale}#${map.sizeBy}#${map.spacing}`;
+  const layoutKey = `${idsKey}#${lineData.list.length}#${map.nodeStyle}#${map.nodeScale}#${map.sizeBy}#${map.spacing}#${map.gravity}`;
+  const ringRef = useRef(300);
   useEffect(() => {
     const prev = nodesRef.current;
     const next = new Map<string, GNode>();
@@ -793,6 +913,12 @@ export function GraphView() {
       } else if (old) {
         Object.assign(old, g, { deg });
         next.set(f.id, old);
+      } else if (viewRef.current.fresh[f.id] && prev.size > 0) {
+        // A brand-new friend appears in the middle of what you're looking at.
+        added++;
+        const { w, h } = sizeRef.current;
+        const [cx, cy] = transformRef.current.invert([w / 2, h / 2]);
+        next.set(f.id, { id: f.id, ...g, deg, x: cx + (Math.random() - 0.5) * 20, y: cy + (Math.random() - 0.5) * 20 });
       } else {
         added++;
         const a = Math.random() * Math.PI * 2;
@@ -830,14 +956,15 @@ export function GraphView() {
         "charge",
         d3
           .forceManyBody<GNode>()
-          .strength((n) => (card ? -(60 + n.hw * 5) : -(50 + n.r * 7)) * sp)
+          .strength((n) => (card ? -(60 + n.hw * 5) : -(50 + n.r * 7)) * sp * (map.gravity === "center" ? 0.55 : 1))
           .distanceMax((card ? 900 : 520) * sp),
       )
       .force("collide", card ? null : d3.forceCollide<GNode>((n) => n.r + 5 * map.nodeScale))
       .force("rect", card ? (rectCollide(8 * map.nodeScale) as unknown as d3.Force<GNode, GLink>) : null)
-      .force("x", d3.forceX<GNode>(0).strength(0.035))
-      .force("y", d3.forceY<GNode>(0).strength(0.035))
-      .force("lonely", d3.forceRadial<GNode>(ringRadius, 0, 0).strength((n) => (n.deg === 0 ? 0.06 : 0)));
+      .force("x", null)
+      .force("y", null)
+      .force("lonely", null);
+    ringRef.current = ringRadius;
 
     const restored = !fittedRef.current && savedTransform && nodes.filter((n) => savedPositions.has(n.id)).length > nodes.length * 0.8;
     if (restored) {
@@ -851,7 +978,17 @@ export function GraphView() {
       sim.alpha(1).stop();
       for (let i = 0; i < 160; i++) sim.tick();
       fittedRef.current = true;
-      requestAnimationFrame(() => fit(false));
+      requestAnimationFrame(() => {
+        fit(false);
+        // Phones: start closer so pictures are big enough to recognize,
+        // even if not everyone fits on screen.
+        const { w } = sizeRef.current;
+        if (w < 700 && canvasRef.current && zoomRef.current) {
+          const t = transformRef.current;
+          const k = Math.min(1.6, Math.max(t.k * 2.2, 0.55));
+          d3.select(canvasRef.current).call(zoomRef.current.scaleTo, k);
+        }
+      });
       sim.alpha(0.25).restart();
     } else {
       sim.alpha(added > 0 ? 0.5 : 0.35).restart();
@@ -869,15 +1006,62 @@ export function GraphView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map.nodeStyle]);
 
-  // Pull members of each circle together; people in two circles sit between them.
+  // Gravity: where everyone is pulled. People in two circles sit between them.
+  //  mutuals  – the middle pulls lightly; people without lines float in a ring
+  //  loners   – people without lines gather loosely in one spot to the side
+  //  center   – everyone is pulled tightly toward the middle
+  //  circles  – each circle gets its own spot around the middle
   useEffect(() => {
     const sim = simRef.current;
     if (!sim) return;
     const pull = 0.09 * map.groupPull;
-    const groups = circles
-      .filter((c) => !c.hidden && c.members.length > 1)
+    const gravity = map.gravity;
+    const visibleCircles = circles.filter((c) => !c.hidden && c.members.length > 0);
+    const groups = visibleCircles
+      .filter((c) => c.members.length > 1)
       .map((c) => c.members.map((id) => nodesRef.current.get(id)).filter(Boolean) as GNode[]);
+    const circleIndex = new Map<string, number[]>();
+    visibleCircles.forEach((c, i) => {
+      for (const id of c.members) {
+        if (!circleIndex.has(id)) circleIndex.set(id, []);
+        circleIndex.get(id)!.push(i);
+      }
+    });
     const force = (alpha: number) => {
+      const R = ringRef.current;
+      const turn = orbitRef.current.angle;
+      for (const n of nodesRef.current.values()) {
+        if (n.x == null || n.y == null) continue;
+        let tx = 0;
+        let ty = 0;
+        let k = 0.035;
+        const lonely = n.deg === 0;
+        const mine = circleIndex.get(n.id);
+        if (gravity === "center") {
+          k = 0.11;
+        } else if (gravity === "circles" && mine) {
+          for (const i of mine) {
+            const a = turn + (i / Math.max(1, visibleCircles.length)) * Math.PI * 2;
+            tx += Math.cos(a) * R * 1.1;
+            ty += Math.sin(a) * R * 1.1;
+          }
+          tx /= mine.length;
+          ty /= mine.length;
+          k = 0.14;
+        } else if (lonely && gravity === "loners") {
+          tx = Math.cos(turn) * R * 1.15;
+          ty = Math.sin(turn) * R * 1.15;
+          k = 0.08;
+        } else if (lonely) {
+          // Ring: pull toward the ring along the person's own direction.
+          const d = Math.hypot(n.x, n.y) || 1;
+          tx = (n.x / d) * R;
+          ty = (n.y / d) * R;
+          k = 0.06;
+        }
+        n.vx! += (tx - n.x) * k * alpha;
+        n.vy! += (ty - n.y) * k * alpha;
+      }
       if (!pull) return;
       for (const g of groups) {
         let cx = 0;
@@ -896,7 +1080,35 @@ export function GraphView() {
     };
     sim.force("circles", force as unknown as d3.Force<GNode, GLink>);
     sim.alpha(Math.max(sim.alpha(), 0.3)).restart();
-  }, [circles, layoutKey, map.groupPull]);
+  }, [circles, layoutKey, map.groupPull, map.gravity]);
+
+  // Orbit: slowly turn everyone around the middle. Positions really move, so
+  // names stay upright and dragging still works.
+  useEffect(() => {
+    if (!map.orbit) return;
+    const speed = [0, 0.012, 0.03, 0.07][Math.round(map.orbit)] ?? 0.012; // radians per second
+    let raf = 0;
+    orbitRef.current.last = performance.now();
+    const step = (now: number) => {
+      const dt = Math.min(0.1, (now - orbitRef.current.last) / 1000);
+      orbitRef.current.last = now;
+      const a = speed * dt;
+      orbitRef.current.angle += a;
+      const cos = Math.cos(a);
+      const sin = Math.sin(a);
+      for (const n of nodesRef.current.values()) {
+        if (n.x == null || n.y == null || n.fx != null) continue;
+        const x = n.x;
+        n.x = x * cos - n.y * sin;
+        n.y = x * sin + n.y * cos;
+      }
+      if (!document.hidden) draw();
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map.orbit]);
 
   // Keep the selected person in view (the detail panel narrows the canvas).
   useEffect(() => {
@@ -922,7 +1134,7 @@ export function GraphView() {
   useEffect(() => {
     requestDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cache, circles, settings, selectedId, matched, lineData]);
+  }, [cache, circles, settings, selectedId, matched, lineData, fresh]);
 
   // Canvas size, zoom and drag.
   useEffect(() => {
@@ -1092,7 +1304,32 @@ export function GraphView() {
       {wantsTogether && !empty && (
         <div className="graph-hint">No time-together data from game logs yet, so lines show mutual friends for now.</div>
       )}
-      {tipFriend && tooltip && !(card && map.nodeStyle === "fullcard") && (
+      {tipFriend && tooltip && map.hoverCard && map.nodeStyle !== "fullcard" && (
+        <div
+          className="hover-card"
+          style={{
+            left: Math.max(4, Math.min(tooltip.x + 18, sizeRef.current.w - 238)),
+            top: tooltip.y + 250 > sizeRef.current.h ? Math.max(4, tooltip.y - 250) : tooltip.y + 18,
+          }}
+        >
+          <FriendCard
+            friend={tipFriend}
+            presence={presenceOf(tipFriend, cache.presence)}
+            detail={cache.details[tipFriend.id]}
+            mutual={cache.mutuals[tipFriend.id]}
+            favorite={cache.favorites[tipFriend.id]}
+            circles={circles.filter((c) => c.members.includes(tipFriend.id))}
+            now={Date.now()}
+            onSelect={() => {}}
+          />
+          {tipTime && (
+            <div className="hover-extra">
+              {fmtHours(tipTime.secs)} together · {tipTime.days} day{tipTime.days === 1 ? "" : "s"}
+            </div>
+          )}
+        </div>
+      )}
+      {tipFriend && tooltip && !map.hoverCard && map.nodeStyle !== "fullcard" && (
         <div className="tooltip" style={{ left: tooltip.x + 14, top: tooltip.y + 14 }}>
           <div className="tt-name" style={{ color: trustRank(cache.details[tipFriend.id]?.tags, tipFriend.developerType).color }}>
             {tipFriend.displayName}
@@ -1100,11 +1337,6 @@ export function GraphView() {
           <div className="tt-line">
             <span className="dot" style={{ background: statusColor(tipFriend, presenceOf(tipFriend, cache.presence)) }} />
             {tipFriend.statusDescription || presenceLabel(tipFriend, presenceOf(tipFriend, cache.presence))}
-          </div>
-          <div className="tt-line muted">
-            {cache.mutuals[tipFriend.id]?.hidden
-              ? "Mutuals hidden"
-              : `${cache.mutuals[tipFriend.id]?.count ?? "?"} mutual friends · ${lineData.neighbors.get(tipFriend.id)?.size ?? 0} lines`}
           </div>
           {tipTime && (
             <div className="tt-line muted">

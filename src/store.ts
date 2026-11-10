@@ -14,6 +14,7 @@ import type {
   MapSettings,
   PresenceStats,
   Settings,
+  SoundSettings,
   SyncState,
 } from "./types";
 
@@ -59,6 +60,8 @@ export interface AppState {
   /** Live connection to VRChat's event stream. */
   live: { connected: boolean; message: string };
   logs: LogsState;
+  /** Friends added in the last few seconds (id -> time), for the animation. */
+  fresh: Record<string, number>;
 }
 
 // ---------- data format versions ----------
@@ -103,7 +106,12 @@ export const defaultMap = (): MapSettings => ({
   hulls: true,
   hullOpacity: 1,
   showStars: true,
+  gravity: "mutuals",
+  orbit: 0,
+  hoverCard: true,
 });
+
+export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
 
 export const defaultLogSettings = (): LogSettings => ({
   enabled: true,
@@ -137,6 +145,7 @@ export const defaultSettings = (): Settings => ({
   map: defaultMap(),
   logs: defaultLogSettings(),
   groups: defaultGroupSettings(),
+  sounds: defaultSounds(),
   lastVersion: "",
 });
 
@@ -193,6 +202,7 @@ let state: AppState = {
   sidebarOpen: typeof window !== "undefined" ? window.innerWidth > 900 : true,
   live: { connected: false, message: "" },
   logs: idleLogs(),
+  fresh: {},
 };
 
 const listeners = new Set<() => void>();
@@ -271,6 +281,10 @@ export function updateLogSettings(patch: Partial<LogSettings>) {
   updateSettings({ logs: { ...state.settings.logs, ...patch } });
 }
 
+export function updateSounds(patch: Partial<SoundSettings>) {
+  updateSettings({ sounds: { ...state.settings.sounds, ...patch } });
+}
+
 export function updateGroupSettings(patch: Partial<GroupSettings>) {
   updateSettings({ groups: { ...state.settings.groups, ...patch } });
 }
@@ -324,6 +338,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
   const m = isObj(raw.map) ? raw.map : {};
   const l = isObj(raw.logs) ? raw.logs : {};
   const g = isObj(raw.groups) ? raw.groups : {};
+  const snd = isObj(raw.sounds) ? raw.sounds : {};
   // 0.2.0 had a flat "lineColors" setting.
   const legacyLines = raw.lineColors === "plain" ? "plain" : raw.lineColors === "shared" ? "shared" : undefined;
   const out: Settings = {
@@ -350,6 +365,15 @@ export function normalizeSettings(raw: Raw | null): Settings {
       hulls: typeof m.hulls === "boolean" ? m.hulls : d.map.hulls,
       hullOpacity: num(m.hullOpacity, d.map.hullOpacity, 0.2, 3),
       showStars: typeof m.showStars === "boolean" ? m.showStars : d.map.showStars,
+      gravity: oneOf(m.gravity, ["mutuals", "loners", "center", "circles"] as const, d.map.gravity),
+      orbit: num(m.orbit, d.map.orbit, 0, 3),
+      hoverCard: typeof m.hoverCard === "boolean" ? m.hoverCard : d.map.hoverCard,
+    },
+    sounds: {
+      ...snd,
+      newFriend: typeof snd.newFriend === "boolean" ? snd.newFriend : d.sounds.newFriend,
+      sound: oneOf(snd.sound, ["chime", "sparkle", "pop", "bell"] as const, d.sounds.sound),
+      volume: num(snd.volume, d.sounds.volume, 0, 1),
     },
     logs: {
       ...l,
@@ -442,6 +466,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.4.0": "profiles laid out like VRChat's, the full player card when you point at someone, layout gravity options and a slow orbit animation, a sound and animation when someone becomes your friend, and a faster map.",
   "0.3.0": "friend groups suggested from your game logs, map options (including full player cards), 24 circle colors and a color picker.",
 };
 

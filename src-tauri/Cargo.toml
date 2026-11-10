@@ -1,6 +1,6 @@
 [package]
 name = "vrc-friend-map"
-version = "0.3.2"
+version = "0.4.0"
 description = "Map your VRChat friends, mutuals and circles"
 edition = "2021"
 license = "MIT"

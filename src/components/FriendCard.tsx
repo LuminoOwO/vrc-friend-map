@@ -24,6 +24,8 @@ export interface FriendCardProps {
   circles: Circle[];
   dimmed?: boolean;
   selected?: boolean;
+  /** Just became a friend: plays the pop-in animation. */
+  fresh?: boolean;
   now: number;
   onSelect: (id: string) => void;
 }
@@ -46,7 +48,7 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
 
   return (
     <div
-      className={`fcard ${p.dimmed ? "dimmed" : ""} ${p.selected ? "selected" : ""} ${online ? "" : "offline"}`}
+      className={`fcard ${p.dimmed ? "dimmed" : ""} ${p.selected ? "selected" : ""} ${online ? "" : "offline"} ${p.fresh ? "fresh" : ""}`}
       draggable
       onDragStart={(e) => {
         e.dataTransfer.setData("text/vrc-user", f.id);

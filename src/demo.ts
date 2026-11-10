@@ -40,6 +40,28 @@ function avatarThumbFor(name: string, hue: number) {
   );
 }
 
+function badgeImg(text: string, hue: number) {
+  return svgData(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="72" height="44"><rect x="2" y="2" width="68" height="40" rx="6" fill="hsl(${hue},45%,22%)" stroke="hsl(${hue},60%,55%)" stroke-width="2"/><text x="36" y="29" font-family="sans-serif" font-size="18" font-weight="800" text-anchor="middle" fill="hsl(${hue},80%,80%)">${text}</text></svg>`,
+  );
+}
+
+function demoBadges(r: () => number) {
+  const all = [
+    { id: "b1", name: "Early supporter", imageUrl: badgeImg("VRC+", 45) },
+    { id: "b2", name: "6 years", imageUrl: badgeImg("6", 210) },
+    { id: "b3", name: "World creator", imageUrl: badgeImg("WC", 150) },
+    { id: "b4", name: "Event host", imageUrl: badgeImg("EVT", 300) },
+  ];
+  return all.filter(() => r() < 0.5);
+}
+
+function groupIcon(text: string, hue: number) {
+  return svgData(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><circle cx="32" cy="32" r="32" fill="hsl(${hue},50%,30%)"/><text x="32" y="41" font-family="sans-serif" font-size="24" font-weight="800" text-anchor="middle" fill="hsl(${hue},80%,82%)">${text}</text></svg>`,
+  );
+}
+
 function bannerFor(hue: number, r: () => number) {
   const h2 = (hue + 40 + Math.round(r() * 60)) % 360;
   const x = Math.round(r() * 300);
@@ -93,10 +115,20 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
       const t = r();
       const tags =
         t < 0.04 ? [] : t < 0.12 ? ["system_trust_basic"] : t < 0.3 ? ["system_trust_basic", "system_trust_known"] : t < 0.55 ? ["system_trust_basic", "system_trust_known", "system_trust_trusted"] : ["system_trust_basic", "system_trust_known", "system_trust_trusted", "system_trust_veteran"];
+      const langs = [["language_eng"], ["language_eng", "language_deu"], ["language_eng", "language_jpn"], ["language_fra", "language_eng"], ["language_eng", "language_ase"]][Math.floor(r() * 5)];
       details[id] = {
-        tags: r() < 0.25 ? [...tags, "system_supporter"] : tags,
+        tags: [...(r() < 0.25 ? [...tags, "system_supporter"] : tags), ...langs],
         date_joined: new Date(now - (60 + r() * 2200) * 864e5).toISOString().slice(0, 10),
         pronouns: ["", "she/her", "he/him", "they/them", "any"][Math.floor(r() * 5)],
+        bio: [
+          "Just here to vibe ✨ Ask me about my avatar.",
+          "Night owl. Usually in a quiet world with friends.",
+          "Furry, dancer, professional wall-leaner.\nDMs open.",
+          "",
+          "Building worlds on weekends. Say hi!",
+        ][Math.floor(r() * 5)],
+        bioLinks: r() < 0.4 ? [`https://example.com/${name.toLowerCase()}`] : [],
+        badges: r() < 0.5 ? demoBadges(r) : [],
         fetchedAt: now,
       };
       community[id] = ci;
@@ -181,6 +213,24 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
       });
     }
   }
+  const demoGroups = [
+    ["The Black Cat", 20],
+    ["Club Midnight", 290],
+    ["Quest Hangout", 120],
+    ["Avatar Makers", 170],
+    ["Movie Night Crew", 330],
+    ["Rooftop Society", 60],
+    ["Cozy Corner", 25],
+  ] as const;
+  const groups: NonNullable<Cache["groups"]> = {};
+  for (const id of ids) {
+    const list = demoGroups
+      .filter(() => r() < 0.35)
+      .map(([name, hue], i) => ({ groupId: `grp_demo_${hue}`, name, iconUrl: groupIcon(name.split(" ").map((w) => w[0]).join("").slice(0, 2), hue), memberCount: 40 + i * 13, isRepresenting: false }));
+    if (list.length) list[0].isRepresenting = r() < 0.6;
+    groups[id] = { list, hidden: false, fetchedAt: now };
+  }
+
   const presenceStats: PresenceStats = {
     people: [...personAcc.values()],
     pairs: [...pairTimes.values()].sort((x, y) => y.weighted - x.weighted),
@@ -210,6 +260,7 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
       mutuals,
       favorites,
       lastFriendsSync: now,
+      groups,
     },
     local: {
       logSince: now - 20 * 864e5,

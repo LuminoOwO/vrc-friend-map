@@ -196,3 +196,31 @@ export function mutualEdges(friendIds: Set<string>, mutuals: Record<string, Mutu
 export function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }
+
+const LANGUAGES: Record<string, string> = {
+  eng: "English", deu: "German", fra: "French", spa: "Spanish", ita: "Italian", por: "Portuguese",
+  jpn: "Japanese", kor: "Korean", zho: "Chinese", rus: "Russian", ukr: "Ukrainian", pol: "Polish",
+  nld: "Dutch", swe: "Swedish", nor: "Norwegian", dan: "Danish", fin: "Finnish", tur: "Turkish",
+  ces: "Czech", hun: "Hungarian", ron: "Romanian", ell: "Greek", heb: "Hebrew", ara: "Arabic",
+  tha: "Thai", vie: "Vietnamese", ind: "Indonesian", msa: "Malay", tgl: "Tagalog", hin: "Hindi",
+  ase: "American Sign Language", bfi: "British Sign Language", dse: "Dutch Sign Language",
+  fsl: "French Sign Language", jsl: "Japanese Sign Language", kvk: "Korean Sign Language",
+  gsg: "German Sign Language", epo: "Esperanto", cat: "Catalan", est: "Estonian", lav: "Latvian",
+  lit: "Lithuanian", slk: "Slovak", slv: "Slovenian", hrv: "Croatian", srp: "Serbian", bul: "Bulgarian",
+  isl: "Icelandic", gle: "Irish", cym: "Welsh",
+};
+
+/** "language_eng" tags -> ["English"] */
+export function languagesOf(tags: string[] | undefined): string[] {
+  return (tags ?? [])
+    .filter((t) => t.startsWith("language_"))
+    .map((t) => {
+      const code = t.slice(9);
+      return LANGUAGES[code] ?? code.toUpperCase();
+    });
+}
+
+/** "https://twitter.com/x" -> "twitter.com/x" for display. */
+export function shortLink(url: string): string {
+  return url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+}

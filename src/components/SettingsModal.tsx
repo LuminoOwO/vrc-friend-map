@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { backend } from "../backend";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, wipeEverything } from "../session";
-import { setState, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
-import type { GroupSettings, MapSettings } from "../types";
+import { getState, setState, updateCache, updateGroupSettings, updateSounds, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
+import { celebrateNewFriends, playSound, SOUNDS } from "../notify";
+import type { GroupSettings, MapSettings, SoundSettings } from "../types";
 import { Icon } from "./Icon";
 
 export function SettingsModal() {
@@ -118,6 +119,10 @@ export function SettingsModal() {
             </label>
           </div>
           <p className="small muted">More options (full player cards, sizes, spacing…) are under “Map options” on the map.</p>
+        </section>
+
+        <section>
+          <SoundSection />
         </section>
 
         <section ref={logsRef}>
@@ -382,6 +387,65 @@ function GroupSection() {
           Show {dismissed} dismissed suggestion{dismissed === 1 ? "" : "s"} again
         </button>
       )}
+    </>
+  );
+}
+
+function SoundSection() {
+  const snd = useApp((s) => s.settings.sounds);
+  const demo = useApp((s) => s.demo);
+  return (
+    <>
+      <h3>New friends</h3>
+      <p className="small muted">
+        When someone accepts your friend request (or you accept theirs), VRChat tells the app within a second or two, on any device. Their picture
+        pops onto the map with a few rings around it.
+      </p>
+      <label className="check">
+        <input type="checkbox" checked={snd.newFriend} onChange={(e) => updateSounds({ newFriend: e.target.checked })} />
+        Play a sound
+      </label>
+      <div className="row">
+        <label className="field narrow">
+          <span>Sound</span>
+          <select value={snd.sound} onChange={(e) => updateSounds({ sound: e.target.value as SoundSettings["sound"] })}>
+            {SOUNDS.map((x) => (
+              <option key={x.value} value={x.value}>
+                {x.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field narrow">
+          <span>Volume {Math.round(snd.volume * 100)}%</span>
+          <input type="range" min={0} max={1} step={0.05} value={snd.volume} onChange={(e) => updateSounds({ volume: Number(e.target.value) })} />
+        </label>
+      </div>
+      <div className="row">
+        <button className="btn" onClick={() => playSound(snd.sound, snd.volume)}>
+          <Icon name="sound" size={16} /> Play it
+        </button>
+        {demo && (
+          <button
+            className="btn"
+            onClick={() => {
+              const s = getState();
+              const ids = Object.keys(s.cache.friends);
+              const base = s.cache.friends[ids[Math.floor(Math.random() * ids.length)]];
+              const id = `usr_demo_new_${Date.now()}`;
+              updateCache((c) => ({
+                ...c,
+                friends: { ...c.friends, [id]: { ...base, id, displayName: `NewFriend${Math.floor(Math.random() * 90 + 10)}`, status: "join me", location: "private" } },
+                presence: { ...c.presence, [id]: "online" },
+              }));
+              celebrateNewFriends([id]);
+              setState({ settingsOpen: false });
+            }}
+          >
+            Try it: add a demo friend
+          </button>
+        )}
+      </div>
     </>
   );
 }

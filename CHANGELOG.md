@@ -3,6 +3,30 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.4.0 (2026-11-10)
+
+### Added
+- Profiles are laid out like VRChat's profile page: big banner and picture with a status
+  pill, name, status and trust rank, represented group, about me, languages, links, your
+  note, a status card ("Offline for 3 days", "In a private world"), badges and groups
+  (loaded when you open the profile), plus this app's circles, time together and shared
+  friends. Two columns when there's room. Esc closes it.
+- Pointing at someone on the map shows their full player card (can be turned off).
+- Map gravity options: loners float in a ring (as before), loners gather in one spot,
+  everyone close together, or each circle in its own spot.
+- "Slowly turn the map": an optional slow orbit around the center.
+- New friends: an optional sound (chime, sparkle, pop or bell, with volume) and a pop-in
+  animation with rings on the map and in the cards view. A new friend appears in the
+  middle of what you're looking at. Works on every device through VRChat's live events.
+- Phones start zoomed in further so pictures are recognizable.
+
+### Changed
+- Faster map: people off screen aren't drawn, and pictures and cards are drawn once per
+  zoom level and reused instead of being redrawn every frame.
+
+### Fixed
+- The map options panel could scroll sideways into empty space.
+
 ## 0.3.2 (2026-11-10)
 
 ### Fixed

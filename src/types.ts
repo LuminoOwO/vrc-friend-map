@@ -33,6 +33,31 @@ export interface UserDetail {
   pronouns?: string;
   bio?: string;
   note?: string;
+  bioLinks?: string[];
+  badges?: Badge[];
+  fetchedAt: number;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description?: string;
+  imageUrl: string;
+  showcased?: boolean;
+}
+
+/** One of a user's VRChat groups (GET /users/{id}/groups), loaded when you open their profile. */
+export interface UserGroup {
+  groupId: string;
+  name: string;
+  iconUrl?: string;
+  memberCount?: number;
+  isRepresenting?: boolean;
+}
+
+export interface UserGroups {
+  list: UserGroup[];
+  hidden: boolean;
   fetchedAt: number;
 }
 
@@ -93,6 +118,8 @@ export interface Cache {
   mutuals: Record<string, MutualInfo>;
   /** userId -> favorite group display names */
   favorites: Record<string, string[]>;
+  /** Loaded on demand when a profile is opened. */
+  groups?: Record<string, UserGroups>;
   lastFriendsSync: number;
 }
 
@@ -109,6 +136,15 @@ export interface LocalData {
 }
 
 export type NodeStyle = "dot" | "icon" | "card" | "fullcard";
+export type Gravity = "mutuals" | "loners" | "center" | "circles";
+
+export interface SoundSettings {
+  /** Play a sound when someone becomes your friend. */
+  newFriend: boolean;
+  sound: "chime" | "sparkle" | "pop" | "bell";
+  /** 0 – 1 */
+  volume: number;
+}
 export type LineMode = "shared" | "plain" | "together" | "none";
 
 export interface MapSettings {
@@ -131,6 +167,12 @@ export interface MapSettings {
   /** 0.3 – 2 */
   hullOpacity: number;
   showStars: boolean;
+  /** Where people without lines drift, and what pulls the layout together. */
+  gravity: Gravity;
+  /** Slowly turn the whole map around its center (0 = off, 1 = slow … 3 = fast). */
+  orbit: number;
+  /** Show the full player card when pointing at someone. */
+  hoverCard: boolean;
 }
 
 export interface LogSettings {
@@ -176,6 +218,7 @@ export interface Settings {
   map: MapSettings;
   logs: LogSettings;
   groups: GroupSettings;
+  sounds: SoundSettings;
   /** App version that last ran with this data (for upgrade/downgrade notes). */
   lastVersion: string;
 }
