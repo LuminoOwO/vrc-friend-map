@@ -43,8 +43,28 @@ env:
   MODE: ${{ startsWith(github.ref, 'refs/heads/build-check/') && 'check' || 'release' }}
 
 jobs:
+  # Decides where the tests run: my PC when it's online and idle, else GitHub.
+  pick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      runs-on: ${{ steps.pick.outputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/actions
+      - id: pick
+        uses: ./.github/actions/pick-runner
+        with:
+          token: ${{ secrets.RUNNER_STATUS_TOKEN }}
+          mode: ${{ vars.USE_MY_PC }}
+
   test:
-    runs-on: ubuntu-22.04
+    # Tests: my PC (RunnerDock) if it's online and idle, otherwise GitHub's runners. The builds
+    # below always stay on GitHub: ubuntu-22.04 keeps Linux packages compatible with older
+    # distros, and Windows/macOS/iOS/ARM need their own machines.
+    needs: pick
+    runs-on: ${{ fromJSON(needs.pick.outputs.runs-on) }}
     outputs:
       sha: ${{ steps.pick.outputs.sha }}
     steps:
@@ -83,10 +103,25 @@ jobs:
       - name: System libraries
         timeout-minutes: 15
         run: |
+          # a|b = either package will do (Linux Mint ships the Ayatana tray library, which conflicts with
+          # libappindicator3; the app's tray-icon crate works with both). The first one gets installed.
+          PKGS="libwebkit2gtk-4.1-dev libappindicator3-dev|libayatana-appindicator3-dev librsvg2-dev patchelf libxdo-dev"
+          MISSING=$(for alt in $PKGS; do
+            ok=; for p in ${alt//|/ }; do dpkg-query -W -f='${Status}' "$p" 2>/dev/null | grep -q "ok installed" && ok=1; done
+            [ -n "$ok" ] || printf '%s ' "${alt%%|*}"
+          done)
+          MISSING=${MISSING% }
+          if [ -z "$MISSING" ]; then echo "All system libraries present"; exit 0; fi
+          if [ "$RUNNER_ENVIRONMENT" = self-hosted ]; then
+            # no sudo on your own PC: install them once yourself
+            HINT=${MISSING/libappindicator3-dev/libayatana-appindicator3-dev}
+            echo "::error::Missing on this machine: $MISSING. Run once: sudo apt install $HINT"
+            exit 1
+          fi
           # Ubuntu's mirrors sometimes hang: give each try 3 minutes, up to 3 tries.
           APT='-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30'
           for try in 1 2 3; do
-            timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev && break
+            timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y $MISSING && break
             [ $try = 3 ] && exit 1; echo "::warning::package install try $try failed, retrying"; sleep 10
           done
       - run: npm ci
