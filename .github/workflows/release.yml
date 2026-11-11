@@ -80,9 +80,15 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
-      - run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev
+      - name: System libraries
+        timeout-minutes: 15
+        run: |
+          # Ubuntu's mirrors sometimes hang: give each try 3 minutes, up to 3 tries.
+          APT='-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30'
+          for try in 1 2 3; do
+            timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev && break
+            [ $try = 3 ] && exit 1; echo "::warning::package install try $try failed, retrying"; sleep 10
+          done
       - run: npm ci
       - run: npx tsc --noEmit && npm test
       - run: cargo test --manifest-path src-tauri/Cargo.toml --lib
@@ -136,9 +142,14 @@ jobs:
           workspaces: src-tauri -> target
           key: ${{ matrix.runner }}
       - name: System libraries
+        timeout-minutes: 15
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file
+          # Ubuntu's mirrors sometimes hang: give each try 3 minutes, up to 3 tries.
+          APT='-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30'
+          for try in 1 2 3; do
+            timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file && break
+            [ $try = 3 ] && exit 1; echo "::warning::package install try $try failed, retrying"; sleep 10
+          done
       - name: Build deb, rpm, AppImage and tarball
         run: |
           set -o pipefail
