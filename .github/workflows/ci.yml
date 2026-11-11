@@ -43,6 +43,7 @@ jobs:
         with:
           workspaces: src-tauri -> target
       - name: System libraries
+        timeout-minutes: 15
         run: |
           # a|b = either package will do (Linux Mint ships the Ayatana tray library, which conflicts with
           # libappindicator3; the app's tray-icon crate works with both). The first one gets installed.
@@ -59,8 +60,12 @@ jobs:
             echo "::error::Missing on this machine: $MISSING. Run once: sudo apt install $HINT"
             exit 1
           fi
-          sudo apt-get update
-          sudo apt-get install -y $MISSING
+          # Ubuntu's mirrors sometimes hang: give each try 3 minutes, up to 3 tries.
+          APT='-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30'
+          for try in 1 2 3; do
+            timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y $MISSING && break
+            [ $try = 3 ] && exit 1; echo "::warning::package install try $try failed, retrying"; sleep 10
+          done
       - run: npm ci
       - name: Type check and frontend tests
         run: |

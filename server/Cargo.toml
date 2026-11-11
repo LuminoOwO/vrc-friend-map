@@ -1,6 +1,6 @@
 [package]
 name = "vfm-server"
-version = "0.7.1"
+version = "0.7.3"
 description = "Small always-on helper for VRC Friend Map: logs friends' instance hopping and exchanges (end-to-end encrypted) friend lists and activity"
 edition = "2021"
 license = "MIT"

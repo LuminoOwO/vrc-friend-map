@@ -275,6 +275,8 @@ The script picks the format that fits your distro:
 
 To choose yourself, pass one or more formats: `./scripts/build-linux.sh deb rpm appimage tarball`. `all` builds every format, and `none` builds just the binary.
 
+GTK 3 built without Wayland (X11 only) works too. The build notices it, prints `GTK 3 here has no Wayland support: building for X11 only`, and adds stand-ins for the two Wayland functions the window library links. To force it either way, set `VFM_GDK_WAYLAND=0` or `VFM_GDK_WAYLAND=1`.
+
 Finished packages are copied to `release/`, named as in the table above, along with a `SHA256SUMS` file. The script then prints the install command for each one.
 
 By hand, the script runs:
@@ -427,6 +429,9 @@ packaging/linux/         desktop entry, tarball installer and README
 - Live updates only arrive while the app is running. Changes that happen while it's closed
   are picked up by the sync when it starts. A [vfm-server](server/README.md) logger fills
   that gap for time-together.
+- On Linux the app turns off WebKitGTK's DMA-BUF renderer, which made the map several times
+  slower (and misbehaves on NVIDIA). If the window stays blank or flickers on your system, start
+  it with `VRC_FRIEND_MAP_DMABUF=1` to use WebKit's default instead, and please open an issue.
 - iPhones can't run vfm-server (iOS stops background programs); they can use servers.
 - People who hide their mutual connections show up without lines, by design.
 - Game-log features need the desktop app on the PC that runs VRChat. Quest/phone sessions

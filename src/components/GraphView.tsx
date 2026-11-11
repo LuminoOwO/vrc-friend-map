@@ -133,6 +133,9 @@ function bucketLabel(i: number, t: number[]): string {
 
 /** Draw an image to fill a box, cropping instead of stretching (like CSS
  *  object-fit: cover). Avatar thumbnails are 4:3, profile icons are square. */
+/** Dev-only draw timings for the perf harness. */
+const drawStats = { times: [] as number[] };
+
 function drawCover(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
   const iw = img.naturalWidth;
   const ih = img.naturalHeight;
@@ -315,6 +318,8 @@ export function GraphView() {
   const simRef = useRef<d3.Simulation<GNode, GLink> | null>(null);
   const nodesRef = useRef<Map<string, GNode>>(new Map());
   const transformRef = useRef<d3.ZoomTransform>(d3.zoomIdentity);
+  /** Last pan, zoom or drag (ms), to keep the orbit at full frame rate then. */
+  const lastInteractionRef = useRef(0);
   const zoomRef = useRef<d3.ZoomBehavior<HTMLCanvasElement, unknown> | null>(null);
   const hullsRef = useRef<Hull[]>([]);
   const sizeRef = useRef({ w: 800, h: 600, dpr: 1 });
@@ -446,6 +451,30 @@ export function GraphView() {
       draw();
     });
   };
+
+  // Frame-rate readout (Map options → Show frame rate).
+  const fpsRef = useRef<HTMLDivElement>(null);
+  const fpsAcc = useRef({ since: 0, frames: 0, drawMs: 0, worst: 0, last: 0 });
+  function tickFps(t0: number, ms: number) {
+    const a = fpsAcc.current;
+    if (!a.since) a.since = t0;
+    // Gaps while nothing moves aren't slow frames.
+    if (a.last && t0 - a.last < 250) a.worst = Math.max(a.worst, t0 - a.last);
+    a.last = t0;
+    a.frames++;
+    a.drawMs += ms;
+    const span = t0 - a.since;
+    if (span >= 500) {
+      if (fpsRef.current)
+      {
+        const fps = Math.round((a.frames * 1000) / span);
+        const capped = viewRef.current.settings.map.orbit && Date.now() - lastInteractionRef.current > 1500 && fps <= 34;
+        fpsRef.current.textContent =
+          `${fps} fps · draw ${(a.drawMs / a.frames).toFixed(1)} ms · slowest ${Math.round(a.worst)} ms` + (capped ? " · just orbiting: 30 fps on purpose" : "");
+      }
+      fpsAcc.current = { since: t0, frames: 0, drawMs: 0, worst: 0, last: t0 };
+    }
+  }
 
   function getImage(url: string | undefined): HTMLImageElement | null {
     if (!url) return null;
@@ -814,6 +843,22 @@ export function GraphView() {
   }
 
   function draw() {
+    if (viewRef.current.settings.map.showFps) {
+      const t0 = performance.now();
+      drawInner();
+      tickFps(t0, performance.now() - t0);
+      return;
+    }
+    if (import.meta.env.DEV) {
+      const t0 = performance.now();
+      drawInner();
+      drawStats.times.push(performance.now() - t0);
+      return;
+    }
+    drawInner();
+  }
+
+  function drawInner() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -1231,9 +1276,15 @@ export function GraphView() {
         n.x = x * cos - n.y * sin;
         n.y = x * sin + n.y * cos;
       }
-      if (!document.hidden) draw();
+      // Through the shared scheduler, so a frame is never drawn twice (pan,
+      // zoom and the layout also ask for draws). Orbiting alone moves things
+      // a fraction of a pixel per frame, so every other frame is plenty and
+      // halves the cost while the map just sits there.
+      frame++;
+      if (!document.hidden && (frame % 2 === 0 || Date.now() - lastInteractionRef.current < 1500)) requestDraw();
       raf = requestAnimationFrame(step);
     };
+    let frame = 0;
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1333,6 +1384,7 @@ export function GraphView() {
         setTooltip(null);
       })
       .on("drag", (event) => {
+        lastInteractionRef.current = Date.now();
         const t = transformRef.current;
         const n = event.subject.node;
         n.fx = t.invertX(event.x);
@@ -1368,11 +1420,21 @@ export function GraphView() {
       .scaleExtent([0.04, 6])
       .on("zoom", (event) => {
         transformRef.current = event.transform;
+        lastInteractionRef.current = Date.now();
         requestDraw();
       });
     zoomRef.current = zoom;
     const sel = d3.select(canvas);
     sel.call(drag).call(zoom).on("dblclick.zoom", null);
+    // Dev server only: lets the perf harness (src/perf.ts) move the view and read draw times.
+    if (import.meta.env.DEV)
+      (window as unknown as { __vfmGraph: unknown }).__vfmGraph = {
+        transform: () => transformRef.current,
+        setTransform: (x: number, y: number, k: number) => sel.call(zoom.transform, d3.zoomIdentity.translate(x, y).scale(k)),
+        fit: () => fit(false),
+        reheat: () => simRef.current?.alpha(1).restart(),
+        stats: drawStats,
+      };
 
     const onMove = (e: PointerEvent) => {
       if (e.pointerType !== "mouse" || e.buttons) return;
@@ -1445,6 +1507,11 @@ export function GraphView() {
   return (
     <div className="graph" ref={containerRef}>
       <canvas ref={canvasRef} className="graph-canvas" />
+      {map.showFps && (
+        <div ref={fpsRef} className="fps-readout" aria-live="off">
+          measuring…
+        </div>
+      )}
       {empty && <div className="graph-empty">No friends loaded yet. They'll appear here after the first sync.</div>}
       {noMutualData && !wantsTogether && (
         <div className="graph-hint">Connections appear as mutual-friend data loads (one request per friend, about a second each).</div>

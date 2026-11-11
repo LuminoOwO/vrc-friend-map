@@ -107,6 +107,10 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
           <input type="checkbox" checked={map.showShield} onChange={(e) => set({ showShield: e.target.checked })} />
           Trust-rank shield next to names on cards
         </label>
+        <label className="check small">
+          <input type="checkbox" checked={map.showFps} onChange={(e) => set({ showFps: e.target.checked })} />
+          Show frame rate
+        </label>
         {map.nodeStyle !== "fullcard" && (
           <label className="check small">
             <input type="checkbox" checked={map.hoverCard} onChange={(e) => set({ hoverCard: e.target.checked })} />

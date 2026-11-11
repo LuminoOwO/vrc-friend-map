@@ -199,6 +199,8 @@ export interface MapSettings {
   orbitDir: 1 | -1;
   /** Small trust-rank shield next to names on cards. */
   showShield: boolean;
+  /** Small frame-rate readout in the corner of the map. */
+  showFps: boolean;
 }
 
 export type Theme = "dark" | "oled" | "light" | "mocha" | "macchiato" | "latte" | "nord" | "dracula";

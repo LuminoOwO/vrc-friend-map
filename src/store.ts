@@ -128,6 +128,7 @@ export const defaultMap = (): MapSettings => ({
   hoverCard: true,
   orbitDir: 1,
   showShield: true,
+  showFps: false,
 });
 
 export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
@@ -453,6 +454,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       hoverCard: typeof m.hoverCard === "boolean" ? m.hoverCard : d.map.hoverCard,
       orbitDir: m.orbitDir === -1 ? -1 : 1,
       showShield: typeof m.showShield === "boolean" ? m.showShield : d.map.showShield,
+      showFps: typeof m.showFps === "boolean" ? m.showFps : d.map.showFps,
     },
     sounds: {
       ...snd,
