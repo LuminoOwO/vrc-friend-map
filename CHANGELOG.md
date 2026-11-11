@@ -3,6 +3,15 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.7.3 (2026-11-11)
+
+### Fixed
+- Building from source on systems whose GTK 3 has no Wayland support (X11-only builds, e.g.
+  Gentoo with `-wayland`) failed to link with `undefined symbol: gdk_wayland_window_get_wl_surface`.
+  The window library always links two GDK Wayland functions, though it only calls them on
+  Wayland. The build now detects such a GTK and adds stand-ins for them. `VFM_GDK_WAYLAND=0`
+  or `=1` forces the choice. Normal systems build exactly as before.
+
 ## 0.7.2 (2026-11-10)
 
 ### Fixed

@@ -275,6 +275,8 @@ The script picks the format that fits your distro:
 
 To choose yourself, pass one or more formats: `./scripts/build-linux.sh deb rpm appimage tarball`. `all` builds every format, and `none` builds just the binary.
 
+GTK 3 built without Wayland (X11 only) works too. The build notices it, prints `GTK 3 here has no Wayland support: building for X11 only`, and adds stand-ins for the two Wayland functions the window library links. To force it either way, set `VFM_GDK_WAYLAND=0` or `VFM_GDK_WAYLAND=1`.
+
 Finished packages are copied to `release/`, named as in the table above, along with a `SHA256SUMS` file. The script then prints the install command for each one.
 
 By hand, the script runs:

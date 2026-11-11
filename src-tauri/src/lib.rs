@@ -1,5 +1,7 @@
 mod api;
 mod auth;
+#[cfg(all(target_os = "linux", vfm_gdk_no_wayland))]
+mod gdk_stubs;
 mod gamelogs;
 mod images;
 mod pipeline;
