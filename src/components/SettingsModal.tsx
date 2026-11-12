@@ -200,7 +200,12 @@ export function SettingsModal() {
               </p>
             )}
             {gfxStart !== null && gfxStart !== gfx.mode && !gfx.forced && (
-              <p className="small">Restart the app for this to take effect.</p>
+              <div className="row">
+                <span className="small">Restart the app for this to take effect.</span>
+                <button className="btn" onClick={() => backend.restartApp().catch(() => {})}>
+                  Restart now
+                </button>
+              </div>
             )}
           </section>
         )}

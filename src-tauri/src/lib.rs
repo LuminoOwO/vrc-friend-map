@@ -278,6 +278,12 @@ fn graphics_set(mode: String) -> Result<(), String> {
     graphics::save(graphics::Mode::parse(&mode).ok_or("unknown mode")?)
 }
 
+/// Relaunch the app (used to apply a graphics change).
+#[tauri::command]
+fn app_restart(app: AppHandle) {
+    app.restart()
+}
+
 #[derive(serde::Serialize)]
 struct StorageInfo {
     data_dir: String,
@@ -376,6 +382,7 @@ pub fn run() {
             storage_info,
             graphics_get,
             graphics_set,
+            app_restart,
             clear_image_cache,
             hash_ids,
             save_export,

@@ -7,7 +7,7 @@ minor releases can change behavior.
 
 ### Added
 - Settings → Graphics → **Map rendering**: *Automatic*, *Prefer the graphics card (GPU)* or
-  *Software (CPU only)*, on Linux and Windows. Takes effect after a restart. "Prefer the GPU"
+  *Software (CPU only)*, on Linux and Windows. Takes effect after a restart (there is a "Restart now" button). "Prefer the GPU"
   also asks the web view to use the GPU on drivers it would normally avoid. `VRC_FRIEND_MAP_GPU=auto|gpu|software`
   overrides the saved choice, e.g. to get a blank window working again.
 

@@ -232,6 +232,9 @@ export const backend = {
   async setGraphicsMode(mode: GraphicsMode): Promise<void> {
     if (isTauri) await invoke("graphics_set", { mode });
   },
+  async restartApp(): Promise<void> {
+    if (isTauri) await invoke("app_restart");
+  },
   async clearImageCache(): Promise<void> {
     if (isTauri) await invoke("clear_image_cache");
   },

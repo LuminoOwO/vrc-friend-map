@@ -112,6 +112,9 @@ pub fn env_plan(mode: Mode, os: Os, dmabuf_default: bool, get: &dyn Fn(&str) -> 
                     if get("WEBKIT_DISABLE_COMPOSITING_MODE").is_some() {
                         out.push(("WEBKIT_DISABLE_COMPOSITING_MODE".into(), None));
                     }
+                    if get("LIBGL_ALWAYS_SOFTWARE").is_some() {
+                        out.push(("LIBGL_ALWAYS_SOFTWARE".into(), None));
+                    }
                     if get("WEBKIT_FORCE_COMPOSITING_MODE").is_none() {
                         out.push(("WEBKIT_FORCE_COMPOSITING_MODE".into(), Some("1".into())));
                     }
@@ -119,6 +122,10 @@ pub fn env_plan(mode: Mode, os: Os, dmabuf_default: bool, get: &dyn Fn(&str) -> 
                 Mode::Software => {
                     if get("WEBKIT_DISABLE_COMPOSITING_MODE").is_none() {
                         out.push(("WEBKIT_DISABLE_COMPOSITING_MODE".into(), Some("1".into())));
+                    }
+                    // Make GL itself (Mesa) render on the CPU too.
+                    if get("LIBGL_ALWAYS_SOFTWARE").is_none() {
+                        out.push(("LIBGL_ALWAYS_SOFTWARE".into(), Some("1".into())));
                     }
                 }
             }
@@ -221,6 +228,7 @@ mod tests {
         assert!(gpu.contains(&("WEBKIT_FORCE_COMPOSITING_MODE".to_string(), Some("1".to_string()))));
         let sw = env_plan(Mode::Software, Os::Linux, false, &none);
         assert!(sw.contains(&("WEBKIT_DISABLE_COMPOSITING_MODE".to_string(), Some("1".to_string()))));
+        assert!(sw.contains(&("LIBGL_ALWAYS_SOFTWARE".to_string(), Some("1".to_string()))));
     }
 
     #[test]
