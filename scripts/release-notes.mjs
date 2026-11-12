@@ -23,7 +23,7 @@ console.log(`## Which file do I need?
 | Windows 10/11 | \`vrc-friend-map_${v}_windows-x64-setup.exe\` (or the \`.msi\`; \`-portable.exe\` runs without installing) |
 | Debian / Ubuntu / Linux Mint | \`vrc-friend-map_${v}_amd64.deb\` (ARM: \`_arm64.deb\`) |
 | Fedora / openSUSE | \`vrc-friend-map-${v}-1.x86_64.rpm\` |
-| Any Linux | \`vrc-friend-map-${v}-x86_64.AppImage\` or \`vrc-friend-map-${v}-linux-x86_64.tar.gz\` |
+| Any Linux | \`vrc-friend-map-${v}-linux-x86_64.tar.gz\` (Linux builds run on Chromium and need GTK 4.14+: Ubuntu/Mint 24.04+, Debian 13+, Fedora 40+) |
 | Android 7+ | \`vrc-friend-map_${v}_android.apk\` |
 | iPhone / iPad | \`vrc-friend-map_${v}_ios-unsigned.ipa\` (sideload with AltStore / SideStore / Sideloadly) |
 | Mac | \`vrc-friend-map_${v}_macos-universal.dmg\` |

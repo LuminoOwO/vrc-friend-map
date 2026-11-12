@@ -3,6 +3,39 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.9.0 (unreleased)
+
+### Changed
+- **Linux runs on Chromium now.** WebKitGTK, the engine the Linux build used, draws without
+  the graphics card on many systems (NVIDIA on X11 reports no hardware acceleration at all),
+  so the map got slower the bigger the window. The Linux packages now bring their own
+  Chromium (Tauri's not-yet-released CEF runtime), which uses the GPU like Windows and Android
+  already do. The download is much bigger (Chromium is in it), and it needs GTK 4.14 or newer
+  (Ubuntu / Mint 24.04+, Debian 13+, Fedora 40+, current Arch). There's no AppImage for now
+  (Tauri's AppImage packaging for Chromium doesn't finish); the tarball works on any distro.
+  `scripts/build-linux.sh --webkit` still builds the old WebKitGTK version.
+- The map draws at full frame rate whenever its window has focus, also while it only orbits.
+  It drops to about 30 fps only when the window isn't focused.
+
+### Added
+- **Activity tab**: who joined and left your instance, your world changes, VRChat closing or
+  crashing (from the game log), and friends coming online, going offline, changing worlds,
+  being added or removed. Filters, search, a day-by-day list, kept 4 days on this device.
+- **Profile actions**: unfriend, block / unblock, mute / unmute, hide avatar. Each is one
+  click, unfriend and block ask first, and like friend requests they go out at most one
+  every 3 seconds.
+- **Settings → People who aren't friends**: load the profile of everyone in your instance (not
+  only the first 25; also a switch in the instance strip), which of their profiles to keep on
+  this device (none, potential friends, everyone), and whether to show people you've blocked
+  (hidden by default, in the strip, on the map and in the activity log).
+- **Settings → Diagnostics**: frame rate, drawing time, canvas size, the GPU the web view uses
+  (and a warning when it's software rendering), web engine, environment flags, a quick drawing
+  benchmark and a *Copy diagnostics* button.
+
+### Fixed
+- Phones: the profile's close button sat under the status bar and was hard to hit. It's bigger
+  now, below the status bar, and stays in place while the profile scrolls.
+
 ## 0.8.0 (2026-11-12)
 
 ### Added

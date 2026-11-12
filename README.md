@@ -18,7 +18,7 @@ packages, which follow each package format's own naming rules.
 | You have | Take | Notes |
 |---|---|---|
 | Windows 10/11 | `…_windows-x64-setup.exe` | Normal installer. The `.msi` is the same thing for managed PCs; `…-portable.exe` runs without installing. Windows may warn that the app is unrecognized (it isn't code-signed): *More info → Run anyway*. |
-| Linux | see [Installing on Linux](#installing-on-linux) | `.deb`, `.rpm`, AppImage or tarball; x86_64 and ARM64. |
+| Linux | see [Installing on Linux](#installing-on-linux) | `.deb`, `.rpm` or tarball; x86_64 and ARM64. |
 | Android 7+ | `…_android.apk` | Allow installing from your browser/file manager when asked. Updates install over the old version and keep your data. |
 | iPhone / iPad | `…_ios-unsigned.ipa` | Apple only allows signed apps, so this needs a sideloading tool that signs it with your own Apple ID (AltStore, SideStore, Sideloadly). With a free Apple ID it has to be refreshed every 7 days. Untested on real devices so far. |
 | Mac | `…_macos-universal.dmg` | Not notarized: right-click the app → Open the first time. VRChat itself doesn't run on macOS, so game-log features don't apply. |
@@ -170,8 +170,10 @@ can't sign in on vrchat.com, so they can't use this either. Link the account in-
 The API is unofficial and VRChat's Creator Guidelines ask tools to limit request volume,
 cache, back off on errors, and identify themselves. This app:
 
-- only makes **GET** requests to a short allow-list of endpoints (plus logout). The one
-  exception is sending or cancelling a friend request, and only when you press that button,
+- only makes **GET** requests to a short allow-list of endpoints (plus logout). The
+  exceptions are the profile buttons: send or cancel a friend request, unfriend, block or
+  unblock, mute or unmute, hide an avatar. Each goes out only when you press it (unfriend and
+  block ask first), at most one every 3 seconds,
 - loads profiles of people who aren't friends only for people shown on the map or in "here
   now", a few seconds apart, at most 200 per session,
 - spaces requests **at least 1 s apart** (default 1.2 s + random jitter), app-wide,
@@ -189,35 +191,36 @@ as data arrives, and later syncs only refresh what's stale.
 
 ## Installing on Linux
 
-Every release comes in four formats. Pick the one for your distro:
+Every release comes in three formats. Pick the one for your distro:
 
 | File (example: 0.3.0 on x86_64) | For | Install |
 |---|---|---|
 | `vrc-friend-map_0.3.0_amd64.deb` | Debian, Ubuntu, Linux Mint, Pop!_OS | `sudo apt install ./vrc-friend-map_0.3.0_amd64.deb` |
 | `vrc-friend-map-0.3.0-1.x86_64.rpm` | Fedora, RHEL/Alma/Rocky, openSUSE | `sudo dnf install ./vrc-friend-map-0.3.0-1.x86_64.rpm` (openSUSE: `sudo zypper install …`) |
-| `vrc-friend-map-0.3.0-x86_64.AppImage` | any distro, no install | `chmod +x` it, then run it |
-| `vrc-friend-map-0.3.0-linux-x86_64.tar.gz` | Arch and anything else | unpack, then `./install.sh` (per-user, no root; `./install.sh --uninstall` removes it) |
+| `vrc-friend-map-0.3.0-linux-x86_64.tar.gz` | Arch and any other distro | unpack, then `./install.sh` (per-user, no root; `./install.sh --uninstall` removes it) |
 
 ARM64 builds use `arm64` (deb) or `aarch64` (everything else) in place of `amd64`/`x86_64`.
 
 `SHA256SUMS` lists the checksums: `sha256sum -c SHA256SUMS --ignore-missing`.
 
-Runtime dependencies (the .deb and .rpm pull these in by themselves):
+Since 0.9.0 the Linux app runs on **Chromium**, which comes inside every package (Tauri's
+CEF runtime). WebKitGTK, which it used before, draws without the graphics card on many
+systems, so big windows got slow; Chromium uses the GPU. That makes the downloads much
+bigger than before (Chromium is in them), and it needs a fairly recent desktop:
 
-- **WebKitGTK 4.1**:
-  - `libwebkit2gtk-4.1-0` on Debian, Ubuntu and Mint
-  - `webkit2gtk4.1` on Fedora
-  - `webkit2gtk-4.1` on Arch
-  - `libwebkit2gtk-4_1-0` on openSUSE
-- **The AppImage** also needs FUSE 2: `sudo apt install libfuse2t64` on Ubuntu 24.04 / Mint 22 (older releases: `libfuse2`). Without FUSE you can run it as `./vrc-friend-map-….AppImage --appimage-extract-and-run`.
+- **GTK 4.14 or newer** (and GTK 3): Ubuntu / Linux Mint 24.04+, Debian 13+, Fedora 40+,
+  current Arch and openSUSE Tumbleweed. The .deb and .rpm pull it in by themselves.
+- There's no AppImage since 0.9.0: Tauri's AppImage packaging for Chromium doesn't work yet.
+  The tarball runs on any distro (and needs no root).
 
-The AppImage bundles WebKit, so it's much bigger (~80 MB vs ~5 MB).
+On older systems, build the previous WebKitGTK version yourself with
+`scripts/build-linux.sh --webkit` (see [Building on Linux](#building-on-linux)).
 
 Files are named the way each format expects:
 
 - `name_version_arch.deb`, using Debian architecture names like `amd64`.
 - `name-version-release.arch.rpm`, using RPM architecture names like `x86_64`.
-- `name-version-arch` for the AppImage and the tarball.
+- `name-version-arch` for the tarball.
 
 Versions follow [Semantic Versioning](https://semver.org). Changes are listed in [CHANGELOG.md](CHANGELOG.md).
 
@@ -241,6 +244,14 @@ where they are (see [Where data lives](#where-data-lives)), whatever the format:
   as long as both are official release builds (same signing key).
 
 ## Building on Linux
+
+`scripts/build-linux.sh` builds the Chromium version by default: it needs **GTK 4.14+
+development files** (`libgtk-4-dev` on Debian/Ubuntu, `gtk4-devel` on Fedora) and Python 3,
+downloads Chromium (CEF, about 1 GB, kept in `~/.cache/tauri-cef`), and the first time builds
+Tauri's command line tool from its Chromium branch into `.tools/` (a few minutes). Tauri's
+Chromium runtime isn't released yet, so this takes Tauri from that branch, pinned to one
+commit in `scripts/chromium.py`; the script switches `src-tauri/Cargo.toml` over for the build
+and back afterwards. Add `--webkit` for the WebKitGTK version, which needs the packages below.
 
 You need **Node.js 20+**, **Rust**, a C toolchain and the **WebKitGTK 4.1** development
 files. Install the system packages for your distro (list from Tauri's
@@ -291,10 +302,9 @@ The script picks the format that fits your distro:
 
 - `.deb` on Debian-based systems
 - `.rpm` on Fedora and openSUSE
-- the tarball on Arch
-- an AppImage elsewhere
+- the tarball on Arch and everything else (the WebKitGTK build, `--webkit`, uses an AppImage there)
 
-To choose yourself, pass one or more formats: `./scripts/build-linux.sh deb rpm appimage tarball`. `all` builds every format, and `none` builds just the binary.
+To choose yourself, pass one or more formats: `./scripts/build-linux.sh deb rpm tarball` (`appimage` only with `--webkit`). `all` builds every format, and `none` builds just the binary.
 
 GTK 3 built without Wayland (X11 only) works too. The build notices it, prints `GTK 3 here has no Wayland support: building for X11 only`, and adds stand-ins for the two Wayland functions the window library links. To force it either way, set `VFM_GDK_WAYLAND=0` or `VFM_GDK_WAYLAND=1`.
 
@@ -452,12 +462,14 @@ packaging/linux/         desktop entry, tarball installer and README
 - Live updates only arrive while the app is running. Changes that happen while it's closed
   are picked up by the sync when it starts. A [vfm-server](server/README.md) logger fills
   that gap for time-together.
-- On Linux the app turns off WebKitGTK's DMA-BUF renderer, which made the map several times
-  slower (and misbehaves on NVIDIA). If the window stays blank or flickers on your system, start
-  it with `VRC_FRIEND_MAP_DMABUF=1` to use WebKit's default instead, and please open an issue.
+- The Linux build uses Tauri's Chromium (CEF) runtime before Tauri has released it. If the
+  window stays blank, crashes or acts up, please open an issue with Settings → Diagnostics
+  copied in; `scripts/build-linux.sh --webkit` builds the older WebKitGTK version.
 - Settings → Graphics → Map rendering switches between automatic, GPU-preferred and software
   rendering (Linux and Windows, applied on restart). `VRC_FRIEND_MAP_GPU=auto|gpu|software`
-  overrides it from the command line.
+  overrides it from the command line. Settings → Diagnostics shows which GPU the app ends up on.
+- The WebKitGTK build (`--webkit`) turns off WebKitGTK's DMA-BUF renderer;
+  `VRC_FRIEND_MAP_DMABUF=1` keeps WebKit's default.
 - iPhones can't run vfm-server (iOS stops background programs); they can use servers.
 - People who hide their mutual connections show up without lines, by design.
 - Game-log features need the desktop app on the PC that runs VRChat. Quest/phone sessions

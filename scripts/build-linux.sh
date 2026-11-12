@@ -94,11 +94,17 @@ if [ ${#formats[@]} -eq 0 ] || [ "${formats[0]}" = "auto" ]; then
     *debian*|*ubuntu*) formats=(deb) ;;
     *fedora*|*rhel*|*suse*) formats=(rpm) ;;
     *arch*) formats=(tarball) ;;
-    *) formats=(appimage) ;;
+    *) if [ "$ENGINE" = chromium ]; then formats=(tarball); else formats=(appimage); fi ;;
   esac
   echo "→ Building '${formats[*]}' for this system (pass all, deb, rpm, appimage, tarball or none to choose)"
 elif [ "${formats[0]}" = "all" ]; then
   formats=(deb rpm appimage tarball)
+  # Tauri's Chromium AppImage packaging (quick-sharun) doesn't finish yet.
+  [ "$ENGINE" = chromium ] && formats=(deb rpm tarball)
+fi
+if [ "$ENGINE" = chromium ] && [[ " ${formats[*]} " == *" appimage "* ]]; then
+  echo "✗ No AppImage for the Chromium build yet (Tauri's packaging for it hangs). Use deb, rpm or tarball, or --webkit." >&2
+  exit 2
 fi
 bundles=()
 for f in "${formats[@]}"; do

@@ -199,7 +199,7 @@ jobs:
             timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y libgtk-4-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file && break
             [ $try = 3 ] && exit 1; echo "::warning::package install try $try failed, retrying"; sleep 10
           done
-      - name: Build deb, rpm, AppImage and tarball (Chromium)
+      - name: Build deb, rpm and tarball (Chromium)
         timeout-minutes: 75
         run: |
           set -o pipefail
