@@ -604,6 +604,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.7.4": "Settings → Graphics lets you choose GPU or software rendering for the map (Linux and Windows), if it's slow or the window stays blank.",
   "0.7.0": "share friend lists and activity with friends through your own or a friend's server (end-to-end encrypted), and run vfm-server on a spare device to log your friends' instance hopping 24/7 for better circle suggestions. Settings → Servers.",
   "0.6.0": "groups also learned from where your friends hang out together (even without you), profiles like on vrchat.com with the current world and who's there, clickable overview tiles and legend as filters, and more of the card flies into the profile.",
   "0.5.0": "color themes (light, OLED, Catppuccin, Nord, Dracula), profiles open as a popup, the hover card sits right on the person's picture, the map turns slowly by default and circles (and loners) each get their own spot.",
