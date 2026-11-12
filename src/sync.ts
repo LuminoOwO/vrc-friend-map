@@ -1,6 +1,7 @@
 // Sync engine: pulls data from the VRChat API through the Rust client, which
 // spaces requests out (>= 1 s apart) and backs off on 429. Profiles and mutuals
 // are cached and only refetched when older than the configured age.
+import { noteFriend } from "./activity";
 import { backend, type ApiResponse } from "./backend";
 import { celebrateNewFriends } from "./notify";
 import { getState, resetSync, setState, setSync, showToast, updateCache, updateLocal } from "./store";
@@ -516,6 +517,7 @@ export function applyPipelineEvent(type: string, content: any) {
         me: c.me && !c.me.friends.includes(id) ? { ...c.me, friends: [...c.me.friends, id] } : c.me,
       }));
       recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
+      noteFriend("friend-add", id, friend.displayName);
       showToast(`${friend.displayName} is now your friend`);
       refreshPerson(id); // load their mutual friends so lines appear
       return;
@@ -534,6 +536,7 @@ export function applyPipelineEvent(type: string, content: any) {
       });
       recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
       if (getState().selectedId === id) setState({ selectedId: null });
+      noteFriend("friend-remove", id, name);
       showToast(`${name} is no longer on your friends list`);
       return;
     }
@@ -543,6 +546,15 @@ export function applyPipelineEvent(type: string, content: any) {
     case "friend-update":
     case "friend-location": {
       if (!known) return;
+      {
+        const name = content.user?.displayName ?? s.cache.friends[id]?.displayName ?? id;
+        const wasOnline = (s.cache.presence[id] ?? "offline") === "online";
+        if (type === "friend-online" && !wasOnline) noteFriend("online", id, name);
+        else if (type === "friend-offline" && (s.cache.presence[id] ?? "offline") !== "offline") noteFriend("offline", id, name);
+        else if (type === "friend-location" && typeof content.location === "string" && content.location !== s.cache.friends[id]?.location && content.location.startsWith("wrld_")) {
+          noteFriend("location", id, name, { location: content.location, worldId: content.location.split(":")[0], worldName: content.world?.name });
+        }
+      }
       updateCache((c) => {
         const prev = c.friends[id];
         let friend = mergeUser(prev, content.user, id);

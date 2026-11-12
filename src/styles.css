@@ -125,7 +125,7 @@ textarea { width: 100%; resize: vertical; }
 /* ---------- layout ---------- */
 .app { height: 100%; display: flex; flex-direction: column; }
 .topbar {
-  display: flex; align-items: center; gap: 10px; padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top));
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top), var(--safe-top-fallback, 0px));
   background: var(--panel); border-bottom: 1px solid var(--border); flex-wrap: wrap;
 }
 .brand-name { font-weight: 700; white-space: nowrap; }
@@ -528,6 +528,11 @@ textarea { width: 100%; resize: vertical; }
 @media (max-width: 900px) {
   .profile-backdrop { padding: 0; }
   .profile.popup { inset: auto; width: 100%; min-height: 100%; border-radius: 0; border: none; position: relative; }
+  /* Below the status bar, big enough for a thumb, and it stays put while the profile scrolls. */
+  .profile { padding-top: calc(8px + max(env(safe-area-inset-top), var(--safe-top-fallback, 0px))); }
+  .profile-close { position: fixed; top: calc(10px + max(env(safe-area-inset-top), var(--safe-top-fallback, 0px))); right: 10px; width: 46px; height: 46px; border-radius: 50%; z-index: 45; background: rgba(0,0,0,0.65); }
+  .profile-close::before { content: ""; position: absolute; inset: -10px; }
+  .profile-close svg { width: 22px; height: 22px; }
 }
 .hover-card { animation: hover-in 0.16s ease-out both; }
 @keyframes hover-in { from { opacity: 0; transform: scale(0.6); } to { opacity: 1; transform: scale(1); } }
@@ -670,3 +675,36 @@ code.secret { font-family: ui-monospace, monospace; font-size: 11px; word-break:
 .relation-here { display: flex; align-items: center; gap: 6px; font-size: 13px; margin: 6px 0 0; }
 .opt-hint { margin: 0 0 6px; line-height: 1.35; }
 .here-now.docked { position: relative; top: auto; left: auto; margin: 10px 12px 0; max-width: none; align-self: stretch; }
+
+/* Settings → Diagnostics */
+.diag-list { display: grid; gap: 2px; margin: 4px 0 10px; font-size: 12.5px; }
+.diag-list > div { display: grid; grid-template-columns: minmax(120px, 34%) 1fr; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+.diag-list dt { color: var(--muted); }
+.diag-list dd { margin: 0; word-break: break-word; font-variant-numeric: tabular-nums; }
+
+/* Activity tab */
+.activity-view { position: absolute; inset: 0; overflow-y: auto; padding: 14px 18px 40px; }
+.activity-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.chip-btn { border: 1px solid var(--border-strong); border-radius: 999px; background: transparent; color: var(--muted); padding: 4px 11px; font: inherit; font-size: 12.5px; cursor: pointer; }
+.chip-btn.on { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
+.activity-search { flex: 1 1 160px; max-width: 260px; }
+.activity-note, .activity-empty { margin: 8px 2px; }
+.activity-day h3 { margin: 14px 0 6px; font-size: 13px; color: var(--muted); text-transform: none; }
+.activity-day ul { list-style: none; margin: 0; padding: 0; }
+.act { display: flex; align-items: center; gap: 9px; padding: 5px 4px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+.act svg { flex: none; color: var(--muted); }
+.act-time { flex: none; width: 46px; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+.act.initial { opacity: 0.6; }
+.act-join svg, .act-online svg, .act-friend-add svg { color: var(--ok, #51e57e); }
+.act-leave svg, .act-offline svg, .act-friend-remove svg, .act-crash svg { color: var(--danger, #f87171); }
+.act-world svg, .act-location svg { color: var(--accent); }
+.link-btn { background: none; border: none; padding: 0; font: inherit; color: var(--text); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.act-name { font-weight: 600; }
+.act-name:not(.friend) { color: var(--sub, var(--muted)); }
+
+/* profile: unfriend / block / mute */
+.mod-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 2px; }
+.mod-row .btn.small { opacity: 0.85; }
+.mod-row.confirm { flex-direction: column; align-items: flex-start; background: color-mix(in srgb, var(--danger, #f87171) 10%, transparent); border: 1px solid color-mix(in srgb, var(--danger, #f87171) 40%, transparent); border-radius: 10px; padding: 8px 10px; }
+.btn.danger { border-color: var(--danger, #f87171); color: var(--danger, #f87171); }
+.here-chip.blocked { opacity: 0.45; text-decoration: line-through; }

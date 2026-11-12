@@ -141,7 +141,8 @@ if [ "$ENGINE" = chromium ]; then
     cargo install --locked --force --root "$TOOLS" --git https://github.com/tauri-apps/tauri --rev "$CEF_REV" tauri-cli
     echo "$CEF_REV" > "$TOOLS/tauri-rev"
   fi
-  TAURI=("$TOOLS/bin/cargo-tauri" build --features chromium)
+  # The npm packages (@tauri-apps/api 2.12) are newer than that branch (2.11); they talk the same way.
+  TAURI=("$TOOLS/bin/cargo-tauri" build --features chromium --ignore-version-mismatches)
 else
   echo "→ Web engine: WebKitGTK"
   TAURI=(npx tauri build)

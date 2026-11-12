@@ -71,6 +71,7 @@ export function useExtra(): Extra {
   const stats = useApp((s) => s.logs.stats);
   const showMe = useApp((s) => s.settings.map.showMe);
   const level = useApp((s) => s.settings.map.showOthers);
+  const showBlocked = useApp((s) => s.settings.people.showBlocked);
 
   const extra = useMemo<Extra>(() => {
     const friends = cache.friends;
@@ -98,6 +99,7 @@ export function useExtra(): Extra {
     const names = new Map<string, string>();
     const add = (id: string, name: string) => {
       if (!id || friends[id] || id === myId || id === here?.localId) return null;
+      if (!showBlocked && isBlocked(cache, id)) return null;
       if (!info.has(id)) info.set(id, { here: false, via: [] });
       if (name && !names.has(id)) names.set(id, name);
       return info.get(id)!;
@@ -149,13 +151,18 @@ export function useExtra(): Extra {
       for (const f of i.via) link(id, f);
     }
     return { me, anchors, others, info, otherEdges, here: hereSet };
-  }, [cache.friends, cache.others, cache.mutuals, cache.me, local.imports, here, met, stats, showMe, level]);
+  }, [cache.friends, cache.others, cache.mutuals, cache.me, cache.moderations, local.imports, here, met, stats, showMe, level, showBlocked]);
 
   // Load profiles (and mutuals) of the people shown; in your instance first.
   useEffect(() => {
     const ids = [...extra.info.entries()].sort((a, b) => Number(b[1].here) - Number(a[1].here)).map(([id]) => id);
     wantProfiles(ids);
   }, [extra.info]);
+
+  // Your blocks, to leave blocked people out (or mark them).
+  useEffect(() => {
+    if (level !== "off") void refreshModerations();
+  }, [level]);
 
   // People from the game logs, when that level is on.
   useEffect(() => {
@@ -290,6 +297,82 @@ export async function setFriendRequest(id: string, send: boolean): Promise<strin
     if (r.status === 429) return "VRChat says: too many requests. Try again in a while.";
     const msg = typeof r.data === "object" && r.data ? (r.data.error?.message ?? r.data.message) : undefined;
     return `VRChat said no (${r.status})${msg ? `: ${msg}` : ""}`;
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e);
+  }
+}
+
+// ---------- blocks, mutes, hidden avatars ----------
+
+const MODERATION_TTL = 10 * 60_000;
+let moderationsLoading: Promise<void> | null = null;
+
+export function moderationsOf(cache: Cache, id: string): string[] {
+  return cache.moderations?.byUser[id] ?? [];
+}
+
+export function isBlocked(cache: Cache, id: string): boolean {
+  return moderationsOf(cache, id).includes("block");
+}
+
+/** Your player moderations (blocks, mutes, ...), at most every 10 minutes unless forced. */
+export function refreshModerations(force = false): Promise<void> {
+  const s = getState();
+  if (!isTauri || s.demo || s.mode !== "app") return Promise.resolve();
+  if (!force && s.cache.moderations && Date.now() - s.cache.moderations.fetchedAt < MODERATION_TTL) return Promise.resolve();
+  moderationsLoading ??= (async () => {
+    try {
+      const r = await get("/auth/user/playermoderations");
+      if (!r || r.status !== 200 || !Array.isArray(r.data)) return;
+      const byUser: Record<string, string[]> = {};
+      for (const m of r.data as { type?: string; targetUserId?: string }[]) {
+        if (!m?.targetUserId || !m.type) continue;
+        (byUser[m.targetUserId] ??= []).push(m.type);
+      }
+      updateCache((c) => ({ ...c, moderations: { byUser, fetchedAt: Date.now() } }));
+    } catch {
+      /* try again later */
+    } finally {
+      moderationsLoading = null;
+    }
+  })();
+  return moderationsLoading;
+}
+
+function vrcError(r: { status: number; data: unknown }): string {
+  if (r.status === 429) return "VRChat says: too many requests. Try again in a while.";
+  const d = r.data as { error?: { message?: string }; message?: string } | null;
+  const msg = typeof d === "object" && d ? (d.error?.message ?? d.message) : undefined;
+  return `VRChat said no (${r.status})${msg ? `: ${String(msg).replace(/^"|"$/g, "")}` : ""}`;
+}
+
+/** Block, mute, hide their avatar, or undo it. Returns an error message, or null. */
+export async function setModeration(id: string, kind: "block" | "mute" | "hideAvatar", on: boolean): Promise<string | null> {
+  if (getState().demo) return "Not in demo mode.";
+  try {
+    const r = await backend.moderateUser(id, kind, !on);
+    if (r.status < 200 || r.status >= 300) return vrcError(r);
+    updateCache((c) => {
+      const byUser = { ...(c.moderations?.byUser ?? {}) };
+      const cur = new Set(byUser[id] ?? []);
+      if (on) cur.add(kind);
+      else cur.delete(kind);
+      byUser[id] = [...cur];
+      return { ...c, moderations: { byUser, fetchedAt: c.moderations?.fetchedAt ?? 0 } };
+    });
+    return null;
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e);
+  }
+}
+
+/** Remove a friend. Returns an error message, or null. */
+export async function unfriend(id: string): Promise<string | null> {
+  if (getState().demo) return "Not in demo mode.";
+  try {
+    const r = await backend.unfriend(id);
+    if (r.status < 200 || r.status >= 300) return vrcError(r);
+    return null;
   } catch (e) {
     return e instanceof Error ? e.message : String(e);
   }

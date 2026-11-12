@@ -24,7 +24,7 @@ import type {
   SyncState,
 } from "./types";
 
-export type View = "graph" | "cards" | "lists";
+export type View = "graph" | "cards" | "lists" | "activity";
 
 export interface Toast {
   id: number;
@@ -53,6 +53,8 @@ export interface AppState {
   local: LocalData;
   settings: Settings;
   filters: Filters;
+  /** Activity log (src/activity.ts). */
+  activity: import("./activity").ActivityEntry[];
   view: View;
   selectedId: string | null;
   hoverId: string | null;
@@ -212,6 +214,7 @@ export const defaultSettings = (): Settings => ({
   theme: "dark",
   profileAs: "popup",
   sharing: defaultSharing(),
+  people: { loadEveryone: false, keep: "potential", showBlocked: false },
   lastVersion: "",
 });
 
@@ -259,6 +262,7 @@ let state: AppState = {
   settings: defaultSettings(),
   filters: defaultFilters(),
   view: "graph",
+  activity: [],
   selectedId: null,
   hoverId: null,
   sync: idleSync(),
@@ -307,8 +311,26 @@ export function useApp<T>(selector: (s: AppState) => T): T {
 
 const timers: Record<string, ReturnType<typeof setTimeout>> = {};
 
+/** The cache as saved: profiles of non-friends only as Settings → People allows. */
+export function cacheForDisk(c: Cache, keep: Settings["people"]["keep"], potential: (id: string) => boolean): Cache {
+  if (keep === "everyone" || !c.others) return c;
+  const others: NonNullable<Cache["others"]> = {};
+  if (keep === "potential") for (const [id, p] of Object.entries(c.others)) if (potential(id)) others[id] = p;
+  const mutuals = { ...c.mutuals };
+  for (const id of Object.keys(c.others)) if (!others[id] && !c.friends[id]) delete mutuals[id];
+  return { ...c, others, mutuals };
+}
+
+/** Someone who isn't a friend but could be: friends in common, or time spent together. */
+function isPotential(id: string): boolean {
+  const m = state.cache.mutuals[id];
+  if (m && m.count > 0) return true;
+  return !!state.met?.some((p) => p.id === id);
+}
+
 function serialize(name: StoreName): string {
-  const value = name === "cache" ? state.cache : name === "local" ? state.local : state.settings;
+  const value =
+    name === "cache" ? cacheForDisk(state.cache, state.settings.people.keep, isPotential) : name === "local" ? state.local : state.settings;
   return JSON.stringify({ ...value, schema: Math.max(SCHEMA[name], loadedSchema[name]) });
 }
 
@@ -340,6 +362,11 @@ export function updateCache(fn: (c: Cache) => Cache) {
 export function updateLocal(fn: (l: LocalData) => LocalData) {
   setState((s) => ({ local: fn(s.local) }));
   scheduleSave("local");
+}
+
+export function updatePeople(patch: Partial<Settings["people"]>) {
+  updateSettings({ people: { ...state.settings.people, ...patch } });
+  if ("keep" in patch) scheduleSave("cache"); // apply the new rule to what's on disk
 }
 
 export function updateSettings(patch: Partial<Settings>) {
@@ -500,6 +527,11 @@ export function normalizeSettings(raw: Raw | null): Settings {
     },
     theme: oneOf(raw.theme, ["dark", "oled", "light", "mocha", "macchiato", "latte", "nord", "dracula"] as const, d.theme),
     profileAs: oneOf(raw.profileAs, ["popup", "sidebar"] as const, d.profileAs),
+    people: {
+      loadEveryone: typeof raw.people?.loadEveryone === "boolean" ? raw.people.loadEveryone : d.people.loadEveryone,
+      keep: oneOf(raw.people?.keep, ["none", "potential", "everyone"] as const, d.people.keep),
+      showBlocked: typeof raw.people?.showBlocked === "boolean" ? raw.people.showBlocked : d.people.showBlocked,
+    },
     sharing: normalizeSharing(raw.sharing),
     lastVersion: typeof raw.lastVersion === "string" ? raw.lastVersion : "",
   };

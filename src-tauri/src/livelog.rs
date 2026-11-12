@@ -46,9 +46,36 @@ pub struct Snapshot {
     pub closed: bool,
 }
 
+/// One thing that happened, for the activity log.
+#[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub struct LiveEvent {
+    /// Increasing number, to ask for what's new.
+    pub seq: u64,
+    /// Log time (naive seconds, as VRChat writes it: local time).
+    pub ts: i64,
+    /// "world" (you joined an instance), "join", "leave" (someone else),
+    /// "left" (you left the instance), "quit" (VRChat closed), "crash" (VRChat is gone without quitting).
+    pub kind: &'static str,
+    pub id: String,
+    pub name: String,
+    pub world_id: String,
+    pub world_name: String,
+    pub location: String,
+    /// Already there when you arrived (the join lines VRChat writes right after you load in).
+    pub initial: bool,
+}
+
+/// How many events are kept in memory (the UI keeps its own history).
+const EVENTS_KEPT: usize = 3000;
+
 #[derive(Default)]
 struct Tracker {
     snap: Snapshot,
+    /// Events since the last time they were collected.
+    events: Vec<LiveEvent>,
+    /// Log time of the last line with a time stamp.
+    last_ts: i64,
     /// Players by ID (the snapshot keeps them ordered).
     here: BTreeMap<String, LivePlayer>,
     pending_world_name: String,
@@ -56,9 +83,27 @@ struct Tracker {
 }
 
 impl Tracker {
+    fn event(&mut self, ts: i64, kind: &'static str, id: &str, name: &str, initial: bool) {
+        self.events.push(LiveEvent {
+            seq: 0,
+            ts,
+            kind,
+            id: id.to_string(),
+            name: name.to_string(),
+            world_id: self.snap.world_id.clone(),
+            world_name: self.snap.world_name.clone(),
+            location: self.snap.location.clone(),
+            initial,
+        });
+    }
+
     fn line(&mut self, line: &str) {
         let Some(ts) = parse_ts(line) else { return };
+        self.last_ts = ts;
         if line.contains("OnApplicationQuit") || line.contains("HandleApplicationQuit") {
+            if !self.snap.closed {
+                self.event(ts, "quit", "", "", false);
+            }
             self.leave();
             self.snap.closed = true;
             return;
@@ -79,20 +124,39 @@ impl Tracker {
             self.snap.world_id = inst.split(':').next().unwrap_or(inst).to_string();
             self.snap.world_name = std::mem::take(&mut self.pending_world_name);
             self.snap.since = ts;
+            self.event(ts, "world", "", "", false);
         } else if let Some(p) = rest.strip_prefix("OnPlayerJoined ") {
             let Some((name, id)) = split_player(p) else { return };
             if !self.snap.active {
                 return;
             }
-            self.here.entry(id.to_string()).or_insert(LivePlayer { id: id.to_string(), name: name.to_string(), since: ts });
             if self.snap.local_id.is_none() && self.local_name.as_deref() == Some(name) {
                 self.snap.local_id = Some(id.to_string());
             }
+            if !self.here.contains_key(id) {
+                self.here.insert(id.to_string(), LivePlayer { id: id.to_string(), name: name.to_string(), since: ts });
+                let is_me = self.snap.local_id.as_deref() == Some(id) || self.local_name.as_deref() == Some(name);
+                if !is_me {
+                    // VRChat lists everyone who's already there within a few seconds of you loading in.
+                    let me_in = self.snap.local_id.as_ref().and_then(|m| self.here.get(m)).map(|p| p.since);
+                    let initial = match me_in {
+                        Some(t) => ts - t <= 3,
+                        None => ts - self.snap.since <= 30,
+                    };
+                    self.event(ts, "join", id, name, initial);
+                }
+            }
         } else if let Some(p) = rest.strip_prefix("OnPlayerLeft ") {
-            if let Some((_, id)) = split_player(p) {
-                self.here.remove(id);
+            if let Some((name, id)) = split_player(p) {
+                let is_me = self.snap.local_id.as_deref() == Some(id);
+                if self.here.remove(id).is_some() && !is_me && self.snap.active {
+                    self.event(ts, "leave", id, name, false);
+                }
             }
         } else if rest.trim_end() == "OnLeftRoom" {
+            if self.snap.active {
+                self.event(ts, "left", "", "", false);
+            }
             self.leave();
         } else if let Some(p) = rest.strip_prefix("Initialized PlayerAPI \"") {
             if let Some(name) = p.trim_end().strip_suffix("\" is local") {
@@ -215,11 +279,39 @@ fn read_new(f: &mut FileState, t: &mut Tracker) -> std::io::Result<()> {
 pub struct LiveLog {
     generation: AtomicU64,
     last: Mutex<Snapshot>,
+    events: Mutex<std::collections::VecDeque<LiveEvent>>,
+    seq: AtomicU64,
 }
 
 impl LiveLog {
     pub fn new() -> Arc<Self> {
-        Arc::new(LiveLog { generation: AtomicU64::new(0), last: Mutex::new(Snapshot::default()) })
+        Arc::new(LiveLog {
+            generation: AtomicU64::new(0),
+            last: Mutex::new(Snapshot::default()),
+            events: Mutex::new(Default::default()),
+            seq: AtomicU64::new(0),
+        })
+    }
+
+    /// Events with a `seq` above `since`, oldest first.
+    pub fn events_since(&self, since: u64) -> Vec<LiveEvent> {
+        self.events.lock().unwrap().iter().filter(|e| e.seq > since).cloned().collect()
+    }
+
+    fn take_events(&self, t: &mut Tracker) -> Vec<LiveEvent> {
+        if t.events.is_empty() {
+            return Vec::new();
+        }
+        let mut new = std::mem::take(&mut t.events);
+        let mut kept = self.events.lock().unwrap();
+        for e in &mut new {
+            e.seq = self.seq.fetch_add(1, Ordering::SeqCst) + 1;
+            kept.push_back(e.clone());
+        }
+        while kept.len() > EVENTS_KEPT {
+            kept.pop_front();
+        }
+        new
     }
 
     pub fn snapshot(&self) -> Snapshot {
@@ -234,6 +326,8 @@ impl LiveLog {
     /// Follow the newest log in `dirs` until stopped; emits "live-instance".
     pub fn start(self: &Arc<Self>, app: AppHandle, dirs: Vec<PathBuf>) {
         let gen = self.generation.fetch_add(1, Ordering::SeqCst) + 1;
+        // The log is read again from its start, so its events come again too.
+        self.events.lock().unwrap().clear();
         let me = Arc::clone(self);
         tauri::async_runtime::spawn(async move {
             let mut state: Option<FileState> = None;
@@ -253,6 +347,8 @@ impl LiveLog {
                 // Every ~15 s while "in an instance": did VRChat crash?
                 if tracker.snap.active && ticks % 10 == 0 {
                     if vrchat_running() == Some(false) {
+                        let ts = tracker.last_ts;
+                        tracker.event(ts, "crash", "", "", false);
                         tracker.leave();
                         tracker.snap.closed = true;
                     }
@@ -271,6 +367,10 @@ impl LiveLog {
                 if changed {
                     let _ = app.emit("live-instance", &snap);
                 }
+                let new = me.take_events(&mut tracker);
+                if !new.is_empty() {
+                    let _ = app.emit("live-events", &new);
+                }
                 tokio::time::sleep(Duration::from_millis(1500)).await;
             }
         });
@@ -287,9 +387,49 @@ pub fn snapshot_of(text: &str) -> Snapshot {
     t.snapshot()
 }
 
+/// For tests: the events a whole log text produces.
+#[cfg(test)]
+pub fn events_of(text: &str) -> Vec<LiveEvent> {
+    let mut t = Tracker::default();
+    for l in text.lines() {
+        t.line(l);
+    }
+    t.events
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn events_for_the_activity_log() {
+        let log = "\
+2026.11.08 21:13:49 Debug      -  [Behaviour] Entering Room: Cozy Room
+2026.11.08 21:13:49 Debug      -  [Behaviour] Joining wrld_aaaa:60004~private(usr_me0000000)~region(eu)
+2026.11.08 21:13:58 Debug      -  [Behaviour] Initialized PlayerAPI \"Me Myself\" is local
+2026.11.08 21:13:58 Debug      -  [Behaviour] OnPlayerJoined Me Myself (usr_me0000000)
+2026.11.08 21:13:59 Debug      -  [Behaviour] OnPlayerJoined Alice (usr_alice00000)
+2026.11.08 21:20:00 Debug      -  [Behaviour] OnPlayerJoined Bob (usr_bob0000000)
+2026.11.08 21:25:00 Debug      -  [Behaviour] OnPlayerLeft Alice (usr_alice00000)
+2026.11.08 21:30:00 Debug      -  [Behaviour] OnLeftRoom
+2026.11.08 21:30:05 Debug      -  VRCApplication: HandleApplicationQuit at 1234
+";
+        let ev = events_of(log);
+        let kinds: Vec<_> = ev.iter().map(|e| (e.kind, e.name.as_str(), e.initial)).collect();
+        assert_eq!(
+            kinds,
+            vec![
+                ("world", "", false),
+                ("join", "Alice", true),
+                ("join", "Bob", false),
+                ("leave", "Alice", false),
+                ("left", "", false),
+                ("quit", "", false),
+            ]
+        );
+        assert_eq!(ev[0].world_name, "Cozy Room");
+        assert_eq!(ev[2].world_id, "wrld_aaaa");
+    }
 
     const LOG: &str = "\
 2026.11.08 21:13:49 Debug      -  [Behaviour] Entering Room: Cozy Room

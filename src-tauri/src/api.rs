@@ -299,17 +299,48 @@ impl ApiClient {
         if !valid_user_id(user_id) {
             return Err("invalid user".into());
         }
-        {
-            let mut last = self.last_write.lock().await;
-            if let Some(t) = *last {
-                if t.elapsed() < Duration::from_secs(3) {
-                    return Err("wait a moment before trying again".into());
-                }
-            }
-            *last = Some(Instant::now());
-        }
+        self.write_cooldown().await?;
         let method = if cancel { reqwest::Method::DELETE } else { reqwest::Method::POST };
         self.send(method, &format!("/user/{user_id}/friendRequest")).await
+    }
+
+    /// Changes to your account go out one at a time, at most one every 3 s,
+    /// and only from a button click in the UI.
+    async fn write_cooldown(&self) -> Result<(), String> {
+        let mut last = self.last_write.lock().await;
+        if let Some(t) = *last {
+            if t.elapsed() < Duration::from_secs(3) {
+                return Err("wait a moment before trying again".into());
+            }
+        }
+        *last = Some(Instant::now());
+        Ok(())
+    }
+
+    /// Remove someone from your friends.
+    pub async fn unfriend(&self, user_id: &str) -> Result<ApiResponse, String> {
+        if !valid_user_id(user_id) {
+            return Err("invalid user".into());
+        }
+        self.write_cooldown().await?;
+        self.send(reqwest::Method::DELETE, &format!("/auth/user/friends/{user_id}")).await
+    }
+
+    /// Block, mute, hide their avatar, ... (`undo` removes it again).
+    pub async fn moderate(&self, user_id: &str, kind: &str, undo: bool) -> Result<ApiResponse, String> {
+        if !valid_user_id(user_id) {
+            return Err("invalid user".into());
+        }
+        if !MODERATIONS.contains(&kind) {
+            return Err("unknown moderation".into());
+        }
+        self.write_cooldown().await?;
+        let body = serde_json::json!({ "moderated": user_id, "type": kind });
+        if undo {
+            self.send_json(reqwest::Method::PUT, "/auth/user/unplayermoderate", Some(body)).await
+        } else {
+            self.send_json(reqwest::Method::POST, "/auth/user/playermoderations", Some(body)).await
+        }
     }
 
     /// Friend status: isFriend, outgoingRequest, incomingRequest.
@@ -321,18 +352,23 @@ impl ApiClient {
     }
 
     async fn send(&self, method: reqwest::Method, path: &str) -> Result<ApiResponse, String> {
+        self.send_json(method, path, None).await
+    }
+
+    async fn send_json(&self, method: reqwest::Method, path: &str, body: Option<Value>) -> Result<ApiResponse, String> {
         let session = self.session.read().await.clone().ok_or("not logged in")?;
         self.acquire_slot().await;
         let ua = self.user_agent().await;
-        let res = self
+        let mut req = self
             .http
             .request(method, format!("{}{}", session.base, path))
             .header(reqwest::header::USER_AGENT, ua)
             .header(reqwest::header::COOKIE, Self::cookie_header(&session.auth, session.two_factor.as_deref()))
-            .header(reqwest::header::ACCEPT, "application/json")
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
+            .header(reqwest::header::ACCEPT, "application/json");
+        if let Some(b) = body {
+            req = req.json(&b);
+        }
+        let res = req.send().await.map_err(|e| e.to_string())?;
         let status = res.status().as_u16();
         let mut retry_after = None;
         if status == 429 {
@@ -414,6 +450,9 @@ impl ApiClient {
 }
 
 /// `usr_` + UUID-ish, or an old 10-character ID. Nothing that could change the path.
+/// Player moderations the UI may set or remove (VRChat's names).
+pub const MODERATIONS: [&str; 5] = ["block", "mute", "muteChat", "hideAvatar", "showAvatar"];
+
 pub fn valid_user_id(id: &str) -> bool {
     id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
         && ((id.starts_with("usr_") && (8..=64).contains(&id.len())) || (id.len() == 10 && !id.contains(['_', '-'])))

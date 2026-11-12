@@ -146,6 +146,8 @@ export interface Cache {
   worlds?: Record<string, WorldInfo>;
   /** Profiles of people who aren't friends (instance mates, potential friends). */
   others?: Record<string, Friend & { fetchedAt: number }>;
+  /** Your blocks, mutes, hidden avatars (VRChat "player moderations"), by user. */
+  moderations?: { byUser: Record<string, string[]>; fetchedAt: number };
   lastFriendsSync: number;
 }
 
@@ -346,8 +348,20 @@ export interface Settings {
   /** Open profiles as a popup over everything, or as a panel at the side. */
   profileAs: "popup" | "sidebar";
   sharing: SharingSettings;
+  people: PeopleSettings;
   /** App version that last ran with this data (for upgrade/downgrade notes). */
   lastVersion: string;
+}
+
+/** People who aren't friends: whose profiles to load and keep. */
+export interface PeopleSettings {
+  /** Load the profile of everyone in my instance (not only the first 25). */
+  loadEveryone: boolean;
+  /** Which non-friend profiles are kept on this device between sessions:
+   *  none, only potential friends (shared friends or time spent together), or everyone. */
+  keep: "none" | "potential" | "everyone";
+  /** Show people I've blocked (in my instance, on the map, in the activity log). */
+  showBlocked: boolean;
 }
 
 // ---- game log statistics (from the Rust side) ----

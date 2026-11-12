@@ -283,6 +283,18 @@ async fn friend_status(state: AppStateRef<'_>, user_id: String) -> Result<api::A
     state.api.friend_status(&user_id).await
 }
 
+/// Remove a friend (only from a button click, after confirming).
+#[tauri::command]
+async fn unfriend(state: AppStateRef<'_>, user_id: String) -> Result<api::ApiResponse, String> {
+    state.api.unfriend(&user_id).await
+}
+
+/// Block / mute / hide avatar, or undo it (only from a button click).
+#[tauri::command]
+async fn moderate_user(state: AppStateRef<'_>, user_id: String, kind: String, undo: bool) -> Result<api::ApiResponse, String> {
+    state.api.moderate(&user_id, &kind, undo).await
+}
+
 #[tauri::command]
 async fn logs_clear(state: AppStateRef<'_>) -> Result<(), String> {
     state.logs.clear()
@@ -308,6 +320,12 @@ fn live_stop(state: AppStateRef<'_>) {
 #[tauri::command]
 fn live_snapshot(state: AppStateRef<'_>) -> livelog::Snapshot {
     state.live.snapshot()
+}
+
+/// Activity-log events (joins, leaves, world changes) after `since`.
+#[tauri::command]
+fn live_events(state: AppStateRef<'_>, since: u64) -> Vec<livelog::LiveEvent> {
+    state.live.events_since(since)
 }
 
 #[tauri::command]
@@ -429,10 +447,13 @@ pub fn run() {
             logs_met,
             friend_request,
             friend_status,
+            unfriend,
+            moderate_user,
             storage_info,
             live_start,
             live_stop,
             live_snapshot,
+            live_events,
             graphics_get,
             graphics_set,
             app_restart,

@@ -244,6 +244,30 @@ pub struct Info {
     pub supported: bool,
     /// chromium, webkitgtk, webview2, wkwebview or android-webview.
     pub engine: &'static str,
+    pub os: &'static str,
+    pub arch: &'static str,
+    /// Environment variables that change how the web view draws (for diagnostics).
+    pub env: Vec<(String, String)>,
+}
+
+/// Variables worth showing in diagnostics: the app's own, the web engines',
+/// and the graphics driver ones that commonly matter.
+fn graphics_env() -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = std::env::vars()
+        .filter(|(k, _)| {
+            k.starts_with("VRC_FRIEND_MAP_")
+                || k.starts_with("WEBKIT_")
+                || k.starts_with("__NV_")
+                || k.starts_with("__GLX_")
+                || k.starts_with("CHROME_")
+                || matches!(
+                    k.as_str(),
+                    "XDG_SESSION_TYPE" | "XDG_CURRENT_DESKTOP" | "WAYLAND_DISPLAY" | "DISPLAY" | "LIBGL_ALWAYS_SOFTWARE" | "GDK_BACKEND" | "GSK_RENDERER" | "MESA_LOADER_DRIVER_OVERRIDE" | "DRI_PRIME" | "APPIMAGE"
+                )
+        })
+        .collect();
+    out.sort();
+    out
 }
 
 pub fn info() -> Info {
@@ -254,6 +278,9 @@ pub fn info() -> Info {
         forced: forced.then_some(m),
         supported: cfg!(any(target_os = "linux", target_os = "windows")),
         engine: engine(),
+        os: std::env::consts::OS,
+        arch: std::env::consts::ARCH,
+        env: graphics_env(),
     }
 }
 

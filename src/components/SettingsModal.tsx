@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { backend, type GraphicsInfo, type GraphicsMode } from "../backend";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, wipeEverything } from "../session";
-import { flushSaves, getState, setState, showToast, updateCache, updateGroupSettings, updateSounds, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
+import { flushSaves, getState, setState, showToast, updatePeople, updateCache, updateGroupSettings, updateSounds, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
 import { celebrateNewFriends, playSound, SOUNDS } from "../notify";
 import { forgetObserved } from "../together";
 import type { GroupSettings, MapSettings, SoundSettings, Theme } from "../types";
@@ -18,6 +18,7 @@ const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: 
   { value: "dracula", label: "Dracula", bg: "#21222c", panel: "#44475a", accent: "#bd93f9" },
 ];
 import { Icon } from "./Icon";
+import { Diagnostics } from "./Diagnostics";
 import { openServers } from "./ServersModal";
 import { serverName } from "../share";
 
@@ -221,6 +222,14 @@ export function SettingsModal() {
             )}
           </section>
         )}
+
+        <section>
+          <PeopleSection />
+        </section>
+
+        <section>
+          <Diagnostics />
+        </section>
 
         <section>
           <SoundSection />
@@ -582,6 +591,36 @@ function ServersSummary() {
       <button className="btn" onClick={openServers}>
         <Icon name="server" size={16} /> {servers.length ? "Manage servers" : "Set up"}
       </button>
+    </>
+  );
+}
+
+function PeopleSection() {
+  const people = useApp((s) => s.settings.people);
+  const blocked = useApp((s) => Object.values(s.cache.moderations?.byUser ?? {}).filter((t) => t.includes("block")).length);
+  return (
+    <>
+      <h3>People who aren't friends</h3>
+      <label className="check">
+        <input type="checkbox" checked={people.loadEveryone} onChange={(e) => updatePeople({ loadEveryone: e.target.checked })} />
+        Load the profile of everyone in my instance (otherwise the first 25)
+      </label>
+      <label className="field narrow">
+        <span>Keep their profiles on this device</span>
+        <select value={people.keep} onChange={(e) => updatePeople({ keep: e.target.value as typeof people.keep })}>
+          <option value="none">Don't keep (only while the app is open)</option>
+          <option value="potential">Only potential friends</option>
+          <option value="everyone">Everyone</option>
+        </select>
+      </label>
+      <p className="small muted">
+        Potential friends: people who share friends with you or who you've spent time with (game logs). Kept profiles are refreshed after a
+        week; the others load again when you meet them.
+      </p>
+      <label className="check">
+        <input type="checkbox" checked={people.showBlocked} onChange={(e) => updatePeople({ showBlocked: e.target.checked })} />
+        Show people I've blocked{blocked ? ` (${blocked})` : ""}
+      </label>
     </>
   );
 }

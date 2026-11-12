@@ -3,6 +3,7 @@
 // logs), and soft "circle" outlines around the groups you create. Circles can
 // overlap. Drag a person into a circle outline (or onto a circle in the
 // sidebar) to add them. Map options change how people and lines are drawn.
+import { mapStats, noteFrame } from "../diag";
 import * as d3 from "d3";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
@@ -884,19 +885,12 @@ export function GraphView() {
   }
 
   function draw() {
-    if (viewRef.current.settings.map.showFps) {
-      const t0 = performance.now();
-      drawInner();
-      tickFps(t0, performance.now() - t0);
-      return;
-    }
-    if (import.meta.env.DEV) {
-      const t0 = performance.now();
-      drawInner();
-      drawStats.times.push(performance.now() - t0);
-      return;
-    }
+    const t0 = performance.now();
     drawInner();
+    const ms = performance.now() - t0;
+    noteFrame(t0, ms);
+    if (viewRef.current.settings.map.showFps) tickFps(t0, ms);
+    if (import.meta.env.DEV) drawStats.times.push(ms);
   }
 
   function drawInner() {
@@ -1486,6 +1480,9 @@ export function GraphView() {
       sizeRef.current = { w: rect.width, h: rect.height, dpr };
       canvas.width = Math.round(rect.width * dpr);
       canvas.height = Math.round(rect.height * dpr);
+      mapStats.canvasW = canvas.width;
+      mapStats.canvasH = canvas.height;
+      mapStats.dpr = dpr;
       canvas.style.width = `${rect.width}px`;
       canvas.style.height = `${rect.height}px`;
       requestDraw();

@@ -28,9 +28,9 @@ import {
 } from "../model";
 import { addToCircle, createCircle, removeFromCircle, setState, showToast, useApp } from "../store";
 import { bioKeyState } from "../share";
-import { friendStatus, personOf, relationOf, setFriendRequest } from "../people";
+import { friendStatus, personOf, refreshModerations, relationOf, setFriendRequest, setModeration, unfriend } from "../people";
 import { othersHere } from "../live";
-import { freshenProfile, loadGroups, loadInstance, loadWorld, refreshPerson } from "../sync";
+import { applyPipelineEvent, freshenProfile, loadGroups, loadInstance, loadWorld, refreshPerson } from "../sync";
 import type { Friend, Presence } from "../types";
 import { GroupsModal } from "./GroupsModal";
 import { Icon } from "./Icon";
@@ -278,6 +278,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   <Icon name="link" size={16} />
                 </button>
               </div>
+              {relation !== "me" && <ModerationRow id={id} name={f.displayName} friend={relation === "friend"} />}
 
               <div className="profile-block" data-flip-fade>
                 <h3>About me</h3>
@@ -640,6 +641,104 @@ function RelationBox({ id, relation, here, via }: { id: string; relation: "me" |
           {status?.incoming && !status.outgoing && <span className="small">They sent you one.</span>}
         </div>
       )}
+      {error && <p className="error-text">{error}</p>}
+    </div>
+  );
+}
+
+type Mod = "block" | "mute" | "hideAvatar";
+const NO_MODS: string[] = [];
+
+/** Unfriend, block, mute, hide avatar (and undo). Each is one click plus a
+ *  confirmation for the ones that are hard to take back. */
+function ModerationRow({ id, name, friend }: { id: string; name: string; friend: boolean }) {
+  const demo = useApp((s) => s.demo);
+  const byUser = useApp((s) => s.cache.moderations?.byUser);
+  const mods = byUser?.[id] ?? NO_MODS;
+  const [confirming, setConfirming] = useState<"unfriend" | "block" | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setConfirming(null);
+    setError("");
+    void refreshModerations();
+  }, [id]);
+
+  const run = async (what: () => Promise<string | null>, done: string) => {
+    setBusy(true);
+    setError("");
+    const err = await what();
+    setBusy(false);
+    setConfirming(null);
+    if (err) setError(err);
+    else showToast(done);
+  };
+  const toggle = (kind: Mod, on: boolean, done: string) => run(() => setModeration(id, kind, on), done);
+  const has = (k: Mod) => mods.includes(k);
+  const off = busy || demo;
+
+  if (confirming) {
+    const text =
+      confirming === "unfriend"
+        ? `Remove ${name} from your friends? They aren't told, but you'd have to send a new request to be friends again.`
+        : `Block ${name}? You won't see or hear each other in VRChat. You can unblock them here later.`;
+    return (
+      <div className="mod-row confirm" data-flip-fade>
+        <p className="small">{text}</p>
+        <div className="row">
+          <button
+            className="btn danger small"
+            disabled={off}
+            onClick={() =>
+              confirming === "unfriend"
+                ? run(async () => {
+                    const err = await unfriend(id);
+                    if (!err) applyPipelineEvent("friend-delete", { userId: id });
+                    return err;
+                  }, `${name} removed from your friends`)
+                : toggle("block", true, `${name} blocked`)
+            }
+          >
+            {confirming === "unfriend" ? "Unfriend" : "Block"}
+          </button>
+          <button className="btn small" onClick={() => setConfirming(null)}>
+            Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mod-row" data-flip-fade>
+      {friend && (
+        <button className="btn small" disabled={off} onClick={() => setConfirming("unfriend")} title="Remove from your friends on VRChat">
+          <Icon name="user" size={14} /> Unfriend
+        </button>
+      )}
+      {has("block") ? (
+        <button className="btn small" disabled={off} onClick={() => toggle("block", false, `${name} unblocked`)}>
+          Unblock
+        </button>
+      ) : (
+        <button className="btn small" disabled={off} onClick={() => setConfirming("block")}>
+          Block
+        </button>
+      )}
+      <button className="btn small" disabled={off} onClick={() => toggle("mute", !has("mute"), has("mute") ? `${name} unmuted` : `${name} muted`)}>
+        {has("mute") ? "Unmute" : "Mute"}
+      </button>
+      <button
+        className="btn small"
+        disabled={off}
+        onClick={() => toggle("hideAvatar", !has("hideAvatar"), has("hideAvatar") ? "Avatar back to your safety settings" : "Avatar hidden")}
+        title={has("hideAvatar") ? "Back to what your safety settings decide" : "Always hide their avatar in VRChat"}
+      >
+        {has("hideAvatar") ? "Stop hiding avatar" : "Hide avatar"}
+      </button>
+      {has("block") && <span className="small muted">You've blocked them.</span>}
+      {demo && <span className="small muted">Not in demo mode.</span>}
       {error && <p className="error-text">{error}</p>}
     </div>
   );

@@ -3,6 +3,9 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import * as store from "./store";
 import "./styles.css";
+import { applySafeArea } from "./safearea";
+
+applySafeArea();
 
 // Dev server only: lets UI test scripts set up state (stripped from builds).
 if (import.meta.env.DEV) {

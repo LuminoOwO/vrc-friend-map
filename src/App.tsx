@@ -1,3 +1,4 @@
+import { ActivityView } from "./components/ActivityView";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { backend, isTauri } from "./backend";
 import { useDerived } from "./derived";
@@ -117,6 +118,7 @@ export default function App() {
           {view === "graph" && <GraphView />}
           {view === "cards" && <CardsView />}
           {view === "lists" && <SharedLists />}
+          {view === "activity" && <ActivityView />}
         </div>
         {selectedId && profileAs === "sidebar" && <DetailPanel id={selectedId} />}
       </div>

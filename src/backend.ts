@@ -1,6 +1,7 @@
 // Thin wrapper around the Rust commands. When the UI runs in a plain browser
 // (npm run dev without Tauri) only demo mode works, and storage falls back to
 // localStorage.
+import type { LiveEvent } from "./activity";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { LiveSnapshot, LogScanReport, MetPerson, PresenceStats } from "./types";
@@ -12,6 +13,12 @@ export interface GraphicsInfo {
   forced: GraphicsMode | null;
   /** False where the choice does nothing (macOS, phones). */
   supported: boolean;
+  /** chromium, webkitgtk, webview2, wkwebview or android-webview. */
+  engine?: string;
+  os?: string;
+  arch?: string;
+  /** Environment variables that affect drawing. */
+  env?: [string, string][];
 }
 
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -280,6 +287,11 @@ export const backend = {
   liveStart: (dirs: string[]) => need<void>("live_start", { dirs }),
   liveStop: () => (isTauri ? invoke<void>("live_stop") : Promise.resolve()),
   liveSnapshot: () => need<LiveSnapshot>("live_snapshot"),
+  liveEvents: (since: number) => need<LiveEvent[]>("live_events", { since }),
+  onLiveEvents(cb: (e: LiveEvent[]) => void): Promise<UnlistenFn> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<LiveEvent[]>("live-events", (e) => cb(e.payload));
+  },
   onLive(cb: (s: LiveSnapshot) => void): Promise<UnlistenFn> {
     if (!isTauri) return Promise.resolve(() => {});
     return listen<LiveSnapshot>("live-instance", (e) => cb(e.payload));
@@ -288,6 +300,9 @@ export const backend = {
   /** One friend request (or its cancel), only ever from a button click. */
   friendRequest: (userId: string, cancel: boolean) => need<ApiResponse>("friend_request", { userId, cancel }),
   friendStatus: (userId: string) => need<ApiResponse>("friend_status", { userId }),
+  /** Only ever from a button click, after the user confirmed. */
+  unfriend: (userId: string) => need<ApiResponse>("unfriend", { userId }),
+  moderateUser: (userId: string, kind: string, undo: boolean) => need<ApiResponse>("moderate_user", { userId, kind, undo }),
   // ---- vfm-servers (src-tauri/src/share.rs) ----
   share: {
     identity: () => need<MyIdentity>("share_identity"),

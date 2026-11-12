@@ -1,11 +1,13 @@
 // Who's in your instance right now, from VRChat's log as it's written
 // (src-tauri/src/livelog.rs). Desktop only, nothing is asked of VRChat.
+import { addActivity, fromLive, loadActivity } from "./activity";
 import { backend, isTauri } from "./backend";
 import { logDirs, logsSupported } from "./logs";
 import { getState, setState } from "./store";
 import type { LiveSnapshot } from "./types";
 
 let unlisten: (() => void) | null = null;
+let unlistenEvents: (() => void) | null = null;
 let runningKey = "";
 
 /** Start, restart or stop following the log to match settings. */
@@ -22,9 +24,12 @@ export async function syncLive() {
     return;
   }
   unlisten ??= await backend.onLive((here) => setState({ here }));
+  unlistenEvents ??= await backend.onLiveEvents((ev) => addActivity(ev.map(fromLive)));
+  await loadActivity();
   try {
     await backend.liveStart(logDirs());
     setState({ here: await backend.liveSnapshot() });
+    addActivity((await backend.liveEvents(0).catch(() => [])).map(fromLive));
   } catch {
     runningKey = "";
     setState({ here: null });

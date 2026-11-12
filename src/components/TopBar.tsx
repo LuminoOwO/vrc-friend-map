@@ -10,6 +10,7 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: "graph", label: "Map", icon: "graph" },
   { key: "cards", label: "Cards", icon: "cards" },
   { key: "lists", label: "Shared lists", icon: "share" },
+  { key: "activity", label: "Activity", icon: "clock" },
 ];
 
 function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {
