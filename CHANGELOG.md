@@ -3,7 +3,7 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
-## 0.9.0 (unreleased)
+## 0.9.0 (2026-11-13)
 
 ### Changed
 - **Linux runs on Chromium now.** WebKitGTK, the engine the Linux build used, draws without

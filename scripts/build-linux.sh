@@ -190,11 +190,14 @@ make_tarball() {
   mkdir -p "$dir/icons"
   if [ "$ENGINE" = chromium ]; then
     # The program and Chromium's files, as the .deb lays them out.
-    local share
-    share=$(ls -d "$BUNDLE_DIR"/deb/*_"${VERSION}"_*/data/usr/share/"VRC Friend Map" 2>/dev/null | head -n 1)
-    if [ -z "$share" ]; then echo "✗ Chromium files not found in the .deb build" >&2; exit 1; fi
+    local deb unpack
+    deb=$(pick "$BUNDLE_DIR/deb/*_${VERSION}_*.deb")
+    unpack=$(mktemp -d)
+    (cd "$unpack" && ar x "$ROOT/$deb" && tar -xf data.tar.*)
+    if [ ! -d "$unpack/usr/share/VRC Friend Map" ]; then echo "✗ Chromium files not found in $deb" >&2; exit 1; fi
     mkdir -p "$dir/app"
-    cp -a "$share/." "$dir/app/"
+    cp -a "$unpack/usr/share/VRC Friend Map/." "$dir/app/"
+    rm -rf "$unpack"
     # Run from this folder: a link next to the scripts.
     ln -s app/vrc-friend-map "$dir/vrc-friend-map"
   else

@@ -650,6 +650,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.9.0": "Linux runs on Chromium now (smooth on big windows), a new Activity tab with who joined and left and friends coming online, unfriend / block / mute buttons on profiles, Settings → Diagnostics, and choices for which non-friends' profiles to load and keep.",
   "0.8.0": "you're on the map now (between your closest friends), a strip shows who's in your VRChat instance right now, and Map options → Not friends yet shows people you could befriend, with a friend-request button on their profile.",
   "0.7.4": "Settings → Graphics lets you choose GPU or software rendering for the map (Linux and Windows), if it's slow or the window stays blank.",
   "0.7.0": "share friend lists and activity with friends through your own or a friend's server (end-to-end encrypted), and run vfm-server on a spare device to log your friends' instance hopping 24/7 for better circle suggestions. Settings → Servers.",
