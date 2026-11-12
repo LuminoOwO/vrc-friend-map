@@ -8,6 +8,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
 import { hexA } from "../colors";
 import { useDerived } from "../derived";
+import { useExtra, type OtherInfo } from "../people";
 import { fmtHours, personTime } from "../logs";
 import {
   bannerUrl,
@@ -23,7 +24,7 @@ import {
   trustRank,
 } from "../model";
 import { addToCircle, getState, setState, updateSettings, useApp } from "../store";
-import type { Circle, Filters, Friend, MapSettings, Presence } from "../types";
+import type { Cache, Circle, Filters, Friend, MapSettings, Presence } from "../types";
 import { captureCard, capturePicture } from "../flip";
 import { FRESH_MS } from "../notify";
 import { FriendCard } from "./FriendCard";
@@ -39,6 +40,8 @@ interface GNode extends d3.SimulationNodeDatum {
   hw: number;
   hh: number;
   deg: number;
+  /** Not a friend: you, or someone who isn't a friend yet. */
+  kind?: "me" | "other";
 }
 type GLink = d3.SimulationLinkDatum<GNode> & { source: GNode | string; target: GNode | string };
 
@@ -225,7 +228,7 @@ class SpriteCache {
   }
 }
 /** Map colors that follow the color theme (read from CSS variables). */
-interface Palette { card: string; nodeBg: string; label: string; outline: string; sub: string; dim: string; line: string; border: string; gold: string; ok: string }
+interface Palette { card: string; nodeBg: string; label: string; outline: string; sub: string; dim: string; line: string; border: string; gold: string; ok: string; accent: string; here: string }
 function readPalette(): Palette {
   const cs = getComputedStyle(document.documentElement);
   readEdges(cs);
@@ -241,6 +244,8 @@ function readPalette(): Palette {
     border: v("--border-strong", "#31455a"),
     gold: v("--gold", "#ffd34d"),
     ok: v("--ok", "#51e57e"),
+    accent: v("--accent", "#7aa2ff"),
+    here: v("--here", "#ff6bcb"),
   };
 }
 let PAL: Palette = typeof document !== "undefined" ? readPalette() : ({} as Palette);
@@ -388,6 +393,9 @@ export function GraphView() {
   const map = settings.map;
   const derived = useDerived();
   const { friends, idsKey, matched, edges: mutualEdgeList, degree: mutualDegree } = derived;
+  // You and people who aren't friends yet (src/people.ts).
+  const extra = useExtra();
+  const othersById = useMemo(() => new Map(extra.others.map((o) => [o.id, o])), [extra.others]);
 
   const mutualNeighbors = useMemo(() => {
     const m = new Map<string, Set<string>>();
@@ -441,8 +449,8 @@ export function GraphView() {
   const secsById = useMemo(() => new Map((stats?.people ?? []).map((p) => [p.id, p.secs])), [stats]);
 
   // Everything the draw function needs, refreshed every render.
-  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById, fresh });
-  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById, fresh };
+  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById });
+  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById };
 
   const requestDraw = () => {
     if (rafRef.current) return;
@@ -593,6 +601,39 @@ export function GraphView() {
       ctx.textAlign = "center";
       ctx.fillText("★", x + n.r * 0.78, y - n.r * 0.6);
     }
+  }
+
+  /** Marks drawn on top of a node: dashed outline for people who aren't
+   *  friends, a double ring for you, a halo for people in your instance. */
+  function decorate(ctx: CanvasRenderingContext2D, n: GNode, card: boolean, here: boolean) {
+    const x = n.x!;
+    const y = n.y!;
+    const shape = (pad: number) => {
+      ctx.beginPath();
+      if (card) ctx.roundRect(x - n.hw - pad, y - n.hh - pad, (n.hw + pad) * 2, (n.hh + pad) * 2, 10 + pad);
+      else ctx.arc(x, y, Math.max(n.hw, n.hh) + pad, 0, Math.PI * 2);
+    };
+    ctx.save();
+    if (n.kind === "other") {
+      shape(3.5);
+      ctx.setLineDash([4, 3.5]);
+      ctx.strokeStyle = PAL.sub;
+      ctx.lineWidth = 1.6;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (n.kind === "me") {
+      shape(5);
+      ctx.strokeStyle = hexA(PAL.accent, 0.55);
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+    if (here) {
+      shape(n.kind === "me" ? 9 : 7.5);
+      ctx.strokeStyle = hexA(PAL.here, 0.95);
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   /** Draw a card, from the sprite cache when the zoom allows it. */
@@ -865,12 +906,21 @@ export function GraphView() {
     if (!ctx) return;
     const { w, h, dpr } = sizeRef.current;
     const t = transformRef.current;
-    const { cache, settings, selectedId, matched, lineData } = viewRef.current;
+    const { cache, settings, selectedId, matched, lineData, extra, othersById } = viewRef.current;
     const map = settings.map;
     const hover = hoverRef.current;
     const focus = selectedId ?? hover;
     const neighbors = lineData.neighbors;
-    const focusSet = focus ? new Set([focus, ...(neighbors.get(focus) ?? [])]) : null;
+    // Lines of people who aren't friends (to their mutual friends), by person.
+    const otherNbrs = new Map<string, string[]>();
+    for (const [o, f] of extra.otherEdges) {
+      if (!otherNbrs.has(o)) otherNbrs.set(o, []);
+      if (!otherNbrs.has(f)) otherNbrs.set(f, []);
+      otherNbrs.get(o)!.push(f);
+      otherNbrs.get(f)!.push(o);
+    }
+    const focusSet = focus ? new Set([focus, ...(neighbors.get(focus) ?? []), ...(otherNbrs.get(focus) ?? [])]) : null;
+    placeMe();
     const hideMode = settings.dimMode === "hide";
     const style = map.nodeStyle;
     const card = isCard(style);
@@ -930,6 +980,30 @@ export function GraphView() {
           ctx.stroke(p);
         });
       }
+      // People who aren't friends: dashed lines to their mutual friends.
+      if (extra.otherEdges.length) {
+        const dim = new Path2D();
+        const lit = new Path2D();
+        for (const [o, f] of extra.otherEdges) {
+          const s = nodesRef.current.get(o);
+          const d = nodesRef.current.get(f);
+          if (!s || !d || s.x == null || d.x == null || !visible(f)) continue;
+          if ((s.x < vx0 && d.x < vx0) || (s.x > vx1 && d.x > vx1) || (s.y! < vy0 && d.y! < vy0) || (s.y! > vy1 && d.y! > vy1)) continue;
+          const p = focus && (o === focus || f === focus) ? lit : dim;
+          p.moveTo(s.x, s.y!);
+          p.lineTo(d.x, d.y!);
+        }
+        // Solid but faint and in their own color: dashed lines are several
+        // times slower to draw without a GPU (WebKitGTK software paths).
+        if (!map.focusLinesOnly) {
+          ctx.strokeStyle = `rgba(${PAL.line},${Math.min(1, (focusSet ? 0.08 : 0.22) * map.lineOpacity)})`;
+          ctx.lineWidth = (0.8 * map.lineWidth) / t.k;
+          ctx.stroke(dim);
+        }
+        ctx.strokeStyle = hexA(PAL.here, 0.85);
+        ctx.lineWidth = (1.5 * map.lineWidth) / t.k;
+        ctx.stroke(lit);
+      }
       if (focus) {
         const fNode = nodesRef.current.get(focus);
         if (fNode && fNode.x != null) {
@@ -962,16 +1036,25 @@ export function GraphView() {
     const { fresh } = viewRef.current;
     let animating = false;
     for (const n of order) {
-      const f = cache.friends[n.id];
+      const f = cache.friends[n.id] ?? (n.kind === "other" ? othersById.get(n.id) : n.kind === "me" ? (extra.me ?? undefined) : undefined);
       if (!f || n.x == null || n.y == null) continue;
       if (n.x + n.hw < vx0 - margin || n.x - n.hw > vx1 + margin || n.y + n.hh < vy0 - margin || n.y - n.hh > vy1 + margin + 20 / t.k) continue;
-      const isMatch = matched.has(n.id);
+      // Filters are about friends; you and non-friends are always shown.
+      const isMatch = n.kind ? true : matched.has(n.id);
       if (hideMode && !isMatch) continue;
       let alpha = isMatch ? 1 : 0.13;
+      if (n.kind === "other") alpha *= 0.85;
       if (focusSet && !focusSet.has(n.id)) alpha *= 0.35;
       ctx.globalAlpha = alpha;
       const p = presenceOf(f, cache.presence);
-      const ring = settings.ringMode === "trust" ? trustRank(cache.details[n.id]?.tags, f.developerType).color : statusColor(f, p);
+      const ring =
+        n.kind === "me"
+          ? PAL.accent
+          : n.kind === "other"
+            ? PAL.dim
+            : settings.ringMode === "trust"
+              ? trustRank(cache.details[n.id]?.tags, f.developerType).color
+              : statusColor(f, p);
       const selected = n.id === selectedId;
       // A new friend pops in and sends out rings for a few seconds.
       const born = fresh[n.id];
@@ -1001,16 +1084,20 @@ export function GraphView() {
       } else if (card) drawCard(ctx, n, f, ring, p, style === "fullcard", selected, t.k);
       else drawRound(ctx, n, f, ring, p, style, selected, alpha);
       ctx.globalAlpha = alpha;
-      const labelled = !card && (showLabelsAuto || (focusSet?.has(n.id) && settings.showLabels !== "never") || selected);
-      if (labelled && isMatch) {
-        const fs = 12 / t.k;
+      const here = extra.here.has(n.id);
+      if (n.kind || here) decorate(ctx, n, card, here);
+      const labelled = n.kind === "me" || (!card && (showLabelsAuto || (focusSet?.has(n.id) && settings.showLabels !== "never") || selected));
+      if (labelled && isMatch && !(card && n.kind !== "me")) {
+        const fs = (n.kind === "me" ? 13 : 12) / t.k;
+        const name = n.kind === "me" ? "You" : f.displayName;
+        const below = card ? n.hh : n.r;
         ctx.font = `500 ${fs}px system-ui, sans-serif`;
         ctx.textAlign = "center";
         ctx.lineWidth = 3 / t.k;
         ctx.strokeStyle = PAL.outline;
-        ctx.strokeText(f.displayName, n.x, n.y + n.r + 4 / t.k + fs);
-        ctx.fillStyle = PAL.label;
-        ctx.fillText(f.displayName, n.x, n.y + n.r + 4 / t.k + fs);
+        ctx.strokeText(name, n.x, n.y + below + 4 / t.k + fs);
+        ctx.fillStyle = n.kind === "other" ? PAL.sub : n.kind === "me" ? PAL.accent : PAL.label;
+        ctx.fillText(name, n.x, n.y + below + 4 / t.k + fs);
       }
     }
     ctx.globalAlpha = 1;
@@ -1052,7 +1139,8 @@ export function GraphView() {
   }
 
   // Build/refresh the simulation when people, lines or node shapes change.
-  const layoutKey = `${idsKey}#${lineData.list.length}#${map.nodeStyle}#${map.nodeScale}#${map.sizeBy}#${map.spacing}#${map.gravity}`;
+  const extraKey = `${extra.others.map((o) => o.id).join(",")}#${extra.otherEdges.length}#${extra.me?.id ?? ""}`;
+  const layoutKey = `${idsKey}#${lineData.list.length}#${extraKey}#${map.nodeStyle}#${map.nodeScale}#${map.sizeBy}#${map.spacing}#${map.gravity}`;
   const ringRef = useRef(300);
   useEffect(() => {
     const prev = nodesRef.current;
@@ -1061,11 +1149,25 @@ export function GraphView() {
     const style = map.nodeStyle;
     const card = isCard(style);
     let added = 0;
-    for (const f of friends) {
+    const { extra: ex } = viewRef.current;
+    const otherDeg = new Map<string, number>();
+    for (const [o] of ex.otherEdges) otherDeg.set(o, (otherDeg.get(o) ?? 0) + 1);
+    const kinds = new Map<string, "me" | "other">();
+    for (const o of ex.others) kinds.set(o.id, "other");
+    if (ex.me) kinds.set(ex.me.id, "me");
+    const people = [...friends, ...ex.others, ...(ex.me ? [ex.me] : [])];
+    for (const f of people) {
+      const kind = kinds.get(f.id);
       const base =
-        map.sizeBy === "same" ? 14 : map.sizeBy === "together" ? togetherRadius(secsById.get(f.id) ?? 0) : mutualRadius(cache.mutuals[f.id]?.count ?? 0);
-      const g = geometry(style, base, map.nodeScale);
-      const deg = lineData.degree.get(f.id) ?? mutualDegree.get(f.id) ?? 0;
+        kind === "me"
+          ? 20
+          : map.sizeBy === "same" || kind
+            ? 14
+            : map.sizeBy === "together"
+              ? togetherRadius(secsById.get(f.id) ?? 0)
+              : mutualRadius(cache.mutuals[f.id]?.count ?? 0);
+      const g = { ...geometry(style, base, map.nodeScale), kind };
+      const deg = kind === "other" ? (otherDeg.get(f.id) ?? 0) : kind === "me" ? 1 : (lineData.degree.get(f.id) ?? mutualDegree.get(f.id) ?? 0);
       const old = prev.get(f.id);
       const remembered = !old ? savedPositions.get(f.id) : undefined;
       if (remembered) {
@@ -1088,7 +1190,10 @@ export function GraphView() {
     }
     nodesRef.current = next;
     const nodes = [...next.values()];
-    const links: GLink[] = lineData.list.map(([a, b]) => ({ source: a, target: b }));
+    const links: GLink[] = [
+      ...lineData.list.map(([a, b]) => ({ source: a, target: b })),
+      ...ex.otherEdges.filter(([o, f]) => next.has(o) && next.has(f)).map(([o, f]) => ({ source: o, target: f })),
+    ];
     const sp = map.spacing;
     const ringRadius = (160 + Math.sqrt(nodes.length) * (card ? 90 : 30)) * sp;
 
@@ -1116,7 +1221,7 @@ export function GraphView() {
         "charge",
         d3
           .forceManyBody<GNode>()
-          .strength((n) => (card ? -(60 + n.hw * 5) : -(50 + n.r * 7)) * sp * (map.gravity === "center" ? 0.55 : 1))
+          .strength((n) => (n.kind === "me" ? 0 : (card ? -(60 + n.hw * 5) : -(50 + n.r * 7)) * sp * (map.gravity === "center" ? 0.55 : 1)))
           .distanceMax((card ? 900 : 520) * sp),
       )
       .force("collide", card ? null : d3.forceCollide<GNode>((n) => n.r + 5 * map.nodeScale))
@@ -1166,6 +1271,40 @@ export function GraphView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map.nodeStyle]);
 
+  /** Your picture: pinned to the weighted middle of the friends you're closest
+   *  to (it follows them; nobody is pulled toward you). */
+  function placeMe(): GNode | null {
+    const { extra: ex } = viewRef.current;
+    const me = ex.me ? nodesRef.current.get(ex.me.id) : undefined;
+    if (!me) return null;
+    let sx = 0;
+    let sy = 0;
+    let sw = 0;
+    for (const [id, w] of ex.anchors) {
+      const a = nodesRef.current.get(id);
+      if (!a || a.x == null || a.y == null) continue;
+      const weight = Math.sqrt(w);
+      sx += a.x * weight;
+      sy += a.y * weight;
+      sw += weight;
+    }
+    const tx = sw ? sx / sw : 0;
+    const ty = sw ? sy / sw : 0;
+    if (draggingMeRef.current) return me;
+    if (me.fx == null || me.fy == null || !Number.isFinite(me.fx)) {
+      me.fx = tx;
+      me.fy = ty;
+    } else {
+      me.fx += (tx - me.fx) * 0.15;
+      me.fy += (ty - me.fy) * 0.15;
+    }
+    // Also while the layout is at rest (orbit, dragging friends).
+    me.x = me.fx;
+    me.y = me.fy;
+    return me;
+  }
+  const draggingMeRef = useRef(false);
+
   // Gravity: where everyone is pulled. People in two circles sit between them.
   //  mutuals  – the middle pulls lightly; people without lines float in a ring
   //  loners   – people without lines gather loosely in one spot to the side
@@ -1189,7 +1328,7 @@ export function GraphView() {
     });
     let loners = false;
     for (const n of nodesRef.current.values()) {
-      if (n.deg === 0 && !circleIndex.has(n.id)) {
+      if (n.deg === 0 && !n.kind && !circleIndex.has(n.id)) {
         loners = true;
         break;
       }
@@ -1199,8 +1338,29 @@ export function GraphView() {
     const force = (alpha: number) => {
       const R = ringRef.current;
       const turn = orbitRef.current.angle;
+      const meNode = placeMe();
       for (const n of nodesRef.current.values()) {
         if (n.x == null || n.y == null) continue;
+        if (n.kind === "me") continue;
+        if (n.kind === "other") {
+          // Lines to their mutual friends place them; without any, people in
+          // your instance gather around you, the rest wait in the outer ring.
+          if (n.deg > 0) continue;
+          const here = viewRef.current.extra.here.has(n.id);
+          let tx: number;
+          let ty: number;
+          if (here && meNode?.x != null) {
+            tx = meNode.x;
+            ty = meNode.y!;
+          } else {
+            const d = Math.hypot(n.x, n.y) || 1;
+            tx = (n.x / d) * R * 1.35;
+            ty = (n.y / d) * R * 1.35;
+          }
+          n.vx! += (tx - n.x) * 0.06 * alpha;
+          n.vy! += (ty - n.y) * 0.06 * alpha;
+          continue;
+        }
         let tx = 0;
         let ty = 0;
         let k = 0.035;
@@ -1254,7 +1414,7 @@ export function GraphView() {
     };
     sim.force("circles", force as unknown as d3.Force<GNode, GLink>);
     sim.alpha(Math.max(sim.alpha(), 0.3)).restart();
-  }, [circles, layoutKey, map.groupPull, map.gravity]);
+  }, [circles, layoutKey, map.groupPull, map.gravity, extra.anchors]);
 
   // Orbit: slowly turn everyone around the middle. Positions really move, so
   // names stay upright and dragging still works.
@@ -1379,6 +1539,7 @@ export function GraphView() {
         const n = event.subject.node;
         n.fx = n.x;
         n.fy = n.y;
+        if (n.kind === "me") draggingMeRef.current = true;
         simRef.current?.alphaTarget(0.15).restart();
         tooltipIdRef.current = null;
         setTooltip(null);
@@ -1409,9 +1570,15 @@ export function GraphView() {
         const target = dragTargetRef.current;
         dragTargetRef.current = null;
         document.querySelectorAll(".drop-hover").forEach((el) => el.classList.remove("drop-hover"));
-        if (target && moved > 25) addToCircle(target, n.id);
-        n.fx = null;
-        n.fy = null;
+        // Only friends go into circles.
+        if (target && moved > 25 && !n.kind) addToCircle(target, n.id);
+        if (n.kind === "me") {
+          // Let go: drifts back between your closest friends.
+          draggingMeRef.current = false;
+        } else {
+          n.fx = null;
+          n.fy = null;
+        }
         requestDraw();
       });
 
@@ -1497,7 +1664,10 @@ export function GraphView() {
     placeHoverCard();
   });
 
-  const tipFriend = tooltip ? cache.friends[tooltip.id] : null;
+  const tipFriend = tooltip ? (cache.friends[tooltip.id] ?? othersById.get(tooltip.id) ?? (extra.me?.id === tooltip.id ? extra.me : null)) : null;
+  const tipKind = tooltip ? (cache.friends[tooltip.id] ? null : extra.me?.id === tooltip.id ? "me" : "other") : null;
+  const tipOther = tooltip && tipKind === "other" ? extra.info.get(tooltip.id) : undefined;
+  const tipHere = tooltip ? extra.here.has(tooltip.id) : false;
   const tipTime = tipFriend ? personTime(stats, tipFriend.id) : null;
   const empty = friends.length === 0;
   const noMutualData = !empty && Object.keys(cache.mutuals).length === 0 && !together;
@@ -1537,6 +1707,7 @@ export function GraphView() {
               {fmtHours(tipTime.secs)} together · {tipTime.days} day{tipTime.days === 1 ? "" : "s"}
             </div>
           )}
+          {(tipKind || tipHere) && <div className="hover-extra">{relationLine(tooltip!.id, tipKind, tipHere, tipOther, cache)}</div>}
         </div>
       )}
       {tipFriend && tooltip && !map.hoverCard && map.nodeStyle !== "fullcard" && (
@@ -1678,4 +1849,18 @@ function Legend({
       )}
     </div>
   );
+}
+
+/** "You" / "Not a friend · in your instance · friend of A, B" for hover cards. */
+function relationLine(id: string, kind: "me" | "other" | null, here: boolean, info: OtherInfo | undefined, cache: Cache): string {
+  if (kind === "me") return "You";
+  const parts: string[] = [];
+  if (kind === "other") parts.push("Not a friend yet");
+  if (here) parts.push("in your instance");
+  if (info?.met) parts.push(`${fmtHours(info.met.secs)} together`);
+  const via = (info?.via ?? []).map((id) => cache.friends[id]?.displayName).filter(Boolean) as string[];
+  const mutual = kind === "other" ? (cache.mutuals[id]?.count ?? 0) : 0;
+  if (via.length) parts.push(`friend of ${via.slice(0, 2).join(", ")}${via.length > 2 ? ` +${via.length - 2}` : ""}`);
+  else if (mutual) parts.push(`${mutual} mutual`);
+  return parts.join(" · ");
 }

@@ -28,6 +28,8 @@ import {
 } from "../model";
 import { addToCircle, createCircle, removeFromCircle, setState, showToast, useApp } from "../store";
 import { bioKeyState } from "../share";
+import { friendStatus, personOf, relationOf, setFriendRequest } from "../people";
+import { othersHere } from "../live";
 import { freshenProfile, loadGroups, loadInstance, loadWorld, refreshPerson } from "../sync";
 import type { Friend, Presence } from "../types";
 import { GroupsModal } from "./GroupsModal";
@@ -99,11 +101,14 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const local = useApp((s) => s.local);
   const demo = useApp((s) => s.demo);
   const stats = useApp((s) => s.logs.stats);
+  const here = useApp((s) => s.here);
   const [newCircle, setNewCircle] = useState("");
   const [groupsOpen, setGroupsOpen] = useState(false);
   const [bioOpen, setBioOpen] = useState(false);
   const [instance, setInstance] = useState<{ users: number; capacity?: number } | null>(null);
-  const f = cache.friends[id];
+  // Friends, people who aren't friends yet (instance mates, potential friends), or you.
+  const f = personOf(cache, id);
+  const relation = relationOf(cache, id);
   const rootRef = useRef<HTMLElement>(null);
   const location = f?.location ?? "";
   const inWorld = location.startsWith("wrld_");
@@ -170,6 +175,8 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const loc = inWorld ? parseLocation(location) : null;
   const world = loc ? cache.worlds?.[loc.world] : undefined;
   const withThem = inWorld ? Object.values(cache.friends).filter((o) => o.id !== id && o.location === location) : [];
+  const isHere = othersHere(here, cache.me?.id).some((x) => x.id === id);
+  const viaLists = relation === "other" ? local.imports.filter((l) => l.owner.id && cache.friends[l.owner.id] && l.mode === "full" && l.friends?.some((x) => x.id === id)) : [];
   const close = () => setState({ selectedId: null });
   const open = (url: string) => backend.openUrl(url).catch(() => showToast("Couldn't open the link"));
   const copy = (text: string) => {
@@ -250,6 +257,14 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   )}
                 </div>
               )}
+              {relation !== "friend" && (
+                <RelationBox id={id} relation={relation} here={isHere} via={viaLists.map((l) => l.owner.displayName)} />
+              )}
+              {relation === "friend" && isHere && (
+                <p className="relation-here" data-flip-fade>
+                  <span className="here-dot" /> In your instance right now
+                </p>
+              )}
               <div className="profile-actions" data-flip-fade>
                 {!demo && (
                   <button className="btn" onClick={() => refreshPerson(id).then(() => loadGroups(id, true))} title="Load this profile again from VRChat">
@@ -323,10 +338,14 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                     <Icon name="calendar" size={15} /> Joined VRChat
                   </dt>
                   <dd data-flip-fade>{detail?.date_joined ? fmtDate(detail.date_joined) : "loading…"}</dd>
-                  <dt data-flip-fade>
-                    <Icon name="users" size={15} /> Mutual friends
-                  </dt>
-                  <dd data-flip-fade>{mutual ? (mutual.hidden ? "hidden by them" : mutual.count) : "loading…"}</dd>
+                  {relation !== "me" && (
+                    <>
+                      <dt data-flip-fade>
+                        <Icon name="users" size={15} /> Mutual friends
+                      </dt>
+                      <dd data-flip-fade>{mutual ? (mutual.hidden ? "hidden by them" : mutual.count) : "loading…"}</dd>
+                    </>
+                  )}
                   {cache.favorites[id]?.length ? (
                     <>
                       <dt data-flip-fade>
@@ -443,6 +462,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
             </section>
           )}
 
+          {relation === "friend" && (
           <section className="pcard">
             <h3>Your circles</h3>
             <div className="circle-toggles">
@@ -471,6 +491,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               </button>
             </form>
           </section>
+          )}
 
           {(time || oftenWith.length > 0) && (
             <section className="pcard">
@@ -524,8 +545,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
           )}
 
           <p className="muted small profile-updated">
-            {detail ? `Profile loaded ${relTime(detail.fetchedAt, now)}` : ""}
-            {mutual ? ` · mutuals ${relTime(mutual.fetchedAt, now)}` : ""}
+            {[detail && `Profile loaded ${relTime(detail.fetchedAt, now)}`, mutual && `mutuals ${relTime(mutual.fetchedAt, now)}`].filter(Boolean).join(" · ")}
           </p>
         </div>
       </div>
@@ -556,5 +576,71 @@ function BioKey({ bio, userId }: { bio?: string; userId: string }) {
     <p className="key-check muted">
       <Icon name="key" size={14} /> Has a sharing key in their bio (you haven't received anything from them yet).
     </p>
+  );
+}
+
+/** For someone who isn't a friend (or you): how you're connected, and the
+ *  friend-request button. One request per click, never automatic. */
+function RelationBox({ id, relation, here, via }: { id: string; relation: "me" | "other"; here: boolean; via: string[] }) {
+  const demo = useApp((s) => s.demo);
+  const [status, setStatus] = useState<{ isFriend: boolean; outgoing: boolean; incoming: boolean } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    setStatus(null);
+    setError("");
+    if (relation === "other") friendStatus(id).then(setStatus);
+  }, [id, relation]);
+
+  if (relation === "me") {
+    return (
+      <div className="relation-box me" data-flip-fade>
+        <Icon name="user" size={15} /> This is you. On the map you float between the friends you spend the most time with.
+      </div>
+    );
+  }
+  const act = async (send: boolean) => {
+    setBusy(true);
+    setError("");
+    const err = await setFriendRequest(id, send);
+    setBusy(false);
+    if (err) setError(err);
+    else {
+      setStatus((s) => ({ isFriend: false, incoming: s?.incoming ?? false, outgoing: send }));
+      showToast(send ? "Friend request sent" : "Friend request cancelled");
+    }
+  };
+  const bits = ["Not a friend yet"];
+  if (here) bits.push("in your instance right now");
+  if (via.length) bits.push(`in ${via.slice(0, 2).join(" and ")}${via.length > 2 ? ` and ${via.length - 2} more` : ""}'s friend list`);
+  return (
+    <div className="relation-box" data-flip-fade>
+      <p>
+        {here && <span className="here-dot" />} {bits.join(" · ")}
+      </p>
+      {status?.isFriend ? (
+        <p className="small ok-text">You're friends now. They'll show up as a friend after the next sync.</p>
+      ) : (
+        <div className="row">
+          {status?.outgoing ? (
+            <>
+              <span className="small muted">
+                <Icon name="user-check" size={14} /> Request sent
+              </span>
+              <button className="btn small" disabled={busy || demo} onClick={() => act(false)}>
+                Cancel request
+              </button>
+            </>
+          ) : (
+            <button className="btn primary small" disabled={busy || demo} onClick={() => act(true)} title={demo ? "Not in demo mode" : "Send them a friend request on VRChat"}>
+              <Icon name="user-plus" size={15} /> {status?.incoming ? "Accept: send request back" : "Send friend request"}
+            </button>
+          )}
+          {status?.incoming && !status.outgoing && <span className="small">They sent you one.</span>}
+        </div>
+      )}
+      {error && <p className="error-text">{error}</p>}
+    </div>
   );
 }

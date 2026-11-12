@@ -3,7 +3,7 @@
 // localStorage.
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { LogScanReport, PresenceStats } from "./types";
+import type { LiveSnapshot, LogScanReport, MetPerson, PresenceStats } from "./types";
 
 export type GraphicsMode = "auto" | "gpu" | "software";
 export interface GraphicsInfo {
@@ -276,6 +276,18 @@ export const backend = {
     if (!isTauri) return Promise.resolve(() => {});
     return listen<LoginEvent>("login-finished", (e) => cb(e.payload));
   },
+  // ---- live game log (src-tauri/src/livelog.rs) ----
+  liveStart: (dirs: string[]) => need<void>("live_start", { dirs }),
+  liveStop: () => (isTauri ? invoke<void>("live_stop") : Promise.resolve()),
+  liveSnapshot: () => need<LiveSnapshot>("live_snapshot"),
+  onLive(cb: (s: LiveSnapshot) => void): Promise<UnlistenFn> {
+    if (!isTauri) return Promise.resolve(() => {});
+    return listen<LiveSnapshot>("live-instance", (e) => cb(e.payload));
+  },
+  logsMet: (query: { exclude: string[]; min_secs: number; limit: number }) => need<MetPerson[]>("logs_met", { query }),
+  /** One friend request (or its cancel), only ever from a button click. */
+  friendRequest: (userId: string, cancel: boolean) => need<ApiResponse>("friend_request", { userId, cancel }),
+  friendStatus: (userId: string) => need<ApiResponse>("friend_status", { userId }),
   // ---- vfm-servers (src-tauri/src/share.rs) ----
   share: {
     identity: () => need<MyIdentity>("share_identity"),

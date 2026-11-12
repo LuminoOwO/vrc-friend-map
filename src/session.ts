@@ -2,6 +2,7 @@ import { backend } from "./backend";
 import { makeDemo } from "./demo";
 import { initLogs, stopLogScans } from "./logs";
 import { stopSharing } from "./share";
+import { demoHere } from "./live";
 import { defaultFilters, emptyCache, emptyLocal, flushSaves, getState, loadPersisted, setLogs, setState } from "./store";
 import { stopSync, syncAll } from "./sync";
 
@@ -9,7 +10,10 @@ export function enterDemo() {
   stopSync();
   stopLogScans();
   const { cache, local, presence } = makeDemo();
-  setState({ demo: true, mode: "app", cache, local, session: null, selectedId: null, loginMessage: "", filters: defaultFilters() });
+  // A made-up instance so "who's here" can be tried out too.
+  const ids = Object.keys(cache.friends);
+  const names = Object.fromEntries(ids.map((id) => [id, cache.friends[id].displayName]));
+  setState({ demo: true, mode: "app", cache, local, session: null, selectedId: null, loginMessage: "", filters: defaultFilters(), here: demoHere(ids, names) });
   setLogs({ stats: presence, report: { dirs: [], files_seen: 0, files_read: 0, files_stored: 6, visits: presence.visits, first: presence.first, last: presence.last, bytes: 0, newer_version: null, errors: [] } });
 }
 

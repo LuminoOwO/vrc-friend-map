@@ -96,6 +96,8 @@ export interface Me {
   activeFriends: string[];
   offlineFriends: string[];
   iconUrl?: string;
+  /** Your own profile in the shape friends have (picture, status…), for the map. */
+  profile?: Friend;
 }
 
 export interface Circle {
@@ -142,6 +144,8 @@ export interface Cache {
   groups?: Record<string, UserGroups>;
   /** World names and pictures, loaded when a profile shows someone's location. */
   worlds?: Record<string, WorldInfo>;
+  /** Profiles of people who aren't friends (instance mates, potential friends). */
+  others?: Record<string, Friend & { fetchedAt: number }>;
   lastFriendsSync: number;
 }
 
@@ -201,6 +205,11 @@ export interface MapSettings {
   showShield: boolean;
   /** Small frame-rate readout in the corner of the map. */
   showFps: boolean;
+  /** Your own picture, floating between the friends you're closest to. */
+  showMe: boolean;
+  /** People who aren't friends: none, only those in your instance, plus people
+   *  you've spent time with (game logs), plus friends of friends (shared lists). */
+  showOthers: "off" | "here" | "met" | "all";
 }
 
 export type Theme = "dark" | "oled" | "light" | "mocha" | "macchiato" | "latte" | "nord" | "dracula";
@@ -214,6 +223,8 @@ export interface LogSettings {
   scanMinutes: number;
   /** 0 = keep forever */
   retentionDays: number;
+  /** Follow the log as VRChat writes it: who's in your instance right now. */
+  live: boolean;
 }
 
 export interface GroupSettings {
@@ -406,4 +417,32 @@ export interface SyncState {
   backoffUntil: number;
   error: string;
   paused: boolean;
+}
+
+/** Who's in your instance right now (from the live game log). */
+export interface LivePlayer {
+  id: string;
+  name: string;
+  since: number;
+}
+
+export interface LiveSnapshot {
+  active: boolean;
+  location: string;
+  worldId: string;
+  worldName: string;
+  since: number;
+  players: LivePlayer[];
+  localId: string | null;
+  file: string;
+  closed: boolean;
+}
+
+/** Someone from the game logs who isn't a friend. */
+export interface MetPerson {
+  id: string;
+  name: string;
+  secs: number;
+  visits: number;
+  last: number;
 }

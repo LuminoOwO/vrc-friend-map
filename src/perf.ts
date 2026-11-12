@@ -65,8 +65,18 @@ export async function runPerf(collector: string) {
     if (!g) throw new Error("no graph");
     await sleep(4000); // layout settles
     const only = new URLSearchParams(location.search).get("only");
-    const all: { name: string; theme?: Theme; map?: Partial<MapSettings>; pan?: boolean; sim?: boolean; css?: string; group?: string }[] = [
+    const all: { name: string; theme?: Theme; map?: Partial<MapSettings>; pan?: boolean; sim?: boolean; css?: string; group?: string; noHere?: boolean }[] = [
       { group: "css", name: "css: baseline (pan)" },
+      { group: "new2", name: "new2: baseline (pan)" },
+      { group: "new2", name: "new2: no me", map: { showMe: false } },
+      { group: "new2", name: "new2: nobody here", noHere: true },
+      { group: "new2", name: "new2: no me, nobody here", map: { showMe: false }, noHere: true },
+      { group: "new", name: "new: baseline (pan)" },
+      { group: "new", name: "new: no here strip", css: ".here-now { display: none !important; }" },
+      { group: "new", name: "new: no me", map: { showMe: false } },
+      { group: "new", name: "new: neither", map: { showMe: false }, css: ".here-now { display: none !important; }" },
+      { group: "new", name: "new: strip without shadow", map: { showMe: false }, css: ".here-now { box-shadow: none !important; }" },
+      { group: "new", name: "new: strip own layer", map: { showMe: false }, css: ".here-now { will-change: transform; transform: translateZ(0); }" },
       { group: "css", name: "css: no dither background", css: ".graph, .login { background: var(--bg) !important; }" },
       { group: "css", name: "css: no shadows/filters", css: "* { box-shadow: none !important; filter: none !important; text-shadow: none !important; }" },
       { group: "css", name: "css: hide overlays", css: ".graph > :not(canvas) { display: none !important; }" },
@@ -74,7 +84,7 @@ export async function runPerf(collector: string) {
       { group: "css", name: "css: no transitions/animations", css: "* { transition: none !important; animation: none !important; }" },
       { group: "css", name: "css: all of the above", css: ".graph, .login { background: var(--bg) !important; } * { box-shadow: none !important; filter: none !important; transition: none !important; animation: none !important; } .graph > :not(canvas) { display: none !important; }" },
     ];
-    const scenarios: { name: string; theme?: Theme; map?: Partial<MapSettings>; pan?: boolean; sim?: boolean; css?: string; group?: string }[] = only ? all.filter((x) => x.group === only) : [
+    const scenarios: { name: string; theme?: Theme; map?: Partial<MapSettings>; pan?: boolean; sim?: boolean; css?: string; group?: string; noHere?: boolean }[] = only ? all.filter((x) => x.group === only) : [
       { name: "idle (no movement)", pan: false },
       { name: "pan: pictures (default)" },
       { name: "pan: dots", map: { nodeStyle: "dot" } },
@@ -84,14 +94,17 @@ export async function runPerf(collector: string) {
       { name: "pan: pictures, no lines", map: { nodeStyle: "icon", hulls: true, lines: "none" } },
       { name: "pan: oled theme", theme: "oled", map: { lines: getState().settings.map.lines } },
       { name: "layout moving (sim)", theme: "dark", pan: false, sim: true },
+      { name: "pan: me + others shown", map: { showMe: true, showOthers: "here" } },
     ];
     const styleEl = document.createElement("style");
     document.head.appendChild(styleEl);
     const base = { ...getState().settings.map };
+    const savedHere = getState().here;
     for (const sc of scenarios) {
       updateMap({ ...base, ...(sc.map ?? {}) });
       if (sc.theme) updateSettings({ theme: sc.theme });
       styleEl.textContent = sc.css ?? "";
+      if (sc.noHere !== undefined) setState({ here: sc.noHere ? null : savedHere });
       await sleep(sc.theme ? 2500 : 800);
       const gg = (window as unknown as { __vfmGraph: G }).__vfmGraph;
       gg.fit();
@@ -104,5 +117,4 @@ export async function runPerf(collector: string) {
   } catch (e) {
     await post({ event: "error", message: String(e) });
   }
-  void setState;
 }

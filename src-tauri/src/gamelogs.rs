@@ -118,7 +118,7 @@ fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
 }
 
 /// "Name (usr_…)" -> (name, id)
-fn split_player(rest: &str) -> Option<(&str, &str)> {
+pub fn split_player(rest: &str) -> Option<(&str, &str)> {
     let rest = rest.trim_end();
     let open = rest.rfind(" (usr_")?;
     if !rest.ends_with(')') {
@@ -489,6 +489,64 @@ impl LogStore {
     pub fn stats(&self, q: &StatsQuery) -> Result<Stats, String> {
         self.with_history(|h| compute_stats(h, q))
     }
+
+    pub fn met(&self, q: &MetQuery) -> Result<Vec<MetPerson>, String> {
+        self.with_history(|h| met_people(h, q))
+    }
+}
+
+#[derive(Deserialize, Debug, Clone)]
+pub struct MetQuery {
+    /// Friends and yourself: left out.
+    pub exclude: Vec<String>,
+    pub min_secs: f64,
+    pub limit: usize,
+}
+
+#[derive(Serialize, Debug, Clone, PartialEq)]
+pub struct MetPerson {
+    pub id: String,
+    pub name: String,
+    /// Time in the same instance as you.
+    pub secs: f64,
+    pub visits: u32,
+    /// Last time together (naive seconds).
+    pub last: i64,
+}
+
+/// People who aren't friends, by time spent in the same instance as you.
+pub fn met_people(h: &History, q: &MetQuery) -> Vec<MetPerson> {
+    let exclude: HashSet<&str> = q.exclude.iter().map(String::as_str).collect();
+    let mut acc: HashMap<&str, (f64, u32, i64)> = HashMap::new();
+    let mut seen_visits: HashSet<(i64, &str)> = HashSet::new();
+    for f in h.files.values() {
+        for v in &f.visits {
+            if !seen_visits.insert((v.start, v.world.as_str())) {
+                continue;
+            }
+            let mut in_visit: HashSet<&str> = HashSet::new();
+            for st in &v.players {
+                let id = st.id.as_str();
+                if exclude.contains(id) || f.local_id.as_deref() == Some(id) {
+                    continue;
+                }
+                let e = acc.entry(id).or_insert((0.0, 0, 0));
+                e.0 += (st.to - st.from).max(0) as f64;
+                e.2 = e.2.max(st.to);
+                if in_visit.insert(id) {
+                    e.1 += 1;
+                }
+            }
+        }
+    }
+    let mut out: Vec<MetPerson> = acc
+        .into_iter()
+        .filter(|(_, (secs, _, _))| *secs >= q.min_secs)
+        .map(|(id, (secs, visits, last))| MetPerson { id: id.to_string(), name: h.names.get(id).cloned().unwrap_or_default(), secs, visits, last })
+        .collect();
+    out.sort_by(|a, b| b.secs.partial_cmp(&a.secs).unwrap_or(std::cmp::Ordering::Equal).then(a.id.cmp(&b.id)));
+    out.truncate(q.limit.min(500));
+    out
 }
 
 fn fill_summary(h: &History, report: &mut ScanReport) {
@@ -777,6 +835,20 @@ mod tests {
 2026.11.08 21:57:10 Debug      -  [Behaviour] OnPlayerLeft Carol (usr_carol000000)
 2026.11.08 22:07:10 Debug      -  something unrelated, last line
 ";
+
+    #[test]
+    fn met_people_are_not_friends() {
+        let p = parse_log(SAMPLE);
+        let mut h = History::default();
+        h.files.insert("a".into(), FileEntry { local_id: p.local_id.clone(), visits: p.visits.clone(), ..Default::default() });
+        h.names = p.names.clone().into_iter().collect();
+        let met = met_people(&h, &MetQuery { exclude: vec!["usr_alice00000".into()], min_secs: 0.0, limit: 10 });
+        assert!(met.iter().all(|m| m.id != "usr_alice00000" && m.id != "usr_me0000000"));
+        let stranger = met.iter().find(|m| m.id == "usr_strange0000").expect("stranger");
+        assert_eq!(stranger.name, "Stranger");
+        assert!(stranger.secs > 0.0 && stranger.visits == 1);
+        assert!(met_people(&h, &MetQuery { exclude: vec![], min_secs: 1e9, limit: 10 }).is_empty());
+    }
 
     #[test]
     fn timestamps() {

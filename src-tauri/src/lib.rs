@@ -5,6 +5,7 @@ mod gdk_stubs;
 mod gamelogs;
 pub mod graphics;
 mod images;
+mod livelog;
 mod pipeline;
 mod share;
 mod storage;
@@ -20,6 +21,7 @@ pub struct AppState {
     pub store: storage::Store,
     pub logs: gamelogs::LogStore,
     pub share: share::ShareState,
+    pub live: std::sync::Arc<livelog::LiveLog>,
     pub image_dir: PathBuf,
     pub data_dir: PathBuf,
 }
@@ -262,9 +264,50 @@ async fn logs_stats(state: AppStateRef<'_>, query: gamelogs::StatsQuery) -> Resu
     tauri::async_runtime::spawn_blocking(move || st.logs.stats(&query)).await.map_err(|e| e.to_string())?
 }
 
+/// People from your game logs who aren't friends, by time with you.
+#[tauri::command]
+async fn logs_met(state: AppStateRef<'_>, query: gamelogs::MetQuery) -> Result<Vec<gamelogs::MetPerson>, String> {
+    let st = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || st.logs.met(&query)).await.map_err(|e| e.to_string())?
+}
+
+/// Send (or with `cancel`, take back) one friend request. Only ever called
+/// from a button click on that person's profile.
+#[tauri::command]
+async fn friend_request(state: AppStateRef<'_>, user_id: String, cancel: bool) -> Result<api::ApiResponse, String> {
+    state.api.friend_request(&user_id, cancel).await
+}
+
+#[tauri::command]
+async fn friend_status(state: AppStateRef<'_>, user_id: String) -> Result<api::ApiResponse, String> {
+    state.api.friend_status(&user_id).await
+}
+
 #[tauri::command]
 async fn logs_clear(state: AppStateRef<'_>) -> Result<(), String> {
     state.logs.clear()
+}
+
+/// Start following VRChat's newest log ("who's here right now").
+#[tauri::command]
+fn live_start(app: AppHandle, state: AppStateRef<'_>, dirs: Vec<String>) -> Result<(), String> {
+    let dirs = gamelogs::dirs_from_strings(&dirs);
+    let dirs = if dirs.is_empty() { gamelogs::detect_dirs() } else { dirs };
+    if dirs.is_empty() {
+        return Err("no VRChat log folder found".into());
+    }
+    state.live.start(app, dirs);
+    Ok(())
+}
+
+#[tauri::command]
+fn live_stop(state: AppStateRef<'_>) {
+    state.live.stop();
+}
+
+#[tauri::command]
+fn live_snapshot(state: AppStateRef<'_>) -> livelog::Snapshot {
+    state.live.snapshot()
 }
 
 #[tauri::command]
@@ -354,6 +397,7 @@ pub fn run() {
                 pipeline: pipeline::PipelineState::default(),
                 store: storage::Store { dir: data_dir.join("store") },
                 logs: gamelogs::LogStore::new(data_dir.join("gamelogs").join("history.json")),
+                live: livelog::LiveLog::new(),
                 share: share::ShareState::new(&data_dir, format!("vrc-friend-map/{}", env!("CARGO_PKG_VERSION"))),
                 image_dir,
                 data_dir,
@@ -379,7 +423,13 @@ pub fn run() {
             logs_info,
             logs_stats,
             logs_clear,
+            logs_met,
+            friend_request,
+            friend_status,
             storage_info,
+            live_start,
+            live_stop,
+            live_snapshot,
             graphics_get,
             graphics_set,
             app_restart,

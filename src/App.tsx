@@ -8,6 +8,8 @@ import { LoginScreen } from "./components/LoginScreen";
 import { SettingsModal } from "./components/SettingsModal";
 import { ConfirmUnencrypted, ServersModal } from "./components/ServersModal";
 import { loadShared, startSharing, stopSharing } from "./share";
+import { syncLive } from "./live";
+import { HereNow } from "./components/HereNow";
 import { SharedLists } from "./components/SharedLists";
 import { Sidebar } from "./components/Sidebar";
 import { ToastView } from "./components/ToastView";
@@ -111,6 +113,7 @@ export default function App() {
       <div className="main" key={theme}>
         {sidebarOpen && <Sidebar />}
         <div className="content">
+          <HereNow />
           {view === "graph" && <GraphView />}
           {view === "cards" && <CardsView />}
           {view === "lists" && <SharedLists />}
@@ -175,6 +178,11 @@ function LogsAndGroups() {
   useEffect(() => {
     refreshStats();
   }, [idsKey, meId, crowd, sinceDays]);
+
+  // Who's in your instance right now (live game log).
+  useEffect(() => {
+    syncLive();
+  }, [mode, demo, platform, logSettings.enabled, logSettings.live, logSettings.dirs, logSettings.autoDetect]);
 
   useEffect(() => {
     scheduleLogScans();

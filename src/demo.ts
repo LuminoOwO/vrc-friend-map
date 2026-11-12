@@ -256,6 +256,9 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
     { id: "demo-c2", name: "Movie buddies", color: "#f472b6", members: [...byCommunity(1).slice(0, 7), ...byCommunity(0).slice(6, 9)] },
   ];
 
+  // The demo strangers share a few friends with you.
+  mutuals["usr_demo-stranger-0001"] = { ids: ids.slice(0, 5), count: 5, hidden: false, fetchedAt: now };
+  mutuals["usr_demo-stranger-0002"] = { ids: ids.slice(30, 33), count: 3, hidden: false, fetchedAt: now };
   return {
     cache: {
       me: {
@@ -265,6 +268,19 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
         onlineFriends: ids.filter((id) => presence[id] === "online"),
         activeFriends: ids.filter((id) => presence[id] === "web"),
         offlineFriends: ids.filter((id) => presence[id] === "offline"),
+        iconUrl: iconFor("You", 200),
+        profile: {
+          id: "usr_demo-me",
+          displayName: "You (demo)",
+          status: "active",
+          statusDescription: "Trying the demo",
+          location: "",
+          platform: "standalonewindows",
+          last_platform: "standalonewindows",
+          last_login: null,
+          last_activity: null,
+          iconUrl: iconFor("You", 200),
+        },
       },
       friends,
       presence,
@@ -273,6 +289,28 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
       favorites,
       lastFriendsSync: now,
       groups,
+      // Two people in the demo instance who aren't friends (see live.ts demoHere).
+      others: Object.fromEntries(
+        [
+          ["usr_demo-stranger-0001", "Moonlit Fox", 15],
+          ["usr_demo-stranger-0002", "Pixel Bard", 285],
+        ].map(([id, name, hue]) => [
+          id as string,
+          {
+            id: id as string,
+            displayName: name as string,
+            status: "active" as const,
+            statusDescription: "",
+            location: "",
+            platform: "standalonewindows",
+            last_platform: "standalonewindows",
+            last_login: null,
+            last_activity: null,
+            iconUrl: iconFor(name as string, hue as number),
+            fetchedAt: now,
+          },
+        ]),
+      ),
       worlds: Object.fromEntries(
         ["The Black Cat", "Movie & Chill", "Avatar Testing Chamber", "Midnight Rooftop", "Quest Hangout"].map((name, ci) => [
           `wrld_demo${ci}`,

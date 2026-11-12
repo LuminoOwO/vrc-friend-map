@@ -62,6 +62,25 @@ async function fetchMe(): Promise<Me> {
     activeFriends: d.activeFriends ?? [],
     offlineFriends: d.offlineFriends ?? [],
     iconUrl: d.iconUrl || d.userIcon || d.currentAvatarThumbnailImageUrl,
+    profile: {
+      id: d.id,
+      displayName: d.displayName,
+      status: d.status ?? "active",
+      statusDescription: d.statusDescription ?? "",
+      location: typeof d.location === "string" ? d.location : "",
+      platform: d.last_platform ?? "",
+      last_platform: d.last_platform ?? "",
+      last_login: d.last_login ?? null,
+      last_activity: d.last_activity ?? null,
+      iconUrl: d.iconUrl,
+      bannerUrl: d.bannerUrl,
+      currentAvatarImageUrl: d.currentAvatarImageUrl,
+      currentAvatarThumbnailImageUrl: d.currentAvatarThumbnailImageUrl,
+      profilePicOverride: d.profilePicOverride,
+      userIcon: d.userIcon,
+      developerType: d.developerType,
+      tags: d.tags ?? [],
+    },
   };
   updateCache((c) => ({ ...c, me }));
   return me;

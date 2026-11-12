@@ -111,6 +111,24 @@ All of this stays on your PC. Quest and phone sessions don't write logs the app 
 time spent there isn't counted. The detail panel also shows your time together with each
 person and who they're most often with; the map can draw lines and sizes from it.
 
+## You, who's here, and people who aren't friends yet
+
+- **You on the map.** Your picture floats between the friends you spend the most time with
+  (from game logs, or the friends you share the most mutuals with). Nothing is pulled towards
+  you; you follow them. Map options → *Show me*.
+- **Who's in your instance right now.** On the PC that runs VRChat, the app follows VRChat's
+  log as it's written. A strip at the top of the map lists everyone in your instance, friends
+  first, and their pictures get a pink halo on the map. Click anyone to open them. This needs no
+  requests to VRChat. Settings → Game logs.
+- **People who aren't friends yet.** Map options → *Not friends yet*: people in your instance,
+  plus people you've spent time with (game logs), plus friends of friends from shared friend
+  lists. They have a dashed outline, faint lines to the friends you share, and a "not a friend
+  yet" note. They never count as friends or go into circles. Their profiles and mutual friends
+  load slowly in the background, a few seconds apart, only for people actually shown, and at
+  most 200 per session.
+- **Friend requests.** Their profile has *Send friend request* and *Cancel request*. One
+  request per click, never automatically, with a short cooldown against double clicks.
+
 ## Servers: sharing and 24/7 logging
 
 [vfm-server](server/README.md) is an optional small program for a device that's on anyway. It
@@ -152,7 +170,10 @@ can't sign in on vrchat.com, so they can't use this either. Link the account in-
 The API is unofficial and VRChat's Creator Guidelines ask tools to limit request volume,
 cache, back off on errors, and identify themselves. This app:
 
-- only makes **GET** requests to a short allow-list of endpoints (plus logout),
+- only makes **GET** requests to a short allow-list of endpoints (plus logout). The one
+  exception is sending or cancelling a friend request, and only when you press that button,
+- loads profiles of people who aren't friends only for people shown on the map or in "here
+  now", a few seconds apart, at most 200 per session,
 - spaces requests **at least 1 s apart** (default 1.2 s + random jitter), app-wide,
 - backs off on HTTP 429 (honours `Retry-After`, otherwise 30 s doubling up to 10 min),
 - uses **one live connection** for changes instead of frequent polling. It does a full
@@ -413,6 +434,8 @@ src/store.ts             state, saving, data format versions and migrations
 src/__tests__/           frontend tests (npm test); Rust tests: cargo test --lib
 scripts/build-linux.sh   prerequisite check + Linux packages into release/
 scripts/collect-release.mjs  names Windows/macOS/Android/iOS build outputs
+src/live.ts, src-tauri/src/livelog.rs   who's in your instance (live game log)
+src/people.ts            you and non-friends on the map, their profiles, friend requests
 src/share.ts             server sync: what to upload where, encryption switch rules, merging
 src/components/ServersModal  Settings → Servers
 src-tauri/src/share.rs   keys, key pinning, signed requests to servers, sealing/opening

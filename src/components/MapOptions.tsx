@@ -108,6 +108,23 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
           Trust-rank shield next to names on cards
         </label>
         <label className="check small">
+          <input type="checkbox" checked={map.showMe} onChange={(e) => set({ showMe: e.target.checked })} />
+          Show me (between the friends I'm closest to)
+        </label>
+        <label className="opt-row">
+          <span>Not friends yet</span>
+          <select value={map.showOthers} onChange={(e) => set({ showOthers: e.target.value as MapSettings["showOthers"] })}>
+            <option value="off">Don't show</option>
+            <option value="here">In my instance now</option>
+            <option value="met">+ people I've spent time with</option>
+            <option value="all">+ friends of friends (shared lists)</option>
+          </select>
+        </label>
+        <p className="small muted opt-hint">
+          They have a dashed outline and faint lines to the friends you share. "Spent time with" uses your game logs; "friends of friends" needs
+          friend lists that friends shared with you.
+        </p>
+        <label className="check small">
           <input type="checkbox" checked={map.showFps} onChange={(e) => set({ showFps: e.target.checked })} />
           Show frame rate
         </label>

@@ -67,3 +67,38 @@ describe("bio key line", () => {
     expect(bioKeyState("no key here", pin)).toBeNull();
   });
 });
+
+describe("0.8.0 settings", () => {
+  it("defaults: show me, hide non-friends, follow the live log", () => {
+    const s = normalizeSettings(null);
+    expect(s.map.showMe).toBe(true);
+    expect(s.map.showOthers).toBe("off");
+    expect(s.logs.live).toBe(true);
+    expect(normalizeSettings({ map: { showOthers: "weird" } }).map.showOthers).toBe("off");
+    expect(normalizeSettings({ map: { showOthers: "all", showMe: false }, logs: { live: false } })).toMatchObject({ map: { showOthers: "all", showMe: false }, logs: { live: false } });
+  });
+});
+
+describe("who's here", () => {
+  it("leaves you out", async () => {
+    const { othersHere, demoHere } = await import("../live");
+    const h = demoHere(["usr_a", "usr_b"], { usr_a: "A", usr_b: "B" });
+    expect(othersHere(h, "usr_demo-me").map((p) => p.id)).toEqual(["usr_a", "usr_b", "usr_demo-stranger-0001", "usr_demo-stranger-0002"]);
+    expect(othersHere(h, "usr_a").some((p) => p.id === "usr_a")).toBe(false);
+    expect(othersHere({ ...h, active: false }, undefined)).toEqual([]);
+  });
+});
+
+describe("people", () => {
+  it("finds friends, non-friends and you", async () => {
+    const { personOf, relationOf } = await import("../people");
+    const f = { id: "usr_f", displayName: "F" } as never;
+    const o = { id: "usr_o", displayName: "O", fetchedAt: 1 } as never;
+    const cache = { friends: { usr_f: f }, others: { usr_o: o }, me: { id: "usr_me", displayName: "Me", friends: [], onlineFriends: [], activeFriends: [], offlineFriends: [] } } as never;
+    expect(relationOf(cache, "usr_f")).toBe("friend");
+    expect(relationOf(cache, "usr_o")).toBe("other");
+    expect(relationOf(cache, "usr_me")).toBe("me");
+    expect(personOf(cache, "usr_me")?.displayName).toBe("Me");
+    expect(personOf(cache, "usr_nobody")).toBeUndefined();
+  });
+});

@@ -76,6 +76,8 @@ pub struct ApiClient {
     settings: RwLock<ApiSettings>,
     limiter: Mutex<Limiter>,
     image_limiter: Mutex<Instant>,
+    /// Last friend request (send or cancel), for the cooldown.
+    last_write: Mutex<Option<Instant>>,
     pub image_slots: Semaphore,
     session_path: PathBuf,
 }
@@ -102,6 +104,7 @@ impl ApiClient {
                 backoff_secs: 0,
             }),
             image_limiter: Mutex::new(Instant::now()),
+            last_write: Mutex::new(None),
             image_slots: Semaphore::new(4),
             session_path,
         })
@@ -289,6 +292,59 @@ impl ApiClient {
         Ok(ApiResponse { status, data, retry_after })
     }
 
+    /// The only calls that change anything on VRChat: send or cancel one
+    /// friend request for one person. The UI calls this only from a button
+    /// press, and there's a short cooldown so a double click can't repeat it.
+    pub async fn friend_request(&self, user_id: &str, cancel: bool) -> Result<ApiResponse, String> {
+        if !valid_user_id(user_id) {
+            return Err("invalid user".into());
+        }
+        {
+            let mut last = self.last_write.lock().await;
+            if let Some(t) = *last {
+                if t.elapsed() < Duration::from_secs(3) {
+                    return Err("wait a moment before trying again".into());
+                }
+            }
+            *last = Some(Instant::now());
+        }
+        let method = if cancel { reqwest::Method::DELETE } else { reqwest::Method::POST };
+        self.send(method, &format!("/user/{user_id}/friendRequest")).await
+    }
+
+    /// Friend status: isFriend, outgoingRequest, incomingRequest.
+    pub async fn friend_status(&self, user_id: &str) -> Result<ApiResponse, String> {
+        if !valid_user_id(user_id) {
+            return Err("invalid user".into());
+        }
+        self.send(reqwest::Method::GET, &format!("/user/{user_id}/friendStatus")).await
+    }
+
+    async fn send(&self, method: reqwest::Method, path: &str) -> Result<ApiResponse, String> {
+        let session = self.session.read().await.clone().ok_or("not logged in")?;
+        self.acquire_slot().await;
+        let ua = self.user_agent().await;
+        let res = self
+            .http
+            .request(method, format!("{}{}", session.base, path))
+            .header(reqwest::header::USER_AGENT, ua)
+            .header(reqwest::header::COOKIE, Self::cookie_header(&session.auth, session.two_factor.as_deref()))
+            .header(reqwest::header::ACCEPT, "application/json")
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+        let status = res.status().as_u16();
+        let mut retry_after = None;
+        if status == 429 {
+            retry_after = Some(self.note_rate_limited(retry_after_secs(&res)).await);
+        } else if status < 500 {
+            self.note_success().await;
+        }
+        let text = res.text().await.unwrap_or_default();
+        let data = serde_json::from_str(&text).unwrap_or(Value::String(text));
+        Ok(ApiResponse { status, data, retry_after })
+    }
+
     /// Invalidate the session on VRChat's side (best effort).
     pub async fn server_logout(&self) {
         let Some(session) = self.session.read().await.clone() else { return };
@@ -357,10 +413,30 @@ impl ApiClient {
     }
 }
 
+/// `usr_` + UUID-ish, or an old 10-character ID. Nothing that could change the path.
+pub fn valid_user_id(id: &str) -> bool {
+    id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        && ((id.starts_with("usr_") && (8..=64).contains(&id.len())) || (id.len() == 10 && !id.contains(['_', '-'])))
+}
+
 fn retry_after_secs(res: &reqwest::Response) -> Option<u64> {
     res.headers()
         .get(reqwest::header::RETRY_AFTER)
         .and_then(|v| v.to_str().ok())
         .and_then(|v| v.trim().parse::<u64>().ok())
         .map(|s| s.clamp(5, 3600))
+}
+
+#[cfg(test)]
+mod write_tests {
+    use super::valid_user_id;
+
+    #[test]
+    fn friend_request_ids_cant_change_the_path() {
+        assert!(valid_user_id("usr_c1644b5b-3ca4-45b4-97c6-a2a0de70d469"));
+        assert!(valid_user_id("8JoV9XEdpo"));
+        for bad in ["usr_../../auth", "usr_a/b", "usr_a?x=1", "usr_", "", "grp_abcdefgh", "usr_a b"] {
+            assert!(!valid_user_id(bad), "{bad}");
+        }
+    }
 }

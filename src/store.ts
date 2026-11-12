@@ -14,6 +14,8 @@ import type {
   MapSettings,
   PairTime,
   PresenceStats,
+  LiveSnapshot,
+  MetPerson,
   Settings,
   SharedData,
   SharingSettings,
@@ -79,6 +81,10 @@ export interface AppState {
   confirmUnencrypted: string | null;
   /** Friends' sharing keys as first seen (fingerprints), from share.rs. */
   keyPins: Record<string, KeyPin> | null;
+  /** Who's in your instance right now (live game log). */
+  here: LiveSnapshot | null;
+  /** Non-friends from the game logs (for the potential-friends layer). */
+  met: MetPerson[];
 }
 
 // ---------- data format versions ----------
@@ -129,6 +135,8 @@ export const defaultMap = (): MapSettings => ({
   orbitDir: 1,
   showShield: true,
   showFps: false,
+  showMe: true,
+  showOthers: "off",
 });
 
 export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
@@ -139,6 +147,7 @@ export const defaultLogSettings = (): LogSettings => ({
   dirs: [],
   scanMinutes: 5,
   retentionDays: 0,
+  live: true,
 });
 
 export const defaultGroupSettings = (): GroupSettings => ({
@@ -268,6 +277,8 @@ let state: AppState = {
   shareBusy: false,
   confirmUnencrypted: null,
   keyPins: null,
+  here: null,
+  met: [],
 };
 
 const listeners = new Set<() => void>();
@@ -455,6 +466,8 @@ export function normalizeSettings(raw: Raw | null): Settings {
       orbitDir: m.orbitDir === -1 ? -1 : 1,
       showShield: typeof m.showShield === "boolean" ? m.showShield : d.map.showShield,
       showFps: typeof m.showFps === "boolean" ? m.showFps : d.map.showFps,
+      showMe: typeof m.showMe === "boolean" ? m.showMe : d.map.showMe,
+      showOthers: oneOf(m.showOthers, ["off", "here", "met", "all"] as const, d.map.showOthers),
     },
     sounds: {
       ...snd,
@@ -469,6 +482,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       dirs: Array.isArray(l.dirs) ? l.dirs.filter((x: unknown) => typeof x === "string") : d.logs.dirs,
       scanMinutes: num(l.scanMinutes, d.logs.scanMinutes, 1, 120),
       retentionDays: num(l.retentionDays, d.logs.retentionDays, 0, 3650),
+      live: typeof l.live === "boolean" ? l.live : d.logs.live,
     },
     groups: {
       ...g,
@@ -604,6 +618,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.8.0": "you're on the map now (between your closest friends), a strip shows who's in your VRChat instance right now, and Map options → Not friends yet shows people you could befriend, with a friend-request button on their profile.",
   "0.7.4": "Settings → Graphics lets you choose GPU or software rendering for the map (Linux and Windows), if it's slow or the window stays blank.",
   "0.7.0": "share friend lists and activity with friends through your own or a friend's server (end-to-end encrypted), and run vfm-server on a spare device to log your friends' instance hopping 24/7 for better circle suggestions. Settings → Servers.",
   "0.6.0": "groups also learned from where your friends hang out together (even without you), profiles like on vrchat.com with the current world and who's there, clickable overview tiles and legend as filters, and more of the card flies into the profile.",

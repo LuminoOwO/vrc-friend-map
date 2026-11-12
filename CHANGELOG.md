@@ -3,6 +3,32 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## 0.8.0 (2026-11-12)
+
+### Added
+- **You on the map** (#3). Your picture floats at the weighted middle of the friends you spend
+  the most time with and follows them. Nobody is pulled towards you. Double ring and a "You" label.
+  Map options → *Show me*.
+- **Who's in your instance right now** (#4), from VRChat's log as it's written (desktop, same
+  PC as VRChat, no VRChat requests). A strip at the top lists everyone, friends first, one click
+  from their profile. Friends who are there get a pink halo on the map. It notices VRChat
+  quitting or crashing. Settings → Game logs → *Show who's in my instance right now*.
+- **Friend requests from profiles** (#5): *Send friend request*, *Cancel request*, and whether
+  they already sent you one. The only call the app makes that changes anything on VRChat. One
+  per click, with a 3-second cooldown.
+- **People who aren't friends yet** (#6). Map options → *Not friends yet*: in your instance,
+  plus people you've spent time with (game logs), plus friends of friends (people at least two
+  friends list in shared friend lists). They have a dashed outline and faint lines to the
+  friends you share; their hover cards and profiles say "Not a friend yet" and how you're
+  connected. Their profiles and mutual friends load in the background, 2.5 s apart, only for
+  people shown, at most 200 per session.
+- Profiles work for non-friends and for yourself (no circle controls there).
+- The demo has a made-up instance with four friends and two strangers.
+
+### Changed
+- On the map, non-friend lines are solid and faint rather than dashed, and the "here" strip has
+  no shadow. Both were measurably slower to draw in WebKitGTK without a GPU.
+
 ## 0.7.4 (2026-11-12)
 
 ### Added

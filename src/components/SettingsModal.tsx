@@ -316,6 +316,10 @@ function GameLogSection() {
         <input type="checkbox" checked={ls.autoDetect} onChange={(e) => updateLogSettings({ autoDetect: e.target.checked })} />
         Find the log folder automatically (Windows, Steam/Proton libraries on any drive, Flatpak and Snap Steam)
       </label>
+      <label className="check">
+        <input type="checkbox" checked={ls.live} disabled={!ls.enabled} onChange={(e) => updateLogSettings({ live: e.target.checked })} />
+        Show who's in my instance right now (follows the log while VRChat runs)
+      </label>
       {ls.autoDetect && (
         <ul className="path-list">
           {logs.detected.length ? logs.detected.map((d) => <li key={d}><code>{d}</code></li>) : <li className="muted small">No VRChat log folder found automatically.</li>}
