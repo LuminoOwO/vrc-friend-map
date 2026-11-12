@@ -693,7 +693,7 @@ code.secret { font-family: ui-monospace, monospace; font-size: 11px; word-break:
 .activity-day ul { list-style: none; margin: 0; padding: 0; }
 .act { display: flex; align-items: center; gap: 9px; padding: 5px 4px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
 .act svg { flex: none; color: var(--muted); }
-.act-time { flex: none; width: 46px; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+.act-time { flex: none; width: 68px; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
 .act.initial { opacity: 0.6; }
 .act-join svg, .act-online svg, .act-friend-add svg { color: var(--ok, #51e57e); }
 .act-leave svg, .act-offline svg, .act-friend-remove svg, .act-crash svg { color: var(--danger, #f87171); }

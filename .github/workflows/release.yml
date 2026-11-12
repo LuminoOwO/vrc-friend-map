@@ -159,9 +159,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # ubuntu-22.04 keeps the packages compatible with older distros. Free ARM
-        # runners are only available to public repositories.
-        runner: ${{ fromJSON(github.event.repository.private && '["ubuntu-22.04"]' || '["ubuntu-22.04","ubuntu-22.04-arm"]') }}
+        # The Chromium build needs GTK 4.14 (Tauri's CEF runtime), so it's built on
+        # Ubuntu 24.04: it runs on Ubuntu/Mint 24.04+, Debian 13+, Fedora 40+ and
+        # current Arch. Free ARM runners are only available to public repositories.
+        runner: ${{ fromJSON(github.event.repository.private && '["ubuntu-24.04"]' || '["ubuntu-24.04","ubuntu-24.04-arm"]') }}
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4

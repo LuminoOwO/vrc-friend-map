@@ -128,7 +128,7 @@ export function demoActivity(names: Record<string, string>, friendIds: string[])
     { key: "d2", t: at(120), kind: "world", worldId: "wrld_demo-2", worldName: "Midnight Rooftop" },
     { key: "d3", t: at(119), kind: "join", userId: b, name: n(b), initial: true },
     { key: "d4", t: at(95), kind: "join", userId: "usr_demo-stranger-0001", name: "Moonlit Fox" },
-    { key: "d5", t: at(70), kind: "left" },
+    { key: "d5", t: at(70), kind: "left", worldId: "wrld_demo-2", worldName: "Midnight Rooftop" },
     { key: "d6", t: at(62), kind: "world", worldId: "wrld_demo", worldName: "The Black Cat" },
     { key: "d7", t: at(61), kind: "join", userId: c, name: n(c), initial: true },
     { key: "d8", t: at(40), kind: "offline", userId: d, name: n(d) },
