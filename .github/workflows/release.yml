@@ -200,6 +200,7 @@ jobs:
             [ $try = 3 ] && exit 1; echo "::warning::package install try $try failed, retrying"; sleep 10
           done
       - name: Build deb, rpm, AppImage and tarball (Chromium)
+        timeout-minutes: 75
         run: |
           set -o pipefail
           CI=true ./scripts/build-linux.sh all 2>&1 | tee "$RUNNER_TEMP/build.log"

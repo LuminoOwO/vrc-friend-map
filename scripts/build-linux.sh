@@ -150,7 +150,8 @@ if [ "$ENGINE" = chromium ]; then
   [ -s "$ROOT/.cef-url" ] || { echo "✗ Couldn't get Chromium (CEF)" >&2; exit 1; }
   export CEF_DOWNLOAD_URL="$(cat "$ROOT/.cef-url")"
   rm -f "$ROOT/.cef-url"
-  trap 'python3 scripts/chromium.py revert >/dev/null; exec {CEF_IN}>&-' EXIT
+  trap 'python3 scripts/chromium.py revert >/dev/null; exec {CEF_IN}>&-; kill "$CEF_PID" 2>/dev/null || true' EXIT
+  echo "→ Chromium (CEF) ready; index at $CEF_DOWNLOAD_URL"
   # The npm packages (@tauri-apps/api 2.12) are newer than that branch (2.11); they talk the same way.
   TAURI=("$TOOLS/bin/cargo-tauri" build --features chromium --ignore-version-mismatches)
 else

@@ -94,9 +94,15 @@ def prepare() -> pathlib.Path:
         url = f"{CDN}/{minimal['name']}"
         log(f"Downloading {url} …")
         part = archive.with_suffix(archive.suffix + ".part")
-        with urllib.request.urlopen(url, timeout=600) as r, open(part, "wb") as dest:
+        with urllib.request.urlopen(url, timeout=120) as r, open(part, "wb") as dest:
+            total = int(r.headers.get("Content-Length") or 0)
+            done = 0
+            step = 100 << 20
             while chunk := r.read(1 << 20):
                 dest.write(chunk)
+                done += len(chunk)
+                if done // step != (done - len(chunk)) // step:
+                    log(f"  {done >> 20} / {total >> 20} MB")
         if sha1(part) != minimal["sha1"]:
             part.unlink()
             sys.exit("Downloaded CEF archive has the wrong SHA-1")
