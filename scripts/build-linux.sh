@@ -141,6 +141,16 @@ if [ "$ENGINE" = chromium ]; then
     cargo install --locked --force --root "$TOOLS" --git https://github.com/tauri-apps/tauri --rev "$CEF_REV" tauri-cli
     echo "$CEF_REV" > "$TOOLS/tauri-rev"
   fi
+  # Chromium itself: fetched by scripts/fetch-cef.py (see there why), which then
+  # serves a small index for the build script while the build runs.
+  rm -f "$ROOT/.cef-url"
+  exec {CEF_IN}> >(python3 scripts/fetch-cef.py serve > "$ROOT/.cef-url")
+  CEF_PID=$!
+  while [ ! -s "$ROOT/.cef-url" ] && kill -0 "$CEF_PID" 2>/dev/null; do sleep 1; done
+  [ -s "$ROOT/.cef-url" ] || { echo "✗ Couldn't get Chromium (CEF)" >&2; exit 1; }
+  export CEF_DOWNLOAD_URL="$(cat "$ROOT/.cef-url")"
+  rm -f "$ROOT/.cef-url"
+  trap 'python3 scripts/chromium.py revert >/dev/null; exec {CEF_IN}>&-' EXIT
   # The npm packages (@tauri-apps/api 2.12) are newer than that branch (2.11); they talk the same way.
   TAURI=("$TOOLS/bin/cargo-tauri" build --features chromium --ignore-version-mismatches)
 else

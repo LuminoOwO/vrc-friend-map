@@ -10,3 +10,4 @@ crates/*/target
 /.tools/
 /src-tauri/Cargo.toml.webkit
 /src-tauri/Cargo.lock.webkit
+/.cef-url
