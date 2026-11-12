@@ -5,6 +5,15 @@ import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type { LogScanReport, PresenceStats } from "./types";
 
+export type GraphicsMode = "auto" | "gpu" | "software";
+export interface GraphicsInfo {
+  mode: GraphicsMode;
+  /** Set when the VRC_FRIEND_MAP_GPU environment variable overrides the saved choice. */
+  forced: GraphicsMode | null;
+  /** False where the choice does nothing (macOS, phones). */
+  supported: boolean;
+}
+
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
 export interface ApiResponse {
@@ -214,6 +223,14 @@ export const backend = {
   async storageInfo(): Promise<{ data_dir: string; image_cache_bytes: number } | null> {
     if (!isTauri) return null;
     return invoke("storage_info");
+  },
+  async graphicsInfo(): Promise<GraphicsInfo | null> {
+    if (!isTauri) return null;
+    return invoke<GraphicsInfo>("graphics_get");
+  },
+  /** Applies the next time the app starts. */
+  async setGraphicsMode(mode: GraphicsMode): Promise<void> {
+    if (isTauri) await invoke("graphics_set", { mode });
   },
   async clearImageCache(): Promise<void> {
     if (isTauri) await invoke("clear_image_cache");

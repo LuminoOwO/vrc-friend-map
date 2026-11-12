@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { backend } from "../backend";
+import { backend, type GraphicsInfo, type GraphicsMode } from "../backend";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, wipeEverything } from "../session";
 import { getState, setState, updateCache, updateGroupSettings, updateSounds, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
@@ -27,12 +27,15 @@ export function SettingsModal() {
   const demo = useApp((s) => s.demo);
   const tab = useApp((s) => s.settingsTab);
   const [info, setInfo] = useState<{ data_dir: string; image_cache_bytes: number } | null>(null);
+  const [gfx, setGfx] = useState<GraphicsInfo | null>(null);
+  const [gfxStart, setGfxStart] = useState<GraphicsMode | null>(null);
   const [confirmWipe, setConfirmWipe] = useState(false);
   const groupsRef = useRef<HTMLElement>(null);
   const logsRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     backend.storageInfo().then(setInfo).catch(() => setInfo(null));
+    backend.graphicsInfo().then((g) => { setGfx(g); setGfxStart(g?.mode ?? null); }).catch(() => setGfx(null));
   }, []);
 
   useEffect(() => {
@@ -168,6 +171,39 @@ export function SettingsModal() {
           </div>
           <p className="small muted">More options (full player cards, sizes, spacing…) are under “Map options” on the map.</p>
         </section>
+
+        {gfx?.supported && (
+          <section>
+            <h3>Graphics</h3>
+            <label className="field narrow">
+              <span>Map rendering</span>
+              <select
+                value={gfx.mode}
+                onChange={(e) => {
+                  const mode = e.target.value as GraphicsMode;
+                  setGfx({ ...gfx, mode });
+                  backend.setGraphicsMode(mode).catch(() => {});
+                }}
+              >
+                <option value="auto">Automatic</option>
+                <option value="gpu">Prefer the graphics card (GPU)</option>
+                <option value="software">Software (CPU only)</option>
+              </select>
+            </label>
+            <p className="small muted">
+              Choose “Prefer the graphics card” if the map is slow or your GPU sits idle; choose “Software” if the window is blank or flickers.
+              Turn on “Show frame rate” in Map options to compare.
+            </p>
+            {gfx.forced && (
+              <p className="small">
+                The <code>VRC_FRIEND_MAP_GPU</code> environment variable is set to <code>{gfx.forced}</code> and overrides this choice.
+              </p>
+            )}
+            {gfxStart !== null && gfxStart !== gfx.mode && !gfx.forced && (
+              <p className="small">Restart the app for this to take effect.</p>
+            )}
+          </section>
+        )}
 
         <section>
           <SoundSection />
