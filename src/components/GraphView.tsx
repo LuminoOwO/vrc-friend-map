@@ -476,9 +476,9 @@ export function GraphView() {
       if (fpsRef.current)
       {
         const fps = Math.round((a.frames * 1000) / span);
-        const capped = viewRef.current.settings.map.orbit && Date.now() - lastInteractionRef.current > 1500 && fps <= 34;
+        const capped = viewRef.current.settings.map.orbit && !document.hasFocus() && Date.now() - lastInteractionRef.current > 1500 && fps <= 34;
         fpsRef.current.textContent =
-          `${fps} fps · draw ${(a.drawMs / a.frames).toFixed(1)} ms · slowest ${Math.round(a.worst)} ms` + (capped ? " · just orbiting: 30 fps on purpose" : "");
+          `${fps} fps · draw ${(a.drawMs / a.frames).toFixed(1)} ms · slowest ${Math.round(a.worst)} ms` + (capped ? " · window not focused: 30 fps on purpose" : "");
       }
       fpsAcc.current = { since: t0, frames: 0, drawMs: 0, worst: 0, last: t0 };
     }
@@ -1437,11 +1437,11 @@ export function GraphView() {
         n.y = x * sin + n.y * cos;
       }
       // Through the shared scheduler, so a frame is never drawn twice (pan,
-      // zoom and the layout also ask for draws). Orbiting alone moves things
-      // a fraction of a pixel per frame, so every other frame is plenty and
-      // halves the cost while the map just sits there.
+      // zoom and the layout also ask for draws). Full frame rate while the
+      // window has focus; every other frame (about 30 fps) while it doesn't,
+      // to save power when it just sits on a second screen.
       frame++;
-      if (!document.hidden && (frame % 2 === 0 || Date.now() - lastInteractionRef.current < 1500)) requestDraw();
+      if (!document.hidden && (frame % 2 === 0 || document.hasFocus() || Date.now() - lastInteractionRef.current < 1500)) requestDraw();
       raf = requestAnimationFrame(step);
     };
     let frame = 0;
