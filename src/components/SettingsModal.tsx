@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { backend, type GraphicsInfo, type GraphicsMode } from "../backend";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, wipeEverything } from "../session";
-import { getState, setState, updateCache, updateGroupSettings, updateSounds, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
+import { flushSaves, getState, setState, showToast, updateCache, updateGroupSettings, updateSounds, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
 import { celebrateNewFriends, playSound, SOUNDS } from "../notify";
 import { forgetObserved } from "../together";
 import type { GroupSettings, MapSettings, SoundSettings, Theme } from "../types";
@@ -181,8 +181,10 @@ export function SettingsModal() {
                 value={gfx.mode}
                 onChange={(e) => {
                   const mode = e.target.value as GraphicsMode;
-                  setGfx({ ...gfx, mode });
-                  backend.setGraphicsMode(mode).catch(() => {});
+                  backend
+                    .setGraphicsMode(mode)
+                    .then(() => setGfx((g) => (g ? { ...g, mode } : g)))
+                    .catch((err) => showToast(`Couldn't save the graphics setting: ${err}`));
                 }}
               >
                 <option value="auto">Automatic</option>
@@ -202,7 +204,17 @@ export function SettingsModal() {
             {gfxStart !== null && gfxStart !== gfx.mode && !gfx.forced && (
               <div className="row">
                 <span className="small">Restart the app for this to take effect.</span>
-                <button className="btn" onClick={() => backend.restartApp().catch(() => {})}>
+                <button
+                  className="btn"
+                  onClick={async () => {
+                    try {
+                      await flushSaves();
+                      await backend.restartApp();
+                    } catch (err) {
+                      showToast(`Couldn't restart: ${err}`);
+                    }
+                  }}
+                >
                   Restart now
                 </button>
               </div>

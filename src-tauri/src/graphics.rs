@@ -8,7 +8,8 @@
 //!
 //! Modes:
 //! - `auto`: the app's defaults (on Linux: WebKitGTK without its DMA-BUF renderer).
-//! - `gpu`: prefer the GPU; also asks for GPU compositing/rasterization even on
+//! - `gpu`: prefer the GPU (on Linux recent WebKitGTK already composites on the GPU, so this
+//!   changes little there); also asks for GPU compositing/rasterization even on
 //!   GPUs the web view would normally avoid (blocklisted drivers).
 //! - `software`: no GPU; draws on the CPU. Slower, but works around broken drivers.
 //!
@@ -109,13 +110,9 @@ pub fn env_plan(mode: Mode, os: Os, dmabuf_default: bool, get: &dyn Fn(&str) -> 
             match mode {
                 Mode::Auto => {}
                 Mode::Gpu => {
-                    if get("WEBKIT_DISABLE_COMPOSITING_MODE").is_some() {
-                        out.push(("WEBKIT_DISABLE_COMPOSITING_MODE".into(), None));
-                    }
-                    if get("LIBGL_ALWAYS_SOFTWARE").is_some() {
-                        out.push(("LIBGL_ALWAYS_SOFTWARE".into(), None));
-                    }
-                    if get("WEBKIT_FORCE_COMPOSITING_MODE").is_none() {
+                    // Variables the user set themselves are left alone, even if they
+                    // contradict this mode.
+                    if get("WEBKIT_FORCE_COMPOSITING_MODE").is_none() && get("WEBKIT_DISABLE_COMPOSITING_MODE").is_none() {
                         out.push(("WEBKIT_FORCE_COMPOSITING_MODE".into(), Some("1".into())));
                     }
                 }
@@ -123,10 +120,7 @@ pub fn env_plan(mode: Mode, os: Os, dmabuf_default: bool, get: &dyn Fn(&str) -> 
                     if get("WEBKIT_DISABLE_COMPOSITING_MODE").is_none() {
                         out.push(("WEBKIT_DISABLE_COMPOSITING_MODE".into(), Some("1".into())));
                     }
-                    // Make GL itself (Mesa) render on the CPU too.
-                    if get("LIBGL_ALWAYS_SOFTWARE").is_none() {
-                        out.push(("LIBGL_ALWAYS_SOFTWARE".into(), Some("1".into())));
-                    }
+                    // Not LIBGL_ALWAYS_SOFTWARE: programs we start (the browser) would inherit it.
                 }
             }
         }
@@ -200,6 +194,12 @@ mod tests {
     }
 
     #[test]
+    fn identifier_matches_tauri_conf() {
+        let conf: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        assert_eq!(conf["identifier"], IDENTIFIER);
+    }
+
+    #[test]
     fn parses_modes() {
         assert_eq!(Mode::parse("GPU"), Some(Mode::Gpu));
         assert_eq!(Mode::parse(" software "), Some(Mode::Software));
@@ -223,12 +223,14 @@ mod tests {
 
     #[test]
     fn linux_gpu_and_software() {
-        let gpu = env_plan(Mode::Gpu, Os::Linux, false, &|k| (k == "WEBKIT_DISABLE_COMPOSITING_MODE").then(|| "1".into()));
-        assert!(gpu.contains(&("WEBKIT_DISABLE_COMPOSITING_MODE".to_string(), None)));
+        let gpu = env_plan(Mode::Gpu, Os::Linux, false, &none);
         assert!(gpu.contains(&("WEBKIT_FORCE_COMPOSITING_MODE".to_string(), Some("1".to_string()))));
+        // The user's own variables are never changed.
+        let own = env_plan(Mode::Gpu, Os::Linux, false, &|k| (k == "WEBKIT_DISABLE_COMPOSITING_MODE").then(|| "1".into()));
+        assert!(own.iter().all(|(k, _)| k != "WEBKIT_DISABLE_COMPOSITING_MODE" && k != "WEBKIT_FORCE_COMPOSITING_MODE"));
         let sw = env_plan(Mode::Software, Os::Linux, false, &none);
         assert!(sw.contains(&("WEBKIT_DISABLE_COMPOSITING_MODE".to_string(), Some("1".to_string()))));
-        assert!(sw.contains(&("LIBGL_ALWAYS_SOFTWARE".to_string(), Some("1".to_string()))));
+        assert!(sw.iter().all(|(k, _)| k != "LIBGL_ALWAYS_SOFTWARE"));
     }
 
     #[test]
