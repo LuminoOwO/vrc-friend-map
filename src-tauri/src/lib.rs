@@ -3,6 +3,7 @@ mod auth;
 #[cfg(all(target_os = "linux", vfm_gdk_no_wayland))]
 mod gdk_stubs;
 mod gamelogs;
+pub mod graphics;
 mod images;
 mod pipeline;
 mod share;
@@ -266,6 +267,23 @@ async fn logs_clear(state: AppStateRef<'_>) -> Result<(), String> {
     state.logs.clear()
 }
 
+#[tauri::command]
+fn graphics_get() -> graphics::Info {
+    graphics::info()
+}
+
+/// Takes effect the next time the app starts (the web view reads it once).
+#[tauri::command]
+fn graphics_set(mode: String) -> Result<(), String> {
+    graphics::save(graphics::Mode::parse(&mode).ok_or("unknown mode")?)
+}
+
+/// Relaunch the app (used to apply a graphics change).
+#[tauri::command]
+fn app_restart(app: AppHandle) {
+    app.restart()
+}
+
 #[derive(serde::Serialize)]
 struct StorageInfo {
     data_dir: String,
@@ -362,6 +380,9 @@ pub fn run() {
             logs_stats,
             logs_clear,
             storage_info,
+            graphics_get,
+            graphics_set,
+            app_restart,
             clear_image_cache,
             hash_ids,
             save_export,

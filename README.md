@@ -432,6 +432,9 @@ packaging/linux/         desktop entry, tarball installer and README
 - On Linux the app turns off WebKitGTK's DMA-BUF renderer, which made the map several times
   slower (and misbehaves on NVIDIA). If the window stays blank or flickers on your system, start
   it with `VRC_FRIEND_MAP_DMABUF=1` to use WebKit's default instead, and please open an issue.
+- Settings → Graphics → Map rendering switches between automatic, GPU-preferred and software
+  rendering (Linux and Windows, applied on restart). `VRC_FRIEND_MAP_GPU=auto|gpu|software`
+  overrides it from the command line.
 - iPhones can't run vfm-server (iOS stops background programs); they can use servers.
 - People who hide their mutual connections show up without lines, by design.
 - Game-log features need the desktop app on the PC that runs VRChat. Quest/phone sessions
