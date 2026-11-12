@@ -380,7 +380,10 @@ async fn save_export(app: AppHandle, filename: String, contents: String) -> Resu
 pub fn run() {
     // One TLS crypto backend for both HTTPS and the WebSocket connection.
     let _ = rustls::crypto::ring::default_provider().install_default();
-    tauri::Builder::default()
+    let builder = tauri::Builder::default();
+    #[cfg(feature = "chromium")]
+    let builder = builder.runtime(graphics::chromium_runtime());
+    builder
         .plugin(tauri_plugin_opener::init())
         .register_asynchronous_uri_scheme_protocol("vrcimg", images::handle)
         .setup(|app| {

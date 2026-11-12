@@ -146,6 +146,9 @@ pub fn env_plan(mode: Mode, os: Os, dmabuf_default: bool, get: &dyn Fn(&str) -> 
 
 /// Called first thing in `main`, before the web view exists.
 pub fn apply_startup() {
+    if cfg!(feature = "chromium") {
+        return; // Chromium takes its switches in chromium_runtime()
+    }
     let (mode, _) = effective(std::env::var(ENV_OVERRIDE).ok().as_deref(), load());
     let os = if cfg!(target_os = "linux") {
         Os::Linux
@@ -165,6 +168,72 @@ pub fn apply_startup() {
     }
 }
 
+/// Chromium switches for `mode` (Chromium build only). Auto keeps Chromium's
+/// own choices, which use the GPU wherever its driver list allows.
+pub fn chromium_switches(mode: Mode) -> Vec<&'static str> {
+    match mode {
+        Mode::Auto => vec![],
+        // Also on GPUs/drivers Chromium would normally avoid.
+        Mode::Gpu => vec!["ignore-gpu-blocklist", "enable-gpu-rasterization", "enable-zero-copy"],
+        Mode::Software => vec!["disable-gpu", "disable-gpu-compositing"],
+    }
+}
+
+/// The Chromium (CEF) runtime with the saved graphics choice.
+#[cfg(feature = "chromium")]
+pub fn chromium_runtime() -> tauri_runtime_cef::Cef {
+    let (mode, _) = effective(std::env::var(ENV_OVERRIDE).ok().as_deref(), load());
+    let mut cef = tauri_runtime_cef::Cef::default();
+    for switch in chromium_switches(mode) {
+        cef = cef.command_line_arg(switch, None::<String>);
+    }
+    if chromium_sandbox_unusable() {
+        // Chromium would refuse to start ("No usable sandbox!").
+        eprintln!("VRC Friend Map: starting Chromium without its sandbox (no setuid chrome-sandbox helper, and this system restricts unprivileged user namespaces)");
+        cef = cef.sandbox(tauri_runtime_cef::SandboxPolicy::Disabled);
+    }
+    cef
+}
+
+/// The per-user (tarball) install can't ship a root-owned setuid
+/// `chrome-sandbox`, and Ubuntu 23.10+ restricts unprivileged user namespaces
+/// (Chromium's other sandbox). The runtime only handles this for AppImages.
+#[cfg(feature = "chromium")]
+fn chromium_sandbox_unusable() -> bool {
+    use std::os::unix::fs::MetadataExt;
+    if std::env::var_os("APPIMAGE").is_some() {
+        return false; // the runtime decides for AppImages
+    }
+    let helper = std::env::var_os("CHROME_DEVEL_SANDBOX")
+        .map(std::path::PathBuf::from)
+        .or_else(|| std::env::current_exe().ok().and_then(|e| e.parent().map(|d| d.join("chrome-sandbox"))));
+    let helper_ok = helper
+        .and_then(|p| std::fs::metadata(p).ok())
+        .is_some_and(|m| m.uid() == 0 && m.mode() & 0o4000 != 0 && m.mode() & 0o001 != 0);
+    if helper_ok {
+        return false;
+    }
+    let read = |p: &str| std::fs::read_to_string(p).ok().and_then(|s| s.trim().parse::<u64>().ok());
+    read("/proc/sys/kernel/apparmor_restrict_unprivileged_userns") == Some(1)
+        || read("/proc/sys/kernel/unprivileged_userns_clone") == Some(0)
+        || read("/proc/sys/user/max_user_namespaces") == Some(0)
+}
+
+/// Which web engine this build runs on.
+pub fn engine() -> &'static str {
+    if cfg!(feature = "chromium") {
+        "chromium"
+    } else if cfg!(target_os = "linux") {
+        "webkitgtk"
+    } else if cfg!(target_os = "windows") {
+        "webview2"
+    } else if cfg!(target_os = "android") {
+        "android-webview"
+    } else {
+        "wkwebview"
+    }
+}
+
 #[derive(Serialize)]
 pub struct Info {
     /// What's saved (and used after the next start unless overridden).
@@ -173,6 +242,8 @@ pub struct Info {
     pub forced: Option<Mode>,
     /// False where the choice does nothing (macOS, mobile).
     pub supported: bool,
+    /// chromium, webkitgtk, webview2, wkwebview or android-webview.
+    pub engine: &'static str,
 }
 
 pub fn info() -> Info {
@@ -182,6 +253,7 @@ pub fn info() -> Info {
         mode: saved,
         forced: forced.then_some(m),
         supported: cfg!(any(target_os = "linux", target_os = "windows")),
+        engine: engine(),
     }
 }
 

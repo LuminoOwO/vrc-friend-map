@@ -8,10 +8,13 @@ here="$(cd "$(dirname "$0")" && pwd)"
 bin_dir="${XDG_BIN_HOME:-$HOME/.local/bin}"
 data_home="${XDG_DATA_HOME:-$HOME/.local/share}"
 app_dir="$data_home/applications"
+# The Chromium build is a folder (the program plus Chromium's files).
+lib_dir="${XDG_DATA_HOME:-$HOME/.local/share}/vrc-friend-map-app"
 icon_dir="$data_home/icons/hicolor"
 
 if [ "${1:-}" = "--uninstall" ]; then
   rm -f "$bin_dir/vrc-friend-map" "$app_dir/vrc-friend-map.desktop"
+  rm -rf "$lib_dir"
   rm -f "$icon_dir"/{32x32,128x128,256x256,512x512}/apps/vrc-friend-map.png
   command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$app_dir" || true
   echo "Removed VRC Friend Map."
@@ -19,7 +22,15 @@ if [ "${1:-}" = "--uninstall" ]; then
   exit 0
 fi
 
-install -Dm755 "$here/vrc-friend-map" "$bin_dir/vrc-friend-map"
+mkdir -p "$bin_dir"
+if [ -d "$here/app" ]; then
+  rm -rf "$lib_dir"
+  mkdir -p "$lib_dir"
+  cp -a "$here/app/." "$lib_dir/"
+  ln -sfn "$lib_dir/vrc-friend-map" "$bin_dir/vrc-friend-map"
+else
+  install -Dm755 "$here/vrc-friend-map" "$bin_dir/vrc-friend-map"
+fi
 for size in 32 128 256 512; do
   install -Dm644 "$here/icons/${size}x${size}.png" "$icon_dir/${size}x${size}/apps/vrc-friend-map.png"
 done
@@ -34,7 +45,7 @@ if command -v ldd >/dev/null 2>&1 && ldd "$bin_dir/vrc-friend-map" | grep -q "no
   echo
   echo "⚠ Some system libraries are missing:"
   ldd "$bin_dir/vrc-friend-map" | grep "not found" | sed 's/^/    /'
-  echo "  Install WebKitGTK 4.1 for your distro (see README.txt), then start the app."
+  echo "  Install them for your distro (see README.txt), then start the app."
 fi
 
 echo "Installed VRC Friend Map to $bin_dir/vrc-friend-map"

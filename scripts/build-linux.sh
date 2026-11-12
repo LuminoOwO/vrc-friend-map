@@ -11,6 +11,13 @@
 #   tarball   portable .tar.gz with a per-user install script (no root needed)
 #   none      just the program: src-tauri/target/release/vrc-friend-map
 #
+# Web engine: Chromium (CEF) by default; add --webkit (or VFM_ENGINE=webkit)
+# for the older WebKitGTK build. WebKitGTK draws the map on the CPU on many
+# systems, so big windows get slow; Chromium uses the GPU. The Chromium build
+# needs GTK 4 development files instead of WebKitGTK, downloads Chromium
+# (about 1 GB, kept in ~/.cache/tauri-cef) and, once, builds Tauri's command
+# line tool from the branch with Chromium support into .tools/ (a few minutes).
+#
 # Finished files are copied to release/ with standard names, plus SHA256SUMS:
 #   vrc-friend-map_<version>_amd64.deb
 #   vrc-friend-map-<version>-1.x86_64.rpm
@@ -22,6 +29,22 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$(pwd)"
+
+# ---------- web engine ----------
+ENGINE="${VFM_ENGINE:-chromium}"
+rest=()
+for a in "$@"; do
+  case "$a" in
+    --webkit) ENGINE=webkit ;;
+    --chromium) ENGINE=chromium ;;
+    *) rest+=("$a") ;;
+  esac
+done
+set -- "${rest[@]+"${rest[@]}"}"
+case "$ENGINE" in
+  chromium|webkit) ;;
+  *) echo "Unknown engine '$ENGINE' (use chromium or webkit)" >&2; exit 2 ;;
+esac
 
 # ---------- prerequisites ----------
 missing=0
@@ -37,13 +60,15 @@ need cargo "install Rust: curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -
 need pkg-config "install pkg-config (Debian/Ubuntu: pkg-config, Fedora: pkgconf-pkg-config)"
 need cc    "install a C compiler (Debian/Ubuntu: build-essential, Fedora: the c-development group, Arch: base-devel)"
 if command -v pkg-config >/dev/null 2>&1; then
-  for lib in webkit2gtk-4.1 gtk+-3.0 librsvg-2.0; do
+  if [ "$ENGINE" = chromium ]; then libs=(gtk4 gtk+-3.0 librsvg-2.0); else libs=(webkit2gtk-4.1 gtk+-3.0 librsvg-2.0); fi
+  for lib in "${libs[@]}"; do
     if ! pkg-config --exists "$lib"; then
       echo "✗ Missing development files for '$lib' (see README: Building on Linux)" >&2
       missing=1
     fi
   done
 fi
+[ "$ENGINE" = chromium ] && need python3 "install Python 3 (it sets up the Chromium build)"
 if command -v node >/dev/null 2>&1; then
   major=$(node -p 'process.versions.node.split(".")[0]')
   if [ "$major" -lt 20 ]; then
@@ -83,6 +108,11 @@ for f in "${formats[@]}"; do
     *) echo "Unknown format '$f' (use all, deb, rpm, appimage, tarball or none)" >&2; exit 2 ;;
   esac
 done
+# The Chromium tarball is put together from the .deb's files (the program
+# plus Chromium), so build the .deb too.
+if [ "$ENGINE" = chromium ] && [[ " ${formats[*]} " == *" tarball "* ]] && [[ " ${bundles[*]-} " != *" deb "* ]]; then
+  bundles+=(deb)
+fi
 
 VERSION=$(node -p 'require("./package.json").version')
 CARGO_VERSION=$(sed -n 's/^version *= *"\(.*\)"/\1/p' src-tauri/Cargo.toml | head -n1)
@@ -100,10 +130,26 @@ esac
 
 # ---------- build ----------
 if [ -f package-lock.json ]; then npm ci; else npm install; fi
-if [ ${#bundles[@]} -gt 0 ]; then
-  npx tauri build --bundles "$(IFS=,; echo "${bundles[*]}")"
+if [ "$ENGINE" = chromium ]; then
+  echo "→ Web engine: Chromium (pass --webkit for the WebKitGTK build)"
+  python3 scripts/chromium.py apply
+  trap 'python3 scripts/chromium.py revert >/dev/null' EXIT
+  CEF_REV=$(python3 -c 'import runpy, sys; print(runpy.run_path(sys.argv[1])["REV"])' scripts/chromium.py)
+  TOOLS="$ROOT/.tools"
+  if [ ! -x "$TOOLS/bin/cargo-tauri" ] || [ "$(cat "$TOOLS/tauri-rev" 2>/dev/null)" != "$CEF_REV" ]; then
+    echo "→ Building Tauri's command line tool with Chromium support (once; takes a few minutes)"
+    cargo install --locked --force --root "$TOOLS" --git https://github.com/tauri-apps/tauri --rev "$CEF_REV" tauri-cli
+    echo "$CEF_REV" > "$TOOLS/tauri-rev"
+  fi
+  TAURI=("$TOOLS/bin/cargo-tauri" build --features chromium)
 else
-  npx tauri build --no-bundle
+  echo "→ Web engine: WebKitGTK"
+  TAURI=(npx tauri build)
+fi
+if [ ${#bundles[@]} -gt 0 ]; then
+  "${TAURI[@]}" --bundles "$(IFS=,; echo "${bundles[*]}")"
+else
+  "${TAURI[@]}" --no-bundle
 fi
 
 BIN="src-tauri/target/release/vrc-friend-map"
@@ -124,7 +170,18 @@ make_tarball() {
   stage=$(mktemp -d)
   local dir="$stage/$name"
   mkdir -p "$dir/icons"
-  install -m755 "$BIN" "$dir/vrc-friend-map"
+  if [ "$ENGINE" = chromium ]; then
+    # The program and Chromium's files, as the .deb lays them out.
+    local share
+    share=$(ls -d "$BUNDLE_DIR"/deb/*_"${VERSION}"_*/data/usr/share/"VRC Friend Map" 2>/dev/null | head -n 1)
+    if [ -z "$share" ]; then echo "✗ Chromium files not found in the .deb build" >&2; exit 1; fi
+    mkdir -p "$dir/app"
+    cp -a "$share/." "$dir/app/"
+    # Run from this folder: a link next to the scripts.
+    ln -s app/vrc-friend-map "$dir/vrc-friend-map"
+  else
+    install -m755 "$BIN" "$dir/vrc-friend-map"
+  fi
   install -m755 packaging/linux/install.sh "$dir/install.sh"
   install -m644 packaging/linux/vrc-friend-map.desktop "$dir/vrc-friend-map.desktop"
   install -m644 packaging/linux/README.txt "$dir/README.txt"

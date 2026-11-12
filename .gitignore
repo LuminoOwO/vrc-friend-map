@@ -5,3 +5,8 @@ src-tauri/gen/schemas
 release
 server/target
 crates/*/target
+
+# Chromium build (scripts/build-linux.sh, scripts/chromium.py)
+/.tools/
+/src-tauri/Cargo.toml.webkit
+/src-tauri/Cargo.lock.webkit

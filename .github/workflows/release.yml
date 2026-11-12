@@ -172,20 +172,33 @@ jobs:
           node-version: 22
           cache: npm
       - uses: dtolnay/rust-toolchain@stable
+      - name: Make disk space (Chromium is big)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost &
+          wait
+          df -h /
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: src-tauri -> target
-          key: ${{ matrix.runner }}
+          key: ${{ matrix.runner }}-chromium-${{ hashFiles('src-tauri/chromium/Cargo.lock') }}
+      # Tauri's CLI built from its Chromium branch (scripts/chromium.py pins the commit),
+      # and the Chromium (CEF) download, are the same until that pin changes.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            .tools
+            ~/.cache/tauri-cef
+          key: chromium-${{ matrix.runner }}-${{ hashFiles('scripts/chromium.py', 'src-tauri/chromium/Cargo.lock') }}
       - name: System libraries
         timeout-minutes: 15
         run: |
           # Ubuntu's mirrors sometimes hang: give each try 3 minutes, up to 3 tries.
           APT='-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30'
           for try in 1 2 3; do
-            timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file && break
+            timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y libgtk-4-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file && break
             [ $try = 3 ] && exit 1; echo "::warning::package install try $try failed, retrying"; sleep 10
           done
-      - name: Build deb, rpm, AppImage and tarball
+      - name: Build deb, rpm, AppImage and tarball (Chromium)
         run: |
           set -o pipefail
           CI=true ./scripts/build-linux.sh all 2>&1 | tee "$RUNNER_TEMP/build.log"

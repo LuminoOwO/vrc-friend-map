@@ -5,17 +5,22 @@ Install for your user (no root needed):
 
     ./install.sh
 
-This copies the program to ~/.local/bin, adds it to your app menu and installs the icon.
-Run ./install.sh --uninstall to remove it again. You can also just run ./vrc-friend-map
-from this folder without installing.
+This copies the program to ~/.local/share/vrc-friend-map-app (linked from ~/.local/bin),
+adds it to your app menu and installs the icon. Run ./install.sh --uninstall to remove it
+again. You can also just run ./vrc-friend-map from this folder without installing.
 
-The app needs WebKitGTK 4.1 and GTK 3, which most desktops already have. If it doesn't
-start, install them:
+This build runs on Chromium, which comes with it (that's why the download is big). It
+needs GTK 3 and 4 and the usual desktop libraries, which most desktops already have. If it
+doesn't start, install them:
 
-    Debian / Ubuntu / Mint:  sudo apt install libwebkit2gtk-4.1-0 libgtk-3-0
-    Fedora:                  sudo dnf install webkit2gtk4.1 gtk3
-    Arch / Manjaro:          sudo pacman -S webkit2gtk-4.1 gtk3
-    openSUSE:                sudo zypper install libwebkit2gtk-4_1-0 gtk3
+    Debian / Ubuntu / Mint:  sudo apt install libgtk-3-0 libgtk-4-1 libnss3 libasound2t64  (older: libasound2)
+    Fedora:                  sudo dnf install gtk3 gtk4 nss alsa-lib
+    Arch / Manjaro:          sudo pacman -S gtk3 gtk4 nss alsa-lib
+    openSUSE:                sudo zypper install gtk3 gtk4 mozilla-nss alsa
+
+Installed this way, Chromium's sandbox works only where the system allows unprivileged
+user namespaces; where it doesn't (Ubuntu 24.04 and later restrict them), the app starts
+without Chromium's sandbox. The .deb and .rpm packages always keep it.
 
 Your data (session, cache, circles) is stored in ~/.local/share/app.vrcfriendmap.
 

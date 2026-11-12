@@ -31,6 +31,12 @@ tokio-tungstenite = { version = "0.30", default-features = false, features = ["c
 futures-util = { version = "0.3", default-features = false, features = ["sink", "std"] }
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 
+[features]
+# Linux build on Chromium (CEF) instead of WebKitGTK. Needs the extra setup
+# that scripts/chromium.py does (Tauri's CEF runtime isn't released yet);
+# scripts/build-linux.sh uses it by default.
+chromium = []
+
 # Android: read cookies through android.webkit.CookieManager (see auth.rs).
 # Same version as wry's, so JniHandle::exec closures get matching types.
 [target.'cfg(target_os = "android")'.dependencies]
