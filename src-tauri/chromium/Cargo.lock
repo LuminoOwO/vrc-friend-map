@@ -5485,6 +5485,7 @@ dependencies = [
  "jni 0.21.1",
  "percent-encoding",
  "rand 0.8.8",
+ "raw-window-handle",
  "reqwest 0.12.28",
  "rustls",
  "serde",
@@ -5499,6 +5500,7 @@ dependencies = [
  "tokio-tungstenite",
  "url",
  "vfm-share",
+ "x11-dl",
 ]
 
 [[package]]

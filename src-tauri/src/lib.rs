@@ -12,6 +12,7 @@ mod pipeline;
 mod share;
 mod storage;
 mod tray;
+mod wheelfix;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -480,6 +481,9 @@ pub fn run() {
             }));
             #[cfg(desktop)]
             tray::setup(app.handle());
+            if wheelfix::forced_on() {
+                wheelfix::set_enabled(app.handle(), true);
+            }
             Ok(())
         })
         .on_window_event(tray::on_window_event)
@@ -542,6 +546,8 @@ pub fn run() {
             tray::tray_set_muted,
             tray::window_hide,
             tray::app_quit,
+            wheelfix::wheel_fix_set,
+            wheelfix::wheel_fix_state,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VRC Friend Map");

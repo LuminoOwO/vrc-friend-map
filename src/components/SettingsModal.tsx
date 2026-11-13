@@ -5,6 +5,8 @@ import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs"
 import { exitDemo, logoutAll, wipeEverything } from "../session";
 import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
 import { CloseSection, NotificationsSection } from "./NotificationsSection";
+import { WheelFixSection } from "./WheelFixSection";
+import { wheelFixHere } from "../wheelfix";
 import { forgetObserved } from "../together";
 import type { GroupSettings, MapSettings, Theme } from "../types";
 
@@ -335,6 +337,11 @@ export function SettingsModal() {
           <PeopleSection />
         </Sec>
 
+        {wheelFixHere && (
+          <Sec id="wheel" cat="performance" title="Mouse wheel" keys="scroll zoom wheel mouse touchpad x11 xlibre input not working">
+            <WheelFixSection />
+          </Sec>
+        )}
         <Sec id="diagnostics" cat="performance" title="Diagnostics" keys="fps gpu benchmark debug">
           <Diagnostics />
         </Sec>

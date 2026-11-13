@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { backend, type GraphicsInfo } from "../backend";
 import { benchmark, gpuInfo, mapDrawMs, mapFps, mapStats, type BenchResult } from "../diag";
 import { getState, showToast } from "../store";
+import { wheelFixCounts, wheelFixHere } from "../wheelfix";
 
 const ENGINE_NAMES: Record<string, string> = {
   chromium: "Chromium (CEF)",
@@ -43,6 +44,7 @@ export function Diagnostics() {
       ["Vsync", gfx ? (gfx.unlocked_now ? "off (faster than the screen allowed)" : gfx.unlocked ? "on (turns off on the next start)" : "on") : "–"],
       ["Frame rate limit", (() => { const p = getState().settings.perf; return p.fps === -1 ? "unlimited" : p.fps === 0 ? `match the screen${p.screenHz ? ` (${p.screenHz} Hz)` : ""}` : `${p.fps} fps`; })()],
       ["Graphics setting", gfx ? `${gfx.mode}${gfx.forced ? ` (forced to ${gfx.forced} by VRC_FRIEND_MAP_GPU)` : ""}` : "–"],
+      ["Mouse wheel", (() => { const c = wheelFixCounts(); return `${c.real} wheel events from the web engine${wheelFixHere ? `, ${c.used} from the wheel fix (${c.skipped} not needed)` : ""}`; })()],
       ["System", gfx?.os ? `${gfx.os} ${gfx.arch}` : navigator.platform],
       ["CPU threads", String(navigator.hardwareConcurrency || "?")],
       ["User agent", navigator.userAgent],

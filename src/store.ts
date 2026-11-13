@@ -252,6 +252,7 @@ export const defaultSettings = (): Settings => ({
   sounds: defaultSounds(),
   notify: defaultNotify(),
   closeAction: "ask",
+  wheelFix: false,
   theme: "dark",
   profileAs: "popup",
   sharing: defaultSharing(),
@@ -595,6 +596,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
     },
     notify: normalizeNotify(raw.notify, snd),
     closeAction: oneOf(raw.closeAction, ["ask", "tray", "quit"] as const, d.closeAction),
+    wheelFix: typeof raw.wheelFix === "boolean" ? raw.wheelFix : d.wheelFix,
     sounds: {
       ...snd,
       newFriend: typeof snd.newFriend === "boolean" ? snd.newFriend : d.sounds.newFriend,

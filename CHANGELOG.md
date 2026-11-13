@@ -92,6 +92,13 @@ minor releases can change behavior.
 - Phones: the app itself no longer zooms with pinch or double tap (the map and the image
   viewer still do).
 
+### Added (mouse wheel fix)
+- **Settings → Performance → Mouse wheel** (Linux): on some X11 systems (seen with XLibre) the
+  map didn't zoom and nothing scrolled with the wheel, because Chromium never passed the wheel
+  on. *Fix the mouse wheel* reads the wheel from the X server instead, only when the page got
+  nothing, so nothing scrolls twice. Also on with the start option `--wheel-fix` (or
+  `VRC_FRIEND_MAP_WHEEL_FIX=1`). Diagnostics counts wheel events from both paths.
+
 ### Added (Linux packages)
 - **AppImage** again (one file, any distro with GTK 4.14+), now made by the build script
   itself instead of Tauri's packaging.

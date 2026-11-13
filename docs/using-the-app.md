@@ -195,6 +195,8 @@ Laid out like VRChat's own profile page:
 - **Game logs:** read logs, find the folder automatically, follow the log live, extra folders,
   how often to check, how long to keep history.
 - **Notifications:** see [below](#notifications).
+- **Mouse wheel (Linux):** if the wheel neither scrolls nor zooms (seen on XLibre), turn on
+  *Fix the mouse wheel*, or start the app with `--wheel-fix`.
 - **Closing the window (desktop):** keep running in the tray, quit, or ask.
 - **Open profiles** as a popup or in a side panel.
 - **Themes:** Dark, OLED black, Light, Catppuccin Mocha / Macchiato / Latte, Nord, Dracula.

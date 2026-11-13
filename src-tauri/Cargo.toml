@@ -40,5 +40,10 @@ chromium = []
 
 # Android: read cookies through android.webkit.CookieManager (see auth.rs).
 # Same version as wry's, so JniHandle::exec closures get matching types.
+[target.'cfg(target_os = "linux")'.dependencies]
+# Mouse wheel fallback for X11 (src/wheelfix.rs); loads libX11 / libXi at runtime.
+x11-dl = "2.21"
+raw-window-handle = "0.6"
+
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21"

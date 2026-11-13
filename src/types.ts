@@ -366,6 +366,8 @@ export interface Settings {
   notify: NotifySettings;
   /** Desktop: what closing the window does. */
   closeAction: "ask" | "tray" | "quit";
+  /** Linux/X11: take mouse wheel steps from the X server when the web view gets none. */
+  wheelFix: boolean;
   theme: Theme;
   /** Open profiles as a popup over everything, or as a panel at the side. */
   profileAs: "popup" | "sidebar";
