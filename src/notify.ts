@@ -77,7 +77,7 @@ export const SOUNDS: { value: string; label: string }[] = [
   { value: "sparkle", label: "Sparkle" },
   { value: "pop", label: "Pop" },
   { value: "bell", label: "Bell" },
-  { value: "rise", label: "Rise" },
+  { value: "heartbreak", label: "Heartbreak" },
   { value: "fall", label: "Fall" },
   { value: "soft-fall", label: "Soft fall" },
   { value: "knock", label: "Knock" },
@@ -114,10 +114,19 @@ function builtIn(ac: Ctx, out: AudioNode, kind: string, t: number): number {
     case "sparkle":
       [4, 7, 12, 16].forEach((x, i) => note(ac, out, st(x + 12), t + i * 0.045, 0.15, "glass", 0.16));
       return 0.2;
-    case "rise": // came online: up a fifth
-      note(ac, out, st(0), t, 0.1, "bell", 0.35);
-      note(ac, out, st(7), t + 0.08, 0.12, "bell", 0.35);
-      return 0.17;
+    case "heartbreak": {
+      // removed you: falling minor line, then a low chord that sags and fades
+      note(ac, out, st(4), t, 0.14, "flute", 0.3);
+      note(ac, out, st(0), t + 0.15, 0.14, "flute", 0.3);
+      note(ac, out, st(-4), t + 0.3, 0.16, "flute", 0.3);
+      const c = t + 0.46;
+      for (const [x, p] of [[-15, 0.26], [-12, 0.2], [-8, 0.16], [-3, 0.12]] as const) {
+        const f = st(x);
+        tone(ac, out, f, c, 1.0, "triangle", p, f * 0.96);
+        tone(ac, out, f * 1.006, c, 1.0, "sine", p * 0.5, f * 0.96);
+      }
+      return 0.8;
+    }
     case "fall": // removed you: gently down
       note(ac, out, st(9), t, 0.1, "flute", 0.32);
       note(ac, out, st(5), t + 0.1, 0.1, "flute", 0.3);

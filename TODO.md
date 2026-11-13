@@ -54,3 +54,6 @@ The bigger, discussed list lives in GitHub issue #14.
   shortcuts that make no sense in the app) in the Chromium build.
 - [ ] **F11 for real fullscreen.** F11 currently does Chromium's page fullscreen ("press and
   hold Esc to exit") inside the window. Make it toggle the app window's fullscreen instead.
+- [ ] **Custom sounds.** (Asked 2026-11-13.) Uploading your own sound files per event already
+  exists (Settings → Notifications → Add a sound file). To clarify what's wanted beyond that:
+  e.g. a sound for one specific person, making sounds in the app, or sound packs.

@@ -27,7 +27,6 @@ stubs!(
     gdk_wayland_display_get_startup_notification_id,
     gdk_wayland_display_get_type,
     gdk_wayland_display_get_wl_compositor,
-    gdk_wayland_display_get_wl_display,
     gdk_wayland_display_query_registry,
     gdk_wayland_display_set_cursor_theme,
     gdk_wayland_display_set_startup_notification_id,
@@ -47,3 +46,8 @@ stubs!(
     gdk_wayland_toplevel_set_transient_for_exported,
     gdk_wayland_toplevel_unexport_handle,
 );
+
+// GTK 3 and GTK 4 share this name. When GTK 3 has no Wayland either, its
+// stand-in (gdk_stubs.rs) already provides it; defining it twice fails to link.
+#[cfg(not(vfm_gdk_no_wayland))]
+stubs!(gdk_wayland_display_get_wl_display);

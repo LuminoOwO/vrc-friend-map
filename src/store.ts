@@ -152,7 +152,9 @@ export const defaultMap = (): MapSettings => ({
 
 export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
 export const NOTIFY_EVENTS: NotifyEvent[] = ["added", "removed", "online", "offline", "joined", "left"];
+const SOUNDS_REV = 2;
 export const defaultNotify = (): NotifySettings => ({
+  soundsRev: SOUNDS_REV,
   enabled: true,
   events: { added: true, removed: true, online: false, offline: false, joined: false, left: false },
   scope: "everyone",
@@ -160,7 +162,7 @@ export const defaultNotify = (): NotifySettings => ({
   people: {},
   sound: true,
   volume: 0.6,
-  actionSounds: { added: "sparkle", removed: "fall", online: "rise", offline: "soft-fall", joined: "chime", left: "door" },
+  actionSounds: { added: "sparkle", removed: "heartbreak", online: "bell", offline: "soft-fall", joined: "chime", left: "door" },
   personTune: true,
   system: "background",
   muteUntil: 0,
@@ -448,13 +450,22 @@ function normalizeNotify(raw: unknown, oldSounds: Partial<SoundSettings> | undef
   // From before 0.9.0: "Play a sound for new friends" and its sound.
   if (fresh && oldSounds && typeof oldSounds.newFriend === "boolean") events.added = oldSounds.newFriend;
   const actionSounds = { ...d.actionSounds };
-  if (fresh && oldSounds?.sound) actionSounds.added = oldSounds.sound;
+  // 0.8's default was chime; only a sound someone picked themselves carries over.
+  if (fresh && oldSounds?.sound && oldSounds.sound !== "chime") actionSounds.added = oldSounds.sound;
   for (const e of NOTIFY_EVENTS) if (typeof n.actionSounds?.[e] === "string") actionSounds[e] = n.actionSounds[e];
+  // Settings from 0.9.0 test builds: move to the newer default sounds once.
+  if (!fresh && (typeof n.soundsRev !== "number" || n.soundsRev < SOUNDS_REV)) {
+    const was = { added: ["chime"], removed: ["fall"], online: ["rise"], joined: ["knock"] } as Partial<Record<NotifyEvent, string[]>>;
+    for (const e of NOTIFY_EVENTS) if (was[e]?.includes(actionSounds[e])) actionSounds[e] = d.actionSounds[e];
+  }
+  // "Rise" was removed (too close to Bell).
+  for (const e of NOTIFY_EVENTS) if (actionSounds[e] === "rise") actionSounds[e] = "bell";
   const people: Record<string, NotifyPerson> = {};
   for (const [id, p] of Object.entries(n.people ?? {})) {
     if (p && ["always", "once", "never"].includes((p as NotifyPerson).mode)) people[id] = { mode: (p as NotifyPerson).mode };
   }
   return {
+    soundsRev: SOUNDS_REV,
     enabled: typeof n.enabled === "boolean" ? n.enabled : d.enabled,
     events,
     scope: oneOf(n.scope, ["everyone", "circles", "picked"] as const, d.scope),

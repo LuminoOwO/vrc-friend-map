@@ -510,6 +510,8 @@ export interface NotifyPerson {
 }
 
 export interface NotifySettings {
+  /** Version of the default sounds, to move older settings to newer defaults once. */
+  soundsRev: number;
   /** Master switch. */
   enabled: boolean;
   events: Record<NotifyEvent, boolean>;

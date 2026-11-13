@@ -63,3 +63,13 @@ describe("person tunes", () => {
     expect(distinct.size).toBe(names.length);
   });
 });
+
+describe("sound defaults migration", () => {
+  it("moves test-build defaults to the new ones once, keeps own picks", async () => {
+    const { normalizeSettings: normalizeSettingsForTest } = await import("../store");
+    const n = normalizeSettingsForTest({ notify: { actionSounds: { added: "chime", removed: "fall", online: "rise", offline: "pop", joined: "knock", left: "door" } } }).notify;
+    expect(n.actionSounds).toMatchObject({ added: "sparkle", removed: "heartbreak", online: "bell", offline: "pop", joined: "chime", left: "door" });
+    const again = normalizeSettingsForTest({ notify: { ...n, actionSounds: { ...n.actionSounds, joined: "knock" } } }).notify;
+    expect(again.actionSounds.joined).toBe("knock");
+  });
+});
