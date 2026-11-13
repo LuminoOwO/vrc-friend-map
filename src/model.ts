@@ -234,13 +234,10 @@ const LANGUAGES: Record<string, string> = {
 };
 
 /** "language_eng" tags -> ["English"] */
-export function languagesOf(tags: string[] | undefined): string[] {
-  return (tags ?? [])
-    .filter((t) => t.startsWith("language_"))
-    .map((t) => {
-      const code = t.slice(9);
-      return LANGUAGES[code] ?? code.toUpperCase();
-    });
+/** Languages from the profile's list (since 2026) or, before that, the language_ tags. */
+export function languagesOf(tags: string[] | undefined, codes?: string[]): string[] {
+  const list = codes?.length ? codes.map((c) => c.replace(/^language_/, "")) : (tags ?? []).filter((t) => t.startsWith("language_")).map((t) => t.slice(9));
+  return [...new Set(list)].map((code) => LANGUAGES[code] ?? code.toUpperCase());
 }
 
 /** "https://twitter.com/x" -> "twitter.com/x" for display. */

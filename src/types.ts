@@ -35,6 +35,10 @@ export interface UserDetail {
   note?: string;
   bioLinks?: string[];
   badges?: Badge[];
+  /** Language codes from the profile (VRChat moved them there in 2026). */
+  languages?: string[];
+  /** When bio, links, badges and languages last came from GET /profile/{id}. */
+  profileFetchedAt?: number;
   /** VRChat's 18+ age verification. */
   ageVerified?: boolean;
   fetchedAt: number;

@@ -191,20 +191,8 @@ async function fetchDetail(id: string) {
     tags: d.tags ?? [],
     date_joined: d.date_joined,
     pronouns: d.pronouns,
-    bio: d.bio,
     note: d.note,
-    bioLinks: Array.isArray(d.bioLinks) ? d.bioLinks.filter((x: unknown) => typeof x === "string" && x) : [],
-    badges: Array.isArray(d.badges)
-      ? d.badges
-          .filter((b: { badgeImageUrl?: string }) => b && b.badgeImageUrl)
-          .map((b: { badgeId?: string; badgeName?: string; badgeDescription?: string; badgeImageUrl: string; showcased?: boolean }) => ({
-            id: b.badgeId ?? b.badgeImageUrl,
-            name: b.badgeName ?? "Badge",
-            description: b.badgeDescription,
-            imageUrl: b.badgeImageUrl,
-            showcased: b.showcased,
-          }))
-      : [],
+    ...profileFields(d),
     ageVerified: d.ageVerificationStatus === "18+" || d.ageVerified === true,
     fetchedAt: Date.now(),
   };
@@ -219,7 +207,62 @@ async function fetchDetail(id: string) {
           bannerColor: friend.bannerColor || d.bannerColor,
         }
       : friend;
-    return { ...c, details: { ...c.details, [id]: detail }, friends: merged ? { ...c.friends, [id]: merged } : c.friends };
+    // Bio, links, badges and languages now come from /profile/{id}: keep what that gave.
+    const prev = c.details[id];
+    const kept = prev ? { bio: prev.bio, bioLinks: prev.bioLinks, badges: prev.badges, languages: prev.languages, profileFetchedAt: prev.profileFetchedAt } : {};
+    const next: UserDetail = { ...kept, ...detail };
+    return { ...c, details: { ...c.details, [id]: next }, friends: merged ? { ...c.friends, [id]: merged } : c.friends };
+  });
+}
+
+/** Bio, links, badges and languages, from whichever response has them
+ *  (/profile/{id} since VRChat's 2026 change; older /users/{id} answers too).
+ *  Fields the response doesn't have are left out, so they don't wipe cached ones. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function profileFields(d: any): Partial<UserDetail> {
+  const out: Partial<UserDetail> = {};
+  if (typeof d.bio === "string") out.bio = d.bio;
+  if (Array.isArray(d.bioLinks)) out.bioLinks = d.bioLinks.filter((x: unknown) => typeof x === "string" && x);
+  if (Array.isArray(d.languages)) out.languages = d.languages.filter((x: unknown) => typeof x === "string" && x);
+  if (Array.isArray(d.badges))
+    out.badges = d.badges
+          .filter((b: { badgeImageUrl?: string }) => b && b.badgeImageUrl)
+          .map((b: { badgeId?: string; badgeName?: string; badgeDescription?: string; badgeImageUrl: string; showcased?: boolean }) => ({
+            id: b.badgeId ?? b.badgeImageUrl,
+            name: b.badgeName ?? "Badge",
+            description: b.badgeDescription,
+            imageUrl: b.badgeImageUrl,
+            showcased: b.showcased,
+          }));
+  return out;
+}
+
+/** The profile half of a person (bio, links, badges, languages): GET /profile/{id}. */
+export async function fetchProfile(id: string) {
+  const r = await api(`/profile/${encodeURIComponent(id)}`);
+  if (r.status !== 200 || !r.data) return;
+  const d = r.data;
+  const fields = profileFields(d);
+  updateCache((c) => {
+    const prev = c.details[id] ?? { tags: [], fetchedAt: 0 };
+    const friend = c.friends[id];
+    const merged = friend
+      ? { ...friend, iconUrl: d.iconUrl || friend.iconUrl, bannerUrl: d.bannerUrl || friend.bannerUrl, bannerColor: d.bannerColor || friend.bannerColor }
+      : friend;
+    return {
+      ...c,
+      details: {
+        ...c.details,
+        [id]: {
+          ...prev,
+          ...fields,
+          pronouns: typeof d.pronouns === "string" ? d.pronouns : prev.pronouns,
+          ageVerified: d.ageVerificationStatus ? d.ageVerificationStatus === "18+" || d.ageVerified === true : prev.ageVerified,
+          profileFetchedAt: Date.now(),
+        },
+      },
+      friends: merged ? { ...c.friends, [id]: merged } : c.friends,
+    };
   });
 }
 
@@ -305,10 +348,13 @@ export async function freshenProfile(id: string) {
   const s = getState();
   if (s.demo || profileLoading.has(id)) return;
   const d = s.cache.details[id];
-  if (d && d.bioLinks !== undefined && d.ageVerified !== undefined && Date.now() - d.fetchedAt < 86400000) return;
+  const userFresh = !!d && d.ageVerified !== undefined && Date.now() - d.fetchedAt < 86400000;
+  const profileFresh = !!d?.profileFetchedAt && Date.now() - d.profileFetchedAt < 86400000;
+  if (userFresh && profileFresh) return;
   profileLoading.add(id);
   try {
-    await fetchDetail(id);
+    if (!userFresh) await fetchDetail(id);
+    if (!profileFresh) await fetchProfile(id);
   } catch {
     // shown as-is
   } finally {
@@ -403,6 +449,7 @@ export async function refreshPerson(id: string) {
   setSync({ running: true, phase: "Refreshing", message: s.cache.friends[id]?.displayName ?? "", error: "" });
   try {
     await fetchDetail(id);
+    await fetchProfile(id);
     await fetchMutuals(id, gen);
     resetSync();
   } catch (e) {

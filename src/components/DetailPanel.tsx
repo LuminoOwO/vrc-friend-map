@@ -159,7 +159,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const now = Date.now();
   const plat = platformKey(f);
   const supporter = detail?.tags.includes("system_supporter");
-  const languages = languagesOf(detail?.tags);
+  const languages = languagesOf(detail?.tags, detail?.languages);
   const links = detail?.bioLinks ?? [];
   const badges = detail?.badges ?? [];
   // Representing group first, like on vrchat.com; otherwise VRChat's order.
@@ -334,7 +334,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                     )}
                   </>
                 ) : (
-                  <p className="muted small">{detail ? "Nothing written." : "Loading…"}</p>
+                  <p className="muted small">{detail && (detail.profileFetchedAt || demo) ? "Nothing written." : "Loading…"}</p>
                 )}
                 <BioKey bio={detail?.bio} userId={f.id} />
                 {links.length > 0 && (
