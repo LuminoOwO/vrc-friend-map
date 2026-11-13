@@ -73,3 +73,8 @@ The bigger, discussed list lives in GitHub issue #14.
   building each package: .deb, .rpm, AppImage, tarball, Flatpak, the WebKitGTK version,
   X11-only systems, Windows, macOS, Android, iOS and the server, with the exact commands and
   what each needs installed.
+- [ ] **Starting the app a second time crashes (Chromium build).** With the app already running
+  (also hidden in the tray), a second start prints "Opening in existing browser session" and
+  panics with `WebviewRuntimeNotInstalled`: Chromium's lock on the shared data folder hands the
+  start over to the running copy, and Tauri's CEF runtime then fails. Make a second start bring
+  the running window to the front (single instance) and exit quietly.
