@@ -11,6 +11,7 @@ mod livelog;
 mod pipeline;
 mod share;
 mod storage;
+mod silent_notify;
 mod single;
 mod tray;
 mod wheelfix;
@@ -560,6 +561,7 @@ pub fn run() {
             tray::app_quit,
             tray::window_toggle_fullscreen,
             wheelfix::wheel_fix_set,
+            silent_notify::notify_silent,
             wheelfix::wheel_fix_state,
         ])
         .run(tauri::generate_context!())

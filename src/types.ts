@@ -218,6 +218,8 @@ export interface MapSettings {
   showOthers: "off" | "here" | "met" | "all";
   /** The "who's here" panel: full list, one row of pictures, or just a button. */
   hereView: "list" | "compact" | "hidden";
+  /** Where "who's here" sits: at the top of the sidebar, or over the map. */
+  herePlace: "sidebar" | "map";
 }
 
 export type Theme = "dark" | "oled" | "light" | "mocha" | "macchiato" | "latte" | "nord" | "dracula";

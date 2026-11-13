@@ -89,3 +89,7 @@ The bigger, discussed list lives in GitHub issue #14.
 - [ ] **Zoom without a scroll wheel.** + / − buttons on the map and keyboard zoom (+, −, 0 to
   fit), so the map is usable where wheel events don't arrive (see the XLibre item) and with
   touchpads that only click.
+- [ ] **Friends together in one instance, on the "instance preview in the upper right corner".**
+  (Asked 2026-11-13.) A friend's profile already lists "N of your friends" in their instance
+  in its top-right world card. To clarify which preview is meant (the map's hover card? a list
+  of all instances your friends are in?).

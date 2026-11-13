@@ -38,6 +38,7 @@ export default function App() {
   const settingsOpen = useApp((s) => s.settingsOpen);
   const serversOpen = useApp((s) => s.serversOpen);
   const sidebarOpen = useApp((s) => s.sidebarOpen);
+  const herePlace = useApp((s) => s.settings.map.herePlace);
 
   useEffect(() => {
     let unlisten: (() => void)[] = [];
@@ -118,7 +119,7 @@ export default function App() {
       <div className="main" key={theme}>
         {sidebarOpen && <Sidebar />}
         <div className="content">
-          <HereNow />
+          {!(sidebarOpen && herePlace === "sidebar") && <HereNow />}
           {view === "graph" && <GraphView />}
           {view === "cards" && <CardsView />}
           {view === "lists" && <SharedLists />}

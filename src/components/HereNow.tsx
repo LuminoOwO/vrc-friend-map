@@ -7,6 +7,8 @@ import { othersHere } from "../live";
 import { naiveToDate } from "../logs";
 import { iconUrl, presenceLabel, presenceOf, statusColor } from "../model";
 import { isBlocked, refreshModerations, wantProfiles } from "../people";
+import { loadInstance, loadWorld } from "../sync";
+import { parseLocation } from "./DetailPanel";
 import { setState, updateMap, updatePeople, useApp } from "../store";
 import type { Cache, LivePlayer } from "../types";
 import { Icon } from "./Icon";
@@ -37,7 +39,26 @@ function detailLine(id: string, friend: boolean, cache: Cache): string {
   return bits.join(" · ");
 }
 
-export function HereNow() {
+/** Players and slots of an instance, from VRChat (refreshed every minute while you're there). */
+function useInstanceSlots(location: string | undefined, active: boolean) {
+  const [slots, setSlots] = useState<{ users: number; capacity?: number } | null>(null);
+  useEffect(() => {
+    setSlots(null);
+    if (!active || !location?.startsWith("wrld_")) return;
+    let stop = false;
+    const load = () => void loadInstance(location).then((r) => !stop && r && setSlots(r));
+    load();
+    const t = setInterval(load, 60_000);
+    return () => {
+      stop = true;
+      clearInterval(t);
+    };
+  }, [location, active]);
+  return slots;
+}
+
+/** "Who's here". `inSidebar`: the sidebar version, with the world's picture on top. */
+export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
   const here = useApp((s) => s.here);
   const cache = useApp((s) => s.cache);
   const selectedId = useApp((s) => s.selectedId);
@@ -73,11 +94,42 @@ export function HereNow() {
     else if (mode !== "hidden") wantProfiles(people.others.slice(0, PROFILE_LIMIT).map((p) => p.id));
   }, [mode, people.others, loadEveryone]);
 
+  const slots = useInstanceSlots(here?.location, !!here?.active);
+  useEffect(() => {
+    if (here?.active && here.worldId) void loadWorld(here.worldId);
+  }, [here?.active, here?.worldId]);
+
   if (!here?.active) return null;
   const count = people.friends.length + people.others.length;
-  const world = here.worldName || cache.worlds?.[here.worldId]?.name || "this instance";
+  const worldInfo = cache.worlds?.[here.worldId];
+  const world = here.worldName || worldInfo?.name || "this instance";
   const setMode = (hereView: "list" | "compact" | "hidden") => updateMap({ hereView });
-  const docked = view !== "graph";
+  const docked = !inSidebar && view !== "graph";
+  const loc = here.location?.startsWith("wrld_") ? parseLocation(here.location) : null;
+  const capacity = slots?.capacity ?? worldInfo?.capacity;
+  const inside = Math.max(count + 1, slots?.users ?? 0);
+  const facts = (
+    <span className="here-facts">
+      {loc && (
+        <span title={`Region: ${loc.region.toUpperCase()}`}>
+          {loc.flag} {loc.type}
+        </span>
+      )}
+      <span title={capacity ? `${inside} of ${capacity} slots taken` : `${inside} in the instance`}>
+        <Icon name="users" size={12} /> {inside}
+        {capacity ? ` / ${capacity}` : ""}
+      </span>
+    </span>
+  );
+  const moveBtn = (
+    <button
+      className="icon-btn small"
+      title={inSidebar ? "Show over the map instead" : "Put it in the sidebar"}
+      onClick={() => updateMap({ herePlace: inSidebar ? "map" : "sidebar" })}
+    >
+      <Icon name={inSidebar ? "expand" : "compress"} size={15} />
+    </button>
+  );
 
   const q = query.trim().toLowerCase();
   const match = (p: LivePlayer) => !q || (cache.friends[p.id]?.displayName ?? cache.others?.[p.id]?.displayName ?? p.name).toLowerCase().includes(q);
@@ -90,7 +142,7 @@ export function HereNow() {
     </span>
   );
 
-  if (mode === "hidden") {
+  if (mode === "hidden" && !inSidebar) {
     return (
       <button className={`here-pill ${docked ? "docked" : ""}`} onClick={() => setMode("list")} title="Show who's in your instance">
         <span className="here-dot" />
@@ -144,11 +196,17 @@ export function HereNow() {
   const othersShown = people.others.filter(match);
 
   return (
-    <section className={`here-now ${mode} ${docked ? "docked" : ""}`} aria-label="People in your instance">
+    <section className={`here-now ${mode} ${docked ? "docked" : ""} ${inSidebar ? "in-sidebar" : ""}`} aria-label="People in your instance">
+      {inSidebar && worldInfo?.imageUrl && mode !== "hidden" && (
+        <div className="here-banner">
+          <img src={imgSrc(worldInfo.thumbnailImageUrl || worldInfo.imageUrl)} alt="" />
+        </div>
+      )}
       <header className="here-head">
         <span className="here-dot" />
         <span className="here-title">
           <b>{world}</b>
+          {facts}
           {summary}
         </span>
         <span className="here-modes">
@@ -158,9 +216,14 @@ export function HereNow() {
           <button className={`icon-btn small ${mode === "compact" ? "on" : ""}`} title="Pictures only" onClick={() => setMode("compact")}>
             <Icon name="users" size={15} />
           </button>
-          <button className="icon-btn small" title="Hide (a button stays)" onClick={() => setMode("hidden")}>
+          <button
+            className={`icon-btn small ${mode === "hidden" ? "on" : ""}`}
+            title={inSidebar ? "Only the heading" : "Hide (a button stays)"}
+            onClick={() => setMode(mode === "hidden" && inSidebar ? "list" : "hidden")}
+          >
             <Icon name="chevron-up" size={15} />
           </button>
+          {moveBtn}
         </span>
       </header>
 

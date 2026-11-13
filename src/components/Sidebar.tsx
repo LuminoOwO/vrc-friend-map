@@ -8,10 +8,12 @@ import { ColorPicker } from "./ColorPicker";
 import { FilterChip, clearAll, statusToggle } from "./FilterChip";
 import { Icon } from "./Icon";
 import { SuggestedGroups } from "./SuggestedGroups";
+import { HereNow } from "./HereNow";
 import { ActivityText, KIND_ICON, friendLogEntries, useActivityLoaded } from "./ActivityView";
 
 export function Sidebar() {
   const circles = useApp((s) => s.local.circles);
+  const herePlace = useApp((s) => s.settings.map.herePlace);
   const filters = useApp((s) => s.filters);
   const cache = useApp((s) => s.cache);
   const { friends, edges } = useDerived();
@@ -58,6 +60,7 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar">
+      {herePlace === "sidebar" && <HereNow inSidebar />}
       <section>
         <h3>Overview</h3>
         <div className="stat-grid">

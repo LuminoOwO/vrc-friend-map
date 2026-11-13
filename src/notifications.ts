@@ -166,6 +166,11 @@ async function systemNotify(title: string, body: string) {
     if ("Notification" in window && Notification.permission === "granted") new Notification(title, { body, silent: true });
     return;
   }
+  // Linux: show it without the desktop's notification sound while the app plays its own.
+  if (/Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent) && getState().settings.notify.sound) {
+    const { invoke } = await import("@tauri-apps/api/core");
+    if (await invoke("notify_silent", { title, body }).then(() => true, () => false)) return;
+  }
   try {
     const n = await import("@tauri-apps/plugin-notification");
     if (permission === null) {
