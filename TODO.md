@@ -50,3 +50,7 @@ The bigger, discussed list lives in GitHub issue #14.
   - **Where it shows** (defaults, adjustable): a mark on the profile; a warning before you send
     or accept a friend request; for people already on your friend list, only on their profile,
     no pop-ups.
+- [ ] **F7 opens Chromium's "Turn on caret browsing?" dialog.** Swallow F7 (and other browser
+  shortcuts that make no sense in the app) in the Chromium build.
+- [ ] **F11 for real fullscreen.** F11 currently does Chromium's page fullscreen ("press and
+  hold Esc to exit") inside the window. Make it toggle the app window's fullscreen instead.

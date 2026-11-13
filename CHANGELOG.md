@@ -50,7 +50,8 @@ minor releases can change behavior.
     come online* (once, then back to normal: for when you're waiting for someone), or *never*,
     which also works when notifications are on for everyone.
   - **Sounds**: a sound for what happened, then the person's own short tune, made from their
-    name (always the same for them; on by default). Choose from 10 built-in sounds or add
+    name (always the same for them; on by default): short, cheerful, in the same key as the
+    event sounds, and starting right as the event sound lands. Choose from 20 built-in sounds or add
     your own audio files.
   - **Mute** for 30 min / 1 h / 4 h or until you unmute (also from the tray).
   - **System notifications** on Windows, Linux, macOS, Android and iOS, when the app is in the

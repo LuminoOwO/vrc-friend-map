@@ -160,7 +160,7 @@ export const defaultNotify = (): NotifySettings => ({
   people: {},
   sound: true,
   volume: 0.6,
-  actionSounds: { added: "sparkle", removed: "fall", online: "rise", offline: "soft-fall", joined: "knock", left: "door" },
+  actionSounds: { added: "sparkle", removed: "fall", online: "rise", offline: "soft-fall", joined: "chime", left: "door" },
   personTune: true,
   system: "background",
   muteUntil: 0,

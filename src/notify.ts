@@ -31,18 +31,45 @@ export function unlockAudioOnInput() {
   window.addEventListener("keydown", unlock, true);
 }
 
-function tone(ac: AudioContext, out: AudioNode, freq: number, start: number, len: number, type: OscillatorType, peak: number, glideTo?: number) {
+type Ctx = BaseAudioContext;
+
+/** One note. `voice` picks the timbre; all are soft (no square waves). */
+function tone(ac: Ctx, out: AudioNode, freq: number, start: number, len: number, type: OscillatorType, peak: number, glideTo?: number) {
   const o = ac.createOscillator();
   const g = ac.createGain();
   o.type = type;
   o.frequency.setValueAtTime(freq, start);
   if (glideTo) o.frequency.exponentialRampToValueAtTime(glideTo, start + len * 0.6);
   g.gain.setValueAtTime(0.0001, start);
-  g.gain.exponentialRampToValueAtTime(peak, start + 0.012);
+  g.gain.exponentialRampToValueAtTime(peak, start + 0.008);
   g.gain.exponentialRampToValueAtTime(0.0001, start + len);
   o.connect(g).connect(out);
   o.start(start);
   o.stop(start + len + 0.05);
+}
+
+export type Voice = "bell" | "glass" | "pluck" | "flute";
+/** A note with a little character: a few partials over the fundamental. */
+function note(ac: Ctx, out: AudioNode, freq: number, start: number, len: number, voice: Voice, peak: number) {
+  switch (voice) {
+    case "bell": // warm mallet: fundamental, soft octave, a hint of the 3rd partial
+      tone(ac, out, freq, start, len + 0.35, "sine", peak);
+      tone(ac, out, freq * 2, start, len * 0.6 + 0.1, "sine", peak * 0.28);
+      tone(ac, out, freq * 3, start, len * 0.3 + 0.05, "sine", peak * 0.08);
+      break;
+    case "glass": // bright and short, like a glass harmonica tap
+      tone(ac, out, freq, start, len + 0.25, "sine", peak * 0.9);
+      tone(ac, out, freq * 4, start, 0.12, "sine", peak * 0.1);
+      break;
+    case "pluck": // music box / kalimba
+      tone(ac, out, freq, start, len * 0.8 + 0.2, "triangle", peak * 0.9);
+      tone(ac, out, freq * 2, start, 0.09, "sine", peak * 0.3);
+      break;
+    case "flute": // soft and round
+      tone(ac, out, freq, start, len + 0.18, "triangle", peak * 0.8);
+      tone(ac, out, freq * 1.003, start, len + 0.18, "sine", peak * 0.35);
+      break;
+  }
 }
 
 export const SOUNDS: { value: string; label: string }[] = [
@@ -56,53 +83,106 @@ export const SOUNDS: { value: string; label: string }[] = [
   { value: "knock", label: "Knock" },
   { value: "door", label: "Door" },
   { value: "blip", label: "Blip" },
+  { value: "doorbell", label: "Doorbell" },
+  { value: "harp", label: "Harp" },
+  { value: "marimba", label: "Marimba" },
+  { value: "coin", label: "Coin" },
+  { value: "bubble", label: "Bubble" },
+  { value: "twinkle", label: "Twinkle" },
+  { value: "fanfare", label: "Fanfare" },
+  { value: "hello", label: "Hello" },
+  { value: "drop", label: "Drop" },
+  { value: "sigh", label: "Sigh" },
 ];
 
-/** Plays a built-in sound starting at `t`; returns its length in seconds. */
-function builtIn(ac: AudioContext, out: AudioNode, kind: string, t: number): number {
+// Everything is in C major, so an event sound and the person's tune always fit together.
+const C5 = 523.25;
+const st = (semis: number) => C5 * Math.pow(2, semis / 12);
+
+/** Plays a built-in sound starting at `t`. Returns when the next part may start:
+ *  right as its last note lands, not after it rings out, so there's no pause. */
+function builtIn(ac: Ctx, out: AudioNode, kind: string, t: number): number {
   switch (kind) {
     case "pop":
-      tone(ac, out, 380, t, 0.18, "sine", 0.6, 900);
-      tone(ac, out, 760, t + 0.09, 0.16, "sine", 0.3, 1400);
-      return 0.3;
+      tone(ac, out, 380, t, 0.16, "sine", 0.5, 900);
+      tone(ac, out, 760, t + 0.07, 0.14, "sine", 0.25, 1400);
+      return 0.16;
     case "bell":
-      [523.25, 1046.5, 1568].forEach((f, i) => tone(ac, out, f, t, 1.4 - i * 0.3, "sine", 0.35 / (i + 1)));
-      tone(ac, out, 659.25, t + 0.25, 1.2, "sine", 0.25);
-      return 0.9;
+      note(ac, out, st(0), t, 0.5, "bell", 0.4);
+      note(ac, out, st(7), t + 0.09, 0.5, "bell", 0.25);
+      return 0.2;
     case "sparkle":
-      [1318.5, 1568, 2093, 2637].forEach((f, i) => tone(ac, out, f, t + i * 0.07, 0.35, "triangle", 0.22));
-      return 0.55;
-    case "rise":
-      tone(ac, out, 523.25, t, 0.22, "sine", 0.45);
-      tone(ac, out, 783.99, t + 0.11, 0.35, "sine", 0.42);
-      return 0.42;
-    case "fall":
-      tone(ac, out, 587.33, t, 0.25, "triangle", 0.4);
-      tone(ac, out, 440, t + 0.14, 0.3, "triangle", 0.38);
-      tone(ac, out, 349.23, t + 0.28, 0.45, "triangle", 0.34);
-      return 0.65;
-    case "soft-fall":
-      tone(ac, out, 659.25, t, 0.25, "sine", 0.3);
-      tone(ac, out, 493.88, t + 0.13, 0.4, "sine", 0.26);
-      return 0.45;
-    case "knock":
-      tone(ac, out, 220, t, 0.09, "sine", 0.7, 140);
-      tone(ac, out, 220, t + 0.13, 0.09, "sine", 0.6, 140);
-      tone(ac, out, 880, t + 0.27, 0.3, "sine", 0.25);
-      return 0.5;
-    case "door":
-      tone(ac, out, 880, t, 0.2, "sine", 0.25);
-      tone(ac, out, 220, t + 0.12, 0.12, "sine", 0.6, 120);
-      return 0.35;
+      [4, 7, 12, 16].forEach((x, i) => note(ac, out, st(x + 12), t + i * 0.045, 0.15, "glass", 0.16));
+      return 0.2;
+    case "rise": // came online: up a fifth
+      note(ac, out, st(0), t, 0.1, "bell", 0.35);
+      note(ac, out, st(7), t + 0.08, 0.12, "bell", 0.35);
+      return 0.17;
+    case "fall": // removed you: gently down
+      note(ac, out, st(9), t, 0.1, "flute", 0.32);
+      note(ac, out, st(5), t + 0.1, 0.1, "flute", 0.3);
+      note(ac, out, st(2), t + 0.2, 0.18, "flute", 0.28);
+      return 0.3;
+    case "soft-fall": // went offline
+      note(ac, out, st(7), t, 0.1, "bell", 0.28);
+      note(ac, out, st(4), t + 0.09, 0.14, "bell", 0.24);
+      return 0.18;
+    case "knock": // joined your world: two knocks
+      tone(ac, out, 230, t, 0.07, "sine", 0.6, 150);
+      tone(ac, out, 230, t + 0.1, 0.07, "sine", 0.5, 150);
+      return 0.19;
+    case "door": // left your world
+      tone(ac, out, 200, t, 0.1, "sine", 0.5, 120);
+      note(ac, out, st(-5), t + 0.06, 0.12, "flute", 0.2);
+      return 0.16;
     case "blip":
-      tone(ac, out, 1046.5, t, 0.08, "square", 0.12);
+      note(ac, out, st(12), t, 0.06, "glass", 0.2);
+      return 0.07;
+    case "doorbell": // ding-dong
+      note(ac, out, st(4), t, 0.2, "bell", 0.35);
+      note(ac, out, st(0), t + 0.2, 0.25, "bell", 0.32);
+      return 0.3;
+    case "harp": // quick run up
+      [0, 4, 7, 11, 12].forEach((x, i) => note(ac, out, st(x), t + i * 0.035, 0.2, "pluck", 0.22));
+      return 0.2;
+    case "marimba":
+      note(ac, out, st(-5), t, 0.08, "pluck", 0.35);
+      note(ac, out, st(0), t + 0.08, 0.08, "pluck", 0.35);
+      note(ac, out, st(4), t + 0.16, 0.12, "pluck", 0.35);
+      return 0.24;
+    case "coin":
+      note(ac, out, st(19), t, 0.05, "glass", 0.18);
+      note(ac, out, st(24), t + 0.06, 0.18, "glass", 0.2);
+      return 0.14;
+    case "bubble":
+      tone(ac, out, 500, t, 0.09, "sine", 0.4, 1100);
+      tone(ac, out, 650, t + 0.08, 0.09, "sine", 0.32, 1400);
+      return 0.15;
+    case "twinkle":
+      [16, 19, 24, 19, 24].forEach((x, i) => note(ac, out, st(x), t + i * 0.05, 0.12, "glass", 0.13));
+      return 0.24;
+    case "fanfare": // tiny ta-ta-taa
+      note(ac, out, st(7), t, 0.06, "flute", 0.3);
+      note(ac, out, st(7), t + 0.08, 0.06, "flute", 0.3);
+      note(ac, out, st(12), t + 0.16, 0.2, "flute", 0.34);
+      note(ac, out, st(4), t + 0.16, 0.2, "flute", 0.18);
+      return 0.26;
+    case "hello": // two notes like "hel-lo"
+      note(ac, out, st(7), t, 0.09, "flute", 0.32);
+      note(ac, out, st(9), t + 0.11, 0.16, "flute", 0.32);
+      return 0.2;
+    case "drop": // soft drop down
+      tone(ac, out, 1200, t, 0.14, "sine", 0.3, 500);
       return 0.12;
+    case "sigh": // goodbye, without sounding sad
+      note(ac, out, st(4), t, 0.12, "flute", 0.26);
+      note(ac, out, st(0), t + 0.12, 0.18, "flute", 0.22);
+      return 0.22;
     default:
       // chime: two soft notes going up
-      tone(ac, out, 659.25, t, 0.5, "sine", 0.45);
-      tone(ac, out, 987.77, t + 0.14, 0.75, "sine", 0.4);
-      tone(ac, out, 1975.5, t + 0.14, 0.4, "sine", 0.06);
-      return 0.6;
+      note(ac, out, st(4), t, 0.12, "bell", 0.35);
+      note(ac, out, st(11), t + 0.1, 0.25, "bell", 0.3);
+      return 0.19;
   }
 }
 
@@ -119,49 +199,68 @@ function rng(seed: string) {
   };
 }
 
-const SCALES = [
-  [0, 2, 4, 7, 9, 12, 14], // major pentatonic
-  [0, 3, 5, 7, 10, 12, 15], // minor pentatonic
-  [0, 2, 4, 5, 7, 9, 11, 12], // major
-  [0, 2, 3, 5, 7, 8, 10, 12], // minor
+// Short, happy melodies in C major (semitones above C5). They lean on the notes of the
+// C and F/A-minor chords, mostly go up, and end on a restful note (C, E, G or A).
+const MELODIES = [
+  [0, 4, 7, 12],
+  [7, 4, 7, 12],
+  [4, 7, 12, 16],
+  [0, 7, 4, 12],
+  [0, 2, 4, 7],
+  [4, 7, 9, 12],
+  [12, 9, 7, 12],
+  [7, 9, 12, 16],
+  [0, 4, 9, 7],
+  [4, 2, 4, 7],
+  [7, 12, 11, 12],
+  [0, 5, 9, 12],
+  [9, 7, 12, 16],
+  [2, 4, 7, 9],
+  [7, 4, 9, 12],
+  [12, 7, 9, 16],
+  [0, 4, 2, 7],
+  [5, 9, 7, 12],
+  [4, 0, 7, 12],
+  [12, 11, 12, 16],
 ];
+// Seconds per note; the last one rings. Three-note rhythms skip the melody's second note.
 const RHYTHMS = [
-  [0.14, 0.14, 0.28],
-  [0.1, 0.1, 0.1, 0.24],
-  [0.2, 0.12, 0.3],
-  [0.12, 0.24, 0.12, 0.24],
-  [0.16, 0.16, 0.16, 0.3],
+  [0.08, 0.08, 0.08, 0.18],
+  [0.06, 0.06, 0.12, 0.18],
+  [0.11, 0.055, 0.11, 0.18],
+  [0.055, 0.055, 0.055, 0.2],
+  [0.09, 0.09, 0.2],
+  [0.07, 0.14, 0.2],
 ];
+const VOICES: Voice[] = ["bell", "glass", "pluck", "flute"];
 
 /** Someone's own little tune, always the same for the same name. */
 export function tuneOf(name: string) {
   const r = rng(name.trim().toLowerCase());
-  const scale = SCALES[Math.floor(r() * SCALES.length)];
-  const root = 392 * Math.pow(2, Math.floor(r() * 9) / 12); // G4 … E5
+  let melody = MELODIES[Math.floor(r() * MELODIES.length)];
   const rhythm = RHYTHMS[Math.floor(r() * RHYTHMS.length)];
-  const wave: OscillatorType = (["sine", "triangle", "sine", "square"] as const)[Math.floor(r() * 4)];
-  let step = Math.floor(r() * 3);
-  const notes = rhythm.map((len) => {
-    step = Math.max(0, Math.min(scale.length - 1, step + Math.floor(r() * 5) - 2));
-    return { freq: root * Math.pow(2, scale[step] / 12), len };
-  });
-  return { notes, wave };
+  const voice = VOICES[Math.floor(r() * VOICES.length)];
+  // Most tunes sit around C5-E6; some an octave lower (warmer), never higher (shrill).
+  const octave = r() < 0.3 ? -12 : 0;
+  if (rhythm.length === 3) melody = [melody[0], melody[2], melody[3]];
+  const notes = rhythm.map((len, i) => ({ freq: st(melody[i] + octave), len }));
+  return { notes, voice };
 }
 
-function playTune(ac: AudioContext, out: AudioNode, name: string, t: number): number {
-  const { notes, wave } = tuneOf(name);
-  const peak = wave === "square" ? 0.1 : 0.35;
+function playTune(ac: Ctx, out: AudioNode, name: string, t: number): number {
+  const { notes, voice } = tuneOf(name);
   let at = t;
-  for (const n of notes) {
-    tone(ac, out, n.freq, at, n.len * 1.6, wave, peak);
+  notes.forEach((n, i) => {
+    const last = i === notes.length - 1;
+    note(ac, out, n.freq, at, last ? n.len + 0.1 : n.len, voice, last ? 0.32 : 0.27);
     at += n.len;
-  }
-  return at - t + 0.15;
+  });
+  return at - t;
 }
 
 /** Custom sound files, decoded once. */
 const decoded = new Map<string, Promise<AudioBuffer | null>>();
-function decode(ac: AudioContext, data: string): Promise<AudioBuffer | null> {
+function decode(ac: Ctx, data: string): Promise<AudioBuffer | null> {
   let p = decoded.get(data);
   if (!p) {
     p = fetch(data)
@@ -175,31 +274,48 @@ function decode(ac: AudioContext, data: string): Promise<AudioBuffer | null> {
 
 export type SoundPart = { sound: string } | { tune: string } | { data: string };
 
-/** Plays the parts one after another (action sound, then the person's tune). Resolves when done. */
-export async function playParts(parts: SoundPart[], volume: number): Promise<void> {
-  const ac = ctx();
-  if (!ac || volume <= 0 || !parts.length) return;
+/** Schedules the parts one after another on `ac` (action sound, then the person's tune).
+ *  Returns when the last note starts ringing out (seconds, in the context's time). */
+export async function scheduleParts(ac: Ctx, parts: SoundPart[], volume: number, start: number): Promise<number> {
   const out = ac.createGain();
   out.gain.value = Math.min(1, volume);
+  // A touch of echo makes the synth notes sound less dry.
+  const echo = ac.createDelay(0.5);
+  echo.delayTime.value = 0.11;
+  const fb = ac.createGain();
+  fb.gain.value = 0.22;
+  const wet = ac.createGain();
+  wet.gain.value = 0.18;
   out.connect(ac.destination);
-  let t = ac.currentTime + 0.03;
+  out.connect(echo).connect(fb).connect(echo);
+  echo.connect(wet).connect(ac.destination);
+  let t = start;
   for (const p of parts) {
     if ("sound" in p) {
-      if (p.sound !== "none") t += builtIn(ac, out, p.sound, t) + 0.08;
+      if (p.sound !== "none") t += builtIn(ac, out, p.sound, t);
     } else if ("tune" in p) {
-      t += playTune(ac, out, p.tune, t) + 0.05;
+      t += playTune(ac, out, p.tune, t);
     } else {
       const buf = await decode(ac, p.data);
       if (!buf) continue;
       const src = ac.createBufferSource();
       src.buffer = buf;
       src.connect(out);
-      t = Math.max(t, ac.currentTime + 0.02);
+      if (ac instanceof AudioContext) t = Math.max(t, ac.currentTime + 0.02);
       src.start(t, 0, Math.min(buf.duration, 6));
-      t += Math.min(buf.duration, 6) + 0.08;
+      t += Math.min(buf.duration, 6) + 0.03;
     }
   }
-  await new Promise((r) => setTimeout(r, Math.max(0, (t - ac.currentTime) * 1000)));
+  return t;
+}
+
+/** Plays the parts one after another. Resolves when done. */
+export async function playParts(parts: SoundPart[], volume: number): Promise<void> {
+  const ac = ctx();
+  if (!ac || volume <= 0 || !parts.length) return;
+  const end = await scheduleParts(ac, parts, volume, ac.currentTime + 0.03);
+  // The next queued notification may start while this one rings out.
+  await new Promise((r) => setTimeout(r, Math.max(0, (end + 0.25 - ac.currentTime) * 1000)));
 }
 
 export function playSound(kind: string, volume: number) {

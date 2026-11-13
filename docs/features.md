@@ -144,7 +144,7 @@ A readable log of what happened around you, kept 4 days on this device.
 - **Who:** *came online / went offline* for all friends, people in some circles, or only people
   you pick. Per person: *always*, *next time they come online* (once), or *never*.
 - **Sounds:** a sound for the event, then the person's own tune, generated from their name.
-  10 built-in sounds, or your own audio files.
+  20 built-in sounds, or your own audio files.
 - **System notifications** on every platform while the app is in the background; mute for a
   while or until you turn it back on.
 - **Tray (desktop):** close the window and the app keeps running in the tray, notifying and
