@@ -12,11 +12,7 @@ export const mapStats = {
   dpr: 1,
 };
 
-/** Called with each frame's start time (for the frame-rate test). */
-export const frameHooks = new Set<(t: number) => void>();
-
 export function noteFrame(t0: number, ms: number) {
-  for (const h of frameHooks) h(t0);
   const s = mapStats;
   const prev = s.frames[s.frames.length - 1];
   s.frames.push(t0);

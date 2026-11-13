@@ -18,13 +18,12 @@ minor releases can change behavior.
 
 ### Added (frame rate)
 - **Settings → Frame rate**: a vsync switch (on by default; off needs the Chromium build or
-  Windows and a restart, which the setting offers) and a limit from 30 fps up to 360 fps or
-  unlimited (default: match the screen). With vsync off, *Find the best limit* tries limits on
-  the live map and keeps the highest one that runs evenly without delaying input; between
-  frames the app sleeps instead of asking for frame after frame.
-- **Saving power**: how fast the map moves while the window isn't focused (default 30 fps,
-  down to stopping, or no change), and optionally a lower rate after a while without input.
-  Any mouse, key or touch input brings the full rate back right away.
+  Windows and a restart, which the setting offers) and a frame-rate limit you type in:
+  60 by default, -1 for unlimited, 0 for the screen's rate. With vsync off the app sleeps
+  between frames instead of asking for frame after frame.
+- **Saving power**: the frame rate while the window isn't focused (default 30) and, optionally,
+  after a while without input (0 stops the map moving, -1 means no change). Any mouse, key or
+  touch input brings the full rate back right away.
 
 ### Added
 - **Activity tab**: who joined and left your instance, your world changes, VRChat closing or

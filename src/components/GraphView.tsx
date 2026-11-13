@@ -4,7 +4,6 @@
 // overlap. Drag a person into a circle outline (or onto a circle in the
 // sidebar) to add them. Map options change how people and lines are drawn.
 import { mapStats, noteFrame } from "../diag";
-import { PERF_NO_LIMIT } from "../types";
 import * as d3 from "d3";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
@@ -466,8 +465,8 @@ export function GraphView() {
     let cap = p.fps > 0 ? p.fps : p.fps === 0 && p.screenHz > 0 ? p.screenHz : Infinity;
     const quiet = Date.now() - lastInteractionRef.current;
     if (quiet > 1500) {
-      if (!document.hasFocus() && p.unfocusedFps < PERF_NO_LIMIT) cap = Math.min(cap, p.unfocusedFps);
-      if (p.idleAfter > 0 && quiet > p.idleAfter * 1000) cap = Math.min(cap, p.idleFps);
+      if (!document.hasFocus() && p.unfocusedFps >= 0) cap = Math.min(cap, p.unfocusedFps);
+      if (p.idleAfter > 0 && quiet > p.idleAfter * 1000 && p.idleFps >= 0) cap = Math.min(cap, p.idleFps);
     }
     return cap;
   }
