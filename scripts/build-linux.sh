@@ -194,9 +194,15 @@ make_tarball() {
     deb=$(pick "$BUNDLE_DIR/deb/*_${VERSION}_*.deb")
     unpack=$(mktemp -d)
     (cd "$unpack" && ar x "$ROOT/$deb" && tar -xf data.tar.*)
-    if [ ! -d "$unpack/usr/share/VRC Friend Map" ]; then echo "✗ Chromium files not found in $deb" >&2; exit 1; fi
+    local appdir
+    appdir=$(find "$unpack/usr" -name libcef.so -printf '%h\n' | head -n 1)
+    if [ -z "$appdir" ] || [ ! -x "$appdir/vrc-friend-map" ]; then
+      echo "✗ Chromium files not found in $deb:" >&2
+      (cd "$unpack" && find usr -maxdepth 3) >&2
+      exit 1
+    fi
     mkdir -p "$dir/app"
-    cp -a "$unpack/usr/share/VRC Friend Map/." "$dir/app/"
+    cp -a "$appdir/." "$dir/app/"
     rm -rf "$unpack"
     # Run from this folder: a link next to the scripts.
     ln -s app/vrc-friend-map "$dir/vrc-friend-map"
