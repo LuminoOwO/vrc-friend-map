@@ -2,6 +2,8 @@ mod api;
 mod auth;
 #[cfg(all(target_os = "linux", vfm_gdk_no_wayland))]
 mod gdk_stubs;
+#[cfg(all(target_os = "linux", feature = "chromium", vfm_gtk4_no_wayland))]
+mod gdk4_stubs;
 mod gamelogs;
 pub mod graphics;
 mod images;

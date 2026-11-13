@@ -138,6 +138,12 @@ esac
 if [ -f package-lock.json ]; then npm ci; else npm install; fi
 if [ "$ENGINE" = chromium ]; then
   echo "→ Web engine: Chromium (pass --webkit for the WebKitGTK build)"
+  # GTK 4 built without Wayland (X11 only) has no gtk4-wayland.pc; the window
+  # library still wants it. Skip that lookup; build.rs adds stand-ins.
+  if pkg-config --exists gtk4 && ! pkg-config --exists gtk4-wayland; then
+    echo "→ GTK 4 has no Wayland support here: building for X11 only"
+    export SYSTEM_DEPS_GTK4_WAYLAND_NO_PKG_CONFIG=1 SYSTEM_DEPS_GTK4_WAYLAND_LIB=gtk-4
+  fi
   python3 scripts/chromium.py apply
   trap 'python3 scripts/chromium.py revert >/dev/null' EXIT
   CEF_REV=$(python3 -c 'import runpy, sys; print(runpy.run_path(sys.argv[1])["REV"])' scripts/chromium.py)
