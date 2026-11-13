@@ -30,6 +30,10 @@ finish-args:
 modules:
   - name: vrc-friend-map
     buildsystem: simple
+    # Chromium's files come ready-built; leave them as they are.
+    build-options:
+      no-debuginfo: true
+      strip: false
     build-commands:
       - mkdir -p /app/lib/vrc-friend-map
       - cp -a app/. /app/lib/vrc-friend-map/

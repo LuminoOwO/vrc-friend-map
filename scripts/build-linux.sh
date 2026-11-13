@@ -297,8 +297,8 @@ make_flatpak() {
     flatpak-builder --user --force-clean --disable-rofiles-fuse "$build" "$manifest"
     local lost
     lost=$(flatpak-builder --run "$build" "$manifest" sh -c \
-      'D=/app/lib/vrc-friend-map; LD_LIBRARY_PATH=$D:$D/extra-libs ldd $D/vrc-friend-map $D/libcef.so $D/extra-libs/*.so* 2>/dev/null' \
-      | awk '/not found/ {print $1}' | sort -u)
+      'D=/app/lib/vrc-friend-map; for f in $D/vrc-friend-map $D/libcef.so $D/extra-libs/*.so*; do [ -e "$f" ] && LD_LIBRARY_PATH=$D:$D/extra-libs ldd "$f" 2>/dev/null; done; true' \
+      | awk '/not found/ {print $1}' | sort -u || true)
     [ -z "$lost" ] && break
     if [ "$round" = 4 ]; then
       echo "✗ The Flatpak runtime still lacks: $lost" >&2
