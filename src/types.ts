@@ -474,6 +474,8 @@ export interface PerfSettings {
   idleFps: number;
   /** The screen's refresh rate as last measured (0 = not yet). */
   screenHz: number;
+  /** Wait for the screen (on) or draw as soon as a frame is due (off; Chromium / WebView2, next start). */
+  vsync: boolean;
 }
 
 export const PERF_NO_LIMIT = 1000;

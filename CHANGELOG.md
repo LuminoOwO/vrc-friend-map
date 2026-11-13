@@ -17,9 +17,11 @@ minor releases can change behavior.
 - The map draws at full frame rate whenever its window has focus, also while it only orbits.
 
 ### Added (frame rate)
-- **Settings → Frame rate**: a limit from 30 fps up to 360 fps or unlimited (default: match the
-  screen). Faster than the screen turns vsync off for the app (Chromium on Linux, WebView2 on
-  Windows; needs a restart, which the setting offers).
+- **Settings → Frame rate**: a vsync switch (on by default; off needs the Chromium build or
+  Windows and a restart, which the setting offers) and a limit from 30 fps up to 360 fps or
+  unlimited (default: match the screen). With vsync off, *Find the best limit* tries limits on
+  the live map and keeps the highest one that runs evenly without delaying input; between
+  frames the app sleeps instead of asking for frame after frame.
 - **Saving power**: how fast the map moves while the window isn't focused (default 30 fps,
   down to stopping, or no change), and optionally a lower rate after a while without input.
   Any mouse, key or touch input brings the full rate back right away.

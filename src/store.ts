@@ -215,7 +215,7 @@ export const defaultSettings = (): Settings => ({
   profileAs: "popup",
   sharing: defaultSharing(),
   people: { loadEveryone: false, keep: "potential", showBlocked: false },
-  perf: { fps: 0, unfocusedFps: 30, idleAfter: 0, idleFps: 30, screenHz: 0 },
+  perf: { fps: 0, unfocusedFps: 30, idleAfter: 0, idleFps: 30, screenHz: 0, vsync: true },
   lastVersion: "",
 });
 
@@ -538,6 +538,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       idleAfter: Math.round(num(raw.perf?.idleAfter, d.perf.idleAfter, 0, 86400)),
       idleFps: Math.round(num(raw.perf?.idleFps, d.perf.idleFps, 0, 1000)),
       screenHz: Math.round(num(raw.perf?.screenHz, 0, 0, 1000)),
+      vsync: typeof raw.perf?.vsync === "boolean" ? raw.perf.vsync : d.perf.vsync,
     },
     people: {
       loadEveryone: typeof raw.people?.loadEveryone === "boolean" ? raw.people.loadEveryone : d.people.loadEveryone,

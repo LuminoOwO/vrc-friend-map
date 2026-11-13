@@ -483,8 +483,13 @@ export function GraphView() {
         const since = now - lastDrawRef.current;
         if (since < interval - 1) {
           const wait = interval - since;
-          // Long waits sleep instead of checking every screen refresh.
-          if (wait > 40) waitRef.current = setTimeout(() => ((waitRef.current = 0), (rafRef.current = requestAnimationFrame(tick))), wait - 20);
+          // Sleep instead of asking for frame after frame: with vsync off the browser
+          // would otherwise call back ~1000 times a second and keep the main thread
+          // (and your input) waiting. Short waits with vsync on: just the next frame.
+          const unsynced = !viewRef.current.settings.perf.vsync;
+          const margin = unsynced ? 1 : 20;
+          if (wait > (unsynced ? 2 : 40))
+            waitRef.current = setTimeout(() => ((waitRef.current = 0), (rafRef.current = requestAnimationFrame(tick))), Math.max(0, wait - margin));
           else rafRef.current = requestAnimationFrame(tick);
           return;
         }
