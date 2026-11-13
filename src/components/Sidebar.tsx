@@ -1,19 +1,18 @@
 import { useMemo, useState } from "react";
 import { duplicateColorIds, pickCircleColor } from "../colors";
 import { useDerived } from "../derived";
-import { fmtDate, relTime } from "../model";
+import { relTime } from "../model";
 import { addToCircle, createCircle, deleteCircle, getState, patchCircle, setState, updateFilters, updateLocal, useApp } from "../store";
 import { IN_GAME_STATUSES } from "../model";
 import { ColorPicker } from "./ColorPicker";
 import { FilterChip, clearAll, statusToggle } from "./FilterChip";
 import { Icon } from "./Icon";
 import { SuggestedGroups } from "./SuggestedGroups";
+import { ActivityText, KIND_ICON, friendLogEntries, useActivityLoaded } from "./ActivityView";
 
 export function Sidebar() {
   const circles = useApp((s) => s.local.circles);
   const filters = useApp((s) => s.filters);
-  const friendLog = useApp((s) => s.local.friendLog);
-  const logSince = useApp((s) => s.local.logSince);
   const cache = useApp((s) => s.cache);
   const { friends, edges } = useDerived();
   const [name, setName] = useState("");
@@ -198,28 +197,46 @@ export function Sidebar() {
 
       <SuggestedGroups />
 
-      <section>
-        <h3>Friend changes</h3>
-        {logSince ? <p className="muted small">Friends added or removed since {fmtDate(logSince)}.</p> : null}
-        {friendLog.length === 0 ? (
-          <p className="muted small">No adds or removals seen yet.</p>
-        ) : (
-          <ul className="log">
-            {[...friendLog]
-              .reverse()
-              .slice(0, 30)
-              .map((e, i) => (
-                <li key={`${e.id}-${e.t}-${i}`}>
-                  <span className={e.type === "added" ? "added" : "removed"}>{e.type === "added" ? "+" : "−"}</span>
-                  <button className="btn link" disabled={!cache.friends[e.id]} onClick={() => setState({ selectedId: e.id })}>
-                    {cache.friends[e.id]?.displayName ?? e.name}
-                  </button>
-                  <span className="muted small">{relTime(e.t)}</span>
-                </li>
-              ))}
-          </ul>
-        )}
-      </section>
+      <RecentActivity />
     </aside>
+  );
+}
+
+/** The latest things from the Activity tab (arrivals in a new instance left out). */
+function RecentActivity() {
+  useActivityLoaded();
+  const activity = useApp((s) => s.activity);
+  const friendLog = useApp((s) => s.local.friendLog);
+  const recent = useMemo(
+    () =>
+      [...activity.filter((e) => !e.initial && e.kind !== "friend-add" && e.kind !== "friend-remove"), ...friendLogEntries(friendLog.slice(-20))]
+        .sort((a, b) => b.t - a.t)
+        .slice(0, 25),
+    [activity, friendLog],
+  );
+  return (
+    <section>
+      <div className="row between">
+        <h3>Activity</h3>
+        <button className="btn link small" onClick={() => setState({ view: "activity" })}>
+          See all
+        </button>
+      </div>
+      {recent.length === 0 ? (
+        <p className="muted small">Nothing yet. Friends coming online, joining your world, being added or removed show up here.</p>
+      ) : (
+        <ul className="log side-activity">
+          {recent.map((e) => (
+            <li key={e.key} className={`act-${e.kind}`} title={new Date(e.t).toLocaleString()}>
+              <Icon name={KIND_ICON[e.kind]} size={13} />
+              <span className="act-text">
+                <ActivityText e={e} />
+              </span>
+              <span className="muted small">{relTime(e.t)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }

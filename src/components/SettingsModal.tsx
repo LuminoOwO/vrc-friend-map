@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { scoreSection } from "../settingsSearch";
-import { backend, type GraphicsInfo, type GraphicsMode } from "../backend";
+import { backend, isMobile, isTauri, type GraphicsInfo, type GraphicsMode } from "../backend";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, wipeEverything } from "../session";
-import { flushSaves, getState, setState, showToast, updatePeople, updateCache, updateGroupSettings, updateSounds, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
-import { celebrateNewFriends, playSound, SOUNDS } from "../notify";
+import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
+import { CloseSection, NotificationsSection } from "./NotificationsSection";
 import { forgetObserved } from "../together";
-import type { GroupSettings, MapSettings, SoundSettings, Theme } from "../types";
+import type { GroupSettings, MapSettings, Theme } from "../types";
 
 const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: string }[] = [
   { value: "dark", label: "Dark", bg: "#0b1015", panel: "#18242e", accent: "#19c3b1" },
@@ -339,9 +339,14 @@ export function SettingsModal() {
           <Diagnostics />
         </Sec>
 
-        <Sec id="sound" cat="sounds" title="New friends" keys="sound notification volume chime">
-          <SoundSection />
+        <Sec id="notify" cat="sounds" title="Notifications" keys="sound notification volume chime online offline alert mute ping tune friend added removed joined left world once date waiting">
+          <NotificationsSection />
         </Sec>
+        {isTauri && !isMobile && (
+          <Sec id="close" cat="sounds" title="Closing the window" keys="tray minimize background close quit exit">
+            <CloseSection />
+          </Sec>
+        )}
 
         <Sec id="logs" cat="logs" title="Game logs" keys="log folder steam instance here live">
           <GameLogSection />
@@ -399,7 +404,7 @@ const CATS: { id: Cat; label: string; icon: string }[] = [
   { id: "people", label: "People", icon: "users" },
   { id: "logs", label: "Game logs & groups", icon: "clock" },
   { id: "sharing", label: "Sharing & servers", icon: "server" },
-  { id: "sounds", label: "Sounds", icon: "sound" },
+  { id: "sounds", label: "Notifications", icon: "sound" },
   { id: "account", label: "Account & data", icon: "user" },
 ];
 
@@ -664,65 +669,6 @@ function GroupSection() {
           Show {dismissed} dismissed suggestion{dismissed === 1 ? "" : "s"} again
         </button>
       )}
-    </>
-  );
-}
-
-function SoundSection() {
-  const snd = useApp((s) => s.settings.sounds);
-  const demo = useApp((s) => s.demo);
-  return (
-    <>
-      <h3>New friends</h3>
-      <p className="small muted">
-        When someone accepts your friend request (or you accept theirs), VRChat tells the app within a second or two, on any device. Their picture
-        pops onto the map with a few rings around it.
-      </p>
-      <label className="check">
-        <input type="checkbox" checked={snd.newFriend} onChange={(e) => updateSounds({ newFriend: e.target.checked })} />
-        Play a sound
-      </label>
-      <div className="row">
-        <label className="field narrow">
-          <span>Sound</span>
-          <select value={snd.sound} onChange={(e) => updateSounds({ sound: e.target.value as SoundSettings["sound"] })}>
-            {SOUNDS.map((x) => (
-              <option key={x.value} value={x.value}>
-                {x.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field narrow">
-          <span>Volume {Math.round(snd.volume * 100)}%</span>
-          <input type="range" min={0} max={1} step={0.05} value={snd.volume} onChange={(e) => updateSounds({ volume: Number(e.target.value) })} />
-        </label>
-      </div>
-      <div className="row">
-        <button className="btn" onClick={() => playSound(snd.sound, snd.volume)}>
-          <Icon name="sound" size={16} /> Play it
-        </button>
-        {demo && (
-          <button
-            className="btn"
-            onClick={() => {
-              const s = getState();
-              const ids = Object.keys(s.cache.friends);
-              const base = s.cache.friends[ids[Math.floor(Math.random() * ids.length)]];
-              const id = `usr_demo_new_${Date.now()}`;
-              updateCache((c) => ({
-                ...c,
-                friends: { ...c.friends, [id]: { ...base, id, displayName: `NewFriend${Math.floor(Math.random() * 90 + 10)}`, status: "join me", location: "private" } },
-                presence: { ...c.presence, [id]: "online" },
-              }));
-              celebrateNewFriends([id]);
-              setState({ settingsOpen: false });
-            }}
-          >
-            Try it: add a demo friend
-          </button>
-        )}
-      </div>
     </>
   );
 }

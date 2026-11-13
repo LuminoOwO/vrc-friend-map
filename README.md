@@ -16,6 +16,9 @@ affiliated with VRChat Inc.
   circles.
 - **Who's in your instance**, live, plus an **activity log** of joins, leaves, world changes
   and friends coming online.
+- **Notifications with sounds** when friends come online, join your world, add or remove you:
+  for everyone or only people you pick, even just once. Each friend gets their own little tune.
+  Keeps running in the tray.
 - **Profiles like VRChat's**, with friend requests, unfriend, block and mute.
 - **Optional servers** to share with friends (end-to-end encrypted) and log around the clock.
 - **Gentle on VRChat's API**, and everything stays on your device unless you add a server.

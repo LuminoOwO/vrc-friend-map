@@ -25,7 +25,7 @@ GIT = "https://github.com/tauri-apps/tauri"
 REV = "9d1a5b176e337c8395362a4e7c99bac99b36a1d1"  # feat/cef, 2026-10-07
 PLUGINS_GIT = "https://github.com/tauri-apps/plugins-workspace"
 PLUGINS_REV = "835adce473e8f059f6ba84660dd07bcb19fb9030"  # feat/cef
-PLUGINS = ["tauri-plugin-opener"]
+PLUGINS = ["tauri-plugin-opener", "tauri-plugin-notification"]
 CRATES = ["tauri", "tauri-build", "tauri-runtime", "tauri-utils", "tauri-macros", "tauri-codegen", "tauri-plugin"]
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent / "src-tauri"

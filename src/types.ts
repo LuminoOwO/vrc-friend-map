@@ -288,9 +288,15 @@ export interface ShareServer {
   encrypt: boolean | null;
   shareFriends: boolean;
   shareActivity: boolean;
-  /** Who may receive it: all friends, or the members of some circles. */
-  audience: "all" | "circles";
+  /** Who may receive it: all friends, the members of some circles, or people you picked. */
+  audience: "all" | "circles" | "picked";
   circleIds: string[];
+  /** audience "picked": these friends. */
+  audiencePicked: string[];
+  /** Put new friends on the picked recipients automatically. */
+  audienceAutoAdd: boolean;
+  /** Which friends the shared friend list and activity cover. */
+  include: PeopleSelection;
   /** Fetch what others share with me here. */
   download: boolean;
   /** You paired this server's logger. */
@@ -304,7 +310,18 @@ export interface ShareServer {
   lastNote: string;
 }
 
+/** A choice of friends: everyone, the members of some circles, or hand-picked people. */
+export interface PeopleSelection {
+  who: "all" | "circles" | "picked";
+  circleIds: string[];
+  picked: string[];
+  /** Add new friends to `picked` automatically. */
+  autoAdd: boolean;
+}
+
 export interface SharingSettings {
+  /** Who goes into a list shared by hand (Shared lists → Share your list). */
+  exportPick: PeopleSelection;
   encDefault: EncDefault;
   autoSync: boolean;
   /** Minutes between syncs while the app is open. */
@@ -346,6 +363,9 @@ export interface Settings {
   logs: LogSettings;
   groups: GroupSettings;
   sounds: SoundSettings;
+  notify: NotifySettings;
+  /** Desktop: what closing the window does. */
+  closeAction: "ask" | "tray" | "quit";
   theme: Theme;
   /** Open profiles as a popup over everything, or as a panel at the side. */
   profileAs: "popup" | "sidebar";
@@ -478,4 +498,43 @@ export interface PerfSettings {
   screenHz: number;
   /** Wait for the screen (on) or draw as soon as a frame is due (off; Chromium / WebView2, next start). */
   vsync: boolean;
+}
+
+// ---------- notifications (src/notifications.ts) ----------
+
+export type NotifyEvent = "added" | "removed" | "online" | "offline" | "joined" | "left";
+
+/** Per person: follow the general rules (no entry), always, only the next time they come online, or never. */
+export interface NotifyPerson {
+  mode: "always" | "once" | "never";
+}
+
+export interface NotifySettings {
+  /** Master switch. */
+  enabled: boolean;
+  events: Record<NotifyEvent, boolean>;
+  /** Who counts for "came online" / "went offline": everyone, people in some circles, or only people you picked. */
+  scope: "everyone" | "circles" | "picked";
+  circleIds: string[];
+  people: Record<string, NotifyPerson>;
+  /** Play sounds. */
+  sound: boolean;
+  /** 0 – 1 */
+  volume: number;
+  /** Per event: a built-in sound's name, "custom:<id>", or "none". */
+  actionSounds: Record<NotifyEvent, string>;
+  /** After the action sound: each person's own tune, made from their name. */
+  personTune: boolean;
+  /** System notifications: always, only while the app is in the background, or never. */
+  system: "always" | "background" | "never";
+  /** Muted until this time (ms); 0 = not muted, -1 = until unmuted. */
+  muteUntil: number;
+}
+
+/** A sound file you added (kept in store/sounds.json). */
+export interface CustomSound {
+  id: string;
+  name: string;
+  /** data: URL */
+  data: string;
 }

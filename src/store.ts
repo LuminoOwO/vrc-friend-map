@@ -21,6 +21,10 @@ import type {
   SharingSettings,
   ShareServer,
   SoundSettings,
+  NotifyEvent,
+  NotifyPerson,
+  NotifySettings,
+  PeopleSelection,
   SyncState,
 } from "./types";
 
@@ -63,6 +67,8 @@ export interface AppState {
   /** A message that stays until dismissed (version changes, data from a newer version). */
   notice: string | null;
   settingsOpen: boolean;
+  /** The close button was pressed and the app should ask what to do. */
+  closeAsk: boolean;
   settingsTab: string;
   sidebarOpen: boolean;
   /** Live connection to VRChat's event stream. */
@@ -145,6 +151,20 @@ export const defaultMap = (): MapSettings => ({
 });
 
 export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
+export const NOTIFY_EVENTS: NotifyEvent[] = ["added", "removed", "online", "offline", "joined", "left"];
+export const defaultNotify = (): NotifySettings => ({
+  enabled: true,
+  events: { added: true, removed: true, online: false, offline: false, joined: false, left: false },
+  scope: "everyone",
+  circleIds: [],
+  people: {},
+  sound: true,
+  volume: 0.6,
+  actionSounds: { added: "sparkle", removed: "fall", online: "rise", offline: "soft-fall", joined: "knock", left: "door" },
+  personTune: true,
+  system: "background",
+  muteUntil: 0,
+});
 
 export const defaultLogSettings = (): LogSettings => ({
   enabled: true,
@@ -170,6 +190,7 @@ export const defaultGroupSettings = (): GroupSettings => ({
 });
 
 export const defaultSharing = (): SharingSettings => ({
+  exportPick: allPeople(),
   encDefault: "server",
   autoSync: true,
   intervalMin: 30,
@@ -177,6 +198,16 @@ export const defaultSharing = (): SharingSettings => ({
   useLogger: true,
   servers: [],
 });
+
+export const allPeople = (): PeopleSelection => ({ who: "all", circleIds: [], picked: [], autoAdd: true });
+
+function normalizePick(raw: unknown): PeopleSelection {
+  const d = allPeople();
+  if (!isObj(raw)) return d;
+  const r = raw as Raw;
+  const strs = (v: unknown) => (Array.isArray(v) ? v.filter((c: unknown): c is string => typeof c === "string") : []);
+  return { who: oneOf(r.who, ["all", "circles", "picked"] as const, "all"), circleIds: strs(r.circleIds), picked: strs(r.picked), autoAdd: typeof r.autoAdd === "boolean" ? r.autoAdd : true };
+}
 
 export const newServer = (url: string): ShareServer => ({
   id: uid(),
@@ -192,6 +223,9 @@ export const newServer = (url: string): ShareServer => ({
   shareActivity: true,
   audience: "all",
   circleIds: [],
+  audiencePicked: [],
+  audienceAutoAdd: true,
+  include: allPeople(),
   download: true,
   loggerOwner: false,
   ackUnencrypted: false,
@@ -214,6 +248,8 @@ export const defaultSettings = (): Settings => ({
   logs: defaultLogSettings(),
   groups: defaultGroupSettings(),
   sounds: defaultSounds(),
+  notify: defaultNotify(),
+  closeAction: "ask",
   theme: "dark",
   profileAs: "popup",
   sharing: defaultSharing(),
@@ -273,6 +309,7 @@ let state: AppState = {
   toast: null,
   notice: null,
   settingsOpen: false,
+  closeAsk: false,
   settingsTab: "general",
   sidebarOpen: typeof window !== "undefined" ? window.innerWidth > 900 : true,
   live: { connected: false, message: "" },
@@ -306,6 +343,7 @@ function subscribe(l: () => void) {
   listeners.add(l);
   return () => listeners.delete(l);
 }
+export const subscribeState = subscribe;
 
 /** Select a slice of state. Selectors must return existing references or primitives. */
 export function useApp<T>(selector: (s: AppState) => T): T {
@@ -395,6 +433,40 @@ export function updateMap(patch: Partial<MapSettings>) {
 
 export function updateLogSettings(patch: Partial<LogSettings>) {
   updateSettings({ logs: { ...state.settings.logs, ...patch } });
+}
+
+export function updateNotify(patch: Partial<NotifySettings>) {
+  updateSettings({ notify: { ...state.settings.notify, ...patch } });
+}
+
+function normalizeNotify(raw: unknown, oldSounds: Partial<SoundSettings> | undefined): NotifySettings {
+  const d = defaultNotify();
+  const n = (raw && typeof raw === "object" ? raw : {}) as Partial<NotifySettings>;
+  const fresh = !raw || typeof raw !== "object";
+  const events = { ...d.events };
+  for (const e of NOTIFY_EVENTS) if (typeof n.events?.[e] === "boolean") events[e] = n.events[e];
+  // From before 0.9.0: "Play a sound for new friends" and its sound.
+  if (fresh && oldSounds && typeof oldSounds.newFriend === "boolean") events.added = oldSounds.newFriend;
+  const actionSounds = { ...d.actionSounds };
+  if (fresh && oldSounds?.sound) actionSounds.added = oldSounds.sound;
+  for (const e of NOTIFY_EVENTS) if (typeof n.actionSounds?.[e] === "string") actionSounds[e] = n.actionSounds[e];
+  const people: Record<string, NotifyPerson> = {};
+  for (const [id, p] of Object.entries(n.people ?? {})) {
+    if (p && ["always", "once", "never"].includes((p as NotifyPerson).mode)) people[id] = { mode: (p as NotifyPerson).mode };
+  }
+  return {
+    enabled: typeof n.enabled === "boolean" ? n.enabled : d.enabled,
+    events,
+    scope: oneOf(n.scope, ["everyone", "circles", "picked"] as const, d.scope),
+    circleIds: Array.isArray(n.circleIds) ? n.circleIds.filter((x) => typeof x === "string") : [],
+    people,
+    sound: typeof n.sound === "boolean" ? n.sound : d.sound,
+    volume: num(n.volume, fresh && typeof oldSounds?.volume === "number" ? oldSounds.volume : d.volume, 0, 1),
+    actionSounds,
+    personTune: typeof n.personTune === "boolean" ? n.personTune : d.personTune,
+    system: oneOf(n.system, ["always", "background", "never"] as const, d.system),
+    muteUntil: typeof n.muteUntil === "number" ? n.muteUntil : 0,
+  };
 }
 
 export function updateSounds(patch: Partial<SoundSettings>) {
@@ -510,6 +582,8 @@ export function normalizeSettings(raw: Raw | null): Settings {
       showOthers: oneOf(m.showOthers, ["off", "here", "met", "all"] as const, d.map.showOthers),
       hereView: oneOf(m.hereView, ["list", "compact", "hidden"] as const, d.map.hereView),
     },
+    notify: normalizeNotify(raw.notify, snd),
+    closeAction: oneOf(raw.closeAction, ["ask", "tray", "quit"] as const, d.closeAction),
     sounds: {
       ...snd,
       newFriend: typeof snd.newFriend === "boolean" ? snd.newFriend : d.sounds.newFriend,
@@ -584,8 +658,11 @@ function normalizeSharing(raw: unknown): SharingSettings {
             ...x,
             info: isObj(x.info) ? (x.info as unknown as ShareServer["info"]) : null,
             encrypt: typeof x.encrypt === "boolean" ? x.encrypt : null,
-            audience: oneOf(x.audience, ["all", "circles"] as const, "all"),
+            audience: oneOf(x.audience, ["all", "circles", "picked"] as const, "all"),
             circleIds: Array.isArray(x.circleIds) ? x.circleIds.filter((c: unknown) => typeof c === "string") : [],
+            audiencePicked: Array.isArray(x.audiencePicked) ? x.audiencePicked.filter((c: unknown) => typeof c === "string") : [],
+            audienceAutoAdd: bool(x.audienceAutoAdd, true),
+            include: normalizePick(x.include),
             published: Array.isArray(x.published) ? x.published.filter((c: unknown) => typeof c === "string") : [],
             upload: bool(x.upload, n.upload),
             download: bool(x.download, n.download),
@@ -600,6 +677,7 @@ function normalizeSharing(raw: unknown): SharingSettings {
     : [];
   return {
     ...r,
+    exportPick: normalizePick(r.exportPick),
     encDefault: oneOf(r.encDefault, ["server", "on", "off"] as const, d.encDefault),
     autoSync: bool(r.autoSync, d.autoSync),
     intervalMin: num(r.intervalMin, d.intervalMin, 10, 24 * 60),
@@ -673,7 +751,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
-  "0.9.0": "Linux runs on Chromium now (smooth on big windows), a new Activity tab with who joined and left and friends coming online, unfriend / block / mute buttons on profiles, a frame-rate limit with power saving, Settings → Diagnostics, and choices for which non-friends' profiles to load and keep.",
+  "0.9.0": "notifications with sounds (each friend gets their own little tune) when friends come online, join your world, add or remove you, for everyone or only people you pick (also just once, when you're waiting for someone); a tray icon so the app keeps running with the window closed; an Activity tab; hand-picked people for sharing; unfriend / block / mute on profiles; Linux on Chromium; a frame-rate limit with power saving.",
   "0.8.0": "you're on the map now (between your closest friends), a strip shows who's in your VRChat instance right now, and Map options → Not friends yet shows people you could befriend, with a friend-request button on their profile.",
   "0.7.4": "Settings → Graphics lets you choose GPU or software rendering for the map (Linux and Windows), if it's slow or the window stays blank.",
   "0.7.0": "share friend lists and activity with friends through your own or a friend's server (end-to-end encrypted), and run vfm-server on a spare device to log your friends' instance hopping 24/7 for better circle suggestions. Settings → Servers.",

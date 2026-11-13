@@ -8,6 +8,7 @@ import { DetailPanel } from "./components/DetailPanel";
 import { GraphView } from "./components/GraphView";
 import { LoginScreen } from "./components/LoginScreen";
 import { SettingsModal } from "./components/SettingsModal";
+import { CloseDialog } from "./components/CloseDialog";
 import { ConfirmUnencrypted, ServersModal } from "./components/ServersModal";
 import { loadShared, startSharing, stopSharing } from "./share";
 import { syncLive } from "./live";
@@ -102,6 +103,7 @@ export default function App() {
       <>
         <ThemeSync />
         <LoginScreen canLogin={isTauri} />
+        <CloseDialog />
         <ToastView />
       </>
     );
@@ -138,6 +140,7 @@ export default function App() {
       {serversOpen && <ServersModal />}
       <ConfirmUnencrypted />
       <ImageViewer />
+      <CloseDialog />
       <ToastView />
     </div>
   );

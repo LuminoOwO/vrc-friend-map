@@ -11,6 +11,7 @@ mod livelog;
 mod pipeline;
 mod share;
 mod storage;
+mod tray;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -456,6 +457,7 @@ pub fn run() {
     let builder = builder.runtime(graphics::chromium_runtime());
     builder
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .register_asynchronous_uri_scheme_protocol("vrcimg", images::handle)
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
@@ -476,8 +478,11 @@ pub fn run() {
                 image_dir,
                 data_dir,
             }));
+            #[cfg(desktop)]
+            tray::setup(app.handle());
             Ok(())
         })
+        .on_window_event(tray::on_window_event)
         .invoke_handler(tauri::generate_handler![
             session_info,
             login_start,
@@ -532,6 +537,11 @@ pub fn run() {
             logger_unpair,
             logger_status,
             logger_stats,
+            tray::tray_available,
+            tray::tray_set_close_action,
+            tray::tray_set_muted,
+            tray::window_hide,
+            tray::app_quit,
         ])
         .run(tauri::generate_context!())
         .expect("error while running VRC Friend Map");

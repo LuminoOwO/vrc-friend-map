@@ -171,6 +171,16 @@ pub fn env_plan(mode: Mode, os: Os, dmabuf_default: bool, get: &dyn Fn(&str) -> 
     out
 }
 
+/// Chromium switches that keep the page working while the window is hidden in
+/// the tray (timers, the live connection, notification sounds) and let sounds
+/// play without a click first.
+pub const BACKGROUND_SWITCHES: [&str; 4] = [
+    "--autoplay-policy=no-user-gesture-required",
+    "--disable-background-timer-throttling",
+    "--disable-renderer-backgrounding",
+    "--disable-backgrounding-occluded-windows",
+];
+
 /// Called first thing in `main`, before the web view exists.
 pub fn apply_startup() {
     if cfg!(feature = "chromium") {
@@ -204,6 +214,15 @@ pub fn apply_startup() {
         };
         std::env::set_var(key, value);
     }
+    if matches!(os, Os::Windows) {
+        let key = "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS";
+        let flags = BACKGROUND_SWITCHES.join(" ");
+        let value = match std::env::var(key).ok().filter(|v| !v.trim().is_empty()) {
+            Some(existing) => format!("{existing} {flags}"),
+            None => flags,
+        };
+        std::env::set_var(key, value);
+    }
 }
 
 /// Chromium switches for `mode` (Chromium build only). Auto keeps Chromium's
@@ -226,6 +245,12 @@ pub fn chromium_runtime() -> tauri_runtime_cef::Cef {
     // a bare name would reach Chromium as a plain argument and do nothing.
     for switch in chromium_switches(mode) {
         cef = cef.command_line_arg(format!("--{switch}"), None::<String>);
+    }
+    for switch in BACKGROUND_SWITCHES {
+        cef = match switch.split_once('=') {
+            Some((k, v)) => cef.command_line_arg(k.to_string(), Some(v.to_string())),
+            None => cef.command_line_arg(switch.to_string(), None::<String>),
+        };
     }
     if load_unlocked() {
         // No vsync and no frame cap: requestAnimationFrame runs as fast as it can;

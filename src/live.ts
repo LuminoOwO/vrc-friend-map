@@ -1,8 +1,9 @@
 // Who's in your instance right now, from VRChat's log as it's written
 // (src-tauri/src/livelog.rs). Desktop only, nothing is asked of VRChat.
 import { addActivity, fromLive, loadActivity } from "./activity";
+import { notifyEvent } from "./notifications";
 import { backend, isTauri } from "./backend";
-import { logDirs, logsSupported } from "./logs";
+import { logDirs, logsSupported, naiveToDate } from "./logs";
 import { getState, setState } from "./store";
 import type { LiveSnapshot } from "./types";
 
@@ -24,7 +25,16 @@ export async function syncLive() {
     return;
   }
   unlisten ??= await backend.onLive((here) => setState({ here }));
-  unlistenEvents ??= await backend.onLiveEvents((ev) => addActivity(ev.map(fromLive)));
+  unlistenEvents ??= await backend.onLiveEvents((ev) => {
+    addActivity(ev.map(fromLive));
+    // Friends joining or leaving your instance, as it happens (not the log's backlog).
+    const s = getState();
+    for (const e of ev) {
+      if ((e.kind !== "join" && e.kind !== "leave") || e.initial || !s.cache.friends[e.id]) continue;
+      if (Date.now() - naiveToDate(e.ts).getTime() > 90_000) continue;
+      notifyEvent(e.kind === "join" ? "joined" : "left", e.id, s.cache.friends[e.id].displayName, { world: e.worldName || undefined });
+    }
+  });
   await loadActivity();
   try {
     await backend.liveStart(logDirs());

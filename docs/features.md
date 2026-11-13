@@ -137,12 +137,26 @@ A readable log of what happened around you, kept 4 days on this device.
 - Overview tiles (in VRChat / web or app) work as quick filters.
 - Search by name.
 
+## Notifications
+
+- **Events:** a friend added you, removed you, came online, went offline, joined your instance,
+  left it (the last two from the game log, PC). Each has its own switch and sound.
+- **Who:** *came online / went offline* for all friends, people in some circles, or only people
+  you pick. Per person: *always*, *next time they come online* (once), or *never*.
+- **Sounds:** a sound for the event, then the person's own tune, generated from their name.
+  10 built-in sounds, or your own audio files.
+- **System notifications** on every platform while the app is in the background; mute for a
+  while or until you turn it back on.
+- **Tray (desktop):** close the window and the app keeps running in the tray, notifying and
+  collecting without drawing. The tray menu mutes, opens the window or quits.
+
 ## Live updates
 
 - One live connection to VRChat's event stream. New friends appear right away, with an
   optional sound and a pop-in on the map.
 - People coming online or going offline, unfriending and status changes all show instantly.
-- The sidebar keeps a list of friends added or removed since your first sync.
+- Friends added or removed since your first sync are kept in the Activity tab; the sidebar
+  shows the latest activity.
 
 ## Sharing and servers (optional)
 
@@ -161,8 +175,9 @@ A readable log of what happened around you, kept 4 days on this device.
   owners choose force-off, optional, recommended or force-on.
 - **Signed uploads and key pinning:** a server can't fake what someone shared or swap their
   key without the app noticing. Friends can confirm keys with a line in their VRChat bio.
-- **Choose who gets your data:** all friends or some circles. Share your friend list, your
-  activity, or both.
+- **Choose who gets your data and who's in it:** all friends, some circles, or people you pick
+  (optionally adding new friends automatically). Share your friend list, your activity, or
+  both. The list you share by hand can be hand-picked too.
 
 ## Look and feel
 

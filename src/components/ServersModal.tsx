@@ -21,6 +21,7 @@ import {
 import { setState, showToast, updateServer, updateSharing, useApp } from "../store";
 import type { EncDefault, EncPolicy, ShareServer } from "../types";
 import { Icon } from "./Icon";
+import { PeopleChooser } from "./PeopleChooser";
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -349,7 +350,6 @@ function KeySection({ me, setMe }: { me: MyIdentity | null; setMe: (m: MyIdentit
 }
 
 function ServerCard({ server: s }: { server: ShareServer }) {
-  const circles = useApp((st) => st.local.circles);
   const busy = useApp((st) => st.shareBusy);
   const [invite, setInvite] = useState("");
   const [code, setCode] = useState("");
@@ -466,35 +466,18 @@ function ServerCard({ server: s }: { server: ShareServer }) {
                 <Why text="Friend list: your friends' names and IDs, so friends see your connections even when VRChat hides mutuals. Activity: how much time pairs of your friends spent in the same instance (from your game logs, live locations and loggers), which makes their group suggestions better. Nothing else is sent." />
               </div>
               <div className="row">
+                <span className="small">Which friends it covers:</span>
+                <Why text="Only these friends go into your shared friend list, and only time spent between them goes into your activity. Everyone else is left out." />
+              </div>
+              <PeopleChooser value={s.include} onChange={(include) => set({ include })} />
+              <div className="row">
                 <span className="small">Who can get it:</span>
-                <div className="seg" role="radiogroup" aria-label="Who can get it">
-                  <button role="radio" aria-checked={s.audience === "all"} className={s.audience === "all" ? "on" : ""} onClick={() => set({ audience: "all" })}>
-                    All my friends
-                  </button>
-                  <button role="radio" aria-checked={s.audience === "circles"} className={s.audience === "circles" ? "on" : ""} onClick={() => set({ audience: "circles" })}>
-                    Some circles
-                  </button>
-                </div>
                 <Why text="Only these people can download what you share here, and only if they joined this server too. Friends who join later get it on your next sync." />
               </div>
-              {s.audience === "circles" && (
-                <div className="chips">
-                  {circles.length === 0 && <span className="small muted">Make circles first (on the map or in the sidebar).</span>}
-                  {circles.map((c) => {
-                    const on = s.circleIds.includes(c.id);
-                    return (
-                      <button
-                        key={c.id}
-                        className={`chip ${on ? "on" : ""}`}
-                        style={{ "--chip": c.color } as React.CSSProperties}
-                        onClick={() => set({ circleIds: on ? s.circleIds.filter((x) => x !== c.id) : [...s.circleIds, c.id] })}
-                      >
-                        {c.name} ({c.members.length})
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              <PeopleChooser
+                value={{ who: s.audience, circleIds: s.circleIds, picked: s.audiencePicked, autoAdd: s.audienceAutoAdd }}
+                onChange={(v) => set({ audience: v.who, circleIds: v.circleIds, audiencePicked: v.picked, audienceAutoAdd: v.autoAdd })}
+              />
               <EncryptionSwitch server={s} />
               {serverSwitch(s).warn && s.ackUnencrypted && (
                 <p className="small muted">

@@ -58,6 +58,7 @@ In the app's data folder (Settings shows the exact path; on Linux
 | `store/local.json` | Your circles, imported lists, friend change log. |
 | `store/settings.json` | Preferences. |
 | `store/activity.json` | The activity log (4 days). |
+| `store/sounds.json` | Sound files you added for notifications. |
 | `store/observed.json` | Time together from live locations. |
 | `store/shared.json` | What friends shared with you through servers. |
 | `store/backups/` | Copies made before a format change, or when data came from a newer version. |

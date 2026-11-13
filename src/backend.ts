@@ -28,6 +28,7 @@ export interface GraphicsInfo {
 }
 
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+export const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad/i.test(navigator.userAgent);
 
 export interface ApiResponse {
   status: number;

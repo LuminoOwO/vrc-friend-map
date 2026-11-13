@@ -140,7 +140,8 @@ The Activity tab lists, newest first and grouped by day:
 - **From live updates (any device):** friends online / offline, changing worlds, added /
   removed.
 
-The chips at the top filter by type. *People already there when I arrived* hides the burst of
+It also has every friend added or removed since your first sync (the sidebar shows the latest
+few entries of all of this). The chips at the top filter by type. *People already there when I arrived* hides the burst of
 joins you see when you load into a world. Search finds names and worlds; click a name to open
 the profile. The log stays on this device for 4 days; *Clear* empties it.
 
@@ -172,6 +173,9 @@ Laid out like VRChat's own profile page:
     already know.
   - *Full list*: names and IDs. This also reveals friends who hide their mutuals, so only use
     it with people you trust.
+- **Who's in it:** all friends, some circles, or *People I pick* (a searchable list with
+  checkboxes and *Add new friends to this list automatically*). The same choice exists per
+  server, for what you share and for who may get it.
 - **Automatic sharing and 24/7 logging** need a server. See the
   [server sync tutorial](server-setup.md).
 
@@ -190,9 +194,36 @@ Laid out like VRChat's own profile page:
   report a problem.
 - **Game logs:** read logs, find the folder automatically, follow the log live, extra folders,
   how often to check, how long to keep history.
-- **New friends:** a sound (chime, sparkle, pop, bell) and volume.
+- **Notifications:** see [below](#notifications).
+- **Closing the window (desktop):** keep running in the tray, quit, or ask.
 - **Open profiles** as a popup or in a side panel.
 - **Themes:** Dark, OLED black, Light, Catppuccin Mocha / Macchiato / Latte, Nord, Dracula.
+
+## Notifications
+
+Settings → Notifications decides what you hear about:
+
+- **When:** switches for *became your friend*, *removed you*, *came online*, *went offline*,
+  *joined your instance* and *left your instance* (the last two need the game log on the PC).
+  Next to each: its sound and a play button.
+- **For whom:** *came online* and *went offline* for all friends, people in some circles, or
+  only people you pick.
+- **Per person:** use the bell on someone's profile (or *Add a friend…* in Settings):
+  - *Always*: when they come online or join your world, even if those are off in general.
+  - *Next time they come online*: once, then back to normal. Waiting for someone to show up
+    for a date or an event? Set this and do something else.
+  - *Never*: nothing about them, even when everyone else notifies.
+- **Sounds:** first the sound for what happened, then the person's own short tune, made from
+  their name, so after a while you can tell who it is by ear. Type a name to hear its tune.
+  *Add a sound file* uses your own sounds (up to 1 MB each).
+- **Mute** for a while or until you unmute: in Settings or from the tray icon.
+- **Pop-up notifications:** when the app is in the background (default), always, or never.
+  *Allow notifications* asks the system for permission. On phones the system's notification
+  sound plays; the app's own sounds play while it's open.
+
+On the desktop, closing the window asks once whether to keep running in the tray (recommended:
+notifications and data collection go on, nothing is drawn) or quit. Change it later in
+Settings → Notifications → Closing the window. Click the tray icon to bring the window back.
 
 ## Live updates
 

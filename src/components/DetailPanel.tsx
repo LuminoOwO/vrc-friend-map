@@ -5,6 +5,8 @@
 // this app's circles, time together and shared friends. One column on narrow
 // screens.
 import { openImage, type ViewerItem } from "./ImageViewer";
+import { removedByMe } from "../notifications";
+import { PERSON_MODES, setPersonMode } from "./NotificationsSection";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { backend, imgSrc } from "../backend";
 import { listMemberIds } from "../derived";
@@ -316,6 +318,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 <button className="btn" onClick={() => copy(`https://vrchat.com/home/user/${id}`)} title="Copy the profile link">
                   <Icon name="link" size={16} />
                 </button>
+                {relation === "friend" && <NotifyBell id={id} />}
               </div>
               {relation !== "me" && <ModerationRow id={id} name={f.displayName} friend={relation === "friend"} />}
 
@@ -766,7 +769,9 @@ function ModerationRow({ id, name, friend }: { id: string; name: string; friend:
             onClick={() =>
               confirming === "unfriend"
                 ? run(async () => {
+                    removedByMe.add(id);
                     const err = await unfriend(id);
+                    if (err) removedByMe.delete(id);
                     if (!err) applyPipelineEvent("friend-delete", { userId: id });
                     return err;
                   }, `${name} removed from your friends`)
@@ -814,5 +819,24 @@ function ModerationRow({ id, name, friend }: { id: string; name: string; friend:
       {demo && <span className="small muted">Not in demo mode.</span>}
       {error && <p className="error-text">{error}</p>}
     </div>
+  );
+}
+
+/** Per-person notification rule: general rules / always / once / never. */
+function NotifyBell({ id }: { id: string }) {
+  const mode = useApp((s) => s.settings.notify.people[id]?.mode ?? "default") as (typeof PERSON_MODES)[number]["value"];
+  const label = PERSON_MODES.find((m) => m.value === mode)?.label ?? "";
+  return (
+    <label className={`btn notify-bell ${mode !== "default" ? "on" : ""}`} title={`Notifications for this person: ${label}`}>
+      <Icon name={mode === "never" ? "bell-off" : "bell"} size={16} />
+      {mode === "once" ? "Next time online" : mode === "always" ? "Always" : mode === "never" ? "Muted" : ""}
+      <select value={mode} onChange={(e) => setPersonMode(id, e.target.value as (typeof PERSON_MODES)[number]["value"])}>
+        {PERSON_MODES.map((m) => (
+          <option key={m.value} value={m.value}>
+            {m.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }

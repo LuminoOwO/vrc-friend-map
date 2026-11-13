@@ -2,6 +2,8 @@
 // spaces requests out (>= 1 s apart) and backs off on 429. Profiles and mutuals
 // are cached and only refetched when older than the configured age.
 import { noteFriend } from "./activity";
+import { addNewFriendsToPicks } from "./selection";
+import { notifyEvent } from "./notifications";
 import { backend, type ApiResponse } from "./backend";
 import { celebrateNewFriends } from "./notify";
 import { getState, resetSync, setState, setSync, showToast, updateCache, updateLocal } from "./store";
@@ -133,12 +135,18 @@ async function fetchFriends(me: Me, gen: number) {
 }
 
 /** Keep a small log of friends added and removed since the first sync. */
-export function recordFriendChanges(current: string[], prevFriends: Record<string, Friend>) {
+/** Returns the new friends a notification was shown for. */
+export function recordFriendChanges(current: string[], prevFriends: Record<string, Friend>): Set<string> {
   const now = Date.now();
   const before = getState().local;
+  const notified = new Set<string>();
   if (before.logSince) {
     const prevIds = new Set(before.lastFriendIds);
-    celebrateNewFriends(current.filter((id) => !prevIds.has(id)));
+    const added = current.filter((id) => !prevIds.has(id));
+    celebrateNewFriends(added);
+    addNewFriendsToPicks(added);
+    const friends = getState().cache.friends;
+    for (const id of added.slice(0, 5)) if (notifyEvent("added", id, friends[id]?.displayName ?? "Someone")) notified.add(id);
   }
   updateLocal((l) => {
     const firstRun = !l.logSince;
@@ -155,6 +163,7 @@ export function recordFriendChanges(current: string[], prevFriends: Record<strin
     }
     return { ...l, logSince: l.logSince || now, lastFriendIds: current, friendLog: log.slice(-500) };
   });
+  return notified;
 }
 
 async function fetchFavorites() {
@@ -516,9 +525,9 @@ export function applyPipelineEvent(type: string, content: any) {
           : c.details,
         me: c.me && !c.me.friends.includes(id) ? { ...c.me, friends: [...c.me.friends, id] } : c.me,
       }));
-      recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
+      const notified = recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
       noteFriend("friend-add", id, friend.displayName);
-      showToast(`${friend.displayName} is now your friend`);
+      if (!notified.has(id)) showToast(`${friend.displayName} is now your friend`);
       refreshPerson(id); // load their mutual friends so lines appear
       return;
     }
@@ -537,7 +546,7 @@ export function applyPipelineEvent(type: string, content: any) {
       recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
       if (getState().selectedId === id) setState({ selectedId: null });
       noteFriend("friend-remove", id, name);
-      showToast(`${name} is no longer on your friends list`);
+      if (!notifyEvent("removed", id, name)) showToast(`${name} is no longer on your friends list`);
       return;
     }
     case "friend-online":
@@ -549,8 +558,13 @@ export function applyPipelineEvent(type: string, content: any) {
       {
         const name = content.user?.displayName ?? s.cache.friends[id]?.displayName ?? id;
         const wasOnline = (s.cache.presence[id] ?? "offline") === "online";
-        if (type === "friend-online" && !wasOnline) noteFriend("online", id, name);
-        else if (type === "friend-offline" && (s.cache.presence[id] ?? "offline") !== "offline") noteFriend("offline", id, name);
+        if (type === "friend-online" && !wasOnline) {
+          noteFriend("online", id, name);
+          notifyEvent("online", id, name);
+        } else if (type === "friend-offline" && (s.cache.presence[id] ?? "offline") !== "offline") {
+          noteFriend("offline", id, name);
+          notifyEvent("offline", id, name);
+        }
         else if (type === "friend-location" && typeof content.location === "string" && content.location !== s.cache.friends[id]?.location && content.location.startsWith("wrld_")) {
           noteFriend("location", id, name, { location: content.location, worldId: content.location.split(":")[0], worldName: content.world?.name });
         }

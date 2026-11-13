@@ -40,6 +40,35 @@ minor releases can change behavior.
   (and a warning when it's software rendering), web engine, environment flags, a quick drawing
   benchmark and a *Copy diagnostics* button.
 
+### Added (notifications)
+- **Settings → Notifications**: notify about friends who add you, remove you, come online, go
+  offline, join your instance or leave it (the last two from the game log, PC). Each event has
+  its own switch and sound.
+  - *Came online / went offline* for all friends, the people in some circles, or only people
+    you pick.
+  - **Per person** (bell on their profile, or the list in Settings): *always*, *next time they
+    come online* (once, then back to normal: for when you're waiting for someone), or *never*,
+    which also works when notifications are on for everyone.
+  - **Sounds**: a sound for what happened, then the person's own short tune, made from their
+    name (always the same for them; on by default). Choose from 10 built-in sounds or add
+    your own audio files.
+  - **Mute** for 30 min / 1 h / 4 h or until you unmute (also from the tray).
+  - **System notifications** on Windows, Linux, macOS, Android and iOS, when the app is in the
+    background (or always, or never). Phones use the system's notification sound; the app's own
+    sounds play while it's open.
+- **Tray icon (desktop)**: the app can keep running in the tray with the window closed. It keeps
+  notifying and collecting live updates and game logs, and draws nothing. The first time you
+  close the window it asks: tray (recommended) or quit, and whether to ask every time
+  (Settings → Notifications → Closing the window). The tray menu opens the window, mutes
+  notifications (30 min, 1 h, 4 h, 8 h, until tomorrow morning, until you turn them back on)
+  or quits.
+
+### Added (sharing)
+- **Hand-pick people** for sharing: the list you send by hand, what you share through a server
+  (whose names and time together go in) and who may get it can each be all friends, some
+  circles, or people you pick from a searchable list. *Add new friends to this list
+  automatically* keeps picked lists up to date.
+
 ### Added (more)
 - **Image viewer**: click a profile picture, banner, world picture, badge or group picture to see
   it full size, with zoom (wheel, pinch, buttons, double click), panning, flipping through a
@@ -52,10 +81,13 @@ minor releases can change behavior.
 - **Shared lists tab**: explains servers, lists yours with their state, and adds new ones
   right there (no more digging in Settings).
 - **Settings, sorted**: categories on the side (Appearance, Performance, People, Game logs &
-  groups, Sharing & servers, Sounds, Account & data) and a search that understands other
+  groups, Sharing & servers, Notifications, Account & data) and a search that understands other
   words for things ("ui style" finds Themes, "lag" finds Frame rate) and small typos.
 
 ### Changed (more)
+- The sidebar's *Friend changes* list moved into the Activity tab (with the full history since
+  your first sync, not only 4 days). The sidebar shows the latest activity instead.
+- Settings → *Sounds* is now *Notifications*; your new-friend sound settings carry over.
 - Full player cards on the map keep their name, status and details at every zoom level.
 - Phones: the app itself no longer zooms with pinch or double tap (the map and the image
   viewer still do).

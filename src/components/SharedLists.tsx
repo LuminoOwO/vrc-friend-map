@@ -6,9 +6,11 @@ import { useEffect, useMemo, useState } from "react";
 import { backend, randomHex } from "../backend";
 import { listMemberIds } from "../derived";
 import { fmtDate, uid } from "../model";
-import { getState, setState, showToast, updateFilters, updateLocal, useApp } from "../store";
+import { getState, setState, showToast, updateFilters, updateLocal, updateSharing, useApp } from "../store";
 import type { ImportedList } from "../types";
 import { Icon } from "./Icon";
+import { PeopleChooser } from "./PeopleChooser";
+import { selectedIds } from "../selection";
 
 const FORMAT = "vrc-friend-map/friends-v1";
 const MAX_ENTRIES = 20000;
@@ -41,9 +43,9 @@ async function copyText(text: string) {
 }
 
 async function buildExport(mode: "full" | "hashed"): Promise<ExportFile> {
-  const { cache } = getState();
+  const { cache, settings } = getState();
   const me = cache.me;
-  const friends = Object.values(cache.friends);
+  const friends = selectedIds(settings.sharing.exportPick).map((id) => cache.friends[id]);
   const base = {
     format: FORMAT,
     exportedAt: new Date().toISOString(),
@@ -138,6 +140,7 @@ export function SharedLists() {
   const imports = useApp((s) => s.local.imports);
   const cache = useApp((s) => s.cache);
   const demo = useApp((s) => s.demo);
+  const exportPick = useApp((s) => s.settings.sharing.exportPick);
   const [mode, setMode] = useState<"hashed" | "full">("hashed");
   const [paste, setPaste] = useState("");
   const [error, setError] = useState("");
@@ -228,6 +231,8 @@ export function SharedLists() {
               <p className="small muted">Shows your whole friends list, including people who turned off "Show mutual connections" in VRChat. Only use this with people you trust.</p>
             </div>
           </label>
+          <p className="small">Who's in it:</p>
+          <PeopleChooser value={exportPick} onChange={(v) => updateSharing({ exportPick: v })} />
           <div className="row">
             <button className="btn primary" disabled={busy || demo} onClick={() => doExport("copy")}>
               <Icon name="copy" size={16} /> Copy

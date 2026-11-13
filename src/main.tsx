@@ -4,8 +4,14 @@ import App from "./App";
 import * as store from "./store";
 import "./styles.css";
 import { applySafeArea } from "./safearea";
+import { unlockAudioOnInput } from "./notify";
+import { loadCustomSounds } from "./notifications";
+import { startTray } from "./tray";
 
 applySafeArea();
+unlockAudioOnInput();
+void loadCustomSounds();
+startTray();
 
 // Dev server only: lets UI test scripts set up state (stripped from builds).
 if (import.meta.env.DEV) {

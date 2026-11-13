@@ -5,6 +5,7 @@
 import { backend, type InfoResult, type PublishResult } from "./backend";
 import { getState, newServer, setState, showToast, updateLocal, updateServer, updateSharing } from "./store";
 import { combineStats } from "./together";
+import { selectedIds } from "./selection";
 import type { EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareServer, SharedData } from "./types";
 
 export const FRIENDS_FORMAT = "vrc-friend-map/friends-v1";
@@ -314,23 +315,18 @@ export function loggerPairs(d: SharedData | null): PairTime[][] {
 // ---------- uploading ----------
 
 function recipients(s: ShareServer): string[] {
-  const st = getState();
-  if (s.audience === "circles") {
-    const ids = new Set<string>();
-    for (const c of st.local.circles) if (s.circleIds.includes(c.id)) for (const m of c.members) ids.add(m);
-    return [...ids].filter((id) => st.cache.friends[id]);
-  }
-  return Object.keys(st.cache.friends);
+  return selectedIds({ who: s.audience, circleIds: s.circleIds, picked: s.audiencePicked, autoAdd: s.audienceAutoAdd });
 }
 
-function friendsPayload(): string {
+function friendsPayload(s: ShareServer): string {
   const st = getState();
   const me = st.cache.me;
   const body: FriendsPayload = {
     format: FRIENDS_FORMAT,
     owner: { id: me?.id, displayName: me?.displayName },
     exportedAt: new Date().toISOString(),
-    friends: Object.values(st.cache.friends)
+    friends: selectedIds(s.include)
+      .map((id) => st.cache.friends[id])
       .map((f) => ({ id: f.id, displayName: f.displayName }))
       .sort((a, b) => a.displayName.localeCompare(b.displayName)),
   };
@@ -339,9 +335,9 @@ function friendsPayload(): string {
 
 /** Your own time-together numbers (game logs, live locations, your loggers),
  *  only between your friends (and you); never what others shared with you. */
-function activityPayload(): string {
+function activityPayload(s: ShareServer): string {
   const st = getState();
-  const known = new Set(Object.keys(st.cache.friends));
+  const known = new Set(selectedIds(s.include));
   if (st.cache.me) known.add(st.cache.me.id);
   const live = maxPairs([st.observed?.pairs ?? [], ...loggerPairs(st.shared)]);
   const stats = combineStats(st.settings.groups.useLogs ? st.logs.stats : null, live);
@@ -413,7 +409,7 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
       let waiting = 0;
       const changed = new Set<string>();
       for (const kind of wanted) {
-        const payload = kind === "friends" ? friendsPayload() : activityPayload();
+        const payload = kind === "friends" ? friendsPayload(s) : activityPayload(s);
         const max = s.info.maxItemBytes || 1 << 20;
         if (payload.length * 1.4 > max) {
           notes.push(`Your ${kind === "friends" ? "friend list" : "activity"} is bigger than this server takes (${Math.round(max / 1024)} KB).`);
