@@ -168,6 +168,18 @@ pub fn window_hide<R: Runtime>(window: WebviewWindow<R>) {
     let _ = window.emit("window-hidden", ());
 }
 
+/// F11: real fullscreen for the window (not Chromium's page fullscreen).
+#[tauri::command]
+pub fn window_toggle_fullscreen<R: Runtime>(window: WebviewWindow<R>) {
+    #[cfg(desktop)]
+    {
+        let on = window.is_fullscreen().unwrap_or(false);
+        let _ = window.set_fullscreen(!on);
+    }
+    #[cfg(not(desktop))]
+    let _ = window;
+}
+
 #[tauri::command]
 pub fn app_quit<R: Runtime>(app: AppHandle<R>) {
     quit(&app);

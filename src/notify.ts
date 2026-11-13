@@ -283,6 +283,9 @@ function decode(ac: Ctx, data: string): Promise<AudioBuffer | null> {
 
 export type SoundPart = { sound: string } | { tune: string } | { data: string };
 
+/** Seconds between the event sound and the person's tune. */
+const PAUSE = 0.1;
+
 /** Schedules the parts one after another on `ac` (action sound, then the person's tune).
  *  Returns when the last note starts ringing out (seconds, in the context's time). */
 export async function scheduleParts(ac: Ctx, parts: SoundPart[], volume: number, start: number): Promise<number> {
@@ -299,9 +302,10 @@ export async function scheduleParts(ac: Ctx, parts: SoundPart[], volume: number,
   out.connect(echo).connect(fb).connect(echo);
   echo.connect(wet).connect(ac.destination);
   let t = start;
-  for (const p of parts) {
+  for (const [i, p] of parts.entries()) {
     if ("sound" in p) {
-      if (p.sound !== "none") t += builtIn(ac, out, p.sound, t);
+      // A tiny pause before the person's tune, so the two read as separate sounds.
+      if (p.sound !== "none") t += builtIn(ac, out, p.sound, t) + (i < parts.length - 1 ? PAUSE : 0);
     } else if ("tune" in p) {
       t += playTune(ac, out, p.tune, t);
     } else {

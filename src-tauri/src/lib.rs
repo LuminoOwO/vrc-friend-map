@@ -558,6 +558,7 @@ pub fn run() {
             tray::tray_set_muted,
             tray::window_hide,
             tray::app_quit,
+            tray::window_toggle_fullscreen,
             wheelfix::wheel_fix_set,
             wheelfix::wheel_fix_state,
         ])

@@ -1175,6 +1175,32 @@ export function GraphView() {
     else sel.call(zoom.transform, tr);
   }
 
+  /** Zoom around the middle of the map (buttons and keys, for when there's no wheel). */
+  function zoomBy(factor: number) {
+    const canvas = canvasRef.current;
+    const zoom = zoomRef.current;
+    if (!canvas || !zoom) return;
+    d3.select(canvas).transition().duration(220).call(zoom.scaleBy, factor);
+  }
+  const zoomKeysRef = useRef({ zoomBy, fit });
+  zoomKeysRef.current = { zoomBy, fit };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+      const t = e.target as HTMLElement | null;
+      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
+      const s = getState();
+      if (s.settingsOpen || s.serversOpen || s.viewer || s.closeAsk || (s.selectedId && s.settings.profileAs === "popup")) return;
+      if (e.key === "+" || e.key === "=") zoomKeysRef.current.zoomBy(1.4);
+      else if (e.key === "-" || e.key === "_") zoomKeysRef.current.zoomBy(1 / 1.4);
+      else if (e.key === "0") zoomKeysRef.current.fit();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
   // Build/refresh the simulation when people, lines or node shapes change.
   const extraKey = `${extra.others.map((o) => o.id).join(",")}#${extra.otherEdges.length}#${extra.me?.id ?? ""}`;
   const layoutKey = `${idsKey}#${lineData.list.length}#${extraKey}#${map.nodeStyle}#${map.nodeScale}#${map.sizeBy}#${map.spacing}#${map.gravity}`;
@@ -1788,9 +1814,17 @@ export function GraphView() {
         </div>
       )}
       <div className="graph-controls">
-        <button className="icon-btn" title="Fit to screen" onClick={() => fit()}>
-          <Icon name="fit" />
-        </button>
+        <div className="zoom-btns">
+          <button className="icon-btn" title="Zoom in (+)" onClick={() => zoomBy(1.4)}>
+            <Icon name="plus" />
+          </button>
+          <button className="icon-btn" title="Zoom out (−)" onClick={() => zoomBy(1 / 1.4)}>
+            <Icon name="minus" />
+          </button>
+          <button className="icon-btn" title="Fit to screen (0)" onClick={() => fit()}>
+            <Icon name="fit" />
+          </button>
+        </div>
         <button
           className="btn small"
           title="What the ring around each person shows"
