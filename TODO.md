@@ -60,3 +60,12 @@ The bigger, discussed list lives in GitHub issue #14.
 - [ ] **A tiny pause between the event sound and the person's tune.** Right now the tune starts
   the moment the event sound's last note lands; add a short gap (about 0.08–0.12 s) so the
   two read as separate sounds.
+- [ ] **Bio and links missing on profiles (bug).** A friend's profile shows "Nothing written"
+  and no links, while vrchat.com shows their About me (several lines) and three links
+  (Discord and two others). Find out whether the profile data loaded has `bio` / `bioLinks`
+  at all (maybe VRChat stopped sending them in the friends list, or the full profile isn't
+  loaded / merged), and fix it.
+- [ ] **"Who's here" panel into the sidebar by default.** On the Activity tab (and elsewhere)
+  the instance pill overlaps the content. Put it in the sidebar by default, with: the world
+  banner, the instance (name / type), region, people in the instance and the instance's total
+  slots (e.g. 12 / 32).
