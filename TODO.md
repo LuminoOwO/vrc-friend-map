@@ -84,3 +84,6 @@ The bigger, discussed list lives in GitHub issue #14.
   server. `xinput test-xi2` shows only *emulated* wheel buttons (4/5); Chromium ignores those
   when it expects smooth-scroll values instead. Needs: the full xinput output (are there
   Motion events with scroll values?) and `xinput list --long` for his mouse.
+- [ ] **Zoom without a scroll wheel.** + / − buttons on the map and keyboard zoom (+, −, 0 to
+  fit), so the map is usable where wheel events don't arrive (see the XLibre item) and with
+  touchpads that only click.
