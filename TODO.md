@@ -23,21 +23,18 @@ The bigger, discussed list lives in GitHub issue #14.
   languages, profile picture choice, and the profile theming the website shows (VRC+). Needs
   research: which fields VRChat's API lets you change, and how vrchat.com stores and renders
   profile themes, so the app can show and edit them the same way.
-- [ ] **Age concerns (needs a design decision first; see the notes).** Help adults who don't
-  want minors on their friend list notice likely minors. Wished for:
-  - read hints from the profile (bio, links in it) and from linked accounts and link pages
-    (Linktree etc.), also indirectly linked ones;
-  - a manual "I'm sure they're an adult" override;
-  - for friends who sync through a server: notes per person, *most certainly over 18*,
-    *probably over 18*, *probably under 18*, *most certainly under 18*;
-  - age notes shared separately from everything else, with syncing turned off per person;
-  - VRChat's 18+ verification ignored as a signal (accounts get bought).
-
-  Open questions before building (see the discussion of 2026-11-13):
-  - Following every linked and indirectly linked profile builds a cross-platform file on
-    each person, many of them minors. It's also scraping other sites.
-  - Notes saying *under 18*, synced between people, add up to a shared list of minors with
-    their accounts. That list would be valuable to exactly the people minors need protection
-    from. Ideas: keep under-18 notes on your own device only, and share only *adult* vouches,
-    or a neutral "keep your distance" flag without the reason.
-  - False labels stick to people; notes need an author, a date and a way to take them back.
+- [ ] **Age concerns.** Help adults who don't want minors on their friend list notice likely
+  minors. Decided 2026-11-13:
+  - **Signals:** the VRChat profile itself (bio, pronouns, status text) and the links the
+    person posted there, each read once when you open their profile. No following links
+    further, no crawling of linked accounts or link pages beyond that.
+  - **Ignored:** VRChat's 18+ verification (accounts get bought).
+  - **Your own notes:** *most certainly over 18*, *probably over 18*, *probably under 18*,
+    *most certainly under 18*, plus a manual "I'm sure they're an adult" override. Each with a
+    date, editable, and expiring after a while so old guesses don't stick.
+  - **Nothing is shared:** age hints and notes stay on this device. Never synced through
+    servers, never in exports, never in backups sent anywhere. (Synced notes would add up to a
+    shared list of minors with their accounts, which endangers them.)
+  - **Where it shows** (defaults, adjustable): a mark on the profile; a warning before you send
+    or accept a friend request; for people already on your friend list, only on their profile,
+    no pop-ups.
