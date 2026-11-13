@@ -42,6 +42,8 @@ minor releases can change behavior.
 ### Fixed
 - Building the Chromium version on systems whose GTK 4 has no Wayland support (X11 only)
   failed looking for `gtk4-wayland`. It now builds for X11 there.
+- The Chromium build ignored its own switches (they need a `--` in front), so "Unlimited"
+  frame rate and Graphics → "Prefer the graphics card" / "Software" did nothing there.
 - Scrollbars use the theme's colors (Chromium showed its plain light ones).
 - Phones: the profile's close button sat under the status bar and was hard to hit. It's bigger
   now, below the status bar, and stays in place while the profile scrolls.

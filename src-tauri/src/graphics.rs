@@ -222,15 +222,17 @@ pub fn chromium_switches(mode: Mode) -> Vec<&'static str> {
 pub fn chromium_runtime() -> tauri_runtime_cef::Cef {
     let (mode, _) = effective(std::env::var(ENV_OVERRIDE).ok().as_deref(), load());
     let mut cef = tauri_runtime_cef::Cef::default();
+    // The runtime only takes an entry as a switch when it's spelled with `--`;
+    // a bare name would reach Chromium as a plain argument and do nothing.
     for switch in chromium_switches(mode) {
-        cef = cef.command_line_arg(switch, None::<String>);
+        cef = cef.command_line_arg(format!("--{switch}"), None::<String>);
     }
     if load_unlocked() {
         // No vsync and no frame cap: requestAnimationFrame runs as fast as it can;
         // the map's own limit (Settings → Frame rate) decides the actual rate.
         STARTED_UNLOCKED.store(true, std::sync::atomic::Ordering::Relaxed);
-        cef = cef.command_line_arg("disable-gpu-vsync", None::<String>);
-        cef = cef.command_line_arg("disable-frame-rate-limit", None::<String>);
+        cef = cef.command_line_arg("--disable-gpu-vsync", None::<String>);
+        cef = cef.command_line_arg("--disable-frame-rate-limit", None::<String>);
     }
     if chromium_sandbox_unusable() {
         // Chromium would refuse to start ("No usable sandbox!").
