@@ -57,3 +57,6 @@ The bigger, discussed list lives in GitHub issue #14.
 - [ ] **Custom sounds.** (Asked 2026-11-13.) Uploading your own sound files per event already
   exists (Settings → Notifications → Add a sound file). To clarify what's wanted beyond that:
   e.g. a sound for one specific person, making sounds in the app, or sound packs.
+- [ ] **A tiny pause between the event sound and the person's tune.** Right now the tune starts
+  the moment the event sound's last note lands; add a short gap (about 0.08–0.12 s) so the
+  two read as separate sounds.
