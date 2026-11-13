@@ -19,13 +19,17 @@
 | **Top bar** | ☰ (sidebar), tabs (Map, Cards, Shared lists, Activity), search, Filters, how many friends match, the sync / *Live* badge (connection to VRChat), ⚙ Settings. |
 | **Left sidebar** | Overview tiles (friends, in VRChat, web / app, connections; click one to filter), your circles, group suggestions, friend changes. ☰ shows or hides it. |
 | **Map** | Your friend network. Scroll or pinch to zoom, drag the background to move, drag people to place them or drop them on a circle. *Map options* (top right) changes how it looks. |
-| **Instance strip** | On the map, top left, while VRChat runs on this PC: the world you're in and everyone there. |
+| **Who's here** | On the map, top left, while VRChat runs on this PC: the world you're in and everyone there, as a list, a row of pictures, or just a button. |
 | **Cards** | VRChat-style cards grouped by online status; sort them, drag them onto circles. |
-| **Shared lists** | Export your friend list and import other people's. |
+| **Shared lists** | Servers for automatic sharing (add them right there), and exporting / importing lists by hand. |
 | **Activity** | Joins and leaves, world changes, friends online and offline, over the last 4 days. |
-| **Settings** | ⚙ at the top right: themes, frame rate, graphics, game logs, people who aren't friends, servers, diagnostics, sounds and more. |
+| **Settings** | ⚙ at the top right. Sorted into categories, with a search that also understands other words ("ui style" → Themes, "lag" → Frame rate). |
+| **Your picture** | Top left, next to the app name: opens your own profile. |
 
-Clicking anyone, anywhere (map, card, strip, activity), opens their profile.
+Clicking anyone, anywhere (map, card, who's here, activity), opens their profile. Clicking a
+picture in a profile (profile picture, banner, world, badge, group) opens it full size: zoom
+with the wheel, pinch or the buttons, drag to move, and **Download** saves it to
+Downloads / VRC Friend Map.
 
 ## First start and signing in
 
@@ -109,8 +113,10 @@ around the clock. Every source can be switched off in Settings.
 - **You on the map** (Map options → *Show me*). Your picture floats between the friends you
   spend the most time with, or share the most mutuals with. Nothing is pulled towards you.
 - **Who's in your instance** (Settings → Game logs → *Show who's in my instance right now*,
-  on the VRChat PC). The strip on the map lists the world and everyone there, friends first,
-  and gives them a pink halo on the map.
+  on the VRChat PC). The panel on the map lists the world and everyone there, friends first,
+  with their status or friends in common and how long they've been there, and gives them a
+  pink halo on the map. Its buttons switch between the full list, a row of pictures, and a
+  small button.
   - *Show the N who aren't friends on the map* adds the others.
   - *Load everyone's profile* loads all of them (otherwise the first 25).
 - **People who aren't friends yet** (Map options → *Not friends yet*):

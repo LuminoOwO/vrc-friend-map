@@ -77,7 +77,8 @@ they read VRChat's own log files.
 ## Who's in your instance right now **(PC)**
 
 - Follows VRChat's log as it's written: world name, and everyone in the instance, friends
-  first.
+  first, with status or friends in common and time in the instance.
+- A readable list, a row of pictures, or just a button; search in busy instances.
 - Click anyone to open their profile. It needs no requests to VRChat.
 - Option to show the people who aren't friends on the map too.
 - Option to load everyone's profile in the instance (otherwise the first 25).
@@ -111,6 +112,8 @@ A readable log of what happened around you, kept 4 days on this device.
 - **Mutual friends** list and count, the **circles** they're in, and your **VRChat note**.
 - Opens as a popup (default, best on phones) or as a side panel. Opening it from a card
   animates out of that card.
+- **Image viewer:** click any picture (profile picture, banner, world, badges, groups) for full
+  size with zoom, pan, pinch and **Download**.
 - **Actions:**
   - send or cancel a friend request
   - unfriend
@@ -173,6 +176,9 @@ A readable log of what happened around you, kept 4 days on this device.
 
 ## Settings and tools
 
+- **Settings** sorted into categories, with a search that knows other words for things and
+  forgives typos.
+- **Your picture** in the top bar opens your own profile.
 - **Diagnostics:** frame rate, drawing time, the GPU the app draws with (warns about software
   rendering), web engine, a quick benchmark and "Copy diagnostics".
 - **Graphics:** automatic, prefer the graphics card, or software (Linux, Windows).
