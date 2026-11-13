@@ -32,9 +32,21 @@ The bigger, discussed list lives in GitHub issue #14.
   - **Your own notes:** *most certainly over 18*, *probably over 18*, *probably under 18*,
     *most certainly under 18*, plus a manual "I'm sure they're an adult" override. Each with a
     date, editable, and expiring after a while so old guesses don't stick.
-  - **Nothing is shared:** age hints and notes stay on this device. Never synced through
-    servers, never in exports, never in backups sent anywhere. (Synced notes would add up to a
-    shared list of minors with their accounts, which endangers them.)
+  - **Under-18 notes are never shared:** age hints and *probably / most certainly under 18*
+    stay on this device. Never synced through servers, never in exports, never in backups sent
+    anywhere. (Synced under-18 notes would add up to a shared list of minors with their
+    accounts, which endangers them.)
+  - **What friends can share** (through servers, only with the recipients you chose, and
+    turned off per person if you like), one of:
+    - *(nothing)*: the default, no note;
+    - *most certainly over 18*;
+    - *probably over 18*;
+    - *keep your distance*: a neutral flag with no reason attached. It's meant for any reason
+      (age, behavior, drama), so it can't be read as "this is a minor", and the app never
+      shows *why* someone set it.
+
+    Missing vouches mean nothing; the app must never treat "no adult vouch" as a hint. Each
+    shared note shows who set it and when, and its author can take it back.
   - **Where it shows** (defaults, adjustable): a mark on the profile; a warning before you send
     or accept a friend request; for people already on your friend list, only on their profile,
     no pop-ups.
