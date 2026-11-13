@@ -69,3 +69,7 @@ The bigger, discussed list lives in GitHub issue #14.
   the instance pill overlaps the content. Put it in the sidebar by default, with: the world
   banner, the instance (name / type), region, people in the instance and the instance's total
   slots (e.g. 12 / 32).
+- [ ] **Build instructions for every version.** One page (docs/building.md) that walks through
+  building each package: .deb, .rpm, AppImage, tarball, Flatpak, the WebKitGTK version,
+  X11-only systems, Windows, macOS, Android, iOS and the server, with the exact commands and
+  what each needs installed.
