@@ -1,3 +1,4 @@
+import { ImageViewer } from "./components/ImageViewer";
 import { ActivityView } from "./components/ActivityView";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { backend, isTauri } from "./backend";
@@ -84,6 +85,7 @@ export default function App() {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         const s = getState();
+        if (s.viewer) return; // the image viewer closes itself
         if (s.settingsOpen) setState({ settingsOpen: false });
         else if (s.selectedId) setState({ selectedId: null });
       }
@@ -135,6 +137,7 @@ export default function App() {
       {settingsOpen && <SettingsModal />}
       {serversOpen && <ServersModal />}
       <ConfirmUnencrypted />
+      <ImageViewer />
       <ToastView />
     </div>
   );

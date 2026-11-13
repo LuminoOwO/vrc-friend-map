@@ -42,7 +42,20 @@ async fn serve(state: &Arc<AppState>, path: &str) -> Result<Response<Vec<u8>>, S
         .decode_utf8()
         .map_err(|e| e.to_string())?
         .to_string();
-    let url: url::Url = decoded.parse().map_err(|e: url::ParseError| e.to_string())?;
+    let (bytes, content_type) = load(state, &decoded).await?;
+
+    Response::builder()
+        .status(200)
+        .header(header::CONTENT_TYPE, content_type)
+        .header(header::CACHE_CONTROL, "max-age=604800")
+        .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+        .body(bytes)
+        .map_err(|e| e.to_string())
+}
+
+/// An image from VRChat (disk cache first), as bytes and content type.
+pub async fn load(state: &Arc<AppState>, url: &str) -> Result<(Vec<u8>, String), String> {
+    let url: url::Url = url.parse().map_err(|e: url::ParseError| e.to_string())?;
     if url.scheme() != "https" || !allowed_host(url.host_str().unwrap_or_default()) {
         return Err("host not allowed".into());
     }
@@ -61,12 +74,16 @@ async fn serve(state: &Arc<AppState>, path: &str) -> Result<Response<Vec<u8>>, S
             (b, t)
         }
     };
+    Ok((bytes, content_type))
+}
 
-    Response::builder()
-        .status(200)
-        .header(header::CONTENT_TYPE, content_type)
-        .header(header::CACHE_CONTROL, "max-age=604800")
-        .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-        .body(bytes)
-        .map_err(|e| e.to_string())
+/// File extension for an image content type.
+pub fn extension(content_type: &str) -> &'static str {
+    match content_type.split(';').next().unwrap_or("").trim() {
+        "image/jpeg" | "image/jpg" => "jpg",
+        "image/webp" => "webp",
+        "image/gif" => "gif",
+        "image/avif" => "avif",
+        _ => "png",
+    }
 }

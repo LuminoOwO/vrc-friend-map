@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useDerived } from "../derived";
-import { STATUS_COLORS, PLATFORM_LABEL, TRUST_RANKS } from "../model";
+import { imgSrc } from "../backend";
+import { STATUS_COLORS, PLATFORM_LABEL, TRUST_RANKS, iconUrl } from "../model";
 import { exitDemo } from "../session";
 import { defaultFilters, setState, updateFilters, useApp, type View } from "../store";
 import { syncAll, togglePause } from "../sync";
@@ -41,7 +42,7 @@ export function TopBar() {
         <Icon name="menu" />
       </button>
       <div className="brand small">
-        <span className="brand-mark" />
+        <MeButton />
         <span className="brand-name">VRC Friend Map</span>
         {demo && (
           <button className="pill demo" title="Leave demo mode" onClick={exitDemo}>
@@ -282,5 +283,24 @@ function FilterPopover({ onClose }: { onClose: () => void }) {
         </button>
       </div>
     </div>
+  );
+}
+
+/** Your own picture: opens your profile (and its status). */
+function MeButton() {
+  const me = useApp((s) => s.cache.me);
+  const selectedId = useApp((s) => s.selectedId);
+  if (!me) return <span className="brand-mark" />;
+  const pic = imgSrc(me.profile ? iconUrl(me.profile) : me.iconUrl);
+  const status = me.profile?.status;
+  return (
+    <button
+      className={`me-btn ${selectedId === me.id ? "on" : ""}`}
+      title={`${me.displayName}: open your profile`}
+      onClick={() => setState({ selectedId: selectedId === me.id ? null : me.id })}
+    >
+      {pic ? <img src={pic} alt="" /> : <span>{me.displayName.slice(0, 1).toUpperCase()}</span>}
+      {status && <i className="me-dot" style={{ background: STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? "#8b949e" }} />}
+    </button>
   );
 }

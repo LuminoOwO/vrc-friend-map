@@ -1,4 +1,5 @@
 // All of someone's groups as cards, like the "<name>'s Groups" dialog on vrchat.com.
+import { openImage } from "./ImageViewer";
 import { useEffect } from "react";
 import { backend, imgSrc } from "../backend";
 import type { UserGroup } from "../types";
@@ -28,7 +29,16 @@ export function GroupsModal({ name, groups, onClose }: { name: string; groups: U
         <div className="groups-grid">
           {groups.map((g) => (
             <button key={g.groupId} className="group-card" title="Open the group on vrchat.com" onClick={() => backend.openUrl(`https://vrchat.com/home/group/${g.groupId}`)}>
-              <div className="group-card-banner">{g.bannerUrl && <img src={imgSrc(g.bannerUrl)} alt="" loading="lazy" />}</div>
+              <div
+                className={`group-card-banner ${g.bannerUrl ? "viewable" : ""}`}
+                onClick={(e) => {
+                  if (!g.bannerUrl) return;
+                  e.stopPropagation();
+                  openImage([{ url: g.bannerUrl, title: `Group ${g.name} – banner` }, ...(g.iconUrl ? [{ url: g.iconUrl, title: `Group ${g.name} – icon` }] : [])]);
+                }}
+              >
+                {g.bannerUrl && <img src={imgSrc(g.bannerUrl)} alt="" loading="lazy" />}
+              </div>
               <div className="group-card-id">
                 <span className="group-card-icon">{g.iconUrl ? <img src={imgSrc(g.iconUrl)} alt="" loading="lazy" /> : g.name.slice(0, 1)}</span>
                 <span className="group-card-name">{g.name}</span>

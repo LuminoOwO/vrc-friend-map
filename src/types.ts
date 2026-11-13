@@ -212,6 +212,8 @@ export interface MapSettings {
   /** People who aren't friends: none, only those in your instance, plus people
    *  you've spent time with (game logs), plus friends of friends (shared lists). */
   showOthers: "off" | "here" | "met" | "all";
+  /** The "who's here" panel: full list, one row of pictures, or just a button. */
+  hereView: "list" | "compact" | "hidden";
 }
 
 export type Theme = "dark" | "oled" | "light" | "mocha" | "macchiato" | "latte" | "nord" | "dracula";

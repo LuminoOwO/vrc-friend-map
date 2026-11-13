@@ -402,6 +402,51 @@ async fn save_export(app: AppHandle, filename: String, contents: String) -> Resu
     }
 }
 
+/// Save a VRChat image (picture, banner, world, group…) to Downloads/VRC Friend Map.
+/// Returns the path it was saved to.
+#[tauri::command]
+async fn save_image(app: AppHandle, state: AppStateRef<'_>, url: String, name: String) -> Result<String, String> {
+    let (bytes, content_type) = images::load(&state, &url).await?;
+    let file = format!("{}.{}", storage::sanitize_filename(&name), images::extension(&content_type));
+    let mut dirs: Vec<std::path::PathBuf> = Vec::new();
+    #[cfg(target_os = "android")]
+    {
+        // Android 11+ lets apps create their own files in the shared Download folder.
+        dirs.push(std::path::PathBuf::from("/storage/emulated/0/Download"));
+    }
+    if let Ok(d) = app.path().download_dir() {
+        dirs.push(d);
+    }
+    if let Ok(d) = app.path().picture_dir() {
+        dirs.push(d);
+    }
+    if let Ok(d) = app.path().app_data_dir() {
+        dirs.push(d.join("saved images"));
+    }
+    let mut last = String::from("no folder to save to");
+    for dir in dirs {
+        let dir = if dir.ends_with("saved images") { dir } else { dir.join("VRC Friend Map") };
+        if let Err(e) = std::fs::create_dir_all(&dir) {
+            last = e.to_string();
+            continue;
+        }
+        let mut path = dir.join(&file);
+        // Don't overwrite: name (2).png, name (3).png, ...
+        let mut n = 2;
+        while path.exists() {
+            let stem = file.rsplit_once('.').map(|(a, _)| a).unwrap_or(&file);
+            let ext = file.rsplit_once('.').map(|(_, b)| b).unwrap_or("png");
+            path = dir.join(format!("{stem} ({n}).{ext}"));
+            n += 1;
+        }
+        match std::fs::write(&path, &bytes) {
+            Ok(()) => return Ok(path.display().to_string()),
+            Err(e) => last = e.to_string(),
+        }
+    }
+    Err(last)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // One TLS crypto backend for both HTTPS and the WebSocket connection.
@@ -469,6 +514,7 @@ pub fn run() {
             clear_image_cache,
             hash_ids,
             save_export,
+            save_image,
             share_identity,
             share_export_key,
             share_import_key,

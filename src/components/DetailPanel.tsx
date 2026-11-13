@@ -4,6 +4,7 @@
 // the current world (who's there, open or launch it), badges and groups, plus
 // this app's circles, time together and shared friends. One column on narrow
 // screens.
+import { openImage, type ViewerItem } from "./ImageViewer";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { backend, imgSrc } from "../backend";
 import { listMemberIds } from "../derived";
@@ -26,7 +27,7 @@ import {
   toTime,
   trustRank,
 } from "../model";
-import { addToCircle, createCircle, removeFromCircle, setState, showToast, useApp } from "../store";
+import { addToCircle, createCircle, getState, removeFromCircle, setState, showToast, useApp } from "../store";
 import { bioKeyState } from "../share";
 import { friendStatus, personOf, refreshModerations, relationOf, setFriendRequest, setModeration, unfriend } from "../people";
 import { othersHere } from "../live";
@@ -138,7 +139,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !(e.target as HTMLElement)?.closest?.("input, textarea, select")) setState({ selectedId: null });
+      if (e.key === "Escape" && !getState().viewer && !(e.target as HTMLElement)?.closest?.("input, textarea, select")) setState({ selectedId: null });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -174,6 +175,26 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const sColor = statusColor(f, p);
   const loc = inWorld ? parseLocation(location) : null;
   const world = loc ? cache.worlds?.[loc.world] : undefined;
+  // Everything on this profile that can be opened full size, in one list to flip through.
+  const pics: ViewerItem[] = [];
+  const picAt = (url: string | undefined, title: string) => {
+    if (!url) return -1;
+    const i = pics.findIndex((p) => p.url === url);
+    if (i >= 0) return i;
+    pics.push({ url, title: `${f.displayName} – ${title}` });
+    return pics.length - 1;
+  };
+  const iconIdx = picAt(iconUrl(f), "profile picture");
+  const bannerIdx = picAt(bannerUrl(f), "banner");
+  picAt(f.currentAvatarImageUrl, "avatar");
+  const worldPic = world?.imageUrl || world?.thumbnailImageUrl;
+  const worldIdx = worldPic ? picAt(worldPic, world?.name ? `world ${world.name}` : "world") : -1;
+  const show = (i: number) => (e: React.MouseEvent | React.KeyboardEvent) => {
+    if ("key" in e && e.key !== "Enter" && e.key !== " ") return;
+    e.stopPropagation();
+    e.preventDefault();
+    if (i >= 0) openImage(pics, i);
+  };
   const withThem = inWorld ? Object.values(cache.friends).filter((o) => o.id !== id && o.location === location) : [];
   const isHere = othersHere(here, cache.me?.id).some((x) => x.id === id);
   const viaLists = relation === "other" ? local.imports.filter((l) => l.owner.id && cache.friends[l.owner.id] && l.mode === "full" && l.friends?.some((x) => x.id === id)) : [];
@@ -195,11 +216,29 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
       <div className="profile-cols">
         <div className="profile-col">
           <section className="pcard profile-main">
-            <div className="profile-banner" data-flip="banner" style={{ background: f.bannerColor || "#2a9fcc" }}>
+            <div
+              className={`profile-banner ${bannerIdx >= 0 ? "viewable" : ""}`}
+              data-flip="banner"
+              style={{ background: f.bannerColor || "#2a9fcc" }}
+              role={bannerIdx >= 0 ? "button" : undefined}
+              tabIndex={bannerIdx >= 0 ? 0 : undefined}
+              title={bannerIdx >= 0 ? "View full size" : undefined}
+              onClick={show(bannerIdx)}
+              onKeyDown={show(bannerIdx)}
+            >
               {banner && <img src={banner} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />}
             </div>
             <div className="profile-id">
-              <div className="profile-icon" data-flip="icon" style={{ borderColor: sColor }}>
+              <div
+                className={`profile-icon ${iconIdx >= 0 ? "viewable" : ""}`}
+                data-flip="icon"
+                style={{ borderColor: sColor }}
+                role={iconIdx >= 0 ? "button" : undefined}
+                tabIndex={iconIdx >= 0 ? 0 : undefined}
+                title={iconIdx >= 0 ? "View full size" : undefined}
+                onClick={show(iconIdx)}
+                onKeyDown={show(iconIdx)}
+              >
                 {icon ? <img src={icon} alt="" /> : <span>{f.displayName.slice(0, 1).toUpperCase()}</span>}
               </div>
               <span className="status-pill" data-flip="status">
@@ -372,12 +411,29 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
         <div className="profile-col" data-flip-fade>
           {loc ? (
             <section className="pcard world-card">
-              <button className="world-banner" title="Open this world on vrchat.com" onClick={() => open(`https://vrchat.com/home/world/${loc.world}`)}>
-                {world?.imageUrl || world?.thumbnailImageUrl ? <img src={imgSrc(world.imageUrl || world.thumbnailImageUrl)} alt="" /> : <StatusArt kind="globe" />}
+              <div
+                className={`world-banner ${worldIdx >= 0 ? "viewable" : ""}`}
+                role="button"
+                tabIndex={0}
+                title={worldIdx >= 0 ? "View full size" : "Open this world on vrchat.com"}
+                onClick={worldIdx >= 0 ? show(worldIdx) : () => open(`https://vrchat.com/home/world/${loc.world}`)}
+                onKeyDown={worldIdx >= 0 ? show(worldIdx) : undefined}
+              >
+                {worldPic ? <img src={imgSrc(worldPic)} alt="" /> : <StatusArt kind="globe" />}
                 <span className="loc-pill">
                   <Icon name="pin" size={14} /> Current Location
                 </span>
-              </button>
+                <button
+                  className="banner-link"
+                  title="Open this world on vrchat.com"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    open(`https://vrchat.com/home/world/${loc.world}`);
+                  }}
+                >
+                  <Icon name="external" size={15} />
+                </button>
+              </div>
               <div className="world-info">
                 <h3 className="world-name">{world?.name ?? (demo ? "Demo World" : "Loading world…")}</h3>
                 <div className="world-line">
@@ -430,8 +486,15 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
             <section className="pcard">
               <h3>Badges</h3>
               <div className="badges">
-                {badges.map((b) => (
-                  <img key={b.id} src={imgSrc(b.imageUrl)} alt={b.name} title={b.description ? `${b.name}: ${b.description}` : b.name} />
+                {badges.map((b, i) => (
+                  <img
+                    key={b.id}
+                    className="viewable"
+                    src={imgSrc(b.imageUrl)}
+                    alt={b.name}
+                    title={b.description ? `${b.name}: ${b.description}` : b.name}
+                    onClick={() => openImage(badges.map((x) => ({ url: x.imageUrl, title: `Badge – ${x.name}` })), i)}
+                  />
                 ))}
               </div>
             </section>
@@ -444,7 +507,17 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 {groupList.slice(0, 5).map((g) => (
                   <li key={g.groupId}>
                     <button className="group-row" onClick={() => open(`https://vrchat.com/home/group/${g.groupId}`)} title="Open the group on vrchat.com">
-                      <span className="group-icon">{g.iconUrl ? <img src={imgSrc(g.iconUrl)} alt="" /> : g.name.slice(0, 1)}</span>
+                      <span
+                        className={`group-icon ${g.iconUrl ? "viewable" : ""}`}
+                        title={g.iconUrl ? "View full size" : undefined}
+                        onClick={(e) => {
+                          if (!g.iconUrl) return;
+                          e.stopPropagation();
+                          openImage({ url: g.iconUrl, title: `Group ${g.name} – icon` });
+                        }}
+                      >
+                        {g.iconUrl ? <img src={imgSrc(g.iconUrl)} alt="" /> : g.name.slice(0, 1)}
+                      </span>
                       <span className="group-name">{g.name}</span>
                       {g.isRepresenting && (
                         <span className="rep" title="Representing">

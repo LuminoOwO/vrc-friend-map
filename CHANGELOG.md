@@ -40,6 +40,26 @@ minor releases can change behavior.
   (and a warning when it's software rendering), web engine, environment flags, a quick drawing
   benchmark and a *Copy diagnostics* button.
 
+### Added (more)
+- **Image viewer**: click a profile picture, banner, world picture, badge or group picture to see
+  it full size, with zoom (wheel, pinch, buttons, double click), panning, flipping through a
+  profile's pictures, and **Download** (saved to Downloads / VRC Friend Map).
+- **Who's here, as a real list**: the world, then friends and people who aren't friends yet,
+  each with picture, status or friends in common, and how long they've been there. Switch
+  between the full list, a row of pictures, or just a button; a search field appears in
+  busy instances.
+- **Your picture in the top bar** (where the logo was): opens your profile.
+- **Shared lists tab**: explains servers, lists yours with their state, and adds new ones
+  right there (no more digging in Settings).
+- **Settings, sorted**: categories on the side (Appearance, Performance, People, Game logs &
+  groups, Sharing & servers, Sounds, Account & data) and a search that understands other
+  words for things ("ui style" finds Themes, "lag" finds Frame rate) and small typos.
+
+### Changed (more)
+- Full player cards on the map keep their name, status and details at every zoom level.
+- Phones: the app itself no longer zooms with pinch or double tap (the map and the image
+  viewer still do).
+
 ### Docs
 - The project page is short now. The details moved to `docs/`: a full feature list, a guide to
   the app, a step-by-step server sync tutorial (program, Docker / Podman, Pi, Android,

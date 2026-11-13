@@ -24,14 +24,14 @@ import { Icon } from "./Icon";
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-const POLICY_LABEL: Record<EncPolicy, string> = {
+export const POLICY_LABEL: Record<EncPolicy, string> = {
   "force-off": "Never encrypted",
   optional: "Encryption optional",
   recommended: "Encryption recommended",
   "force-on": "Always encrypted",
 };
 
-function ago(t: number) {
+export function ago(t: number) {
   if (!t) return "never";
   const s = (Date.now() - t) / 1000;
   if (s < 90) return "just now";

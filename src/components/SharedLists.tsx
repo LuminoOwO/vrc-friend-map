@@ -1,6 +1,7 @@
 // Compare friend lists that other people share with you. Each person exports a
 // file from their own copy of the app (their own login, their own device) and
 // sends it to you; nobody hands over a login.
+import { ServersPanel } from "./ServersPanel";
 import { useEffect, useMemo, useState } from "react";
 import { backend, randomHex } from "../backend";
 import { listMemberIds } from "../derived";
@@ -207,6 +208,8 @@ export function SharedLists() {
 
   return (
     <div className="lists-view">
+      <ServersPanel />
+      <h2 className="lists-title">Or by hand</h2>
       <div className="lists-cols">
         <section className="panel">
           <h2>Share your list</h2>

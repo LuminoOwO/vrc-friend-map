@@ -271,6 +271,23 @@ export const backend = {
     }
     return invoke<string>("save_export", { filename, contents });
   },
+  /** Save a VRChat image to Downloads/VRC Friend Map; returns where it went. */
+  async saveImage(url: string, name: string): Promise<string> {
+    if (!isTauri) {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      a.target = "_blank";
+      a.click();
+      return name;
+    }
+    return invoke<string>("save_image", { url, name });
+  },
+  async revealFile(path: string): Promise<void> {
+    if (!isTauri) return;
+    const { revealItemInDir } = await import("@tauri-apps/plugin-opener");
+    await revealItemInDir(path);
+  },
   async pipelineStart(): Promise<void> {
     if (isTauri) await invoke("pipeline_start");
   },

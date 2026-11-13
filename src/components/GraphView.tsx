@@ -690,8 +690,8 @@ export function GraphView() {
     const sc = spriteScale(k, dpr, 2);
     const W = n.hw * 2;
     const H = n.hh * 2;
-    const screenW = W * k;
-    const lod = screenW < 54 ? 0 : screenW <= 110 ? 1 : 2;
+    // Cards keep all their details at every zoom level (the sprite is just smaller).
+    const lod = 2;
     const iconOk = !!getImage(iconUrl(f));
     const bannerOk = full && lod > 0 && !!getImage(bannerUrl(f));
     const mi = cache.mutuals[n.id];
@@ -705,7 +705,7 @@ export function GraphView() {
     const pad = 4;
     const sprite = cardSprites.get(key, (W + pad * 2) * sc, (H + pad * 2) * sc, (g) => {
       g.scale(sc, sc);
-      paintCard(g, { ...n, x: n.hw + pad, y: n.hh + pad }, f, ring, p, full, false, lod === 0 ? 50 / W : lod === 1 ? 54.5 / W : 999);
+      paintCard(g, { ...n, x: n.hw + pad, y: n.hh + pad }, f, ring, p, full, false, 999);
     });
     ctx.drawImage(sprite, n.x! - n.hw - pad, n.y! - n.hh - pad, W + pad * 2, H + pad * 2);
     if (selected) {
@@ -725,7 +725,8 @@ export function GraphView() {
     const W = n.hw * 2;
     const H = n.hh * 2;
     const trust = trustRank(cache.details[n.id]?.tags, f.developerType);
-    const screenW = W * k;
+    const screenW = 999; // no simplified versions when zoomed out
+    void k;
     const radius = (full ? 10 : 8) * s;
     const offline = p === "offline";
 

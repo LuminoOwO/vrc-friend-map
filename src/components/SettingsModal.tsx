@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { scoreSection } from "../settingsSearch";
 import { backend, type GraphicsInfo, type GraphicsMode } from "../backend";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, wipeEverything } from "../session";
@@ -32,33 +33,131 @@ export function SettingsModal() {
   const [gfx, setGfx] = useState<GraphicsInfo | null>(null);
   const [gfxStart, setGfxStart] = useState<GraphicsMode | null>(null);
   const [confirmWipe, setConfirmWipe] = useState(false);
-  const groupsRef = useRef<HTMLElement>(null);
-  const logsRef = useRef<HTMLElement>(null);
+  const [cat, setCat] = useState<Cat>("appearance");
+  const [query, setQuery] = useState("");
+  const [scores, setScores] = useState<Record<string, number> | null>(null);
+  const sections = useRef(new Map<string, { cat: Cat; title: string; keys: string; el: HTMLElement | null }>());
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     backend.storageInfo().then(setInfo).catch(() => setInfo(null));
     backend.graphicsInfo().then((g) => { setGfx(g); setGfxStart(g?.mode ?? null); }).catch(() => setGfx(null));
   }, []);
 
+  // Opened for a specific part (e.g. from group suggestions).
   useEffect(() => {
-    const el = tab === "groups" ? groupsRef.current : tab === "logs" ? logsRef.current : null;
-    el?.scrollIntoView({ block: "start" });
-    if (tab !== "general") setState({ settingsTab: "general" });
+    if (tab === "groups" || tab === "logs") setCat("logs");
+    if (tab !== "general") {
+      const id = tab;
+      requestAnimationFrame(() => sections.current.get(id)?.el?.scrollIntoView({ block: "start" }));
+      setState({ settingsTab: "general" });
+    }
   }, [tab]);
 
+  // Search: each section's own text plus its keywords and synonyms.
+  useLayoutEffect(() => {
+    const q = query.trim();
+    if (!q) return setScores(null);
+    const out: Record<string, number> = {};
+    for (const [id, sec] of sections.current) {
+      const score = scoreSection(q, { id, title: sec.title, keywords: sec.keys, text: sec.el?.textContent ?? "" });
+      if (score > 0) out[id] = score;
+    }
+    setScores(out);
+  }, [query, gfx]);
+
   const close = () => setState({ settingsOpen: false });
+  const ranked = scores ? Object.entries(scores).sort((a, b) => b[1] - a[1]) : [];
+  const jump = (id: string) => {
+    const sec = sections.current.get(id);
+    if (!sec) return;
+    setQuery("");
+    setCat(sec.cat);
+    requestAnimationFrame(() => sec.el?.scrollIntoView({ block: "start", behavior: "smooth" }));
+  };
+  const ctx: SecCtx = {
+    visible: (id, c) => (scores ? id in scores : c === cat),
+    order: (id) => (scores ? ranked.findIndex(([x]) => x === id) : 0),
+    register: (id, info) => {
+      if (info) sections.current.set(id, info);
+      else sections.current.delete(id);
+    },
+  };
 
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && close()}>
-      <div className="modal" role="dialog" aria-label="Settings">
-        <div className="modal-head">
+      <div className="modal settings-modal" role="dialog" aria-label="Settings">
+        <div className="modal-head settings-head">
           <h2>Settings</h2>
+          <div className="settings-search">
+            <Icon name="search" size={16} />
+            <input
+              ref={searchRef}
+              autoFocus={!/Android|iPhone|iPad/i.test(navigator.userAgent)}
+              value={query}
+              placeholder="Search settings (e.g. theme, fps, sound, blocked)"
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape" && query) {
+                  e.stopPropagation();
+                  setQuery("");
+                } else if (e.key === "Enter" && ranked[0]) jump(ranked[0][0]);
+              }}
+            />
+            {query && (
+              <button className="icon-btn small" title="Clear" onClick={() => setQuery("")}>
+                <Icon name="close" size={14} />
+              </button>
+            )}
+          </div>
           <button className="icon-btn" onClick={close} title="Close">
             <Icon name="close" />
           </button>
         </div>
-
-        <section>
+        <div className="settings-layout">
+          <nav className="settings-nav" aria-label="Settings categories">
+            {CATS.map((c) => {
+              const hits = scores ? ranked.filter(([id]) => sections.current.get(id)?.cat === c.id).length : 0;
+              return (
+                <button
+                  key={c.id}
+                  className={`settings-cat ${!scores && cat === c.id ? "on" : ""} ${scores && !hits ? "dim" : ""}`}
+                  onClick={() => {
+                    setQuery("");
+                    setCat(c.id);
+                    bodyRef.current?.scrollTo({ top: 0 });
+                  }}
+                >
+                  <Icon name={c.icon} size={16} />
+                  <span>{c.label}</span>
+                  {scores && hits > 0 && <span className="settings-hits">{hits}</span>}
+                </button>
+              );
+            })}
+          </nav>
+          <div className="settings-body" ref={bodyRef}>
+            {scores && (
+              <div className="settings-results">
+                {ranked.length ? (
+                  <>
+                    <span className="small muted">
+                      {ranked.length} match{ranked.length === 1 ? "" : "es"}:
+                    </span>
+                    {ranked.slice(0, 6).map(([id]) => (
+                      <button key={id} className="chip-btn" onClick={() => jump(id)}>
+                        {sections.current.get(id)?.title}
+                      </button>
+                    ))}
+                  </>
+                ) : (
+                  <span className="small muted">Nothing found for “{query}”. Try a different word, like “colors”, “fps”, “sound” or “servers”.</span>
+                )}
+              </div>
+            )}
+            <SecContext.Provider value={ctx}>
+{/*SECTIONS*/}
+        <Sec id="account" cat="account" title="Account" keys="login log out sign out user">
           <h3>Account</h3>
           {demo ? (
             <p>
@@ -80,16 +179,16 @@ export function SettingsModal() {
               </button>
             </div>
           )}
-        </section>
+        </Sec>
 
-        <section>
+        <Sec id="servers" cat="sharing" title="Servers and sharing" keys="server sync share encryption logger">
           <h3>
             <Icon name="server" size={16} /> Servers and sharing
           </h3>
           <ServersSummary />
-        </section>
+        </Sec>
 
-        <section>
+        <Sec id="requests" cat="account" title="Requests to VRChat" keys="api rate limit contact user agent interval refresh">
           <h3>Requests to VRChat</h3>
           <label className="field">
             <span>Contact for the User-Agent</span>
@@ -115,10 +214,10 @@ export function SettingsModal() {
               <input type="number" min={1} max={60} value={settings.mutualTtlDays} onChange={(e) => updateSettings({ mutualTtlDays: Math.max(1, Number(e.target.value) || 7) })} />
             </label>
           </div>
-        </section>
+        </Sec>
 
-        <section>
-          <h3>Display</h3>
+        <Sec id="display" cat="appearance" title="Themes" keys="theme colors dark light style look">
+          <h3>Themes</h3>
           <div className="field">
             <span>Color theme</span>
             <div className="theme-grid" role="radiogroup" aria-label="Color theme">
@@ -139,6 +238,10 @@ export function SettingsModal() {
               ))}
             </div>
           </div>
+        </Sec>
+
+        <Sec id="mapdisplay" cat="appearance" title="Map and profiles" keys="popup sidebar lines ring trust dim filters">
+          <h3>Map and profiles</h3>
           <label className="field narrow">
             <span>Open profiles</span>
             <select value={settings.profileAs} onChange={(e) => updateSettings({ profileAs: e.target.value as "popup" | "sidebar" })}>
@@ -172,14 +275,14 @@ export function SettingsModal() {
             </label>
           </div>
           <p className="small muted">More options (full player cards, sizes, spacing…) are under “Map options” on the map.</p>
-        </section>
+        </Sec>
 
-        <section>
+        <Sec id="framerate" cat="performance" title="Frame rate" keys="fps vsync limit power saving battery">
           <FrameRateSection gfx={gfx} />
-        </section>
+        </Sec>
 
         {gfx?.supported && (
-          <section>
+          <Sec id="graphics" cat="performance" title="Graphics" keys="gpu software rendering">
             <h3>Graphics</h3>
             <label className="field narrow">
               <span>Map rendering</span>
@@ -225,30 +328,30 @@ export function SettingsModal() {
                 </button>
               </div>
             )}
-          </section>
+          </Sec>
         )}
 
-        <section>
+        <Sec id="people" cat="people" title="People who aren't friends" keys="strangers blocked profiles cache">
           <PeopleSection />
-        </section>
+        </Sec>
 
-        <section>
+        <Sec id="diagnostics" cat="performance" title="Diagnostics" keys="fps gpu benchmark debug">
           <Diagnostics />
-        </section>
+        </Sec>
 
-        <section>
+        <Sec id="sound" cat="sounds" title="New friends" keys="sound notification volume chime">
           <SoundSection />
-        </section>
+        </Sec>
 
-        <section ref={logsRef}>
+        <Sec id="logs" cat="logs" title="Game logs" keys="log folder steam instance here live">
           <GameLogSection />
-        </section>
+        </Sec>
 
-        <section ref={groupsRef}>
+        <Sec id="groups" cat="logs" title="Friend group detection" keys="circles suggestions automatic">
           <GroupSection />
-        </section>
+        </Sec>
 
-        <section>
+        <Sec id="data" cat="account" title="Local data" keys="storage cache delete backup folder">
           <h3>Local data</h3>
           {demo ? (
             <p className="small muted">Demo data isn't saved. Your real circles and cache are untouched.</p>
@@ -276,13 +379,56 @@ export function SettingsModal() {
           ) : (
             <p className="small muted">Running in a browser: data is kept in this browser's local storage.</p>
           )}
-        </section>
-        <section>
+        </Sec>
+        <Sec id="about" cat="account" title="About" keys="version">
           <h3>About</h3>
           <p className="small muted">VRC Friend Map {__APP_VERSION__}. Not affiliated with VRChat Inc.</p>
-        </section>
+        </Sec>
+            </SecContext.Provider>
+          </div>
+        </div>
       </div>
     </div>
+  );
+}
+
+type Cat = "appearance" | "performance" | "people" | "logs" | "sharing" | "sounds" | "account";
+const CATS: { id: Cat; label: string; icon: string }[] = [
+  { id: "appearance", label: "Appearance", icon: "eye" },
+  { id: "performance", label: "Performance", icon: "rocket" },
+  { id: "people", label: "People", icon: "users" },
+  { id: "logs", label: "Game logs & groups", icon: "clock" },
+  { id: "sharing", label: "Sharing & servers", icon: "server" },
+  { id: "sounds", label: "Sounds", icon: "sound" },
+  { id: "account", label: "Account & data", icon: "user" },
+];
+
+interface SecInfo {
+  cat: Cat;
+  title: string;
+  keys: string;
+  el: HTMLElement | null;
+}
+interface SecCtx {
+  visible: (id: string, cat: Cat) => boolean;
+  order: (id: string) => number;
+  register: (id: string, info: SecInfo | null) => void;
+}
+const SecContext = createContext<SecCtx | null>(null);
+
+/** One settings section: shown in its category, or when it matches the search. */
+function Sec({ id, cat, title, keys, children }: { id: string; cat: Cat; title: string; keys: string; children: React.ReactNode }) {
+  const ctx = useContext(SecContext)!;
+  const ref = useRef<HTMLElement>(null);
+  useLayoutEffect(() => {
+    ctx.register(id, { cat, title, keys, el: ref.current });
+    return () => ctx.register(id, null);
+  });
+  const shown = ctx.visible(id, cat);
+  return (
+    <section ref={ref} className={`settings-sec ${shown ? "" : "hidden"}`} style={{ order: ctx.order(id) }} data-sec={id}>
+      {children}
+    </section>
   );
 }
 

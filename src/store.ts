@@ -81,6 +81,8 @@ export interface AppState {
   shareBusy: boolean;
   /** Server waiting for the "not encrypted" confirmation before uploading. */
   confirmUnencrypted: string | null;
+  /** Fullscreen image viewer (components/ImageViewer). */
+  viewer: { items: import("./components/ImageViewer").ViewerItem[]; index: number } | null;
   /** Friends' sharing keys as first seen (fingerprints), from share.rs. */
   keyPins: Record<string, KeyPin> | null;
   /** Who's in your instance right now (live game log). */
@@ -139,6 +141,7 @@ export const defaultMap = (): MapSettings => ({
   showFps: false,
   showMe: true,
   showOthers: "off",
+  hereView: "list",
 });
 
 export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
@@ -281,6 +284,7 @@ let state: AppState = {
   serversOpen: false,
   shareBusy: false,
   confirmUnencrypted: null,
+  viewer: null,
   keyPins: null,
   here: null,
   met: [],
@@ -504,6 +508,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       showFps: typeof m.showFps === "boolean" ? m.showFps : d.map.showFps,
       showMe: typeof m.showMe === "boolean" ? m.showMe : d.map.showMe,
       showOthers: oneOf(m.showOthers, ["off", "here", "met", "all"] as const, d.map.showOthers),
+      hereView: oneOf(m.hereView, ["list", "compact", "hidden"] as const, d.map.hereView),
     },
     sounds: {
       ...snd,
