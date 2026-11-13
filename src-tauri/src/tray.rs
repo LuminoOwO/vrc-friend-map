@@ -60,6 +60,7 @@ fn build_menu<R: Runtime, M: Manager<R>>(app: &M) -> tauri::Result<Menu<R>> {
 
 pub fn show_main<R: Runtime>(app: &AppHandle<R>) {
     if let Some(w) = app.get_webview_window("main") {
+        #[cfg(desktop)]
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
