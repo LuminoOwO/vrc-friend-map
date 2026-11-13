@@ -78,3 +78,9 @@ The bigger, discussed list lives in GitHub issue #14.
   panics with `WebviewRuntimeNotInstalled`: Chromium's lock on the shared data folder hands the
   start over to the running copy, and Tauri's CEF runtime then fails. Make a second start bring
   the running window to the front (single instance) and exit quietly.
+- [ ] **No scrolling / zooming on a friend's Gentoo + Xfce + XLibre (X11) system.** The same
+  AppImage scrolls fine on Mint (X.Org), and Chromium 146 scrolls fine on his system, so it's
+  our app (CEF / Chromium 151, or the way its window sits inside the GTK 4 window) with his X
+  server. `xinput test-xi2` shows only *emulated* wheel buttons (4/5); Chromium ignores those
+  when it expects smooth-scroll values instead. Needs: the full xinput output (are there
+  Motion events with scroll values?) and `xinput list --long` for his mouse.
