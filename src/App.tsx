@@ -9,6 +9,7 @@ import { GraphView } from "./components/GraphView";
 import { LoginScreen } from "./components/LoginScreen";
 import { SettingsModal } from "./components/SettingsModal";
 import { CloseDialog } from "./components/CloseDialog";
+import { catppuccinVars, isCatFlavor } from "./catppuccin";
 import { ConfirmUnencrypted, ServersModal } from "./components/ServersModal";
 import { loadShared, startSharing, stopSharing } from "./share";
 import { syncLive } from "./live";
@@ -151,13 +152,18 @@ export default function App() {
 /** Applies the color theme to the whole page. */
 function ThemeSync() {
   const theme = useApp((s) => s.settings.theme);
+  const catAccent = useApp((s) => s.settings.catAccent);
   // Layout effect: colors must be in place before the first paint of the new theme.
   useLayoutEffect(() => {
-    if (theme === "dark") delete document.documentElement.dataset.theme;
-    else document.documentElement.dataset.theme = theme;
+    const root = document.documentElement;
+    if (theme === "dark") delete root.dataset.theme;
+    else root.dataset.theme = theme;
+    // Catppuccin: the variables come from its palette with the chosen accent.
+    for (const k of [...root.style]) if (k.startsWith("--") || k === "color-scheme") root.style.removeProperty(k);
+    if (isCatFlavor(theme)) for (const [k, v] of Object.entries(catppuccinVars(theme, catAccent))) root.style.setProperty(k, v);
     const cs = getComputedStyle(document.documentElement);
     applyThemeColors((v) => cs.getPropertyValue(v).trim());
-  }, [theme]);
+  }, [theme, catAccent]);
   return null;
 }
 

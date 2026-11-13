@@ -222,7 +222,7 @@ export interface MapSettings {
   herePlace: "sidebar" | "map";
 }
 
-export type Theme = "dark" | "oled" | "light" | "mocha" | "macchiato" | "latte" | "nord" | "dracula";
+export type Theme = "dark" | "oled" | "light" | "mocha" | "macchiato" | "frappe" | "latte" | "nord" | "dracula";
 
 export interface LogSettings {
   /** Read VRChat's log files on this computer. */
@@ -375,6 +375,8 @@ export interface Settings {
   /** Linux/X11: take mouse wheel steps from the X server when the web view gets none. */
   wheelFix: boolean;
   theme: Theme;
+  /** Accent color for the Catppuccin themes. */
+  catAccent: import("./catppuccin").CatAccent;
   /** Open profiles as a popup over everything, or as a panel at the side. */
   profileAs: "popup" | "sidebar";
   sharing: SharingSettings;

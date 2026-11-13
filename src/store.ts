@@ -3,6 +3,7 @@ import { useSyncExternalStore } from "react";
 import { backend, type KeyPin, type SessionInfo } from "./backend";
 import { pickCircleColor } from "./colors";
 import { uid } from "./model";
+import { CAT_ACCENTS } from "./catppuccin";
 import type {
   Cache,
   Circle,
@@ -255,6 +256,7 @@ export const defaultSettings = (): Settings => ({
   closeAction: "ask",
   wheelFix: false,
   theme: "dark",
+  catAccent: "mauve",
   profileAs: "popup",
   sharing: defaultSharing(),
   people: { loadEveryone: false, keep: "potential", showBlocked: false },
@@ -628,7 +630,8 @@ export function normalizeSettings(raw: Raw | null): Settings {
       useLogs: typeof g.useLogs === "boolean" ? g.useLogs : d.groups.useLogs,
       useLive: typeof g.useLive === "boolean" ? g.useLive : d.groups.useLive,
     },
-    theme: oneOf(raw.theme, ["dark", "oled", "light", "mocha", "macchiato", "latte", "nord", "dracula"] as const, d.theme),
+    theme: oneOf(raw.theme, ["dark", "oled", "light", "mocha", "macchiato", "frappe", "latte", "nord", "dracula"] as const, d.theme),
+    catAccent: oneOf(raw.catAccent, CAT_ACCENTS, d.catAccent),
     profileAs: oneOf(raw.profileAs, ["popup", "sidebar"] as const, d.profileAs),
     perf: {
       fps: Math.round(num(raw.perf?.fps, d.perf.fps, -1, 1000)),

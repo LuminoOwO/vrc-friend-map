@@ -10,13 +10,14 @@ import { wheelFixHere } from "../wheelfix";
 import { forgetObserved } from "../together";
 import type { GroupSettings, MapSettings, Theme } from "../types";
 
+import { CAT_ACCENTS, CAT_FLAVORS, CAT_LABEL, CAT_PALETTES, isCatFlavor } from "../catppuccin";
 const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: string }[] = [
   { value: "dark", label: "Dark", bg: "#0b1015", panel: "#18242e", accent: "#19c3b1" },
   { value: "oled", label: "OLED black", bg: "#000000", panel: "#0e1215", accent: "#19c3b1" },
   { value: "light", label: "Light", bg: "#eef2f5", panel: "#ffffff", accent: "#0f9d8f" },
-  { value: "mocha", label: "Catppuccin Mocha", bg: "#1e1e2e", panel: "#313244", accent: "#94e2d5" },
-  { value: "macchiato", label: "Catppuccin Macchiato", bg: "#24273a", panel: "#363a4f", accent: "#8bd5ca" },
-  { value: "latte", label: "Catppuccin Latte", bg: "#eff1f5", panel: "#ccd0da", accent: "#179299" },
+  ...CAT_FLAVORS.slice()
+    .reverse()
+    .map((f) => ({ value: f as Theme, label: `Catppuccin ${CAT_LABEL[f]}`, bg: CAT_PALETTES[f].base, panel: CAT_PALETTES[f].surface0, accent: CAT_PALETTES[f].mauve })),
   { value: "nord", label: "Nord", bg: "#2e3440", panel: "#3b4252", accent: "#88c0d0" },
   { value: "dracula", label: "Dracula", bg: "#21222c", panel: "#44475a", accent: "#bd93f9" },
 ];
@@ -218,7 +219,7 @@ export function SettingsModal() {
           </div>
         </Sec>
 
-        <Sec id="display" cat="appearance" title="Themes" keys="theme colors dark light style look">
+        <Sec id="display" cat="appearance" title="Themes" keys="theme colors dark light style look catppuccin accent latte frappe macchiato mocha">
           <h3>Themes</h3>
           <div className="field">
             <span>Color theme</span>
@@ -240,6 +241,27 @@ export function SettingsModal() {
               ))}
             </div>
           </div>
+          {isCatFlavor(settings.theme) && (
+            <div className="field">
+              <span>Catppuccin accent: {settings.catAccent[0].toUpperCase() + settings.catAccent.slice(1)}</span>
+              <div className="accent-grid" role="radiogroup" aria-label="Accent color">
+                {CAT_ACCENTS.map((a) => {
+                  const color = CAT_PALETTES[settings.theme as keyof typeof CAT_PALETTES][a];
+                  return (
+                    <button
+                      key={a}
+                      role="radio"
+                      aria-checked={settings.catAccent === a}
+                      title={a[0].toUpperCase() + a.slice(1)}
+                      className={`accent-dot ${settings.catAccent === a ? "on" : ""}`}
+                      style={{ background: color }}
+                      onClick={() => updateSettings({ catAccent: a })}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </Sec>
 
         <Sec id="mapdisplay" cat="appearance" title="Map and profiles" keys="popup sidebar lines ring trust dim filters">
