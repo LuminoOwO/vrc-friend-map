@@ -321,6 +321,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 {relation === "friend" && <NotifyBell id={id} />}
               </div>
               {relation !== "me" && <ModerationRow id={id} name={f.displayName} friend={relation === "friend"} />}
+              {relation !== "me" && <RedFlags id={id} />}
 
               <div className="profile-block" data-flip-fade>
                 <h3>About me</h3>
@@ -838,5 +839,45 @@ function NotifyBell({ id }: { id: string }) {
         ))}
       </select>
     </label>
+  );
+}
+
+/** Friends who shared that they stopped being friends with this person (their own app recorded it). */
+function RedFlags({ id }: { id: string }) {
+  const imports = useApp((s) => s.local.imports);
+  const friends = useApp((s) => s.cache.friends);
+  const notes = imports.flatMap((l) =>
+    (l.removals ?? [])
+      .filter((r) => r.id === id && l.owner.id !== id)
+      .map((r) => ({ ...r, by: (l.owner.id && friends[l.owner.id]?.displayName) || l.owner.displayName, byId: l.owner.id })),
+  );
+  if (!notes.length) return null;
+  return (
+    <div className="red-flags" data-flip-fade>
+      {notes
+        .sort((a, b) => b.t - a.t)
+        .map((n) => {
+          const who = (
+            <button className="link-btn" disabled={!n.byId || !friends[n.byId]} onClick={() => n.byId && setState({ selectedId: n.byId })}>
+              {n.by}
+            </button>
+          );
+          const what = n.byMe
+            ? n.together
+              ? <>{who} removed them as a friend while they were in the same instance</>
+              : <>{who} removed them as a friend</>
+            : n.together
+              ? <>{who} and they stopped being friends while they were in the same instance</>
+              : <>{who} and they stopped being friends</>;
+          return (
+            <p key={`${n.byId}-${n.t}`} className={`red-flag ${n.together ? "strong" : ""}`}>
+              <Icon name="flag" size={15} />
+              <span>
+                {what} ({fmtDate(n.t)}). You could ask {n.by} why.
+              </span>
+            </p>
+          );
+        })}
+    </div>
   );
 }

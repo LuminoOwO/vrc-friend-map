@@ -127,6 +127,8 @@ export interface ImportedList {
   resolved?: string[];
   /** Received through vfm-servers (names of the servers), kept up to date by syncing. */
   via?: string[];
+  /** People the owner stopped being friends with, if they share that. */
+  removals?: SharedRemoval[];
 }
 
 export interface FriendLogEntry {
@@ -134,6 +136,18 @@ export interface FriendLogEntry {
   id: string;
   name: string;
   type: "added" | "removed";
+  /** Removed with the app's own Unfriend button (otherwise we can't tell who removed whom). */
+  byMe?: boolean;
+  /** Removed while that person was in your instance (or had just left it). */
+  together?: boolean;
+}
+
+/** A removal a friend shared with you (Settings → server → "Share my friend removals"). */
+export interface SharedRemoval {
+  id: string;
+  t: number;
+  byMe?: boolean;
+  together?: boolean;
 }
 
 export interface Cache {
@@ -303,6 +317,8 @@ export interface ShareServer {
   audienceAutoAdd: boolean;
   /** Which friends the shared friend list and activity cover. */
   include: PeopleSelection;
+  /** Also share whom you stopped being friends with (shown to them as a note on that person). */
+  shareRemovals: boolean;
   /** Fetch what others share with me here. */
   download: boolean;
   /** You paired this server's logger. */

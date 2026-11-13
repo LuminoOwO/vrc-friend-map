@@ -3,7 +3,7 @@
 // are cached and only refetched when older than the configured age.
 import { noteFriend } from "./activity";
 import { addNewFriendsToPicks } from "./selection";
-import { notifyEvent } from "./notifications";
+import { notifyEvent, removedByMe } from "./notifications";
 import { backend, type ApiResponse } from "./backend";
 import { celebrateNewFriends } from "./notify";
 import { getState, resetSync, setState, setSync, showToast, updateCache, updateLocal } from "./store";
@@ -135,6 +135,13 @@ async function fetchFriends(me: Me, gen: number) {
 }
 
 /** Keep a small log of friends added and removed since the first sync. */
+/** Was this person in my instance right now, or did they leave it in the last 10 minutes? (game log) */
+function wasWithMe(id: string, now: number): boolean {
+  const s = getState();
+  if (s.here?.active && s.here.players.some((p) => p.id === id)) return true;
+  return s.activity.some((e) => e.userId === id && (e.kind === "leave" || e.kind === "join") && now - e.t < 10 * 60_000);
+}
+
 /** Returns the new friends a notification was shown for. */
 export function recordFriendChanges(current: string[], prevFriends: Record<string, Friend>): Set<string> {
   const now = Date.now();
@@ -158,7 +165,7 @@ export function recordFriendChanges(current: string[], prevFriends: Record<strin
         if (!prev.has(id)) log.push({ t: now, id, name: getState().cache.friends[id]?.displayName ?? id, type: "added" });
       }
       for (const id of prev) {
-        if (!cur.has(id)) log.push({ t: now, id, name: prevFriends[id]?.displayName ?? id, type: "removed" });
+        if (!cur.has(id)) log.push({ t: now, id, name: prevFriends[id]?.displayName ?? id, type: "removed", byMe: removedByMe.has(id), together: wasWithMe(id, now) });
       }
     }
     return { ...l, logSince: l.logSince || now, lastFriendIds: current, friendLog: log.slice(-500) };

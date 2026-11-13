@@ -6,7 +6,7 @@ import { backend, type InfoResult, type PublishResult } from "./backend";
 import { getState, newServer, setState, showToast, updateLocal, updateServer, updateSharing } from "./store";
 import { combineStats } from "./together";
 import { selectedIds } from "./selection";
-import type { EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareServer, SharedData } from "./types";
+import type { EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareServer, SharedData, SharedRemoval } from "./types";
 
 export const FRIENDS_FORMAT = "vrc-friend-map/friends-v1";
 export const ACTIVITY_FORMAT = "vrc-friend-map/activity-v1";
@@ -264,6 +264,7 @@ interface FriendsPayload {
   owner?: { id?: string; displayName?: string };
   exportedAt?: string;
   friends?: { id: string; displayName: string }[];
+  removals?: SharedRemoval[];
 }
 
 /** Friend lists from servers show up under Shared lists, updated on every sync. */
@@ -287,6 +288,11 @@ function applyReceivedLists(d: SharedData) {
       mode: "full",
       friends: p.friends.filter((f) => f && typeof f.id === "string").map((f) => ({ id: f.id, displayName: String(f.displayName ?? "") })),
       via: [...new Set(it.servers.map(name))],
+      removals: Array.isArray(p.removals)
+        ? p.removals
+            .filter((r) => r && typeof r.id === "string" && typeof r.t === "number")
+            .map((r) => ({ id: r.id, t: r.t, byMe: r.byMe === true, together: r.together === true }))
+        : undefined,
     });
   }
   const local = getState().local;
@@ -330,6 +336,13 @@ function friendsPayload(s: ShareServer): string {
       .map((f) => ({ id: f.id, displayName: f.displayName }))
       .sort((a, b) => a.displayName.localeCompare(b.displayName)),
   };
+  if (s.shareRemovals) {
+    const year = Date.now() - 365 * 864e5;
+    body.removals = st.local.friendLog
+      .filter((e) => e.type === "removed" && e.t > year)
+      .slice(-300)
+      .map((e) => ({ id: e.id, t: e.t, byMe: e.byMe, together: e.together }));
+  }
   return JSON.stringify({ ...body, mode: "full" });
 }
 

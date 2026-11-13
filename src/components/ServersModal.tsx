@@ -463,7 +463,11 @@ function ServerCard({ server: s }: { server: ShareServer }) {
                   <input type="checkbox" checked={s.shareActivity} onChange={(e) => set({ shareActivity: e.target.checked })} />
                   Activity (who spends time with whom)
                 </label>
-                <Why text="Friend list: your friends' names and IDs, so friends see your connections even when VRChat hides mutuals. Activity: how much time pairs of your friends spent in the same instance (from your game logs, live locations and loggers), which makes their group suggestions better. Nothing else is sent." />
+                <label className="check">
+                  <input type="checkbox" checked={s.shareRemovals} disabled={!s.shareFriends} onChange={(e) => set({ shareRemovals: e.target.checked })} />
+                  My friend removals
+                </label>
+                <Why text="Friend list: your friends' names and IDs, so friends see your connections even when VRChat hides mutuals. Activity: how much time pairs of your friends spent in the same instance (from your game logs, live locations and loggers), which makes their group suggestions better. Friend removals: whom you stopped being friends with in the last year, and whether they were in your instance then; your friends see it as a note on that person's profile, so they can ask you about it. Nothing else is sent." />
               </div>
               <div className="row">
                 <span className="small">Which friends it covers:</span>
