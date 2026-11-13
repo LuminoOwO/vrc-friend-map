@@ -40,7 +40,13 @@ minor releases can change behavior.
   (and a warning when it's software rendering), web engine, environment flags, a quick drawing
   benchmark and a *Copy diagnostics* button.
 
+### Docs
+- The project page is short now. The details moved to `docs/`: a full feature list, a guide to
+  the app, a step-by-step server sync tutorial (program, Docker / Podman, Pi, Android,
+  HTTPS, connecting the app, sharing, logger), installing, privacy, and building.
+
 ### Fixed
+- Release builds use the Node 24 versions of GitHub's actions (Node 20 is being retired).
 - Building the Chromium version on systems whose GTK 4 has no Wayland support (X11 only)
   failed looking for `gtk4-wayland`. It now builds for X11 there.
 - The Chromium build ignored its own switches (they need a `--` in front), so "Unlimited"

@@ -50,7 +50,7 @@ jobs:
     outputs:
       runs-on: ${{ steps.pick.outputs.runs-on }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           sparse-checkout: .github/actions
       - id: pick
@@ -68,7 +68,7 @@ jobs:
     outputs:
       sha: ${{ steps.pick.outputs.sha }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Commit to build
@@ -82,7 +82,7 @@ jobs:
           git checkout -q "$SHA"
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
           echo "Building $TAG ($MODE) from $SHA"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -165,10 +165,10 @@ jobs:
         runner: ${{ fromJSON(github.event.repository.private && '["ubuntu-24.04"]' || '["ubuntu-24.04","ubuntu-24.04-arm"]') }}
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.test.outputs.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -184,7 +184,7 @@ jobs:
           key: ${{ matrix.runner }}-chromium-${{ hashFiles('src-tauri/chromium/Cargo.lock') }}
       # Tauri's CLI built from its Chromium branch (scripts/chromium.py pins the commit),
       # and the Chromium (CEF) download, are the same until that pin changes.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v5
         with:
           path: |
             .tools
@@ -205,7 +205,7 @@ jobs:
           set -o pipefail
           CI=true ./scripts/build-linux.sh all 2>&1 | tee "$RUNNER_TEMP/build.log"
       - run: rm -f release/SHA256SUMS
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: linux-${{ matrix.runner }}
           path: release/*
@@ -221,10 +221,10 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.test.outputs.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -238,7 +238,7 @@ jobs:
           set -o pipefail
           npx tauri build --bundles nsis,msi 2>&1 | tee "$RUNNER_TEMP/build.log"
       - run: node scripts/collect-release.mjs windows
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: windows
           path: release/*
@@ -252,10 +252,10 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.test.outputs.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -287,7 +287,7 @@ jobs:
           cp README.md ../LICENSE "$D/"
           tar -C "$RUNNER_TEMP" -czf "../release/vfm-server-$VERSION-macos-universal.tar.gz" "vfm-server-$VERSION-macos-universal"
           ls -la ../release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: macos
           path: release/*
@@ -315,14 +315,14 @@ jobs:
               exit 1
             fi
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.test.outputs.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 17
@@ -367,7 +367,7 @@ jobs:
           rm -f "$RUNNER_TEMP/release.keystore"
           "$BT/apksigner" verify --print-certs "$RUNNER_TEMP/signed.apk" | head -n 3
           node scripts/collect-release.mjs android "$RUNNER_TEMP/signed.apk"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: android
           path: release/*
@@ -380,10 +380,10 @@ jobs:
     needs: test
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.test.outputs.sha }}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -403,7 +403,7 @@ jobs:
             npx tauri ios build --ci --no-sign --target aarch64
           } 2>&1 | tee "$RUNNER_TEMP/build.log"
       - run: node scripts/collect-release.mjs ios
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: ios
           path: release/*
@@ -417,7 +417,7 @@ jobs:
     needs: test
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.test.outputs.sha }}
       - uses: dtolnay/rust-toolchain@stable
@@ -460,7 +460,7 @@ jobs:
           } 2>&1 | tee "$RUNNER_TEMP/build.log"
           ls -la ../release
           file target/*/release/vfm-server
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: server-linux
           path: release/*
@@ -476,7 +476,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.test.outputs.sha }}
       - uses: dtolnay/rust-toolchain@stable
@@ -495,7 +495,7 @@ jobs:
           cp target/release/vfm-server.exe README.md ../LICENSE "$D/"
           (cd "$RUNNER_TEMP" && 7z a -tzip "$GITHUB_WORKSPACE/release/vfm-server-$VERSION-windows-x64.zip" "vfm-server-$VERSION-windows-x64" >/dev/null)
           ls -la ../release
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: server-windows
           path: release/*
@@ -513,10 +513,10 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.test.outputs.sha }}
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: server-linux
           path: dl
@@ -535,8 +535,8 @@ jobs:
             cp "$RUNNER_TEMP/vfm-server-$VERSION-${p%%:*}/vfm-server" "$CTX/bin/${p##*:}/"
           done
           find "$CTX" -type f | sort
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         if: env.MODE == 'release'
         with:
           registry: ghcr.io
@@ -569,7 +569,7 @@ jobs:
     if: ${{ always() && needs.test.result == 'success' && !startsWith(github.ref, 'refs/heads/build-check/') }}
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           path: artifacts
       - name: Checksums
