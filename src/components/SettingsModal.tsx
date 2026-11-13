@@ -19,6 +19,7 @@ const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: 
 ];
 import { Icon } from "./Icon";
 import { Diagnostics } from "./Diagnostics";
+import { FrameRateSection } from "./FrameRateSection";
 import { openServers } from "./ServersModal";
 import { serverName } from "../share";
 
@@ -171,6 +172,10 @@ export function SettingsModal() {
             </label>
           </div>
           <p className="small muted">More options (full player cards, sizes, spacing…) are under “Map options” on the map.</p>
+        </section>
+
+        <section>
+          <FrameRateSection gfx={gfx} />
         </section>
 
         {gfx?.supported && (

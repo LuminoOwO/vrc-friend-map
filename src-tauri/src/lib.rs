@@ -341,6 +341,12 @@ fn graphics_set(mode: String) -> Result<(), String> {
     graphics::save(graphics::Mode::parse(&mode).ok_or("unknown mode")?)
 }
 
+/// Let the map run faster than the screen (Chromium build; next start).
+#[tauri::command]
+fn graphics_set_unlocked(unlocked: bool) -> Result<(), String> {
+    graphics::save_unlocked(unlocked)
+}
+
 /// Relaunch the app (used to apply a graphics change).
 #[tauri::command]
 fn app_restart(app: AppHandle) {
@@ -458,6 +464,7 @@ pub fn run() {
             live_events,
             graphics_get,
             graphics_set,
+            graphics_set_unlocked,
             app_restart,
             clear_image_cache,
             hash_ids,

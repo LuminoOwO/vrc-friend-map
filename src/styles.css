@@ -708,3 +708,14 @@ code.secret { font-family: ui-monospace, monospace; font-size: 11px; word-break:
 .mod-row.confirm { flex-direction: column; align-items: flex-start; background: color-mix(in srgb, var(--danger, #f87171) 10%, transparent); border: 1px solid color-mix(in srgb, var(--danger, #f87171) 40%, transparent); border-radius: 10px; padding: 8px 10px; }
 .btn.danger { border-color: var(--danger, #f87171); color: var(--danger, #f87171); }
 .here-chip.blocked { opacity: 0.45; text-decoration: line-through; }
+
+.sub-h { margin: 14px 0 6px; font-size: 13px; font-weight: 600; color: var(--muted); }
+
+/* Scrollbars in the theme's colors (Chromium/Firefox use scrollbar-color;
+   WebKit and older Chromium the ::-webkit-scrollbar rules). */
+* { scrollbar-color: color-mix(in srgb, var(--muted) 45%, transparent) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; background: transparent; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: color-mix(in srgb, var(--muted) 45%, transparent); border-radius: 10px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--accent) 70%, transparent); background-clip: padding-box; }
+::-webkit-scrollbar-corner { background: transparent; }

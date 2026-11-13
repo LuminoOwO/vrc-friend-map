@@ -215,6 +215,7 @@ export const defaultSettings = (): Settings => ({
   profileAs: "popup",
   sharing: defaultSharing(),
   people: { loadEveryone: false, keep: "potential", showBlocked: false },
+  perf: { fps: 0, unfocusedFps: 30, idleAfter: 0, idleFps: 30, screenHz: 0 },
   lastVersion: "",
 });
 
@@ -362,6 +363,10 @@ export function updateCache(fn: (c: Cache) => Cache) {
 export function updateLocal(fn: (l: LocalData) => LocalData) {
   setState((s) => ({ local: fn(s.local) }));
   scheduleSave("local");
+}
+
+export function updatePerf(patch: Partial<Settings["perf"]>) {
+  updateSettings({ perf: { ...state.settings.perf, ...patch } });
 }
 
 export function updatePeople(patch: Partial<Settings["people"]>) {
@@ -527,6 +532,13 @@ export function normalizeSettings(raw: Raw | null): Settings {
     },
     theme: oneOf(raw.theme, ["dark", "oled", "light", "mocha", "macchiato", "latte", "nord", "dracula"] as const, d.theme),
     profileAs: oneOf(raw.profileAs, ["popup", "sidebar"] as const, d.profileAs),
+    perf: {
+      fps: Math.round(num(raw.perf?.fps, d.perf.fps, -1, 1000)),
+      unfocusedFps: Math.round(num(raw.perf?.unfocusedFps, d.perf.unfocusedFps, 0, 1000)),
+      idleAfter: Math.round(num(raw.perf?.idleAfter, d.perf.idleAfter, 0, 86400)),
+      idleFps: Math.round(num(raw.perf?.idleFps, d.perf.idleFps, 0, 1000)),
+      screenHz: Math.round(num(raw.perf?.screenHz, 0, 0, 1000)),
+    },
     people: {
       loadEveryone: typeof raw.people?.loadEveryone === "boolean" ? raw.people.loadEveryone : d.people.loadEveryone,
       keep: oneOf(raw.people?.keep, ["none", "potential", "everyone"] as const, d.people.keep),
@@ -650,7 +662,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
-  "0.9.0": "Linux runs on Chromium now (smooth on big windows), a new Activity tab with who joined and left and friends coming online, unfriend / block / mute buttons on profiles, Settings → Diagnostics, and choices for which non-friends' profiles to load and keep.",
+  "0.9.0": "Linux runs on Chromium now (smooth on big windows), a new Activity tab with who joined and left and friends coming online, unfriend / block / mute buttons on profiles, a frame-rate limit with power saving, Settings → Diagnostics, and choices for which non-friends' profiles to load and keep.",
   "0.8.0": "you're on the map now (between your closest friends), a strip shows who's in your VRChat instance right now, and Map options → Not friends yet shows people you could befriend, with a friend-request button on their profile.",
   "0.7.4": "Settings → Graphics lets you choose GPU or software rendering for the map (Linux and Windows), if it's slow or the window stays blank.",
   "0.7.0": "share friend lists and activity with friends through your own or a friend's server (end-to-end encrypted), and run vfm-server on a spare device to log your friends' instance hopping 24/7 for better circle suggestions. Settings → Servers.",

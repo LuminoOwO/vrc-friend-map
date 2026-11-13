@@ -19,6 +19,12 @@ export interface GraphicsInfo {
   arch?: string;
   /** Environment variables that affect drawing. */
   env?: [string, string][];
+  /** Saved: run faster than the screen (next start). */
+  unlocked?: boolean;
+  /** This run is faster than the screen. */
+  unlocked_now?: boolean;
+  /** Possible on this build (Chromium on Linux, WebView2 on Windows). */
+  can_unlock?: boolean;
 }
 
 export const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -230,6 +236,10 @@ export const backend = {
   async storageInfo(): Promise<{ data_dir: string; image_cache_bytes: number } | null> {
     if (!isTauri) return null;
     return invoke("storage_info");
+  },
+  async graphicsSetUnlocked(unlocked: boolean): Promise<void> {
+    if (!isTauri) return;
+    await invoke("graphics_set_unlocked", { unlocked });
   },
   async graphicsInfo(): Promise<GraphicsInfo | null> {
     if (!isTauri) return null;

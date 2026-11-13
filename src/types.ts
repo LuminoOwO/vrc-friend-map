@@ -349,6 +349,7 @@ export interface Settings {
   profileAs: "popup" | "sidebar";
   sharing: SharingSettings;
   people: PeopleSettings;
+  perf: PerfSettings;
   /** App version that last ran with this data (for upgrade/downgrade notes). */
   lastVersion: string;
 }
@@ -460,3 +461,19 @@ export interface MetPerson {
   visits: number;
   last: number;
 }
+
+/** Frame rate and power saving (Settings → Frame rate). */
+export interface PerfSettings {
+  /** Limit: 0 = the screen's refresh rate, -1 = unlimited, otherwise frames per second. */
+  fps: number;
+  /** While the window isn't focused: 0 = stop moving, PERF_NO_LIMIT = no change, otherwise fps. */
+  unfocusedFps: number;
+  /** After this many seconds without mouse or keyboard input… (0 = never) */
+  idleAfter: number;
+  /** …limit to this (0 = stop moving). */
+  idleFps: number;
+  /** The screen's refresh rate as last measured (0 = not yet). */
+  screenHz: number;
+}
+
+export const PERF_NO_LIMIT = 1000;

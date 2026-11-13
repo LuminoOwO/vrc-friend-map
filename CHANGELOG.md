@@ -15,7 +15,14 @@ minor releases can change behavior.
   (Tauri's AppImage packaging for Chromium doesn't finish); the tarball works on any distro.
   `scripts/build-linux.sh --webkit` still builds the old WebKitGTK version.
 - The map draws at full frame rate whenever its window has focus, also while it only orbits.
-  It drops to about 30 fps only when the window isn't focused.
+
+### Added (frame rate)
+- **Settings → Frame rate**: a limit from 30 fps up to 360 fps or unlimited (default: match the
+  screen). Faster than the screen turns vsync off for the app (Chromium on Linux, WebView2 on
+  Windows; needs a restart, which the setting offers).
+- **Saving power**: how fast the map moves while the window isn't focused (default 30 fps,
+  down to stopping, or no change), and optionally a lower rate after a while without input.
+  Any mouse, key or touch input brings the full rate back right away.
 
 ### Added
 - **Activity tab**: who joined and left your instance, your world changes, VRChat closing or
@@ -33,6 +40,9 @@ minor releases can change behavior.
   benchmark and a *Copy diagnostics* button.
 
 ### Fixed
+- Building the Chromium version on systems whose GTK 4 has no Wayland support (X11 only)
+  failed looking for `gtk4-wayland`. It now builds for X11 there.
+- Scrollbars use the theme's colors (Chromium showed its plain light ones).
 - Phones: the profile's close button sat under the status bar and was hard to hit. It's bigger
   now, below the status bar, and stays in place while the profile scrolls.
 

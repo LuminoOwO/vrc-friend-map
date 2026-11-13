@@ -4,6 +4,7 @@
 // overlap. Drag a person into a circle outline (or onto a circle in the
 // sidebar) to add them. Map options change how people and lines are drawn.
 import { mapStats, noteFrame } from "../diag";
+import { PERF_NO_LIMIT } from "../types";
 import * as d3 from "d3";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
@@ -330,6 +331,7 @@ export function GraphView() {
   const hullsRef = useRef<Hull[]>([]);
   const sizeRef = useRef({ w: 800, h: 600, dpr: 1 });
   const rafRef = useRef(0);
+  const frameCapRef = useRef<() => number>(() => Infinity);
   const hoverRef = useRef<string | null>(null);
   const dragTargetRef = useRef<string | null>(null);
   const fittedRef = useRef(false);
@@ -453,12 +455,45 @@ export function GraphView() {
   const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById });
   viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById };
 
+  // Frame-rate limit (Settings → Frame rate): the limit itself, and lower ones
+  // while the window isn't focused or nobody has touched anything for a while.
+  // Something you just did (drag, zoom, hover) always gets the full limit.
+  const lastDrawRef = useRef(0);
+  const waitRef = useRef<ReturnType<typeof setTimeout> | 0>(0);
+  function frameCap(): number {
+    const p = viewRef.current.settings.perf;
+    // "Match the screen" also holds when the app runs without vsync (after an unlimited limit).
+    let cap = p.fps > 0 ? p.fps : p.fps === 0 && p.screenHz > 0 ? p.screenHz : Infinity;
+    const quiet = Date.now() - lastInteractionRef.current;
+    if (quiet > 1500) {
+      if (!document.hasFocus() && p.unfocusedFps < PERF_NO_LIMIT) cap = Math.min(cap, p.unfocusedFps);
+      if (p.idleAfter > 0 && quiet > p.idleAfter * 1000) cap = Math.min(cap, p.idleFps);
+    }
+    return cap;
+  }
+  frameCapRef.current = frameCap;
+
   const requestDraw = () => {
-    if (rafRef.current) return;
-    rafRef.current = requestAnimationFrame(() => {
+    if (rafRef.current || waitRef.current) return;
+    const tick = (now: number) => {
       rafRef.current = 0;
+      const cap = Math.max(1, frameCap());
+      if (cap !== Infinity) {
+        const interval = 1000 / cap;
+        const since = now - lastDrawRef.current;
+        if (since < interval - 1) {
+          const wait = interval - since;
+          // Long waits sleep instead of checking every screen refresh.
+          if (wait > 40) waitRef.current = setTimeout(() => ((waitRef.current = 0), (rafRef.current = requestAnimationFrame(tick))), wait - 20);
+          else rafRef.current = requestAnimationFrame(tick);
+          return;
+        }
+        // Keep the average on the limit even when it isn't a multiple of the screen rate.
+        lastDrawRef.current = since >= interval && since < interval * 2 ? now - (since - interval) : now;
+      } else lastDrawRef.current = now;
       draw();
-    });
+    };
+    rafRef.current = requestAnimationFrame(tick);
   };
 
   // Frame-rate readout (Map options → Show frame rate).
@@ -477,9 +512,12 @@ export function GraphView() {
       if (fpsRef.current)
       {
         const fps = Math.round((a.frames * 1000) / span);
-        const capped = viewRef.current.settings.map.orbit && !document.hasFocus() && Date.now() - lastInteractionRef.current > 1500 && fps <= 34;
+        const cap = frameCapRef.current();
+        const perf = viewRef.current.settings.perf;
+        const byScreen = perf.fps === 0 && cap === perf.screenHz;
+        const capped = cap !== Infinity && !byScreen && fps >= cap - 3 && fps <= cap + 3;
         fpsRef.current.textContent =
-          `${fps} fps · draw ${(a.drawMs / a.frames).toFixed(1)} ms · slowest ${Math.round(a.worst)} ms` + (capped ? " · window not focused: 30 fps on purpose" : "");
+          `${fps} fps · draw ${(a.drawMs / a.frames).toFixed(1)} ms · slowest ${Math.round(a.worst)} ms` + (capped ? ` · limited to ${cap} fps (Settings → Frame rate)` : "");
       }
       fpsAcc.current = { since: t0, frames: 0, drawMs: 0, worst: 0, last: t0 };
     }
@@ -1410,6 +1448,22 @@ export function GraphView() {
     sim.alpha(Math.max(sim.alpha(), 0.3)).restart();
   }, [circles, layoutKey, map.groupPull, map.gravity, extra.anchors]);
 
+  // Any mouse, touch or key input anywhere in the window counts as "not idle"
+  // for the frame-rate limits.
+  useEffect(() => {
+    const mark = () => {
+      lastInteractionRef.current = Date.now();
+    };
+    const opts = { passive: true, capture: true } as const;
+    const evs = ["pointermove", "pointerdown", "keydown", "wheel", "touchstart"] as const;
+    for (const e of evs) window.addEventListener(e, mark, opts);
+    window.addEventListener("focus", mark);
+    return () => {
+      for (const e of evs) window.removeEventListener(e, mark, opts);
+      window.removeEventListener("focus", mark);
+    };
+  }, []);
+
   // Orbit: slowly turn everyone around the middle. Positions really move, so
   // names stay upright and dragging still works.
   useEffect(() => {
@@ -1420,6 +1474,11 @@ export function GraphView() {
     const step = (now: number) => {
       const dt = Math.min(0.1, (now - orbitRef.current.last) / 1000);
       orbitRef.current.last = now;
+      // A limit of 0 (unfocused / idle) stops the orbit until something changes.
+      if (frameCapRef.current() <= 0) {
+        raf = requestAnimationFrame(step);
+        return;
+      }
       const a = speed * dt;
       orbitRef.current.angle += a;
       const cos = Math.cos(a);
@@ -1434,11 +1493,9 @@ export function GraphView() {
       // zoom and the layout also ask for draws). Full frame rate while the
       // window has focus; every other frame (about 30 fps) while it doesn't,
       // to save power when it just sits on a second screen.
-      frame++;
-      if (!document.hidden && (frame % 2 === 0 || document.hasFocus() || Date.now() - lastInteractionRef.current < 1500)) requestDraw();
+      if (!document.hidden) requestDraw();
       raf = requestAnimationFrame(step);
     };
-    let frame = 0;
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1652,6 +1709,8 @@ export function GraphView() {
       simRef.current = null;
       cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
+      if (waitRef.current) clearTimeout(waitRef.current);
+      waitRef.current = 0;
       fittedRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

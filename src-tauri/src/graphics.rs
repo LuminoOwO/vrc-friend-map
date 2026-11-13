@@ -47,7 +47,39 @@ impl Mode {
 struct Saved {
     #[serde(default)]
     mode: Mode,
+    /// Frame rate above the screen's refresh rate (Chromium build only): no vsync.
+    #[serde(default)]
+    unlocked: bool,
 }
+
+fn load_saved() -> Saved {
+    data_dir()
+        .and_then(|d| std::fs::read_to_string(d.join(FILE)).ok())
+        .and_then(|s| serde_json::from_str::<Saved>(&s).ok())
+        .unwrap_or_default()
+}
+
+fn write_saved(saved: &Saved) -> Result<(), String> {
+    let dir = data_dir().ok_or("no data folder")?;
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let json = serde_json::to_string(saved).map_err(|e| e.to_string())?;
+    std::fs::write(dir.join(FILE), json).map_err(|e| e.to_string())
+}
+
+/// Whether the saved setting lets the map run faster than the screen.
+pub fn load_unlocked() -> bool {
+    load_saved().unlocked
+}
+
+/// Takes effect on the next start (Chromium build only).
+pub fn save_unlocked(unlocked: bool) -> Result<(), String> {
+    let mut s = load_saved();
+    s.unlocked = unlocked;
+    write_saved(&s)
+}
+
+/// What this run started with.
+static STARTED_UNLOCKED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// Where Tauri puts `app_data_dir()`, worked out without Tauri (it isn't running yet).
 fn data_dir() -> Option<PathBuf> {
@@ -65,18 +97,13 @@ fn data_dir() -> Option<PathBuf> {
 }
 
 pub fn load() -> Mode {
-    data_dir()
-        .and_then(|d| std::fs::read_to_string(d.join(FILE)).ok())
-        .and_then(|s| serde_json::from_str::<Saved>(&s).ok())
-        .map(|s| s.mode)
-        .unwrap_or_default()
+    load_saved().mode
 }
 
 pub fn save(mode: Mode) -> Result<(), String> {
-    let dir = data_dir().ok_or("no data folder")?;
-    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
-    let json = serde_json::to_string(&Saved { mode }).map_err(|e| e.to_string())?;
-    std::fs::write(dir.join(FILE), json).map_err(|e| e.to_string())
+    let mut s = load_saved();
+    s.mode = mode;
+    write_saved(&s)
 }
 
 /// The mode in force: the environment override if valid, else the saved choice.
@@ -166,6 +193,17 @@ pub fn apply_startup() {
             None => std::env::remove_var(k),
         }
     }
+    // WebView2 is Chromium too: the same two switches let it run faster than the screen.
+    if matches!(os, Os::Windows) && load_unlocked() {
+        STARTED_UNLOCKED.store(true, std::sync::atomic::Ordering::Relaxed);
+        let key = "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS";
+        let flags = "--disable-gpu-vsync --disable-frame-rate-limit";
+        let value = match std::env::var(key).ok().filter(|v| !v.trim().is_empty()) {
+            Some(existing) => format!("{existing} {flags}"),
+            None => flags.to_string(),
+        };
+        std::env::set_var(key, value);
+    }
 }
 
 /// Chromium switches for `mode` (Chromium build only). Auto keeps Chromium's
@@ -186,6 +224,13 @@ pub fn chromium_runtime() -> tauri_runtime_cef::Cef {
     let mut cef = tauri_runtime_cef::Cef::default();
     for switch in chromium_switches(mode) {
         cef = cef.command_line_arg(switch, None::<String>);
+    }
+    if load_unlocked() {
+        // No vsync and no frame cap: requestAnimationFrame runs as fast as it can;
+        // the map's own limit (Settings → Frame rate) decides the actual rate.
+        STARTED_UNLOCKED.store(true, std::sync::atomic::Ordering::Relaxed);
+        cef = cef.command_line_arg("disable-gpu-vsync", None::<String>);
+        cef = cef.command_line_arg("disable-frame-rate-limit", None::<String>);
     }
     if chromium_sandbox_unusable() {
         // Chromium would refuse to start ("No usable sandbox!").
@@ -248,6 +293,12 @@ pub struct Info {
     pub arch: &'static str,
     /// Environment variables that change how the web view draws (for diagnostics).
     pub env: Vec<(String, String)>,
+    /// Saved: run faster than the screen next start.
+    pub unlocked: bool,
+    /// This run is unlocked.
+    pub unlocked_now: bool,
+    /// Whether unlocking is possible (Chromium build).
+    pub can_unlock: bool,
 }
 
 /// Variables worth showing in diagnostics: the app's own, the web engines',
@@ -281,6 +332,9 @@ pub fn info() -> Info {
         os: std::env::consts::OS,
         arch: std::env::consts::ARCH,
         env: graphics_env(),
+        unlocked: load_unlocked(),
+        unlocked_now: STARTED_UNLOCKED.load(std::sync::atomic::Ordering::Relaxed),
+        can_unlock: cfg!(any(feature = "chromium", target_os = "windows")),
     }
 }
 
