@@ -282,15 +282,15 @@ make_flatpak() {
   work=$(mktemp -d)
   flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
   flatpak install --user -y --noninteractive flathub org.gnome.Platform//48 org.gnome.Sdk//48
-  cp packaging/flatpak/app.vrcfriendmap.yml "$work/"
+  cp packaging/flatpak/io.github.luminoowo.VrcFriendMap.yml "$work/"
   local stage="$work/stage"
   mkdir -p "$stage"
   copy_chromium_app "$stage/app"
   install -m755 packaging/flatpak/vrc-friend-map.sh "$stage/vrc-friend-map.sh"
   install -m644 packaging/linux/vrc-friend-map.desktop "$stage/vrc-friend-map.desktop"
-  install -m644 packaging/flatpak/app.vrcfriendmap.metainfo.xml "$stage/"
+  install -m644 packaging/flatpak/io.github.luminoowo.VrcFriendMap.metainfo.xml "$stage/"
   install_icons "$stage/icons"
-  local build="$work/build" repo="$work/repo" manifest="$work/app.vrcfriendmap.yml" round
+  local build="$work/build" repo="$work/repo" manifest="$work/io.github.luminoowo.VrcFriendMap.yml" round
   # Build, then look for libraries the runtime lacks; copy those from this
   # system into extra-libs and build again (a few rounds for their own needs).
   for round in 1 2 3 4; do
@@ -318,7 +318,7 @@ make_flatpak() {
     done
   done
   flatpak-builder --user --force-clean --disable-rofiles-fuse --repo="$repo" "$build" "$manifest"
-  flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo "$repo" "$OUT/$dest" app.vrcfriendmap
+  flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo "$repo" "$OUT/$dest" io.github.luminoowo.VrcFriendMap
   rm -rf "$work"
 }
 

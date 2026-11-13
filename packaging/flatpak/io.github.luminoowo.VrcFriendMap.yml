@@ -1,7 +1,7 @@
 # Flatpak for the Chromium build. scripts/build-linux.sh flatpak fills
 # `app/` (the program and Chromium's files, from the .deb) next to this file
 # and builds it; the result is a single .flatpak file.
-app-id: app.vrcfriendmap
+app-id: io.github.luminoowo.VrcFriendMap
 runtime: org.gnome.Platform
 runtime-version: "48"
 sdk: org.gnome.Sdk
@@ -37,7 +37,7 @@ modules:
       - if [ -d extra-libs ]; then mkdir -p /app/lib/vrc-friend-map/extra-libs && cp -a extra-libs/. /app/lib/vrc-friend-map/extra-libs/; fi
       - install -Dm755 vrc-friend-map.sh /app/bin/vrc-friend-map
       - install -Dm644 vrc-friend-map.desktop /app/share/applications/vrc-friend-map.desktop
-      - install -Dm644 app.vrcfriendmap.metainfo.xml /app/share/metainfo/app.vrcfriendmap.metainfo.xml
+      - install -Dm644 io.github.luminoowo.VrcFriendMap.metainfo.xml /app/share/metainfo/io.github.luminoowo.VrcFriendMap.metainfo.xml
       - for s in 32 128 256 512; do install -Dm644 icons/${s}x${s}.png /app/share/icons/hicolor/${s}x${s}/apps/vrc-friend-map.png; done
     sources:
       - type: dir

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>app.vrcfriendmap</id>
+  <id>io.github.luminoowo.VrcFriendMap</id>
   <name>VRC Friend Map</name>
   <summary>Map your VRChat friends, mutuals and circles</summary>
   <metadata_license>CC0-1.0</metadata_license>
@@ -16,7 +16,7 @@
       unless you add a server to share with friends.
     </p>
   </description>
-  <launchable type="desktop-id">app.vrcfriendmap.desktop</launchable>
+  <launchable type="desktop-id">io.github.luminoowo.VrcFriendMap.desktop</launchable>
   <url type="homepage">https://github.com/LuminoOwO/vrc-friend-map</url>
   <content_rating type="oars-1.1"/>
 </component>
