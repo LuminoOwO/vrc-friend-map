@@ -3,12 +3,14 @@
 #
 #   scripts/build-linux.sh                 pick a package type for this distro
 #   scripts/build-linux.sh all             every format below
-#   scripts/build-linux.sh deb rpm ...     any of: deb rpm appimage tarball none
+#   scripts/build-linux.sh deb rpm ...     any of: deb rpm appimage tarball flatpak none
 #
 #   deb       Debian / Ubuntu / Mint package
 #   rpm       Fedora / openSUSE / RHEL package
-#   appimage  portable AppImage (runs on most distros)
+#   appimage  portable AppImage (one file; downloads appimagetool once)
 #   tarball   portable .tar.gz with a per-user install script (no root needed)
+#   flatpak   a .flatpak bundle (Chromium build only; needs flatpak-builder,
+#             and downloads the GNOME 48 runtime from Flathub once)
 #   none      just the program: src-tauri/target/release/vrc-friend-map
 #
 # Web engine: Chromium (CEF) by default; add --webkit (or VFM_ENGINE=webkit)
@@ -23,6 +25,7 @@
 #   vrc-friend-map-<version>-1.x86_64.rpm
 #   vrc-friend-map-<version>-x86_64.AppImage
 #   vrc-friend-map-<version>-linux-x86_64.tar.gz
+#   vrc-friend-map-<version>-x86_64.flatpak
 #
 # It doesn't install system packages for you; it tells you what's missing.
 # See "Building on Linux" in README.md for the install commands per distro.
@@ -99,24 +102,36 @@ if [ ${#formats[@]} -eq 0 ] || [ "${formats[0]}" = "auto" ]; then
   echo "→ Building '${formats[*]}' for this system (pass all, deb, rpm, appimage, tarball or none to choose)"
 elif [ "${formats[0]}" = "all" ]; then
   formats=(deb rpm appimage tarball)
-  # Tauri's Chromium AppImage packaging (quick-sharun) doesn't finish yet.
-  [ "$ENGINE" = chromium ] && formats=(deb rpm tarball)
+  if [ "$ENGINE" = chromium ]; then
+    if command -v flatpak-builder >/dev/null 2>&1; then
+      formats+=(flatpak)
+    else
+      echo "→ Skipping the Flatpak (install flatpak-builder to build it too)"
+    fi
+  fi
 fi
-if [ "$ENGINE" = chromium ] && [[ " ${formats[*]} " == *" appimage "* ]]; then
-  echo "✗ No AppImage for the Chromium build yet (Tauri's packaging for it hangs). Use deb, rpm or tarball, or --webkit." >&2
+if [ "$ENGINE" = webkit ] && [[ " ${formats[*]} " == *" flatpak "* ]]; then
+  echo "✗ The Flatpak is only built for the Chromium version." >&2
   exit 2
+fi
+if [[ " ${formats[*]} " == *" flatpak "* ]]; then
+  need flatpak-builder "install flatpak-builder (Debian/Ubuntu/Mint: flatpak-builder, Fedora: flatpak-builder, Arch: flatpak-builder)"
+  [ "$missing" -eq 0 ] || exit 1
 fi
 bundles=()
 for f in "${formats[@]}"; do
   case "$f" in
-    deb|rpm|appimage) bundles+=("$f") ;;
-    tarball|none) ;;
-    *) echo "Unknown format '$f' (use all, deb, rpm, appimage, tarball or none)" >&2; exit 2 ;;
+    deb|rpm) bundles+=("$f") ;;
+    # Tauri's own AppImage packaging for Chromium doesn't finish, so for Chromium
+    # this script makes the AppImage itself (from the .deb's files, like the tarball).
+    appimage) [ "$ENGINE" = webkit ] && bundles+=(appimage) ;;
+    tarball|flatpak|none) ;;
+    *) echo "Unknown format '$f' (use all, deb, rpm, appimage, tarball, flatpak or none)" >&2; exit 2 ;;
   esac
 done
-# The Chromium tarball is put together from the .deb's files (the program
-# plus Chromium), so build the .deb too.
-if [ "$ENGINE" = chromium ] && [[ " ${formats[*]} " == *" tarball "* ]] && [[ " ${bundles[*]-} " != *" deb "* ]]; then
+# The Chromium tarball, AppImage and Flatpak are put together from the .deb's
+# files (the program plus Chromium), so build the .deb too.
+if [ "$ENGINE" = chromium ] && [[ " ${formats[*]} " =~ \ (tarball|appimage|flatpak)\  ]] && [[ " ${bundles[*]-} " != *" deb "* ]]; then
   bundles+=(deb)
 fi
 
@@ -188,6 +203,31 @@ pick() { # newest file matching a glob
   printf '%s' "$f"
 }
 
+# Copies the program and Chromium's files, as the .deb lays them out, into $1.
+copy_chromium_app() {
+  local deb unpack appdir
+  deb=$(pick "$BUNDLE_DIR/deb/*_${VERSION}_*.deb")
+  unpack=$(mktemp -d)
+  (cd "$unpack" && ar x "$ROOT/$deb" && tar -xf data.tar.*)
+  appdir=$(find "$unpack/usr" -name libcef.so -printf '%h\n' | head -n 1)
+  if [ -z "$appdir" ] || [ ! -x "$appdir/vrc-friend-map" ]; then
+    echo "✗ Chromium files not found in $deb:" >&2
+    (cd "$unpack" && find usr -maxdepth 3) >&2
+    exit 1
+  fi
+  mkdir -p "$1"
+  cp -a "$appdir/." "$1/"
+  rm -rf "$unpack"
+}
+
+install_icons() { # $1: folder; icons/<size>x<size>.png
+  mkdir -p "$1"
+  install -m644 src-tauri/icons/32x32.png "$1/32x32.png"
+  install -m644 src-tauri/icons/128x128.png "$1/128x128.png"
+  install -m644 src-tauri/icons/128x128@2x.png "$1/256x256.png"
+  install -m644 src-tauri/icons/icon.png "$1/512x512.png"
+}
+
 make_tarball() {
   local name="vrc-friend-map-${VERSION}-linux-${ARCH}"
   local stage
@@ -195,21 +235,7 @@ make_tarball() {
   local dir="$stage/$name"
   mkdir -p "$dir/icons"
   if [ "$ENGINE" = chromium ]; then
-    # The program and Chromium's files, as the .deb lays them out.
-    local deb unpack
-    deb=$(pick "$BUNDLE_DIR/deb/*_${VERSION}_*.deb")
-    unpack=$(mktemp -d)
-    (cd "$unpack" && ar x "$ROOT/$deb" && tar -xf data.tar.*)
-    local appdir
-    appdir=$(find "$unpack/usr" -name libcef.so -printf '%h\n' | head -n 1)
-    if [ -z "$appdir" ] || [ ! -x "$appdir/vrc-friend-map" ]; then
-      echo "✗ Chromium files not found in $deb:" >&2
-      (cd "$unpack" && find usr -maxdepth 3) >&2
-      exit 1
-    fi
-    mkdir -p "$dir/app"
-    cp -a "$appdir/." "$dir/app/"
-    rm -rf "$unpack"
+    copy_chromium_app "$dir/app"
     # Run from this folder: a link next to the scripts.
     ln -s app/vrc-friend-map "$dir/vrc-friend-map"
   else
@@ -218,13 +244,82 @@ make_tarball() {
   install -m755 packaging/linux/install.sh "$dir/install.sh"
   install -m644 packaging/linux/vrc-friend-map.desktop "$dir/vrc-friend-map.desktop"
   install -m644 packaging/linux/README.txt "$dir/README.txt"
-  install -m644 src-tauri/icons/32x32.png "$dir/icons/32x32.png"
-  install -m644 src-tauri/icons/128x128.png "$dir/icons/128x128.png"
-  install -m644 src-tauri/icons/128x128@2x.png "$dir/icons/256x256.png"
-  install -m644 src-tauri/icons/icon.png "$dir/icons/512x512.png"
+  install_icons "$dir/icons"
   sed -i "s/@VERSION@/${VERSION}/g" "$dir/README.txt"
   tar -C "$stage" --owner=0 --group=0 -czf "$OUT/$name.tar.gz" "$name"
   rm -rf "$stage"
+}
+
+# The Chromium AppImage: the .deb's files in an AppDir, packed with appimagetool.
+# Like the tarball it uses the system's GTK (4.14 or newer).
+make_appimage_chromium() {
+  local dest="$1" tool="$ROOT/.tools/appimagetool-${ARCH}.AppImage"
+  if [ ! -x "$tool" ]; then
+    echo "→ Downloading appimagetool (once)"
+    mkdir -p "$ROOT/.tools"
+    curl -fL --retry 3 -o "$tool.part" "https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-${ARCH}.AppImage"
+    chmod +x "$tool.part" && mv "$tool.part" "$tool"
+  fi
+  local appdir
+  appdir=$(mktemp -d)/VRC_Friend_Map.AppDir
+  copy_chromium_app "$appdir/usr/lib/vrc-friend-map"
+  install -m755 packaging/appimage/AppRun "$appdir/AppRun"
+  install -m644 packaging/linux/vrc-friend-map.desktop "$appdir/vrc-friend-map.desktop"
+  install -m644 src-tauri/icons/icon.png "$appdir/vrc-friend-map.png"
+  ln -s vrc-friend-map.png "$appdir/.DirIcon"
+  local s
+  for s in 32 128 256 512; do mkdir -p "$appdir/usr/share/icons/hicolor/${s}x${s}/apps"; done
+  install_icons "$appdir/icons.tmp"
+  for s in 32 128 256 512; do mv "$appdir/icons.tmp/${s}x${s}.png" "$appdir/usr/share/icons/hicolor/${s}x${s}/apps/vrc-friend-map.png"; done
+  rmdir "$appdir/icons.tmp"
+  # Extract-and-run: appimagetool works without FUSE (containers, CI).
+  ARCH="$ARCH" APPIMAGE_EXTRACT_AND_RUN=1 "$tool" --no-appstream "$appdir" "$OUT/$dest"
+  rm -rf "$(dirname "$appdir")"
+}
+
+make_flatpak() {
+  local dest="$1" work
+  work=$(mktemp -d)
+  flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+  flatpak install --user -y --noninteractive flathub org.gnome.Platform//48 org.gnome.Sdk//48
+  cp packaging/flatpak/app.vrcfriendmap.yml "$work/"
+  local stage="$work/stage"
+  mkdir -p "$stage"
+  copy_chromium_app "$stage/app"
+  install -m755 packaging/flatpak/vrc-friend-map.sh "$stage/vrc-friend-map.sh"
+  install -m644 packaging/linux/vrc-friend-map.desktop "$stage/vrc-friend-map.desktop"
+  install -m644 packaging/flatpak/app.vrcfriendmap.metainfo.xml "$stage/"
+  install_icons "$stage/icons"
+  local build="$work/build" repo="$work/repo" manifest="$work/app.vrcfriendmap.yml" round
+  # Build, then look for libraries the runtime lacks; copy those from this
+  # system into extra-libs and build again (a few rounds for their own needs).
+  for round in 1 2 3 4; do
+    flatpak-builder --user --force-clean --disable-rofiles-fuse "$build" "$manifest"
+    local lost
+    lost=$(flatpak-builder --run "$build" "$manifest" sh -c \
+      'D=/app/lib/vrc-friend-map; LD_LIBRARY_PATH=$D:$D/extra-libs ldd $D/vrc-friend-map $D/libcef.so $D/extra-libs/*.so* 2>/dev/null' \
+      | awk '/not found/ {print $1}' | sort -u)
+    [ -z "$lost" ] && break
+    if [ "$round" = 4 ]; then
+      echo "✗ The Flatpak runtime still lacks: $lost" >&2
+      exit 1
+    fi
+    echo "→ Not in the Flatpak runtime, taking them from this system: $(echo $lost)"
+    mkdir -p "$stage/extra-libs"
+    local lib path
+    for lib in $lost; do
+      path=$(ldconfig -p | awk -v l="$lib" '$1 == l && $0 ~ /x86-64|AArch64|aarch64/ {print $NF; exit}')
+      [ -z "$path" ] && path=$(ldconfig -p | awk -v l="$lib" '$1 == l {print $NF; exit}')
+      if [ -z "$path" ]; then
+        echo "✗ $lib is needed but isn't installed here either" >&2
+        exit 1
+      fi
+      cp -L "$path" "$stage/extra-libs/$lib"
+    done
+  done
+  flatpak-builder --user --force-clean --disable-rofiles-fuse --repo="$repo" "$build" "$manifest"
+  flatpak build-bundle --runtime-repo=https://dl.flathub.org/repo/flathub.flatpakrepo "$repo" "$OUT/$dest" app.vrcfriendmap
+  rm -rf "$work"
 }
 
 made=()
@@ -238,8 +333,15 @@ for f in "${formats[@]}"; do
       cp "$(pick "$BUNDLE_DIR/rpm/*-${VERSION}-*.rpm")" "$OUT/$dest"; made+=("$dest") ;;
     appimage)
       dest="vrc-friend-map-${VERSION}-${ARCH}.AppImage"
-      cp "$(pick "$BUNDLE_DIR/appimage/*_${VERSION}_*.AppImage")" "$OUT/$dest"
+      if [ "$ENGINE" = chromium ]; then
+        make_appimage_chromium "$dest"
+      else
+        cp "$(pick "$BUNDLE_DIR/appimage/*_${VERSION}_*.AppImage")" "$OUT/$dest"
+      fi
       chmod +x "$OUT/$dest"; made+=("$dest") ;;
+    flatpak)
+      dest="vrc-friend-map-${VERSION}-${ARCH}.flatpak"
+      make_flatpak "$dest"; made+=("$dest") ;;
     tarball)
       make_tarball; made+=("vrc-friend-map-${VERSION}-linux-${ARCH}.tar.gz") ;;
     none) ;;
@@ -261,4 +363,5 @@ echo "Install:"
 echo "  .deb       sudo apt install ./release/vrc-friend-map_${VERSION}_${DEB_ARCH}.deb"
 echo "  .rpm       sudo dnf install ./release/vrc-friend-map-${VERSION}-1.${RPM_ARCH}.rpm   (or: sudo zypper install …)"
 echo "  AppImage   chmod +x vrc-friend-map-${VERSION}-${ARCH}.AppImage && ./vrc-friend-map-${VERSION}-${ARCH}.AppImage"
+echo "  Flatpak    flatpak install --user ./release/vrc-friend-map-${VERSION}-${ARCH}.flatpak"
 echo "  .tar.gz    tar xzf vrc-friend-map-${VERSION}-linux-${ARCH}.tar.gz && ./vrc-friend-map-${VERSION}-linux-${ARCH}/install.sh"

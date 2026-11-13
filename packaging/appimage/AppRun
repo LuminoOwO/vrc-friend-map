@@ -1,0 +1,4 @@
+#!/bin/sh
+# AppImage entry point: run the program from inside the image.
+HERE="$(dirname "$(readlink -f "$0")")"
+exec "$HERE/usr/lib/vrc-friend-map/vrc-friend-map" "$@"

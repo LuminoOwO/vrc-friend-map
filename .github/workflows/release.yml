@@ -196,11 +196,19 @@ jobs:
           # Ubuntu's mirrors sometimes hang: give each try 3 minutes, up to 3 tries.
           APT='-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30'
           for try in 1 2 3; do
-            timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y libgtk-4-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file && break
+            timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y libgtk-4-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file zstd flatpak flatpak-builder && break
             [ $try = 3 ] && exit 1; echo "::warning::package install try $try failed, retrying"; sleep 10
           done
-      - name: Build deb, rpm and tarball (Chromium)
-        timeout-minutes: 75
+          # flatpak-builder's sandbox (bubblewrap) needs user namespaces, which
+          # Ubuntu 24.04 restricts for programs without an AppArmor profile.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      # The GNOME runtime and SDK for the Flatpak (about 1 GB), until the version changes.
+      - uses: actions/cache@v5
+        with:
+          path: ~/.local/share/flatpak
+          key: flatpak-gnome-48-${{ matrix.runner }}
+      - name: Build deb, rpm, AppImage, tarball and Flatpak (Chromium)
+        timeout-minutes: 100
         run: |
           set -o pipefail
           CI=true ./scripts/build-linux.sh all 2>&1 | tee "$RUNNER_TEMP/build.log"

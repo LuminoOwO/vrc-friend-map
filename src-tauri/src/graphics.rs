@@ -261,7 +261,7 @@ pub fn chromium_runtime() -> tauri_runtime_cef::Cef {
     }
     if chromium_sandbox_unusable() {
         // Chromium would refuse to start ("No usable sandbox!").
-        eprintln!("VRC Friend Map: starting Chromium without its sandbox (no setuid chrome-sandbox helper, and this system restricts unprivileged user namespaces)");
+        eprintln!("VRC Friend Map: starting Chromium without its own sandbox (Flatpak, or no setuid chrome-sandbox helper and this system restricts unprivileged user namespaces)");
         cef = cef.sandbox(tauri_runtime_cef::SandboxPolicy::Disabled);
     }
     cef
@@ -269,13 +269,16 @@ pub fn chromium_runtime() -> tauri_runtime_cef::Cef {
 
 /// The per-user (tarball) install can't ship a root-owned setuid
 /// `chrome-sandbox`, and Ubuntu 23.10+ restricts unprivileged user namespaces
-/// (Chromium's other sandbox). The runtime only handles this for AppImages.
+/// (Chromium's other sandbox). Inside Flatpak neither works (Flatpak sandboxes the app).
 #[cfg(feature = "chromium")]
 fn chromium_sandbox_unusable() -> bool {
     use std::os::unix::fs::MetadataExt;
-    if std::env::var_os("APPIMAGE").is_some() {
-        return false; // the runtime decides for AppImages
+    if std::path::Path::new("/.flatpak-info").exists() {
+        // Flatpak sandboxes the whole app; Chromium can't build its own sandbox inside it.
+        return true;
     }
+    // In an AppImage the helper sits on a user-mounted image (no setuid), so it
+    // comes down to whether unprivileged user namespaces are allowed, below.
     let helper = std::env::var_os("CHROME_DEVEL_SANDBOX")
         .map(std::path::PathBuf::from)
         .or_else(|| std::env::current_exe().ok().and_then(|e| e.parent().map(|d| d.join("chrome-sandbox"))));

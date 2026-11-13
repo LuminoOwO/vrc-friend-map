@@ -67,7 +67,13 @@ The script picks the format that fits your distro:
 - `.rpm` on Fedora and openSUSE
 - the tarball on Arch and everything else (the WebKitGTK build, `--webkit`, uses an AppImage there)
 
-To choose yourself, pass one or more formats: `./scripts/build-linux.sh deb rpm tarball` (`appimage` only with `--webkit`). `all` builds every format, and `none` builds just the binary.
+To choose yourself, pass one or more formats: `./scripts/build-linux.sh deb rpm appimage tarball flatpak`. `all` builds every format (the Flatpak only if `flatpak-builder` is installed), and `none` builds just the binary.
+
+- **AppImage:** downloads `appimagetool` once into `.tools/`.
+- **Flatpak** (Chromium build only): needs `flatpak-builder` and downloads the GNOME 48
+  runtime and SDK from Flathub once. Libraries the runtime lacks are copied in from your
+  system automatically. Install the result with
+  `flatpak install --user ./release/vrc-friend-map-<version>-x86_64.flatpak`.
 
 GTK built without Wayland (X11 only) works too:
 
@@ -207,4 +213,6 @@ crates/vfm-share/        protocol shared by app and server (identities, envelope
 server/                  vfm-server: exchange + logger + admin page (see ../server/README.md)
 .github/workflows/       CI tests and release builds
 packaging/linux/         desktop entry, tarball installer and README
+packaging/appimage/      AppRun for the Chromium AppImage
+packaging/flatpak/       Flatpak manifest, start script and app metadata
 ```

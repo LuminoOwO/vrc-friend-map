@@ -1,0 +1,44 @@
+# Flatpak for the Chromium build. scripts/build-linux.sh flatpak fills
+# `app/` (the program and Chromium's files, from the .deb) next to this file
+# and builds it; the result is a single .flatpak file.
+app-id: app.vrcfriendmap
+runtime: org.gnome.Platform
+runtime-version: "48"
+sdk: org.gnome.Sdk
+command: vrc-friend-map
+rename-desktop-file: vrc-friend-map.desktop
+rename-icon: vrc-friend-map
+finish-args:
+  - --share=ipc
+  - --share=network
+  - --socket=x11
+  - --socket=wayland
+  - --socket=pulseaudio
+  - --device=dri
+  # Notifications and the tray icon.
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.kde.StatusNotifierWatcher
+  - --talk-name=org.ayatana.indicator.application
+  # VRChat's game logs (read only): in Steam's folders, which can be anywhere
+  # in your home folder or on other drives.
+  - --filesystem=home:ro
+  - --filesystem=/mnt:ro
+  - --filesystem=/media:ro
+  - --filesystem=/run/media:ro
+  # Saved pictures and exported lists go to Downloads.
+  - --filesystem=xdg-download
+modules:
+  - name: vrc-friend-map
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/lib/vrc-friend-map
+      - cp -a app/. /app/lib/vrc-friend-map/
+      # Libraries the runtime doesn't have (found by the build script), if any.
+      - if [ -d extra-libs ]; then mkdir -p /app/lib/vrc-friend-map/extra-libs && cp -a extra-libs/. /app/lib/vrc-friend-map/extra-libs/; fi
+      - install -Dm755 vrc-friend-map.sh /app/bin/vrc-friend-map
+      - install -Dm644 vrc-friend-map.desktop /app/share/applications/vrc-friend-map.desktop
+      - install -Dm644 app.vrcfriendmap.metainfo.xml /app/share/metainfo/app.vrcfriendmap.metainfo.xml
+      - for s in 32 128 256 512; do install -Dm644 icons/${s}x${s}.png /app/share/icons/hicolor/${s}x${s}/apps/vrc-friend-map.png; done
+    sources:
+      - type: dir
+        path: stage

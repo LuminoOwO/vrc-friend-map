@@ -16,6 +16,8 @@ The app isn't code-signed, so Windows may say it's unrecognized: *More info → 
 |---|---|---|
 | `vrc-friend-map_0.9.0_amd64.deb` | Debian, Ubuntu, Linux Mint, Pop!_OS | `sudo apt install ./vrc-friend-map_0.9.0_amd64.deb` |
 | `vrc-friend-map-0.9.0-1.x86_64.rpm` | Fedora, RHEL/Alma/Rocky, openSUSE | `sudo dnf install ./vrc-friend-map-0.9.0-1.x86_64.rpm` (openSUSE: `sudo zypper install …`) |
+| `vrc-friend-map-0.9.0-x86_64.flatpak` | any distro with Flatpak | `flatpak install --user ./vrc-friend-map-0.9.0-x86_64.flatpak` (gets the GNOME runtime from Flathub) |
+| `vrc-friend-map-0.9.0-x86_64.AppImage` | any distro | `chmod +x` it, then run it |
 | `vrc-friend-map-0.9.0-linux-x86_64.tar.gz` | Arch and any other distro | unpack, then `./install.sh` (per user, no root; `./install.sh --uninstall` removes it) |
 
 ARM64 builds say `arm64` (deb) or `aarch64` (the others) instead of `amd64`/`x86_64`.
@@ -27,8 +29,11 @@ it needs:
 
 - **GTK 4.14 or newer**: Ubuntu / Linux Mint 24.04+, Debian 13+, Fedora 40+, current Arch,
   openSUSE Tumbleweed. The .deb and .rpm pull it in by themselves.
-- No AppImage for now: Tauri's AppImage packaging for Chromium doesn't work yet. The tarball
-  runs on any distro.
+  The AppImage and the tarball use your system's GTK too.
+- The **Flatpak** brings its own GTK (GNOME 48 runtime), so it also runs on older distros.
+  It can read your whole home folder and other drives read-only (for VRChat's game logs in
+  Steam's folders) and write to Downloads (saved pictures). NVIDIA: Flatpak installs the
+  matching driver extension from Flathub by itself.
 
 On older systems, [build](building.md#linux) the previous WebKitGTK version with
 `scripts/build-linux.sh --webkit`.

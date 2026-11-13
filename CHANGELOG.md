@@ -11,8 +11,7 @@ minor releases can change behavior.
   so the map got slower the bigger the window. The Linux packages now bring their own
   Chromium (Tauri's not-yet-released CEF runtime), which uses the GPU like Windows and Android
   already do. The download is much bigger (Chromium is in it), and it needs GTK 4.14 or newer
-  (Ubuntu / Mint 24.04+, Debian 13+, Fedora 40+, current Arch). There's no AppImage for now
-  (Tauri's AppImage packaging for Chromium doesn't finish); the tarball works on any distro.
+  (Ubuntu / Mint 24.04+, Debian 13+, Fedora 40+, current Arch), or the Flatpak.
   `scripts/build-linux.sh --webkit` still builds the old WebKitGTK version.
 - The map draws at full frame rate whenever its window has focus, also while it only orbits.
 
@@ -92,6 +91,12 @@ minor releases can change behavior.
 - Full player cards on the map keep their name, status and details at every zoom level.
 - Phones: the app itself no longer zooms with pinch or double tap (the map and the image
   viewer still do).
+
+### Added (Linux packages)
+- **AppImage** again (one file, any distro with GTK 4.14+), now made by the build script
+  itself instead of Tauri's packaging.
+- **Flatpak** (`.flatpak` file, GNOME 48 runtime): brings its own GTK, so it also runs on
+  distros older than the Chromium build otherwise needs.
 
 ### Docs
 - The project page is short now. The details moved to `docs/`: a full feature list, a guide to

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>app.vrcfriendmap</id>
+  <name>VRC Friend Map</name>
+  <summary>Map your VRChat friends, mutuals and circles</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <developer id="io.github.luminoowo">
+    <name>LuminoOwO</name>
+  </developer>
+  <description>
+    <p>
+      A map of your VRChat friends: who knows whom, your own circles, friend groups
+      suggested from your game logs, who's in your instance right now, and
+      notifications when friends come online. Everything stays on your device
+      unless you add a server to share with friends.
+    </p>
+  </description>
+  <launchable type="desktop-id">app.vrcfriendmap.desktop</launchable>
+  <url type="homepage">https://github.com/LuminoOwO/vrc-friend-map</url>
+  <content_rating type="oars-1.1"/>
+</component>
