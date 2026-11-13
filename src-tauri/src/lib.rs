@@ -11,6 +11,7 @@ mod livelog;
 mod pipeline;
 mod share;
 mod storage;
+mod single;
 mod tray;
 mod wheelfix;
 
@@ -451,6 +452,10 @@ async fn save_image(app: AppHandle, state: AppStateRef<'_>, url: String, name: S
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // A second start shows the running copy instead (before Chromium starts and trips over it).
+    if !single::claim() {
+        return;
+    }
     // One TLS crypto backend for both HTTPS and the WebSocket connection.
     let _ = rustls::crypto::ring::default_provider().install_default();
     let builder = tauri::Builder::default();
@@ -481,6 +486,13 @@ pub fn run() {
             }));
             #[cfg(desktop)]
             tray::setup(app.handle());
+            {
+                let handle = app.handle().clone();
+                single::on_show(move || {
+                    let h = handle.clone();
+                    let _ = handle.run_on_main_thread(move || tray::show_main(&h));
+                });
+            }
             if wheelfix::forced_on() {
                 wheelfix::set_enabled(app.handle(), true);
             }

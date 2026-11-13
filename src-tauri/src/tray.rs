@@ -69,6 +69,7 @@ pub fn show_main<R: Runtime>(app: &AppHandle<R>) {
 
 pub fn quit<R: Runtime>(app: &AppHandle<R>) {
     QUITTING.store(true, Ordering::SeqCst);
+    crate::single::release();
     app.exit(0);
 }
 
