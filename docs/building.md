@@ -1,12 +1,66 @@
 # Building from source
 
+- [Which command for which version](#which-command-for-which-version)
 - [Linux](#linux)
 - [Windows](#windows)
 - [Android and iOS](#android-and-ios)
 - [Releases (for maintainers)](#releases-for-maintainers)
 - [Project layout](#project-layout)
 
+## Which command for which version
+
+Run these in the cloned repository (`git clone https://github.com/LuminoOwO/vrc-friend-map.git`
+and `cd vrc-friend-map`) after installing what the section for your system lists. Results land in
+`release/` (Linux) or `src-tauri/target/…/bundle/` (others).
+
+| You want | Command | Needs (besides Node.js 20+ and Rust) |
+|---|---|---|
+| Linux .deb (Debian, Ubuntu, Mint) | `./scripts/build-linux.sh deb` | [Chromium build packages](#packages-for-the-chromium-build) |
+| Linux .rpm (Fedora, openSUSE) | `./scripts/build-linux.sh rpm` | same, plus `rpm` |
+| Linux AppImage (one file) | `./scripts/build-linux.sh appimage` | same, plus `curl`, `ar` (binutils), `zstd` |
+| Linux tarball (any distro, no root) | `./scripts/build-linux.sh tarball` | same |
+| Linux Flatpak (brings its own GTK) | `./scripts/build-linux.sh flatpak` | same, plus `flatpak` and `flatpak-builder` |
+| Every Linux package at once | `./scripts/build-linux.sh all` | all of the above |
+| Just the program, no package | `./scripts/build-linux.sh none` | Chromium build packages |
+| The older WebKitGTK version | add `--webkit`, e.g. `./scripts/build-linux.sh --webkit appimage` | [WebKitGTK packages](#packages-for-the-webkitgtk-build) |
+| Linux with X11-only GTK (no Wayland) | the same commands; it's detected by itself | nothing extra ([details](#x11-only-gtk)) |
+| Windows installer (.msi / .exe) | `npm ci` then `npx tauri build` | [Visual Studio Build Tools](#windows) |
+| macOS (.dmg, Apple Silicon + Intel) | `npm ci` then `npx tauri build --target universal-apple-darwin --bundles dmg` | Xcode command line tools, `rustup target add aarch64-apple-darwin x86_64-apple-darwin` |
+| Android (.apk) | `npx tauri android build --apk` | [Android Studio, SDK, NDK](#android) |
+| iPhone / iPad (.ipa, unsigned) | `npx tauri ios build --no-sign` | [a Mac with Xcode](#android-and-ios) |
+| vfm-server (the optional sharing server) | `cargo build --release --manifest-path server/Cargo.toml` | Rust only; see [server/README.md](../server/README.md) and the [server tutorial](server-setup.md) |
+
+Handy switches for Linux builds: `VFM_GTK4_WAYLAND=0` / `VFM_GDK_WAYLAND=0` force the X11-only
+build, `VFM_ENGINE=webkit` is the same as `--webkit`.
+
 ## Linux
+
+### Packages for the Chromium build
+
+**Debian / Ubuntu / Linux Mint**
+```bash
+sudo apt install build-essential curl file python3 libgtk-4-dev libgtk-3-dev \
+  librsvg2-dev libssl-dev libxdo-dev libayatana-appindicator3-dev zstd binutils
+# for the Flatpak too: sudo apt install flatpak flatpak-builder
+```
+
+**Fedora**
+```bash
+sudo dnf install gtk4-devel gtk3-devel librsvg2-devel openssl-devel libxdo-devel \
+  python3 curl file zstd binutils rpm-build
+sudo dnf group install "c-development"
+```
+
+**Arch**
+```bash
+sudo pacman -S --needed base-devel gtk4 gtk3 librsvg openssl xdotool python curl file zstd
+```
+
+**Gentoo**: `gui-libs/gtk:4`, `x11-libs/gtk+:3`, `gnome-base/librsvg`, `dev-libs/openssl`,
+`x11-misc/xdotool`, `dev-lang/python`, `app-arch/zstd`, plus Rust and Node.js. GTK built with
+`-wayland` works ([X11-only GTK](#x11-only-gtk)).
+
+### About the Chromium build
 
 `scripts/build-linux.sh` builds the Chromium version by default: it needs **GTK 4.14+
 development files** (`libgtk-4-dev` on Debian/Ubuntu, `gtk4-devel` on Fedora) and Python 3,
@@ -16,8 +70,10 @@ Chromium runtime isn't released yet, so this takes Tauri from that branch, pinne
 commit in `scripts/chromium.py`; the script switches `src-tauri/Cargo.toml` over for the build
 and back afterwards. Add `--webkit` for the WebKitGTK version, which needs the packages below.
 
-You need **Node.js 20+**, **Rust**, a C toolchain and the **WebKitGTK 4.1** development
-files. Install the system packages for your distro (list from Tauri's
+### Packages for the WebKitGTK build
+
+Only for `--webkit`. You need **Node.js 20+**, **Rust**, a C toolchain and the **WebKitGTK 4.1**
+development files. Install the system packages for your distro (list from Tauri's
 [prerequisites](https://v2.tauri.app/start/prerequisites/)):
 
 **Debian / Ubuntu / Linux Mint / Pop!_OS**
@@ -53,7 +109,7 @@ then open a new terminal.
 **Node.js**: from your package manager if it's version 20 or newer, otherwise from
 [nodejs.org](https://nodejs.org) or via [nvm](https://github.com/nvm-sh/nvm).
 
-Then build:
+### Building
 
 ```bash
 git clone https://github.com/LuminoOwO/vrc-friend-map.git
@@ -74,6 +130,8 @@ To choose yourself, pass one or more formats: `./scripts/build-linux.sh deb rpm 
   runtime and SDK from Flathub once. Libraries the runtime lacks are copied in from your
   system automatically. Install the result with
   `flatpak install --user ./release/vrc-friend-map-<version>-x86_64.flatpak`.
+
+### X11-only GTK
 
 GTK built without Wayland (X11 only) works too:
 
