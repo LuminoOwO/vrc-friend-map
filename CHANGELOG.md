@@ -3,41 +3,34 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
-## 0.9.0 (2026-11-14)
+## 0.10.0 (2026-11-14)
 
-### Changed
-- **Linux runs on Chromium now.** WebKitGTK, the engine the Linux build used, draws without
-  the graphics card on many systems (NVIDIA on X11 reports no hardware acceleration at all),
-  so the map got slower the bigger the window. The Linux packages now bring their own
-  Chromium (Tauri's not-yet-released CEF runtime), which uses the GPU like Windows and Android
-  already do. The download is much bigger (Chromium is in it), and it needs GTK 4.14 or newer
-  (Ubuntu / Mint 24.04+, Debian 13+, Fedora 40+, current Arch), or the Flatpak.
-  `scripts/build-linux.sh --webkit` still builds the old WebKitGTK version.
-- The map draws at full frame rate whenever its window has focus, also while it only orbits.
+### Added (profiles and people)
+- **Age hints** (profile → Age; Settings → People → Age hints): hints whether someone is over or
+  under 18 from what they wrote (bio, pronouns, status, links; optionally one read of each page
+  they link to, public websites only), your own note (only on this device; guesses fade after
+  6–12 months), and a question before you send or accept a friend request when there are
+  concerns. VRChat's 18+ badge isn't counted. Friends can share only "most certainly over 18",
+  "probably over 18" or a reasonless "keep your distance"; notes saying someone is under 18 never
+  leave your device, and other values are dropped when received.
+- **Red flag**: when a friend shares their friend removals (new server option, off by default),
+  that person's profile says so: "X removed them as a friend [while they were in the same
+  instance]", or "X and they stopped being friends" when VRChat can't tell who did it.
+- **Edit your own profile**: status, status text, pronouns, about me, links, languages, and the
+  look the API allows (theme, background, banner color).
+- **Who's here in the sidebar** by default (it no longer covers the Activity tab), with the
+  world's picture, instance type, region and people / slots. A button moves it over the map.
+- **Map zoom without a wheel**: + / − / fit buttons, and + / − / 0 on the keyboard.
+- **F11** switches the window to real fullscreen.
+- **Catppuccin**: all four flavors (Frappé is new) with any of the 14 accent colors.
 
-### Added (frame rate)
-- **Settings → Frame rate**: a vsync switch (on by default; off needs the Chromium build or
-  Windows and a restart, which the setting offers) and a frame-rate limit you type in:
-  60 by default, -1 for unlimited, 0 for the screen's rate. With vsync off the app sleeps
-  between frames instead of asking for frame after frame.
-- **Saving power**: the frame rate while the window isn't focused (default 30) and, optionally,
-  after a while without input (0 stops the map moving, -1 means no change). Any mouse, key or
-  touch input brings the full rate back right away.
-
-### Added
-- **Activity tab**: who joined and left your instance, your world changes, VRChat closing or
-  crashing (from the game log), and friends coming online, going offline, changing worlds,
-  being added or removed. Filters, search, a day-by-day list, kept 4 days on this device.
-- **Profile actions**: unfriend, block / unblock, mute / unmute, hide avatar. Each is one
-  click, unfriend and block ask first, and like friend requests they go out at most one
-  every 3 seconds.
-- **Settings → People who aren't friends**: load the profile of everyone in your instance (not
-  only the first 25; also a switch in the instance strip), which of their profiles to keep on
-  this device (none, potential friends, everyone), and whether to show people you've blocked
-  (hidden by default, in the strip, on the map and in the activity log).
-- **Settings → Diagnostics**: frame rate, drawing time, canvas size, the GPU the web view uses
-  (and a warning when it's software rendering), web engine, environment flags, a quick drawing
-  benchmark and a *Copy diagnostics* button.
+### Changed (frame rate)
+- **Settings → Frame rate**: the limit is a number you type in now (60 by default, -1 for
+  unlimited, 0 for the screen's rate), with its own vsync switch (on by default; off needs the
+  Chromium build or Windows and a restart). With vsync off the app sleeps between frames
+  instead of asking for frame after frame, which fixes the lag at "unlimited".
+- **Saving power** takes numbers too: the rate while the window isn't focused (default 30) and,
+  optionally, after a while without input (0 stops the map moving, -1 means no change).
 
 ### Added (notifications)
 - **Settings → Notifications**: notify about friends who add you, remove you, come online, go
@@ -92,25 +85,6 @@ minor releases can change behavior.
 - Phones: the app itself no longer zooms with pinch or double tap (the map and the image
   viewer still do).
 
-### Added (profiles and people)
-- **Age hints** (profile → Age; Settings → People → Age hints): hints whether someone is over or
-  under 18 from what they wrote (bio, pronouns, status, links; optionally one read of each page
-  they link to, public websites only), your own note (only on this device; guesses fade after
-  6–12 months), and a question before you send or accept a friend request when there are
-  concerns. VRChat's 18+ badge isn't counted. Friends can share only "most certainly over 18",
-  "probably over 18" or a reasonless "keep your distance"; notes saying someone is under 18 never
-  leave your device, and other values are dropped when received.
-- **Red flag**: when a friend shares their friend removals (new server option, off by default),
-  that person's profile says so: "X removed them as a friend [while they were in the same
-  instance]", or "X and they stopped being friends" when VRChat can't tell who did it.
-- **Edit your own profile**: status, status text, pronouns, about me, links, languages, and the
-  look the API allows (theme, background, banner color).
-- **Who's here in the sidebar** by default (it no longer covers the Activity tab), with the
-  world's picture, instance type, region and people / slots. A button moves it over the map.
-- **Map zoom without a wheel**: + / − / fit buttons, and + / − / 0 on the keyboard.
-- **F11** switches the window to real fullscreen.
-- **Catppuccin**: all four flavors (Frappé is new) with any of the 14 accent colors.
-
 ### Added (mouse wheel fix)
 - **Settings → Performance → Mouse wheel** (Linux): on some X11 systems (seen with XLibre) the
   map didn't zoom and nothing scrolled with the wheel, because Chromium never passed the wheel
@@ -139,10 +113,48 @@ minor releases can change behavior.
 - Linux: system notifications no longer play the desktop's own sound on top of the app's.
 - A short pause between the event sound and the person's tune.
 - Release builds use the Node 24 versions of GitHub's actions (Node 20 is being retired).
-- Building the Chromium version on systems whose GTK 4 has no Wayland support (X11 only)
-  failed looking for `gtk4-wayland`. It now builds for X11 there.
 - The Chromium build ignored its own switches (they need a `--` in front), so "Unlimited"
   frame rate and Graphics → "Prefer the graphics card" / "Software" did nothing there.
+
+## 0.9.0 (2026-11-13)
+
+### Changed
+- **Linux runs on Chromium now.** WebKitGTK, the engine the Linux build used, draws without
+  the graphics card on many systems (NVIDIA on X11 reports no hardware acceleration at all),
+  so the map got slower the bigger the window. The Linux packages now bring their own
+  Chromium (Tauri's not-yet-released CEF runtime), which uses the GPU like Windows and Android
+  already do. The download is much bigger (Chromium is in it), and it needs GTK 4.14 or newer
+  (Ubuntu / Mint 24.04+, Debian 13+, Fedora 40+, current Arch). There's no AppImage for now
+  (Tauri's AppImage packaging for Chromium doesn't finish); the tarball works on any distro.
+  `scripts/build-linux.sh --webkit` still builds the old WebKitGTK version.
+- The map draws at full frame rate whenever its window has focus, also while it only orbits.
+
+### Added (frame rate)
+- **Settings → Frame rate**: a limit from 30 fps up to 360 fps or unlimited (default: match the
+  screen). Faster than the screen turns vsync off for the app (Chromium on Linux, WebView2 on
+  Windows; needs a restart, which the setting offers).
+- **Saving power**: how fast the map moves while the window isn't focused (default 30 fps,
+  down to stopping, or no change), and optionally a lower rate after a while without input.
+  Any mouse, key or touch input brings the full rate back right away.
+
+### Added
+- **Activity tab**: who joined and left your instance, your world changes, VRChat closing or
+  crashing (from the game log), and friends coming online, going offline, changing worlds,
+  being added or removed. Filters, search, a day-by-day list, kept 4 days on this device.
+- **Profile actions**: unfriend, block / unblock, mute / unmute, hide avatar. Each is one
+  click, unfriend and block ask first, and like friend requests they go out at most one
+  every 3 seconds.
+- **Settings → People who aren't friends**: load the profile of everyone in your instance (not
+  only the first 25; also a switch in the instance strip), which of their profiles to keep on
+  this device (none, potential friends, everyone), and whether to show people you've blocked
+  (hidden by default, in the strip, on the map and in the activity log).
+- **Settings → Diagnostics**: frame rate, drawing time, canvas size, the GPU the web view uses
+  (and a warning when it's software rendering), web engine, environment flags, a quick drawing
+  benchmark and a *Copy diagnostics* button.
+
+### Fixed
+- Building the Chromium version on systems whose GTK 4 has no Wayland support (X11 only)
+  failed looking for `gtk4-wayland`. It now builds for X11 there.
 - Scrollbars use the theme's colors (Chromium showed its plain light ones).
 - Phones: the profile's close button sat under the status bar and was hard to hit. It's bigger
   now, below the status bar, and stays in place while the profile scrolls.

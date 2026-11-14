@@ -12,18 +12,18 @@ The app isn't code-signed, so Windows may say it's unrecognized: *More info → 
 
 ## Linux
 
-| File (example: 0.9.0 on x86_64) | For | Install |
+| File (example: 0.10.0 on x86_64) | For | Install |
 |---|---|---|
-| `vrc-friend-map_0.9.0_amd64.deb` | Debian, Ubuntu, Linux Mint, Pop!_OS | `sudo apt install ./vrc-friend-map_0.9.0_amd64.deb` |
-| `vrc-friend-map-0.9.0-1.x86_64.rpm` | Fedora, RHEL/Alma/Rocky, openSUSE | `sudo dnf install ./vrc-friend-map-0.9.0-1.x86_64.rpm` (openSUSE: `sudo zypper install …`) |
-| `vrc-friend-map-0.9.0-x86_64.flatpak` | any distro with Flatpak | `flatpak install --user ./vrc-friend-map-0.9.0-x86_64.flatpak` (gets the GNOME runtime from Flathub) |
-| `vrc-friend-map-0.9.0-x86_64.AppImage` | any distro | `chmod +x` it, then run it |
-| `vrc-friend-map-0.9.0-linux-x86_64.tar.gz` | Arch and any other distro | unpack, then `./install.sh` (per user, no root; `./install.sh --uninstall` removes it) |
+| `vrc-friend-map_0.10.0_amd64.deb` | Debian, Ubuntu, Linux Mint, Pop!_OS | `sudo apt install ./vrc-friend-map_0.10.0_amd64.deb` |
+| `vrc-friend-map-0.10.0-1.x86_64.rpm` | Fedora, RHEL/Alma/Rocky, openSUSE | `sudo dnf install ./vrc-friend-map-0.10.0-1.x86_64.rpm` (openSUSE: `sudo zypper install …`) |
+| `vrc-friend-map-0.10.0-x86_64.flatpak` | any distro with Flatpak | `flatpak install --user ./vrc-friend-map-0.10.0-x86_64.flatpak` (gets the GNOME runtime from Flathub) |
+| `vrc-friend-map-0.10.0-x86_64.AppImage` | any distro | `chmod +x` it, then run it |
+| `vrc-friend-map-0.10.0-linux-x86_64.tar.gz` | Arch and any other distro | unpack, then `./install.sh` (per user, no root; `./install.sh --uninstall` removes it) |
 
 ARM64 builds say `arm64` (deb) or `aarch64` (the others) instead of `amd64`/`x86_64`.
 Check the files with `sha256sum -c SHA256SUMS --ignore-missing`.
 
-**Requirements.** Since 0.9.0 the Linux app comes with its own **Chromium**, which draws the
+**Requirements.** Since 0.10.0 the Linux app comes with its own **Chromium**, which draws the
 map on the graphics card. That makes the download much bigger than before (~110–140 MB), and
 it needs:
 
