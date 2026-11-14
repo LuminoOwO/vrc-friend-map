@@ -841,3 +841,17 @@ html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adju
 .red-flag.strong { background: color-mix(in srgb, var(--danger) 13%, transparent); border-color: color-mix(in srgb, var(--danger) 40%, transparent); }
 .red-flag svg { flex: none; margin-top: 1px; color: var(--danger-text); }
 .red-flag .link-btn { font-weight: 600; }
+/* Age (profile) */
+.age-head { display: flex; align-items: center; gap: 10px; width: 100%; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-align: left; }
+.age-head h3 { margin: 0; }
+.age-headline { flex: 1; font-size: 13px; color: var(--muted); }
+.age-headline.warn { color: var(--warn); }
+.age-distance { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger-text); }
+.age-body { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.age-hints { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.age-hints li { padding: 6px 8px; border-radius: 8px; background: var(--chip-bg); border-left: 3px solid var(--ok); }
+.age-hints li.minor { border-left-color: var(--warn); }
+.age-friends p { margin: 2px 0; }
+.age-distance-line { color: var(--danger-text); }
+.age-confirm { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--warn) 12%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); }
+.age-confirm p { margin: 0 0 6px; font-size: 13px; }

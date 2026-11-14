@@ -6,6 +6,8 @@
 // screens.
 import { openImage, type ViewerItem } from "./ImageViewer";
 import { removedByMe } from "../notifications";
+import { AgePanel } from "./AgePanel";
+import { concernAbout } from "../age";
 import { PERSON_MODES, setPersonMode } from "./NotificationsSection";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { backend, imgSrc } from "../backend";
@@ -361,6 +363,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   </div>
                 </div>
               )}
+              {relation !== "me" && <AgePanel id={id} />}
               {detail?.note && (
                 <div className="profile-block" data-flip-fade>
                   <h3>Your note</h3>
@@ -664,10 +667,12 @@ function RelationBox({ id, relation, here, via }: { id: string; relation: "me" |
   const [status, setStatus] = useState<{ isFriend: boolean; outgoing: boolean; incoming: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [concern, setConcern] = useState<string | null>(null);
 
   useEffect(() => {
     setStatus(null);
     setError("");
+    setConcern(null);
     if (relation === "other") friendStatus(id).then(setStatus);
   }, [id, relation]);
 
@@ -678,7 +683,16 @@ function RelationBox({ id, relation, here, via }: { id: string; relation: "me" |
       </div>
     );
   }
-  const act = async (send: boolean) => {
+  const act = async (send: boolean, checked = false) => {
+    // Think twice when your notes, their profile or friends point to a concern.
+    if (send && !checked) {
+      const why = concernAbout(id);
+      if (why) {
+        setConcern(why);
+        return;
+      }
+    }
+    setConcern(null);
     setBusy(true);
     setError("");
     const err = await setFriendRequest(id, send);
@@ -716,6 +730,21 @@ function RelationBox({ id, relation, here, via }: { id: string; relation: "me" |
             </button>
           )}
           {status?.incoming && !status.outgoing && <span className="small">They sent you one.</span>}
+        </div>
+      )}
+      {concern && (
+        <div className="age-confirm">
+          <p>
+            <Icon name="warn" size={15} /> Think twice: {concern}.
+          </p>
+          <div className="row">
+            <button className="btn small" onClick={() => setConcern(null)} autoFocus>
+              Don't send
+            </button>
+            <button className="btn small danger" onClick={() => act(true, true)}>
+              {status?.incoming ? "Accept anyway" : "Send anyway"}
+            </button>
+          </div>
         </div>
       )}
       {error && <p className="error-text">{error}</p>}

@@ -6,10 +6,12 @@ import { backend, type InfoResult, type PublishResult } from "./backend";
 import { getState, newServer, setState, showToast, updateLocal, updateServer, updateSharing } from "./store";
 import { combineStats } from "./together";
 import { selectedIds } from "./selection";
-import type { EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareServer, SharedData, SharedRemoval } from "./types";
+import type { EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareNote, ShareServer, SharedData, SharedRemoval } from "./types";
 
 export const FRIENDS_FORMAT = "vrc-friend-map/friends-v1";
 export const ACTIVITY_FORMAT = "vrc-friend-map/activity-v1";
+/** The only notes about people that are ever sent or accepted. */
+const SHAREABLE = new Set(["adult", "likely-adult", "distance"]);
 const MAX_PAIRS = 5000;
 
 // ---------- the encryption switch ----------
@@ -265,6 +267,7 @@ interface FriendsPayload {
   exportedAt?: string;
   friends?: { id: string; displayName: string }[];
   removals?: SharedRemoval[];
+  notes?: { id: string; v: string; t: number }[];
 }
 
 /** Friend lists from servers show up under Shared lists, updated on every sync. */
@@ -288,6 +291,11 @@ function applyReceivedLists(d: SharedData) {
       mode: "full",
       friends: p.friends.filter((f) => f && typeof f.id === "string").map((f) => ({ id: f.id, displayName: String(f.displayName ?? "") })),
       via: [...new Set(it.servers.map(name))],
+      notes: Array.isArray(p.notes)
+        ? p.notes
+            .filter((n) => n && typeof n.id === "string" && typeof n.t === "number" && SHAREABLE.has(n.v))
+            .map((n) => ({ id: n.id, v: n.v as ShareNote["v"], t: n.t }))
+        : undefined,
       removals: Array.isArray(p.removals)
         ? p.removals
             .filter((r) => r && typeof r.id === "string" && typeof r.t === "number")
@@ -342,6 +350,13 @@ function friendsPayload(s: ShareServer): string {
       .filter((e) => e.type === "removed" && e.t > year)
       .slice(-300)
       .map((e) => ({ id: e.id, t: e.t, byMe: e.byMe, together: e.together }));
+  }
+  if (s.shareNotes) {
+    // Only adult vouches and "keep your distance" exist here; under-18 notes never leave the device.
+    body.notes = Object.entries(st.local.shareNotes ?? {})
+      .filter(([, n]) => SHAREABLE.has(n.v))
+      .slice(0, 2000)
+      .map(([id, n]) => ({ id, v: n.v, t: n.t }));
   }
   return JSON.stringify({ ...body, mode: "full" });
 }

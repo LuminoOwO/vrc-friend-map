@@ -327,6 +327,8 @@ export const backend = {
   logsMet: (query: { exclude: string[]; min_secs: number; limit: number }) => need<MetPerson[]>("logs_met", { query }),
   /** One friend request (or its cancel), only ever from a button click. */
   friendRequest: (userId: string, cancel: boolean) => need<ApiResponse>("friend_request", { userId, cancel }),
+  /** One read of a page someone linked in their bio (public addresses only; see linkfetch.rs). */
+  fetchLinkText: (url: string) => need<string>("fetch_link_text", { url }),
   friendStatus: (userId: string) => need<ApiResponse>("friend_status", { userId }),
   /** Only ever from a button click, after the user confirmed. */
   unfriend: (userId: string) => need<ApiResponse>("unfriend", { userId }),

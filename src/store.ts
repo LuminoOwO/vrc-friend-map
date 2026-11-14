@@ -124,6 +124,8 @@ export const emptyLocal = (): LocalData => ({
   circles: [],
   imports: [],
   friendLog: [],
+  ageNotes: {},
+  shareNotes: {},
   dismissedGroups: [],
 });
 
@@ -231,6 +233,7 @@ export const newServer = (url: string): ShareServer => ({
   audienceAutoAdd: true,
   include: allPeople(),
   shareRemovals: false,
+  shareNotes: true,
   download: true,
   loggerOwner: false,
   ackUnencrypted: false,
@@ -256,6 +259,7 @@ export const defaultSettings = (): Settings => ({
   notify: defaultNotify(),
   closeAction: "ask",
   wheelFix: false,
+  age: { enabled: true, readLinks: false, warnRequests: true },
   theme: "dark",
   catAccent: "mauve",
   profileAs: "popup",
@@ -602,6 +606,11 @@ export function normalizeSettings(raw: Raw | null): Settings {
     notify: normalizeNotify(raw.notify, snd),
     closeAction: oneOf(raw.closeAction, ["ask", "tray", "quit"] as const, d.closeAction),
     wheelFix: typeof raw.wheelFix === "boolean" ? raw.wheelFix : d.wheelFix,
+    age: {
+      enabled: typeof raw.age?.enabled === "boolean" ? raw.age.enabled : d.age.enabled,
+      readLinks: typeof raw.age?.readLinks === "boolean" ? raw.age.readLinks : d.age.readLinks,
+      warnRequests: typeof raw.age?.warnRequests === "boolean" ? raw.age.warnRequests : d.age.warnRequests,
+    },
     sounds: {
       ...snd,
       newFriend: typeof snd.newFriend === "boolean" ? snd.newFriend : d.sounds.newFriend,
@@ -683,6 +692,7 @@ function normalizeSharing(raw: unknown): SharingSettings {
             audienceAutoAdd: bool(x.audienceAutoAdd, true),
             include: normalizePick(x.include),
             shareRemovals: bool(x.shareRemovals, false),
+            shareNotes: bool(x.shareNotes, true),
             published: Array.isArray(x.published) ? x.published.filter((c: unknown) => typeof c === "string") : [],
             upload: bool(x.upload, n.upload),
             download: bool(x.download, n.download),
@@ -727,6 +737,8 @@ export function normalizeLocal(raw: Raw | null): LocalData {
       : [],
     imports: Array.isArray(raw.imports) ? raw.imports : [],
     friendLog: Array.isArray(raw.friendLog) ? raw.friendLog : [],
+    ageNotes: (isObj(raw.ageNotes) ? raw.ageNotes : {}) as LocalData["ageNotes"],
+    shareNotes: (isObj(raw.shareNotes) ? raw.shareNotes : {}) as LocalData["shareNotes"],
     dismissedGroups: Array.isArray(raw.dismissedGroups) ? raw.dismissedGroups.filter(Array.isArray) : [],
   };
   // 0.1.x kept per-friend "first seen" dates; only the change log needs them.
@@ -751,6 +763,7 @@ export function normalizeCache(raw: Raw | null): Cache {
     friends: obj(raw.friends),
     presence: obj(raw.presence),
     details: obj(raw.details),
+    ageHints: obj(raw.ageHints) as Cache["ageHints"],
     mutuals: obj(raw.mutuals),
     favorites: obj(raw.favorites),
     lastFriendsSync: typeof raw.lastFriendsSync === "number" ? raw.lastFriendsSync : 0,

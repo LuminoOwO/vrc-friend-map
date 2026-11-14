@@ -6,6 +6,7 @@ import { exitDemo, logoutAll, wipeEverything } from "../session";
 import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
 import { CloseSection, NotificationsSection } from "./NotificationsSection";
 import { WheelFixSection } from "./WheelFixSection";
+import { AgeSection } from "./AgeSection";
 import { wheelFixHere } from "../wheelfix";
 import { forgetObserved } from "../together";
 import type { GroupSettings, MapSettings, Theme } from "../types";
@@ -355,6 +356,9 @@ export function SettingsModal() {
           </Sec>
         )}
 
+        <Sec id="age" cat="people" title="Age hints" keys="age minor adult 18 underage kids safety notes vouch distance friend request warning">
+          <AgeSection />
+        </Sec>
         <Sec id="people" cat="people" title="People who aren't friends" keys="strangers blocked profiles cache">
           <PeopleSection />
         </Sec>

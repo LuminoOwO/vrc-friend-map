@@ -129,6 +129,8 @@ export interface ImportedList {
   via?: string[];
   /** People the owner stopped being friends with, if they share that. */
   removals?: SharedRemoval[];
+  /** The owner's notes about people (adult vouches, "keep your distance"). */
+  notes?: (ShareNote & { id: string })[];
 }
 
 export interface FriendLogEntry {
@@ -155,6 +157,8 @@ export interface Cache {
   friends: Record<string, Friend>;
   presence: Record<string, Presence>;
   details: Record<string, UserDetail>;
+  /** Age hints worked out on this device (never shared). */
+  ageHints?: Record<string, { t: number; profileAt: number; hints: AgeHint[] }>;
   mutuals: Record<string, MutualInfo>;
   /** userId -> favorite group display names */
   favorites: Record<string, string[]>;
@@ -169,6 +173,33 @@ export interface Cache {
   lastFriendsSync: number;
 }
 
+export type AgeRating = "sure-adult" | "adult" | "likely-adult" | "likely-minor" | "minor";
+/** Your own note about someone's age. Stays on this device. */
+export interface AgeNote {
+  rating: AgeRating;
+  t: number;
+}
+/** What you tell friends about someone (never "under 18"). */
+export interface ShareNote {
+  v: "adult" | "likely-adult" | "distance";
+  t: number;
+}
+export interface AgeHint {
+  dir: "adult" | "minor";
+  weight: 1 | 2;
+  why: string;
+  source: string;
+  snippet: string;
+}
+export interface AgeSettings {
+  /** Show age hints and notes on profiles. */
+  enabled: boolean;
+  /** Also read each page linked in the bio, once (off by default). */
+  readLinks: boolean;
+  /** Ask before sending or accepting a friend request when there are concerns. */
+  warnRequests: boolean;
+}
+
 export interface LocalData {
   /** When the add/remove log started (first sync). */
   logSince: number;
@@ -179,6 +210,10 @@ export interface LocalData {
   friendLog: FriendLogEntry[];
   /** Suggested groups you dismissed (member IDs), so they don't come back. */
   dismissedGroups: string[][];
+  /** Your age notes (this device only, never shared). */
+  ageNotes: Record<string, AgeNote>;
+  /** What you share with friends about people: adult vouches or "keep your distance". */
+  shareNotes: Record<string, ShareNote>;
 }
 
 export type NodeStyle = "dot" | "icon" | "card" | "fullcard";
@@ -319,6 +354,8 @@ export interface ShareServer {
   include: PeopleSelection;
   /** Also share whom you stopped being friends with (shown to them as a note on that person). */
   shareRemovals: boolean;
+  /** Share your notes about people (adult vouches, "keep your distance"). */
+  shareNotes: boolean;
   /** Fetch what others share with me here. */
   download: boolean;
   /** You paired this server's logger. */
@@ -390,6 +427,7 @@ export interface Settings {
   closeAction: "ask" | "tray" | "quit";
   /** Linux/X11: take mouse wheel steps from the X server when the web view gets none. */
   wheelFix: boolean;
+  age: AgeSettings;
   theme: Theme;
   /** Accent color for the Catppuccin themes. */
   catAccent: import("./catppuccin").CatAccent;

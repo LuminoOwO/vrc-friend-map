@@ -323,6 +323,8 @@ export function makeDemo(): { cache: Cache; local: LocalData; presence: Presence
       lastFriendIds: ids,
       circles,
       imports: [],
+      ageNotes: {},
+      shareNotes: {},
       friendLog: [],
       dismissedGroups: [],
     },

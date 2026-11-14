@@ -7,6 +7,7 @@ mod gdk4_stubs;
 mod gamelogs;
 pub mod graphics;
 mod images;
+mod linkfetch;
 mod livelog;
 mod pipeline;
 mod share;
@@ -562,6 +563,7 @@ pub fn run() {
             tray::window_toggle_fullscreen,
             wheelfix::wheel_fix_set,
             silent_notify::notify_silent,
+            linkfetch::fetch_link_text,
             wheelfix::wheel_fix_state,
         ])
         .run(tauri::generate_context!())
