@@ -201,6 +201,24 @@ Laid out like VRChat's own profile page:
 - **Open profiles** as a popup or in a side panel.
 - **Themes:** Dark, OLED black, Light, Catppuccin Mocha / Macchiato / Latte, Nord, Dracula.
 
+## Age hints
+
+The *Age* part of a profile (Settings → People → Age hints) helps if you'd rather not have
+minors on your friend list:
+
+- **Hints** from what the person wrote: an age ("I'm 15", "24 y/o"), a school grade, a birth
+  year, "minors DNI" and similar. They're guesses; VRChat's 18+ badge isn't counted because
+  verified accounts get sold.
+- **Your note** (only on this device): from *I'm sure they're an adult* to *most certainly
+  under 18*. Guesses fade after 6–12 months.
+- **Tell friends**: *most certainly over 18*, *probably over 18* or *keep your distance* (no
+  reason attached). Under-18 notes can't be shared.
+- **Before a friend request**, the app asks if your note, the hints or a friend's *keep your
+  distance* give a reason to think twice.
+
+A **red flag** on a profile means a friend shared that they removed that person (each friend
+decides that per server with *My friend removals*).
+
 ## Notifications
 
 Settings → Notifications decides what you hear about:

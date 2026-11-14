@@ -150,6 +150,21 @@ A readable log of what happened around you, kept 4 days on this device.
 - **Tray (desktop):** close the window and the app keeps running in the tray, notifying and
   collecting without drawing. The tray menu mutes, opens the window or quits.
 
+## Age hints and notes
+
+- **Hints** whether someone is over or under 18, from what they wrote (bio, pronouns, status,
+  links, and optionally one read of each page they link to). VRChat's 18+ badge isn't counted.
+- **Your own note** per person, only on this device; guesses fade after a while.
+- **Friends' notes**: only "over 18", "probably over 18" or a reasonless "keep your distance".
+  Under-18 notes are never shared.
+- **A question before friend requests** when there are concerns.
+- **Red flag** when a friend shared that they removed someone (opt-in per server).
+
+## Your own profile
+
+- Edit status, status text, pronouns, about me, links, languages, theme, background and banner
+  color.
+
 ## Live updates
 
 - One live connection to VRChat's event stream. New friends appear right away, with an

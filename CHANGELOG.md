@@ -92,6 +92,25 @@ minor releases can change behavior.
 - Phones: the app itself no longer zooms with pinch or double tap (the map and the image
   viewer still do).
 
+### Added (profiles and people)
+- **Age hints** (profile → Age; Settings → People → Age hints): hints whether someone is over or
+  under 18 from what they wrote (bio, pronouns, status, links; optionally one read of each page
+  they link to, public websites only), your own note (only on this device; guesses fade after
+  6–12 months), and a question before you send or accept a friend request when there are
+  concerns. VRChat's 18+ badge isn't counted. Friends can share only "most certainly over 18",
+  "probably over 18" or a reasonless "keep your distance"; notes saying someone is under 18 never
+  leave your device, and other values are dropped when received.
+- **Red flag**: when a friend shares their friend removals (new server option, off by default),
+  that person's profile says so: "X removed them as a friend [while they were in the same
+  instance]", or "X and they stopped being friends" when VRChat can't tell who did it.
+- **Edit your own profile**: status, status text, pronouns, about me, links, languages, and the
+  look the API allows (theme, background, banner color).
+- **Who's here in the sidebar** by default (it no longer covers the Activity tab), with the
+  world's picture, instance type, region and people / slots. A button moves it over the map.
+- **Map zoom without a wheel**: + / − / fit buttons, and + / − / 0 on the keyboard.
+- **F11** switches the window to real fullscreen.
+- **Catppuccin**: all four flavors (Frappé is new) with any of the 14 accent colors.
+
 ### Added (mouse wheel fix)
 - **Settings → Performance → Mouse wheel** (Linux): on some X11 systems (seen with XLibre) the
   map didn't zoom and nothing scrolled with the wheel, because Chromium never passed the wheel
@@ -111,6 +130,14 @@ minor releases can change behavior.
   HTTPS, connecting the app, sharing, logger), installing, privacy, and building.
 
 ### Fixed
+- **Bio, links, badges and languages were missing on profiles.** VRChat moved them to a new
+  endpoint (`/profile/{id}`) in September 2026; the app reads it when a profile is opened.
+- Starting the app a second time crashed (Chromium build). Now it brings the running window to
+  the front, also from the tray.
+- F7 opened Chromium's "caret browsing" question; it and other browser shortcuts (print, save
+  page, view source) are ignored now.
+- Linux: system notifications no longer play the desktop's own sound on top of the app's.
+- A short pause between the event sound and the person's tune.
 - Release builds use the Node 24 versions of GitHub's actions (Node 20 is being retired).
 - Building the Chromium version on systems whose GTK 4 has no Wayland support (X11 only)
   failed looking for `gtk4-wayland`. It now builds for X11 there.

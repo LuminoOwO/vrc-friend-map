@@ -59,6 +59,14 @@ In the app's data folder (Settings shows the exact path; on Linux
 | `store/settings.json` | Preferences. |
 | `store/activity.json` | The activity log (4 days). |
 | `store/sounds.json` | Sound files you added for notifications. |
+
+Age hints (in `store/cache.json`) and your age notes (in `store/local.json`) stay on this
+device. Only notes you chose to tell friends ("over 18", "probably over 18", "keep your
+distance") go to your servers, and only if "My notes about people" is on for that server; notes
+saying someone is under 18 are never sent. With *Age hints → Also read the pages they link to*
+on, opening a profile reads each page linked in that person's bio once (public websites only),
+so those sites see your IP address. Friend removals are shared only with "My friend removals"
+on.
 | `store/observed.json` | Time together from live locations. |
 | `store/shared.json` | What friends shared with you through servers. |
 | `store/backups/` | Copies made before a format change, or when data came from a newer version. |
