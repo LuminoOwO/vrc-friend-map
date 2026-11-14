@@ -220,7 +220,7 @@ export function uid(): string {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 }
 
-const LANGUAGES: Record<string, string> = {
+export const LANGUAGES: Record<string, string> = {
   eng: "English", deu: "German", fra: "French", spa: "Spanish", ita: "Italian", por: "Portuguese",
   jpn: "Japanese", kor: "Korean", zho: "Chinese", rus: "Russian", ukr: "Ukrainian", pol: "Polish",
   nld: "Dutch", swe: "Swedish", nor: "Norwegian", dan: "Danish", fin: "Finnish", tur: "Turkish",

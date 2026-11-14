@@ -855,3 +855,9 @@ html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adju
 .age-distance-line { color: var(--danger-text); }
 .age-confirm { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: color-mix(in srgb, var(--warn) 12%, transparent); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); }
 .age-confirm p { margin: 0 0 6px; font-size: 13px; }
+.profile-editor { width: min(680px, calc(100vw - 24px)); max-height: calc(100vh - 40px); overflow: auto; }
+.pe-body { display: flex; flex-direction: column; gap: 10px; }
+.pe-body textarea { width: 100%; resize: vertical; }
+.pe-body .field > input + input { margin-top: 4px; }
+.pe-theme-dots { display: inline-flex; gap: 4px; align-self: flex-end; padding-bottom: 8px; }
+.pe-theme-dots span { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border-strong); }

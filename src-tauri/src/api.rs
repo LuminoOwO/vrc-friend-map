@@ -343,6 +343,38 @@ impl ApiClient {
         }
     }
 
+    /// Save your own profile (a button click in Profile → Edit): status, status text and
+    /// pronouns go to /users/{id}, bio, links, languages and the look to /profile/{id}
+    /// (VRChat split them in 2026). Only these fields pass; one write cooldown for both.
+    pub async fn update_profile(&self, user_id: &str, user: serde_json::Value, profile: serde_json::Value) -> Result<Vec<ApiResponse>, String> {
+        const USER_FIELDS: &[&str] = &["status", "statusDescription", "pronouns"];
+        const PROFILE_FIELDS: &[&str] =
+            &["bio", "bioLinks", "languages", "themeId", "backgroundType", "backgroundGradientTop", "backgroundGradientBottom", "bannerType", "bannerColor"];
+        if !valid_user_id(user_id) {
+            return Err("invalid user".into());
+        }
+        let only = |v: serde_json::Value, keep: &[&str]| -> serde_json::Map<String, serde_json::Value> {
+            match v {
+                serde_json::Value::Object(m) => m.into_iter().filter(|(k, _)| keep.contains(&k.as_str())).collect(),
+                _ => serde_json::Map::new(),
+            }
+        };
+        let user = only(user, USER_FIELDS);
+        let profile = only(profile, PROFILE_FIELDS);
+        if user.is_empty() && profile.is_empty() {
+            return Ok(vec![]);
+        }
+        self.write_cooldown().await?;
+        let mut out = vec![];
+        if !user.is_empty() {
+            out.push(self.send_json(reqwest::Method::PUT, &format!("/users/{user_id}"), Some(serde_json::Value::Object(user))).await?);
+        }
+        if !profile.is_empty() {
+            out.push(self.send_json(reqwest::Method::PUT, &format!("/profile/{user_id}"), Some(serde_json::Value::Object(profile))).await?);
+        }
+        Ok(out)
+    }
+
     /// Friend status: isFriend, outgoingRequest, incomingRequest.
     pub async fn friend_status(&self, user_id: &str) -> Result<ApiResponse, String> {
         if !valid_user_id(user_id) {

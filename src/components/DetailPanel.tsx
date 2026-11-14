@@ -7,6 +7,7 @@
 import { openImage, type ViewerItem } from "./ImageViewer";
 import { removedByMe } from "../notifications";
 import { AgePanel } from "./AgePanel";
+import { ProfileEditor } from "./ProfileEditor";
 import { concernAbout } from "../age";
 import { PERSON_MODES, setPersonMode } from "./NotificationsSection";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -104,6 +105,7 @@ function statusCard(f: Friend, p: Presence, now: number): { icon: string; text: 
 export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean }) {
   const cache = useApp((s) => s.cache);
   const local = useApp((s) => s.local);
+  const [editing, setEditing] = useState(false);
   const demo = useApp((s) => s.demo);
   const stats = useApp((s) => s.logs.stats);
   const here = useApp((s) => s.here);
@@ -321,7 +323,13 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   <Icon name="link" size={16} />
                 </button>
                 {relation === "friend" && <NotifyBell id={id} />}
+                {relation === "me" && (
+                  <button className="btn" onClick={() => setEditing(true)} title="Change your status, bio, links, languages and look">
+                    <Icon name="settings" size={16} /> Edit profile
+                  </button>
+                )}
               </div>
+              {editing && <ProfileEditor id={id} onClose={() => setEditing(false)} />}
               {relation !== "me" && <ModerationRow id={id} name={f.displayName} friend={relation === "friend"} />}
               {relation !== "me" && <RedFlags id={id} />}
 

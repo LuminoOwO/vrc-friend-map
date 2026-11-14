@@ -296,6 +296,12 @@ async fn unfriend(state: AppStateRef<'_>, user_id: String) -> Result<api::ApiRes
     state.api.unfriend(&user_id).await
 }
 
+/// Save your own profile (only from the Save button in Profile → Edit).
+#[tauri::command]
+async fn update_profile(state: AppStateRef<'_>, user_id: String, user: serde_json::Value, profile: serde_json::Value) -> Result<Vec<api::ApiResponse>, String> {
+    state.api.update_profile(&user_id, user, profile).await
+}
+
 /// Block / mute / hide avatar, or undo it (only from a button click).
 #[tauri::command]
 async fn moderate_user(state: AppStateRef<'_>, user_id: String, kind: String, undo: bool) -> Result<api::ApiResponse, String> {
@@ -525,6 +531,7 @@ pub fn run() {
             friend_status,
             unfriend,
             moderate_user,
+            update_profile,
             storage_info,
             live_start,
             live_stop,
