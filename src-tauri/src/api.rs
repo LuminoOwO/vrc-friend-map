@@ -15,9 +15,11 @@ pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const API_BASES: [&str; 2] = ["https://api.vrchat.cloud/api/1", "https://vrchat.com/api/1"];
 
 /// Only read-only endpoints the app actually needs are reachable from the UI.
-const ALLOWED_GET_PREFIXES: [&str; 7] = [
+const ALLOWED_GET_PREFIXES: [&str; 8] = [
     "/auth/user",
     "/users/",
+    // Bio, links, badges and languages (VRChat moved them here in 2026), and your own profile for editing.
+    "/profile/",
     "/favorites",
     "/favorite/groups",
     "/worlds/",
@@ -501,6 +503,11 @@ fn retry_after_secs(res: &reqwest::Response) -> Option<u64> {
 #[cfg(test)]
 mod write_tests {
     use super::valid_user_id;
+
+    #[test]
+    fn profile_endpoint_is_readable() {
+        assert!(super::ALLOWED_GET_PREFIXES.iter().any(|p| "/profile/usr_x".starts_with(p)));
+    }
 
     #[test]
     fn friend_request_ids_cant_change_the_path() {

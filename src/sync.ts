@@ -361,7 +361,7 @@ export async function freshenProfile(id: string) {
   profileLoading.add(id);
   try {
     if (!userFresh) await fetchDetail(id);
-    if (!profileFresh) await fetchProfile(id);
+    if (!profileFresh) await fetchProfile(id).catch(() => {});
   } catch {
     // shown as-is
   } finally {
@@ -456,7 +456,8 @@ export async function refreshPerson(id: string) {
   setSync({ running: true, phase: "Refreshing", message: s.cache.friends[id]?.displayName ?? "", error: "" });
   try {
     await fetchDetail(id);
-    await fetchProfile(id);
+    // The profile half (bio, links) shouldn't take the rest of the refresh down with it.
+    await fetchProfile(id).catch(() => {});
     await fetchMutuals(id, gen);
     resetSync();
   } catch (e) {
