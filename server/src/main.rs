@@ -8,6 +8,7 @@ mod api;
 mod config;
 mod logger;
 mod store;
+mod upgrade;
 
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
@@ -154,6 +155,10 @@ fn run(config_path: &Path) -> Result<(), String> {
     let _ = rustls::crypto::ring::default_provider().install_default();
     let (cfg, created, env_used) = with_config_env(config_path)?;
     let data = cfg.data_dir(config_path);
+    // A newer vfm-server installed over an older one upgrades the stored files first (with a backup).
+    if let Some(done) = upgrade::upgrade(&data)? {
+        println!("{done}");
+    }
     let store = store::Store::open(&data)?;
     let lg = logger::Logger::new(data.join("logger"), &cfg.logger.contact, cfg.logger.resync_minutes, cfg.logger.keep_hops_months);
     let listen: SocketAddr = cfg.server.listen.parse().map_err(|e| format!("listen = \"{}\": {e}", cfg.server.listen))?;
@@ -235,6 +240,7 @@ fn cmd_invite(config_path: &Path, args: &mut Vec<String>) -> Result<(), String> 
     let uses = take_opt(args, "--uses").map(|v| v.parse::<u32>().map_err(|e| format!("--uses: {e}"))).transpose()?.unwrap_or(1);
     let days = take_opt(args, "--days").map(|v| v.parse::<u32>().map_err(|e| format!("--days: {e}"))).transpose()?.unwrap_or(7);
     let note = take_opt(args, "--note").unwrap_or_default();
+    upgrade::upgrade(&cfg.data_dir(config_path))?;
     let code = store::new_invite(&cfg.data_dir(config_path), uses, days, &note)?;
     println!("Invite code: {code}");
     println!("{} use{}, {}", uses.max(1), if uses > 1 { "s" } else { "" }, if days == 0 { "never expires".to_string() } else { format!("expires in {days} days") });
@@ -247,6 +253,7 @@ fn cmd_invite(config_path: &Path, args: &mut Vec<String>) -> Result<(), String> 
 fn cmd_status(config_path: &Path) -> Result<(), String> {
     let (cfg, _, _) = with_config_env(config_path)?;
     let data = cfg.data_dir(config_path);
+    upgrade::upgrade(&data)?;
     let s = store::Store::open(&data)?;
     let (users, items, sealed) = s.stats();
     println!("{} – {} accounts, {} shared items ({} encrypted)", cfg.server.name, users, items, sealed);
@@ -271,6 +278,7 @@ fn cmd_status(config_path: &Path) -> Result<(), String> {
 fn cmd_remove_user(config_path: &Path, id: Option<String>) -> Result<(), String> {
     let id = id.ok_or("which user? vfm-server remove-user usr_…")?;
     let (cfg, _) = with_config(config_path)?;
+    upgrade::upgrade(&cfg.data_dir(config_path))?;
     let mut s = store::Store::open(&cfg.data_dir(config_path))?;
     if s.delete_user(&id) {
         println!("Removed {id}. If the server is running, restart it so it forgets them too.");
