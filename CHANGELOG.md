@@ -3,9 +3,25 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
-## Next
+## 0.11.0 (2026-11-15)
 
 ### Added
+- **Updates from inside the app**: the app checks GitHub once a day (can be turned off in
+  Settings → Account & data → Updates), shows what's new, and updates with one click: it
+  downloads the file for how you installed it, checks it against the release's checksums,
+  installs it and restarts. Windows (installer, MSI, portable), Mac, AppImage, .deb / .rpm
+  (with your password) and the tarball update themselves; Flatpak, Android and iPhone get the
+  download or the release page.
+- **Your circles and notes on all your devices**: per server, *Sync my circles and notes with my
+  other devices* (on by default; needs the same key on each device and encryption on that
+  server). Circles, dismissed group suggestions, what you tell friends about people and
+  per-person notification rules travel end-to-end encrypted for your own key only; edits on two
+  devices are merged (members added or removed on either side both apply). *Also sync settings*
+  takes theme, map, groups and age-hint settings along; frame rate, tray and graphics stay per
+  device. Age notes never leave a device.
+- **vfm-server upgrades its own files**: a newer vfm-server installed over an older one backs the
+  data up to `data/backups/` and upgrades it at its first start; an older one refuses newer data
+  instead of damaging it. The app shows in a server's card when the server is older than the app.
 - **Filters → Who → Only friends of friends I'm not friends with**: shows people who aren't your
   friends yet but share at least one friend with you (in your instance, people you've met, and
   friends of friends from shared lists), with lines to the friends you share. Your friends stay

@@ -798,6 +798,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.11.0": "updates from inside the app (one click, checked against the release), your circles and notes synced between your devices through your server (encrypted for you only), and a filter for friends of friends you're not friends with yet.",
   "0.10.0": "profiles show bios and links again (VRChat moved them), age hints with notes only you see, edit your own profile, a red flag when a friend removed someone, who's here in the sidebar, Catppuccin with any accent, notifications with sounds (each friend gets their own little tune) when friends come online, join your world, add or remove you, for everyone or only people you pick (also just once, when you're waiting for someone); a tray icon so the app keeps running with the window closed; an Activity tab; hand-picked people for sharing; unfriend / block / mute on profiles.",
   "0.9.0": "Linux runs on Chromium now (smooth on big windows), a new Activity tab with who joined and left and friends coming online, unfriend / block / mute buttons on profiles, a frame-rate limit with power saving, Settings → Diagnostics, and choices for which non-friends' profiles to load and keep.",
   "0.8.0": "you're on the map now (between your closest friends), a strip shows who's in your VRChat instance right now, and Map options → Not friends yet shows people you could befriend, with a friend-request button on their profile.",

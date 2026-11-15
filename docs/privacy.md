@@ -60,6 +60,14 @@ In the app's data folder (Settings shows the exact path; on Linux
 | `store/activity.json` | The activity log (4 days). |
 | `store/sounds.json` | Sound files you added for notifications. |
 
+The update check asks GitHub's API about the latest release once a day (nothing about you is
+sent; turn it off in Settings → Account & data → Updates). Updates are downloaded from the
+project's GitHub releases only.
+
+With device sync on, your circles, dismissed suggestions, notes for friends and per-person
+notification rules go to your servers end-to-end encrypted for your own key only; the server
+can't read them. Age notes are not part of it.
+
 Age hints (in `store/cache.json`) and your age notes (in `store/local.json`) stay on this
 device. Only notes you chose to tell friends ("over 18", "probably over 18", "keep your
 distance") go to your servers, and only if "My notes about people" is on for that server; notes

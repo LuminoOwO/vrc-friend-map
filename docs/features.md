@@ -195,6 +195,8 @@ A readable log of what happened around you, kept 4 days on this device.
   owners choose force-off, optional, recommended or force-on.
 - **Signed uploads and key pinning:** a server can't fake what someone shared or swap their
   key without the app noticing. Friends can confirm keys with a line in their VRChat bio.
+- **Your circles and notes on all your devices**, end-to-end encrypted for your own key, merged
+  when you edit on two devices; optionally settings too.
 - **Choose who gets your data and who's in it:** all friends, some circles, or people you pick
   (optionally adding new friends automatically). Share your friend list, your activity, or
   both. The list you share by hand can be hand-picked too.
@@ -222,6 +224,8 @@ A readable log of what happened around you, kept 4 days on this device.
 - **Runs once:** starting it again brings the open window to the front.
 - **Linux packages:** .deb, .rpm, AppImage, tarball and Flatpak; a mouse-wheel fix for X11
   systems where the wheel doesn't reach the app.
+- **Updates from inside the app:** a daily check (can be turned off) and one-click updates,
+  checked against the release's checksums, for every install type that allows it.
 - **Updates keep your data:** stored files carry format numbers and are backed up before any
   conversion. Going back to an older version works too.
 
