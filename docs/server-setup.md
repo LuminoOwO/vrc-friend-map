@@ -12,7 +12,8 @@ command.
 6. [Turn on the logger](#6-turn-on-the-logger)
 7. [Reach it from outside your home](#7-reach-it-from-outside-your-home)
 8. [Several servers, several devices](#8-several-servers-several-devices)
-9. [Troubleshooting](#9-troubleshooting)
+9. [Updating the server](#9-updating-the-server)
+10. [Troubleshooting](#10-troubleshooting)
 
 ## 1. What a server does
 
@@ -260,8 +261,30 @@ The app warns when a server outside your home network uses plain `http://`.
   1. On the first device: **Your key → Copy key to another device → Copy**. This is your
      private key, so only paste it into your own devices.
   2. On the other device: **Your key → Use key from another device**, paste it, and confirm.
+- **Your circles and notes on every device:** with the same key on both, turn on **Sync my
+  circles and notes with my other devices** for a server (on by default). They travel
+  end-to-end encrypted for your own key only, and edits on both devices are merged. *Also sync
+  settings* (in Syncing) takes theme, map, groups and age-hint settings along too; frame rate,
+  tray and graphics stay per device. Age notes never leave a device. This needs encryption on
+  that server and vfm-server 0.11 or newer.
 
-## 9. Troubleshooting
+## 9. Updating the server
+
+Install the new version the same way as the old one; your data stays. At its first start the
+new version upgrades the stored files by itself, after copying them to `data/backups/`. If you
+ever go back to an older vfm-server, it refuses to start rather than damage newer data.
+
+- **Container (Docker / Podman):** `podman pull ghcr.io/luminoowo/vfm-server:latest` (or
+  `docker pull …`) and restart it; with `podman-auto-update.timer` this happens by itself.
+- **Raspberry Pi / Linux / macOS:** download the new `vfm-server-<version>-…tar.gz`, stop the
+  server, replace the `vfm-server` program, start it again (`systemctl --user restart
+  vfm-server` if you set up the service).
+- **Windows:** replace `vfm-server.exe` with the new one and start it again.
+- **Android (Termux):** replace the program in Termux and start it again.
+
+The app shows in the server's card when it's older than the app.
+
+## 10. Troubleshooting
 
 | Problem | Fix |
 |---|---|

@@ -9,6 +9,7 @@ import { loadCustomSounds } from "./notifications";
 import { startTray } from "./tray";
 import { startWheelFix } from "./wheelfix";
 import { startKeys } from "./keys";
+import { startUpdateChecks } from "./updates";
 
 applySafeArea();
 unlockAudioOnInput();
@@ -16,6 +17,7 @@ void loadCustomSounds();
 startTray();
 startWheelFix();
 startKeys();
+startUpdateChecks();
 
 // Dev server only: lets UI test scripts set up state (stripped from builds).
 if (import.meta.env.DEV) {

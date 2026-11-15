@@ -861,3 +861,15 @@ html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adju
 .pe-body .field > input + input { margin-top: 4px; }
 .pe-theme-dots { display: inline-flex; gap: 4px; align-self: flex-end; padding-bottom: 8px; }
 .pe-theme-dots span { width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--border-strong); }
+/* Update dialog */
+.update-dialog { width: min(620px, calc(100vw - 24px)); max-height: calc(100vh - 40px); display: flex; flex-direction: column; gap: 8px; }
+.update-notes { overflow: auto; max-height: 46vh; padding: 8px 12px; border-radius: 10px; background: var(--chip-bg); font-size: 13px; }
+.update-notes h4 { margin: 10px 0 4px; font-size: 13px; }
+.update-notes h4:first-child { margin-top: 0; }
+.update-notes li { margin: 2px 0 2px 14px; }
+.update-notes p { margin: 2px 0; }
+.update-progress { position: relative; height: 22px; border-radius: 999px; background: var(--chip-bg); overflow: hidden; }
+.update-progress > div { position: absolute; inset: 0 auto 0 0; background: var(--accent-soft); transition: width 0.2s; }
+.update-progress span { position: relative; padding-left: 10px; line-height: 22px; }
+.update-result { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.update-result code { flex: 1 1 100%; padding: 6px 8px; border-radius: 8px; background: var(--chip-bg); font-size: 12px; word-break: break-all; }

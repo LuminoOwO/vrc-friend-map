@@ -7,6 +7,7 @@ import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, upd
 import { CloseSection, NotificationsSection } from "./NotificationsSection";
 import { WheelFixSection } from "./WheelFixSection";
 import { AgeSection } from "./AgeSection";
+import { checkForUpdate } from "../updates";
 import { wheelFixHere } from "../wheelfix";
 import { forgetObserved } from "../together";
 import type { GroupSettings, MapSettings, Theme } from "../types";
@@ -418,6 +419,9 @@ export function SettingsModal() {
             <p className="small muted">Running in a browser: data is kept in this browser's local storage.</p>
           )}
         </Sec>
+        <Sec id="updates" cat="account" title="Updates" keys="update upgrade new version download install release">
+          <UpdatesSection />
+        </Sec>
         <Sec id="about" cat="account" title="About" keys="version">
           <h3>About</h3>
           <p className="small muted">VRC Friend Map {__APP_VERSION__}. Not affiliated with VRChat Inc.</p>
@@ -751,6 +755,43 @@ function PeopleSection() {
         <input type="checkbox" checked={people.showBlocked} onChange={(e) => updatePeople({ showBlocked: e.target.checked })} />
         Show people I've blocked{blocked ? ` (${blocked})` : ""}
       </label>
+    </>
+  );
+}
+
+function UpdatesSection() {
+  const u = useApp((s) => s.settings.updates);
+  const [checking, setChecking] = useState(false);
+  return (
+    <>
+      <h3>Updates</h3>
+      <label className="check">
+        <input type="checkbox" checked={u.check} onChange={(e) => updateSettings({ updates: { ...u, check: e.target.checked } })} />
+        Check for new versions (once a day, on GitHub)
+      </label>
+      <div className="row">
+        <button
+          className="btn small"
+          disabled={checking}
+          onClick={async () => {
+            setChecking(true);
+            await checkForUpdate(true);
+            setChecking(false);
+          }}
+        >
+          <Icon name="refresh" size={14} /> {checking ? "Checking…" : "Check now"}
+        </button>
+        {u.skipped && (
+          <button className="btn small ghost" onClick={() => updateSettings({ updates: { ...u, skipped: "" } })}>
+            Offer {u.skipped} again
+          </button>
+        )}
+      </div>
+      <p className="small muted">
+        Updating downloads the new version from the GitHub release, checks it against the release's checksums and installs it the way this copy
+        was installed (installer, AppImage, .deb / .rpm with your password, tarball). Flatpak, Android and iPhone get a download or the
+        release page instead.
+      </p>
     </>
   );
 }

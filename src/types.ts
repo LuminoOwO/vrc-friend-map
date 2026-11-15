@@ -434,6 +434,7 @@ export interface Settings {
   /** Linux/X11: take mouse wheel steps from the X server when the web view gets none. */
   wheelFix: boolean;
   age: AgeSettings;
+  updates: { check: boolean; skipped: string };
   theme: Theme;
   /** Accent color for the Catppuccin themes. */
   catAccent: import("./catppuccin").CatAccent;

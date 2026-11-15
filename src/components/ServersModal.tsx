@@ -22,6 +22,7 @@ import { setState, showToast, updateServer, updateSharing, useApp } from "../sto
 import type { EncDefault, EncPolicy, ShareServer } from "../types";
 import { Icon } from "./Icon";
 import { PeopleChooser } from "./PeopleChooser";
+import { newerVersion } from "../updates";
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -390,6 +391,14 @@ function ServerCard({ server: s }: { server: ShareServer }) {
             {s.url}
             {info && ` · vfm-server ${info.version}`}
           </div>
+          {info && newerVersion(__APP_VERSION__, info.version) && (
+            <div className="small warn-text">
+              Older than this app ({__APP_VERSION__}); some things (like syncing your devices) need a newer server.{" "}
+              <button className="link-btn" onClick={() => void backend.openUrl("https://github.com/LuminoOwO/vrc-friend-map/blob/main/docs/server-setup.md#9-updating-the-server")}>
+                How to update it
+              </button>
+            </div>
+          )}
         </div>
         <div className="row tight">
           {info && <span className={`pill ${info.encryption === "force-off" ? "warn" : info.encryption === "force-on" ? "ok" : ""}`}>{POLICY_LABEL[info.encryption]}</span>}

@@ -70,6 +70,8 @@ export interface AppState {
   settingsOpen: boolean;
   /** The close button was pressed and the app should ask what to do. */
   closeAsk: boolean;
+  /** A newer version to offer (the update dialog), or null. */
+  update: import("./updates").UpdateInfo | null;
   settingsTab: string;
   sidebarOpen: boolean;
   /** Live connection to VRChat's event stream. */
@@ -262,6 +264,7 @@ export const defaultSettings = (): Settings => ({
   closeAction: "ask",
   wheelFix: false,
   age: { enabled: true, readLinks: false, warnRequests: true },
+  updates: { check: true, skipped: "" },
   theme: "dark",
   catAccent: "mauve",
   profileAs: "popup",
@@ -324,6 +327,7 @@ let state: AppState = {
   notice: null,
   settingsOpen: false,
   closeAsk: false,
+  update: null,
   settingsTab: "general",
   sidebarOpen: typeof window !== "undefined" ? window.innerWidth > 900 : true,
   live: { connected: false, message: "" },
@@ -609,6 +613,10 @@ export function normalizeSettings(raw: Raw | null): Settings {
     notify: normalizeNotify(raw.notify, snd),
     closeAction: oneOf(raw.closeAction, ["ask", "tray", "quit"] as const, d.closeAction),
     wheelFix: typeof raw.wheelFix === "boolean" ? raw.wheelFix : d.wheelFix,
+    updates: {
+      check: typeof raw.updates?.check === "boolean" ? raw.updates.check : d.updates.check,
+      skipped: typeof raw.updates?.skipped === "string" ? raw.updates.skipped : "",
+    },
     age: {
       enabled: typeof raw.age?.enabled === "boolean" ? raw.age.enabled : d.age.enabled,
       readLinks: typeof raw.age?.readLinks === "boolean" ? raw.age.readLinks : d.age.readLinks,

@@ -9,6 +9,7 @@ import { GraphView } from "./components/GraphView";
 import { LoginScreen } from "./components/LoginScreen";
 import { SettingsModal } from "./components/SettingsModal";
 import { CloseDialog } from "./components/CloseDialog";
+import { UpdateDialog } from "./components/UpdateDialog";
 import { catppuccinVars, isCatFlavor } from "./catppuccin";
 import { ConfirmUnencrypted, ServersModal } from "./components/ServersModal";
 import { loadShared, startSharing, stopSharing } from "./share";
@@ -106,6 +107,7 @@ export default function App() {
         <ThemeSync />
         <LoginScreen canLogin={isTauri} />
         <CloseDialog />
+        <UpdateDialog />
         <ToastView />
       </>
     );
@@ -143,6 +145,7 @@ export default function App() {
       <ConfirmUnencrypted />
       <ImageViewer />
       <CloseDialog />
+      <UpdateDialog />
       <ToastView />
     </div>
   );

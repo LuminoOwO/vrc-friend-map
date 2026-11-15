@@ -15,6 +15,7 @@ mod storage;
 mod silent_notify;
 mod single;
 mod tray;
+mod updater;
 mod wheelfix;
 
 use std::path::PathBuf;
@@ -571,6 +572,8 @@ pub fn run() {
             wheelfix::wheel_fix_set,
             silent_notify::notify_silent,
             linkfetch::fetch_link_text,
+            updater::update_check,
+            updater::update_install,
             wheelfix::wheel_fix_state,
         ])
         .run(tauri::generate_context!())
