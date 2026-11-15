@@ -24,6 +24,7 @@ function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {
   if (f.circleId) n++;
   if (f.favoritesOnly) n++;
   if (f.listId) n++;
+  if (f.who !== "all") n++;
   return n;
 }
 
@@ -174,6 +175,20 @@ function FilterPopover({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="popover filters" ref={ref}>
+      <div className="frow">
+        <span className="flabel">Who</span>
+        <select value={f.who} onChange={(e) => updateFilters({ who: e.target.value as typeof f.who })}>
+          <option value="all">Everyone on the map</option>
+          <option value="friends">Only friends</option>
+          <option value="potential">Only friends of friends I'm not friends with</option>
+        </select>
+      </div>
+      {f.who === "potential" && (
+        <p className="small muted frow-note">
+          People in your instance, people you've met and friends of friends from shared lists who share at least one friend with you. Your friends
+          stay dimmed for context.
+        </p>
+      )}
       <div className="frow">
         <span className="flabel">Status</span>
         <Toggle

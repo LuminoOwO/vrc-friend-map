@@ -3,6 +3,14 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## Next
+
+### Added
+- **Filters → Who → Only friends of friends I'm not friends with**: shows people who aren't your
+  friends yet but share at least one friend with you (in your instance, people you've met, and
+  friends of friends from shared lists), with lines to the friends you share. Your friends stay
+  dimmed for context. *Only friends* hides everyone else.
+
 ## 0.10.0 (2026-11-14)
 
 ### Added (profiles and people)

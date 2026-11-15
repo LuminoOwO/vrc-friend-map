@@ -136,6 +136,8 @@ A readable log of what happened around you, kept 4 days on this device.
 
 - Online / offline, last online (24 h to 90 days+), trust rank, platform, circle, VRChat
   favorites only, and "also in X's shared list".
+- **Who:** everyone, only friends, or only friends of friends you're not friends with yet
+  (people in your instance, people you've met, friends of friends from shared lists).
 - People who don't match can be dimmed or hidden.
 - Overview tiles (in VRChat / web or app) work as quick filters.
 - Search by name.

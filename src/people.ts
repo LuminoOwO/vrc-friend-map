@@ -70,8 +70,11 @@ export function useExtra(): Extra {
   const met = useApp((s) => s.met);
   const stats = useApp((s) => s.logs.stats);
   const showMe = useApp((s) => s.settings.map.showMe);
-  const level = useApp((s) => s.settings.map.showOthers);
+  const levelSetting = useApp((s) => s.settings.map.showOthers);
   const showBlocked = useApp((s) => s.settings.people.showBlocked);
+  const who = useApp((s) => s.filters.who);
+  // The filter overrides Map options: "only friends" shows nobody else, "friends of friends" everyone who qualifies.
+  const level = who === "friends" ? "off" : who === "potential" && levelSetting === "off" ? "all" : levelSetting;
 
   const extra = useMemo<Extra>(() => {
     const friends = cache.friends;
@@ -137,6 +140,9 @@ export function useExtra(): Extra {
         });
     }
 
+    // Only people who share at least one friend with you (from VRChat or a shared list).
+    if (who === "potential")
+      for (const [id, i] of [...info]) if (!i.via.length && !(cache.mutuals[id]?.ids ?? []).some((f) => friends[f])) info.delete(id);
     const others = [...info.keys()].map((id) => cache.others?.[id] ?? placeholder(id, names.get(id) ?? ""));
     const edges = new Set<string>();
     const otherEdges: [string, string][] = [];
@@ -151,7 +157,7 @@ export function useExtra(): Extra {
       for (const f of i.via) link(id, f);
     }
     return { me, anchors, others, info, otherEdges, here: hereSet };
-  }, [cache.friends, cache.others, cache.mutuals, cache.me, cache.moderations, local.imports, here, met, stats, showMe, level, showBlocked]);
+  }, [cache.friends, cache.others, cache.mutuals, cache.me, cache.moderations, local.imports, here, met, stats, showMe, level, showBlocked, who]);
 
   // Load profiles (and mutuals) of the people shown; in your instance first.
   useEffect(() => {

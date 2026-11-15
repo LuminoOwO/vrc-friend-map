@@ -498,6 +498,8 @@ export interface LogScanReport {
 
 export interface Filters {
   search: string;
+  /** Everyone, only friends, or only people who aren't friends yet but share friends with you. */
+  who: "all" | "friends" | "potential";
   presence: "all" | "online" | "offline";
   lastSeen: "any" | "24h" | "7d" | "30d" | "90d" | "older";
   trust: string[];

@@ -278,6 +278,7 @@ export const defaultFilters = (): Filters => ({
   platform: [],
   circleId: null,
   favoritesOnly: false,
+  who: "all",
   listId: null,
 });
 
