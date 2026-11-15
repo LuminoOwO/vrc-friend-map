@@ -214,6 +214,8 @@ export interface LocalData {
   ageNotes: Record<string, AgeNote>;
   /** What you share with friends about people: adult vouches or "keep your distance". */
   shareNotes: Record<string, ShareNote>;
+  /** Device sync: the state this device and your others last agreed on. */
+  selfBase?: import("./devicesync").SelfData | null;
 }
 
 export type NodeStyle = "dot" | "icon" | "card" | "fullcard";
@@ -354,6 +356,8 @@ export interface ShareServer {
   include: PeopleSelection;
   /** Also share whom you stopped being friends with (shown to them as a note on that person). */
   shareRemovals: boolean;
+  /** Sync your circles and notes with your other devices through this server (encrypted). */
+  syncMine: boolean;
   /** Share your notes about people (adult vouches, "keep your distance"). */
   shareNotes: boolean;
   /** Fetch what others share with me here. */
@@ -383,6 +387,8 @@ export interface SharingSettings {
   exportPick: PeopleSelection;
   encDefault: EncDefault;
   autoSync: boolean;
+  /** Also sync settings between your devices (not per-device ones like the frame rate). */
+  syncSettings: boolean;
   /** Minutes between syncs while the app is open. */
   intervalMin: number;
   /** Use activity friends shared with you for group suggestions. */

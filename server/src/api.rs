@@ -280,6 +280,10 @@ async fn put_item(
         return Err(err(StatusCode::BAD_REQUEST, "item is malformed"));
     }
     let sealed = env.enc == Enc::Sealed;
+    // Your own devices' data: only ever encrypted, and only for you.
+    if kind == vfm_share::KIND_SELF && (!sealed || env.recipients.iter().any(|r| r != &user)) {
+        return Err(err(StatusCode::BAD_REQUEST, "your devices' data must be encrypted and only for you"));
+    }
     if !cfg.access.encryption.allows(sealed) {
         return Err(err(
             StatusCode::FORBIDDEN,

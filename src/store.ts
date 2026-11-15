@@ -199,6 +199,7 @@ export const defaultSharing = (): SharingSettings => ({
   exportPick: allPeople(),
   encDefault: "server",
   autoSync: true,
+  syncSettings: false,
   intervalMin: 30,
   useShared: true,
   useLogger: true,
@@ -233,6 +234,7 @@ export const newServer = (url: string): ShareServer => ({
   audienceAutoAdd: true,
   include: allPeople(),
   shareRemovals: false,
+  syncMine: true,
   shareNotes: true,
   download: true,
   loggerOwner: false,
@@ -693,6 +695,7 @@ function normalizeSharing(raw: unknown): SharingSettings {
             audienceAutoAdd: bool(x.audienceAutoAdd, true),
             include: normalizePick(x.include),
             shareRemovals: bool(x.shareRemovals, false),
+            syncMine: bool(x.syncMine, true),
             shareNotes: bool(x.shareNotes, true),
             published: Array.isArray(x.published) ? x.published.filter((c: unknown) => typeof c === "string") : [],
             upload: bool(x.upload, n.upload),
@@ -711,6 +714,7 @@ function normalizeSharing(raw: unknown): SharingSettings {
     exportPick: normalizePick(r.exportPick),
     encDefault: oneOf(r.encDefault, ["server", "on", "off"] as const, d.encDefault),
     autoSync: bool(r.autoSync, d.autoSync),
+    syncSettings: bool(r.syncSettings, d.syncSettings),
     intervalMin: num(r.intervalMin, d.intervalMin, 10, 24 * 60),
     useShared: bool(r.useShared, d.useShared),
     useLogger: bool(r.useLogger, d.useLogger),
@@ -741,6 +745,7 @@ export function normalizeLocal(raw: Raw | null): LocalData {
     ageNotes: (isObj(raw.ageNotes) ? raw.ageNotes : {}) as LocalData["ageNotes"],
     shareNotes: (isObj(raw.shareNotes) ? raw.shareNotes : {}) as LocalData["shareNotes"],
     dismissedGroups: Array.isArray(raw.dismissedGroups) ? raw.dismissedGroups.filter(Array.isArray) : [],
+    selfBase: isObj(raw.selfBase) ? (raw.selfBase as LocalData["selfBase"]) : null,
   };
   // 0.1.x kept per-friend "first seen" dates; only the change log needs them.
   const legacy = raw as { firstSeen?: Record<string, number>; trackingSince?: number };

@@ -357,6 +357,12 @@ impl ShareState {
             return Err("unknown kind".into());
         }
         let id = self.identity(user).await?;
+        // Your own devices' data goes to nobody else, and never unencrypted.
+        let self_item = kind == vfm_share::KIND_SELF;
+        if self_item && !encrypt {
+            return Err("syncing your devices needs end-to-end encryption on this server".into());
+        }
+        let recipients = if self_item { Vec::new() } else { recipients };
         let mut wanted: Vec<String> = recipients.into_iter().filter(|r| vfm_share::valid_user_id(r) && r != user).collect();
         wanted.sort();
         wanted.dedup();

@@ -28,7 +28,10 @@ pub const PROTOCOL: u32 = 1;
 /// Kinds of shared items.
 pub const KIND_FRIENDS: &str = "friends";
 pub const KIND_ACTIVITY: &str = "activity";
-pub const KINDS: &[&str] = &[KIND_FRIENDS, KIND_ACTIVITY];
+/// Your own data for your other devices (circles, notes, settings). Always
+/// end-to-end encrypted and addressed only to yourself.
+pub const KIND_SELF: &str = "self";
+pub const KINDS: &[&str] = &[KIND_FRIENDS, KIND_ACTIVITY, KIND_SELF];
 
 pub(crate) mod b64 {
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;

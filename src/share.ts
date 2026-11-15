@@ -3,10 +3,11 @@
 // Encryption and signatures happen in Rust (src-tauri/src/share.rs); this
 // file decides what to send where, and merges what comes back.
 import { backend, type InfoResult, type PublishResult } from "./backend";
-import { getState, newServer, setState, showToast, updateLocal, updateServer, updateSharing } from "./store";
+import { getState, newServer, normalizeSettings, setState, showToast, updateLocal, updateServer, updateSettings, updateSharing } from "./store";
 import { combineStats } from "./together";
+import { mergeSelf, readSelf, sameSelf, SELF_FORMAT, SYNCED_SETTINGS, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
 import { selectedIds } from "./selection";
-import type { EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareNote, ShareServer, SharedData, SharedRemoval } from "./types";
+import type { Settings, EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareNote, ShareServer, SharedData, SharedRemoval } from "./types";
 
 export const FRIENDS_FORMAT = "vrc-friend-map/friends-v1";
 export const ACTIVITY_FORMAT = "vrc-friend-map/activity-v1";
@@ -494,6 +495,21 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
       if (problems) notes.push(`${problems} item${problems === 1 ? "" : "s"} couldn't be used (changed keys or damaged).`);
     }
 
+    // ---- your other devices ----
+    s = getState().settings.sharing.servers.find((x) => x.id === id) ?? s;
+    if (s.syncMine && s.registered) {
+      if (!sw.on) notes.push("Your devices don't sync here: that needs end-to-end encryption on this server.");
+      else {
+        try {
+          const n = await syncDevices(s);
+          if (n) notes.push(n);
+        } catch (e) {
+          const msg = errText(e);
+          notes.push(/unknown kind/.test(msg) ? "Syncing your devices needs a newer vfm-server here (ask its owner to update)." : `Device sync: ${msg}`);
+        }
+      }
+    }
+
     // ---- logger ----
     s = getState().settings.sharing.servers.find((x) => x.id === id) ?? s;
     if (s.loggerOwner) {
@@ -512,6 +528,51 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
     if (/not registered/.test(msg)) updateServer(id, { registered: false });
     if (opts.manual) showToast(`${serverName(s)}: ${msg}`);
   }
+}
+
+/** Merge your circles and notes with what your other devices put on this server. */
+async function syncDevices(s: ShareServer): Promise<string> {
+  const st = getState();
+  const me = st.cache.me?.id;
+  if (!me) return "";
+  const inbox = await backend.share.inbox(s.url);
+  const own = inbox.find((i) => i.owner === me && i.kind === "self" && i.payload != null && !i.error);
+  const theirs = own ? readSelf(own.payload) : null;
+  const mine = currentSelf();
+  const merged = theirs ? mergeSelf(st.local.selfBase ?? null, mine, theirs) : mine;
+  const changedHere = !sameSelf(merged, mine);
+  if (changedHere) applySelf(merged);
+  if (!theirs || !sameSelf(merged, theirs)) {
+    const payload: SelfPayload = { format: SELF_FORMAT, t: Date.now(), ...merged };
+    await backend.share.publish(s.url, "self", JSON.stringify(payload), [], true);
+  }
+  updateLocal((l) => ({ ...l, selfBase: merged }));
+  return changedHere ? "Took over changes from your other devices." : "";
+}
+
+function currentSelf(): SelfData {
+  const st = getState();
+  return {
+    circles: st.local.circles,
+    dismissedGroups: st.local.dismissedGroups,
+    shareNotes: st.local.shareNotes ?? {},
+    notifyPeople: st.settings.notify.people,
+    settings: st.settings.sharing.syncSettings ? syncedSettings(st.settings) : undefined,
+  };
+}
+
+function applySelf(d: SelfData) {
+  updateLocal((l) => ({ ...l, circles: d.circles, dismissedGroups: d.dismissedGroups, shareNotes: d.shareNotes }));
+  const st = getState();
+  const merged = normalizeSettings({
+    ...st.settings,
+    ...(st.settings.sharing.syncSettings && d.settings ? d.settings : {}),
+    notify: { ...st.settings.notify, people: d.notifyPeople },
+  });
+  // Only the synced parts change; everything per device stays as it is.
+  const patch: Partial<Settings> = { notify: { ...st.settings.notify, people: merged.notify.people } };
+  if (st.settings.sharing.syncSettings && d.settings) for (const k of SYNCED_SETTINGS) (patch as Record<string, unknown>)[k] = merged[k];
+  updateSettings(patch);
 }
 
 let syncing = false;

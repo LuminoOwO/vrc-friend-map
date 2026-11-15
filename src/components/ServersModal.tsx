@@ -218,6 +218,10 @@ export function ServersModal() {
             </select>
           </label>
           <label className="check">
+            <input type="checkbox" checked={sharing.syncSettings} onChange={(e) => updateSharing({ syncSettings: e.target.checked })} />
+            Also sync settings between my devices (theme, map, groups, age hints; not frame rate, tray or graphics)
+          </label>
+          <label className="check">
             <input type="checkbox" checked={sharing.useShared} onChange={(e) => updateSharing({ useShared: e.target.checked })} />
             Use activity friends share with me for group suggestions
           </label>
@@ -467,6 +471,11 @@ function ServerCard({ server: s }: { server: ShareServer }) {
                   <input type="checkbox" checked={s.shareNotes} disabled={!s.shareFriends} onChange={(e) => set({ shareNotes: e.target.checked })} />
                   My notes about people
                 </label>
+                <label className="check">
+                  <input type="checkbox" checked={s.syncMine} onChange={(e) => set({ syncMine: e.target.checked })} />
+                  Sync my circles and notes with my other devices
+                </label>
+                <Why text="Your circles, dismissed group suggestions, what you tell friends about people, and per-person notification rules (and settings, if that's on below) go to this server encrypted for your own key only, so the server can't read them. Your other devices pick them up when they sync; edits on both are merged. Your other devices need the same key: Copy key to another device. Age notes stay on each device." />
                 <label className="check">
                   <input type="checkbox" checked={s.shareRemovals} disabled={!s.shareFriends} onChange={(e) => set({ shareRemovals: e.target.checked })} />
                   My friend removals
