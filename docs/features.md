@@ -46,6 +46,7 @@ they read VRChat's own log files.
   - power saving: lower rate when the window isn't focused (default 30) or after a while
     without input
 - **Frame-rate readout** (Map options → Show frame rate).
+- **Zoom without a wheel:** + / − / fit buttons and the + / − / 0 keys. F11 for fullscreen.
 
 ## Circles (your own groups)
 
@@ -78,6 +79,8 @@ they read VRChat's own log files.
 
 - Follows VRChat's log as it's written: world name, and everyone in the instance, friends
   first, with status or friends in common and time in the instance.
+- Sits at the top of the sidebar (or over the map), with the world's picture, instance type,
+  region and people / slots.
 - A readable list, a row of pictures, or just a button; search in busy instances.
 - Click anyone to open their profile. It needs no requests to VRChat.
 - Option to show the people who aren't friends on the map too.
@@ -198,7 +201,7 @@ A readable log of what happened around you, kept 4 days on this device.
 
 - **Themes:**
   - Dark, OLED black and Light
-  - Catppuccin Mocha, Macchiato and Latte
+  - Catppuccin Latte, Frappé, Macchiato and Mocha, each with any of its 14 accent colors
   - Nord and Dracula
 - The scrollbars follow the theme.
 - Works on phones: popup profiles, a bigger close button below the status bar, and a
@@ -214,6 +217,9 @@ A readable log of what happened around you, kept 4 days on this device.
 - **Graphics:** automatic, prefer the graphics card, or software (Linux, Windows).
 - **People who aren't friends:** load everyone in the instance; which profiles to keep on
   this device (none, potential friends, everyone); show blocked people.
+- **Runs once:** starting it again brings the open window to the front.
+- **Linux packages:** .deb, .rpm, AppImage, tarball and Flatpak; a mouse-wheel fix for X11
+  systems where the wheel doesn't reach the app.
 - **Updates keep your data:** stored files carry format numbers and are backed up before any
   conversion. Going back to an older version works too.
 
@@ -221,8 +227,8 @@ A readable log of what happened around you, kept 4 days on this device.
 
 - You sign in on vrchat.com itself (2FA and any sign-in option it offers). The app never sees
   your password.
-- **Only GET requests** to a short list of endpoints. Writes happen only from the profile
-  buttons.
+- **Only GET requests** to a short list of endpoints. Writes happen only when you click: the
+  profile buttons and saving your own profile.
 - **Gentle on VRChat:**
   - requests at least 1 s apart
   - backs off on rate limits
