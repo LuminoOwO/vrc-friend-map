@@ -3,6 +3,15 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## Unreleased
+
+### Changed
+- **Age hints read a number alone at the start of a line** as a likely age: a bio of just "18",
+  or "19" / "21 | he/him" as its first line, now counts (as a weaker hint than "I'm 19", so the
+  profile says "probably over 18"; numbers under 18 count the same way). A link to an
+  adults-only site (OnlyFans, Fansly and similar, which check ID) counts as an adult hint.
+  Hints already worked out are worked out again with the new rules.
+
 ## 0.11.0 (2026-11-15)
 
 ### Added

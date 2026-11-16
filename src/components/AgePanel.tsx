@@ -39,7 +39,9 @@ export function AgePanel({ id }: { id: string }) {
   const vouches = fromFriends.filter((n) => n.v !== "distance");
   const headline = note
     ? `Your note: ${RATINGS.find((r) => r.value === note.rating)?.label}`
-    : VERDICT[sum.verdict];
+    : !sum.strong && (sum.verdict === "adult" || sum.verdict === "minor")
+      ? sum.verdict === "adult" ? "Hints point to probably over 18" : "Hints point to probably under 18"
+      : VERDICT[sum.verdict];
   const warn = !note && (sum.verdict === "minor" || sum.verdict === "mixed");
 
   return (

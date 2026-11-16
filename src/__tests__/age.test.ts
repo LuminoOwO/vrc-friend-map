@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hintsIn, summarize } from "../age";
+import { hintsIn, linkHint, summarize } from "../age";
 
 const verdict = (t: string) => summarize(hintsIn(t, "bio")).verdict;
 
@@ -29,5 +29,29 @@ describe("age hints", () => {
   });
   it("mixed signals stay mixed", () => {
     expect(verdict("I'm 16, 18+ only content lol")).toBe("mixed");
+  });
+  it("a number alone at the start of a line is a weaker age hint", () => {
+    expect(verdict("18")).toBe("adult");
+    expect(summarize(hintsIn("18", "bio")).strong).toBe(false);
+    expect(verdict("19\nPresonality flirty\nDont be afraid to ask")).toBe("adult");
+    expect(verdict("21 | he/him | artist")).toBe("adult");
+    expect(verdict("15 • she/her")).toBe("minor");
+    expect(verdict("hi!\n16\nlikes cats")).toBe("minor");
+  });
+  it("doesn't take other numbers for ages", () => {
+    expect(verdict("2026 was fun")).toBe("none");
+    expect(verdict("10:30 pm usually online")).toBe("none");
+    expect(verdict("50 followers on twitch")).toBe("none");
+    expect(verdict("3 cats")).toBe("none");
+  });
+  it("a stated age wins over a lone number", () => {
+    expect(hintsIn("19\nI'm 19 btw", "bio")).toHaveLength(1);
+  });
+  it("links to adults-only sites", () => {
+    expect(linkHint("https://onlyfans.com/someone")?.dir).toBe("adult");
+    expect(linkHint("https://www.fansly.com/x")?.dir).toBe("adult");
+    expect(linkHint("https://x.com/someone")).toBeNull();
+    expect(linkHint("https://notonlyfans.com.evil.example/")).toBeNull();
+    expect(linkHint("not a url")).toBeNull();
   });
 });

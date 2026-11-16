@@ -158,7 +158,7 @@ export interface Cache {
   presence: Record<string, Presence>;
   details: Record<string, UserDetail>;
   /** Age hints worked out on this device (never shared). */
-  ageHints?: Record<string, { t: number; profileAt: number; hints: AgeHint[] }>;
+  ageHints?: Record<string, { t: number; profileAt: number; hints: AgeHint[]; /** Rules version (src/age.ts RULES_VERSION). */ v?: number }>;
   mutuals: Record<string, MutualInfo>;
   /** userId -> favorite group display names */
   favorites: Record<string, string[]>;

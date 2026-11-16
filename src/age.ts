@@ -82,6 +82,24 @@ const RULES: Rule[] = [
   { dir: "minor", weight: 1, re: /\bteen(?:ager)?\b/i, why: "teen" },
 ];
 
+// A number alone at the start of a line ("18", "19 | he/him", "21 • artist") is
+// how many people write their age. Weaker than "I'm 19", so weight 1. Ages under
+// 18 count the same way (the warning needs them as much as the vouch does).
+const LINE_AGE = /^[ \t>*\-–•·]*(\d{2})(?:\s*(?:y\/?o|yo))?[ \t]*(?:$|[|•·,/\-–~♡❤♥✦★☆]|\s+[|•·/\-–~♡❤♥✦★☆])/m;
+
+// Sites that only let adults post (they check ID): a link there is an adult hint.
+const ADULT_SITES = /^(?:[\w-]+\.)*(?:onlyfans\.com|fansly\.com|justfor\.fans|manyvids\.com|chaturbate\.com|pornhub\.com|xvideos\.com|loyalfans\.com|fancentro\.com)$/i;
+
+/** An adult hint for a link to an adults-only site (pure, for tests). */
+export function linkHint(url: string): AgeHint | null {
+  try {
+    const host = new URL(url).hostname;
+    return ADULT_SITES.test(host) ? { dir: "adult", weight: 2, why: "links an adults-only site", source: "link", snippet: host } : null;
+  } catch {
+    return null;
+  }
+}
+
 const BORN = /\b(?:born|b\.|bday|birth\s*year)[^0-9]{0,12}((?:19|20)\d\d)\b|\b(?:19[5-9]\d|20[0-2]\d)\s*(?:born|kid|baby)\b/i;
 
 /** Age hints in some text (pure, for tests). */
@@ -96,6 +114,19 @@ export function hintsIn(text: string, source: string): AgeHint[] {
     out.push({ dir: r.dir, weight: r.weight, why: r.why, source, snippet: snippet(text, m.index ?? 0, m[0].length) });
     // Don't count the same words twice ("minors DNI" isn't also "minor").
     rest = rest.replace(m[0], " ");
+  }
+  if (!out.some((h) => /states an age/.test(h.why))) {
+    const m = text.match(LINE_AGE);
+    const age = m ? Number(m[1]) : NaN;
+    if (age >= 10 && age <= 79) {
+      out.push({
+        dir: age >= 18 ? "adult" : "minor",
+        weight: 1,
+        why: `"${age}" on its own, likely their age`,
+        source,
+        snippet: snippet(text, m!.index ?? 0, m![0].length),
+      });
+    }
   }
   const b = text.match(BORN);
   if (b) {
@@ -114,11 +145,13 @@ function snippet(text: string, at: number, len: number): string {
   return `${s > 0 ? "…" : ""}${text.slice(s, e).replace(/\s+/g, " ").trim()}${e < text.length ? "…" : ""}`;
 }
 
-export function summarize(hints: AgeHint[]): { adult: number; minor: number; verdict: "adult" | "minor" | "mixed" | "none" } {
+export function summarize(hints: AgeHint[]): { adult: number; minor: number; verdict: "adult" | "minor" | "mixed" | "none"; strong: boolean } {
   const adult = hints.filter((h) => h.dir === "adult").reduce((a, h) => a + h.weight, 0);
   const minor = hints.filter((h) => h.dir === "minor").reduce((a, h) => a + h.weight, 0);
   const verdict = adult && minor ? (adult >= minor * 2 ? "adult" : minor >= adult * 2 ? "minor" : "mixed") : adult ? "adult" : minor ? "minor" : "none";
-  return { adult, minor, verdict };
+  // One weak hint (a lone number, "college") is a "probably".
+  const strong = verdict === "adult" ? adult >= 2 : verdict === "minor" ? minor >= 2 : false;
+  return { adult, minor, verdict, strong };
 }
 
 /** Visible text of a fetched page (no scripts run: DOMParser only builds the tree). */
@@ -139,6 +172,17 @@ function pageText(html: string): string {
   }
 }
 
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
+/** Bump when the rules change, so cached hints are worked out again. */
+const RULES_VERSION = 2;
+
 const reading = new Set<string>();
 
 /** Work out the hints for someone (when their profile is opened). Cached on this device. */
@@ -150,7 +194,7 @@ export async function refreshHints(id: string, force = false) {
   const d = s.cache.details[id];
   const f = s.cache.friends[id] ?? s.cache.others?.[id];
   if (!d && !f) return;
-  if (!force && have && Date.now() - have.t < 7 * DAY && have.profileAt === (d?.profileFetchedAt ?? 0)) return;
+  if (!force && have && Date.now() - have.t < 7 * DAY && have.profileAt === (d?.profileFetchedAt ?? 0) && have.v === RULES_VERSION) return;
   reading.add(id);
   try {
     const hints: AgeHint[] = [];
@@ -158,7 +202,11 @@ export async function refreshHints(id: string, force = false) {
     hints.push(...hintsIn(d?.pronouns ?? "", "pronouns"));
     hints.push(...hintsIn(f?.statusDescription ?? "", "status"));
     const links = (d?.bioLinks ?? []).slice(0, 5);
-    for (const l of links) hints.push(...hintsIn(decodeURIComponent(l), "link"));
+    for (const l of links) {
+      hints.push(...hintsIn(safeDecode(l), "link"));
+      const site = linkHint(l);
+      if (site) hints.push(site);
+    }
     if (settings.readLinks && isTauri && !s.demo) {
       for (const l of links) {
         try {
@@ -169,7 +217,7 @@ export async function refreshHints(id: string, force = false) {
         }
       }
     }
-    updateCache((c) => ({ ...c, ageHints: { ...(c.ageHints ?? {}), [id]: { t: Date.now(), profileAt: d?.profileFetchedAt ?? 0, hints } } }));
+    updateCache((c) => ({ ...c, ageHints: { ...(c.ageHints ?? {}), [id]: { t: Date.now(), profileAt: d?.profileFetchedAt ?? 0, hints, v: RULES_VERSION } } }));
   } finally {
     reading.delete(id);
   }
