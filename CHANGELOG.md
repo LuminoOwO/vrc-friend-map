@@ -3,6 +3,12 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## Unreleased
+
+### Fixed
+- Uploading a sticker failed with "Only emoji can have animation styles": the in-game effect is
+  now offered for emojis only.
+
 ## 0.12.0 (2026-11-16)
 
 Update your **vfm-server** too: live changes instead of polling, devices syncing with each
@@ -227,8 +233,6 @@ servers keep working as before). The **new beta UI** is in this release as an op
 
 ### Fixed
 - Opening a profile could freeze the app (it kept redrawing itself).
-- Uploading a sticker failed with "Only emoji can have animation styles": the in-game effect is
-  now offered for emojis only.
 
 ## 0.11.0 (2026-11-15)
 
