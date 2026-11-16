@@ -417,7 +417,8 @@ export function BlockReasonDialog() {
 
 /** Request an invite (with a saved message) and watch a full instance for a free slot. */
 export function InviteActions({ id, name, location, full, worldName }: { id: string; name: string; location: string; full: boolean; worldName: string }) {
-  const templates = useApp((s) => (s.local.inviteTemplates ?? []).filter((t) => t.kind === "request"));
+  const allTemplates = useApp((s) => s.local.inviteTemplates);
+  const templates = useMemo(() => (allTemplates ?? []).filter((t) => t.kind === "request"), [allTemplates]);
   const watching = useApp((s) => !!s.local.slotWatch?.[location]);
   const demo = useApp((s) => s.demo);
   const [busy, setBusy] = useState(false);

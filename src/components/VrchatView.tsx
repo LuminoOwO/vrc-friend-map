@@ -36,6 +36,8 @@ import { openImage } from "./ImageViewer";
 
 type Tab = "groups" | "favorites" | "avatars" | "files" | "worlds";
 
+const EMPTY_OBJ: Record<string, never> = {};
+
 export function VrchatView() {
   const [tab, setTab] = useState<Tab>("groups");
   const demo = useApp((s) => s.demo);
@@ -512,8 +514,8 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
 // ---------- world notes ----------
 
 function WorldNotes() {
-  const notes = useApp((s) => s.local.worldNotes ?? {});
-  const worlds = useApp((s) => s.cache.worlds ?? {});
+  const notes = useApp((s) => s.local.worldNotes) ?? EMPTY_OBJ;
+  const worlds = useApp((s) => s.cache.worlds) ?? EMPTY_OBJ;
   const [tag, setTag] = useState("");
   const all = Object.entries(notes).sort((a, b) => b[1].t - a[1].t);
   const tags = [...new Set(all.flatMap(([, n]) => n.tags))].sort();

@@ -10,7 +10,8 @@ import { startNotesLine, stopNotesLine } from "./notesline";
 import { startServerLink } from "./serverlink";
 import { ImageViewer } from "./components/ImageViewer";
 import { ActivityView } from "./components/ActivityView";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { backend, isTauri } from "./backend";
 import { useDerived } from "./derived";
 import { CardsView } from "./components/CardsView";
@@ -36,6 +37,41 @@ import { startObserving, stopObserving } from "./together";
 import { flushSaves, getState, loadPersisted, setState, useApp } from "./store";
 import { applyPipelineEvent, startAutoRefresh, syncAll } from "./sync";
 
+const BetaApp = lazy(() => import("./ui2/BetaApp").then((m) => ({ default: m.BetaApp })));
+
+/** `--classic-ui` at start keeps the classic UI even with the beta turned on. */
+function useClassicFlag(): boolean {
+  const [classic, setClassic] = useState(false);
+  useEffect(() => {
+    if (!isTauri) return;
+    invoke<string[]>("start_args")
+      .then((a) => setClassic(a.includes("--classic-ui")))
+      .catch(() => {});
+  }, []);
+  return classic;
+}
+
+/** Dialogs both UIs share. */
+function GlobalDialogs() {
+  const settingsOpen = useApp((s) => s.settingsOpen);
+  const serversOpen = useApp((s) => s.serversOpen);
+  return (
+    <>
+      {settingsOpen && <SettingsModal />}
+      {serversOpen && <ServersModal />}
+      <ConfirmUnencrypted />
+      <ImageViewer />
+      <BlockReasonDialog />
+      <InstanceDialog />
+      <WorldDialog />
+      <GroupDialog />
+      <CloseDialog />
+      <UpdateDialog />
+      <ToastView />
+    </>
+  );
+}
+
 function goLive() {
   syncAll();
   backend.pipelineStart().catch(() => {});
@@ -47,10 +83,10 @@ export default function App() {
   const selectedId = useApp((s) => s.selectedId);
   const theme = useApp((s) => s.settings.theme);
   const profileAs = useApp((s) => s.settings.profileAs);
-  const settingsOpen = useApp((s) => s.settingsOpen);
-  const serversOpen = useApp((s) => s.serversOpen);
   const sidebarOpen = useApp((s) => s.sidebarOpen);
   const herePlace = useApp((s) => s.settings.map.herePlace);
+  const beta = useApp((s) => s.settings.ui.beta);
+  const classicFlag = useClassicFlag();
 
   useEffect(() => {
     let unlisten: (() => void)[] = [];
@@ -123,6 +159,19 @@ export default function App() {
     );
   }
 
+  if (beta && !classicFlag) {
+    return (
+      <Suspense fallback={<div className="splash">Loading…</div>}>
+        <LogsAndGroups />
+        <ThemeSync />
+        <BetaApp>
+          <Notice />
+          <GlobalDialogs />
+        </BetaApp>
+      </Suspense>
+    );
+  }
+
   return (
     <div className={`app ${sidebarOpen ? "with-sidebar" : ""}`}>
       <LogsAndGroups />
@@ -153,17 +202,7 @@ export default function App() {
           <DetailPanel id={selectedId} popup />
         </div>
       )}
-      {settingsOpen && <SettingsModal />}
-      {serversOpen && <ServersModal />}
-      <ConfirmUnencrypted />
-      <ImageViewer />
-      <BlockReasonDialog />
-      <InstanceDialog />
-      <WorldDialog />
-      <GroupDialog />
-      <CloseDialog />
-      <UpdateDialog />
-      <ToastView />
+      <GlobalDialogs />
     </div>
   );
 }

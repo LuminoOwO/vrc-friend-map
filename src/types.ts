@@ -646,6 +646,8 @@ export interface Filters {
   favoritesOnly: boolean;
   /** Only people in this VRChat favorite friend group (its display name). */
   favoriteGroup?: string | null;
+  /** Only your starred friends. */
+  starredOnly?: boolean;
   listId: string | null;
 }
 

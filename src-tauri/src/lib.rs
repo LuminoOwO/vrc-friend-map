@@ -309,6 +309,12 @@ async fn android_root_logs(state: AppStateRef<'_>) -> Result<(String, usize), St
     Ok((dest.display().to_string(), n))
 }
 
+/// Start options the UI cares about (e.g. --classic-ui).
+#[tauri::command]
+fn start_args() -> Vec<String> {
+    std::env::args().skip(1).filter(|a| a.starts_with("--")).take(20).collect()
+}
+
 /// VRChat's picture folders found on this machine.
 #[tauri::command]
 fn pictures_detect() -> Vec<String> {
@@ -610,6 +616,7 @@ pub fn run() {
             vrc_write,
             logs_timeline,
             pictures_detect,
+            start_args,
             android_call,
             android_root_logs,
             pictures_list,

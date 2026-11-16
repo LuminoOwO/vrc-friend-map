@@ -29,6 +29,7 @@ function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {
   if (f.circleId) n++;
   if (f.favoritesOnly) n++;
   if (f.favoriteGroup) n++;
+  if (f.starredOnly) n++;
   if (f.listId) n++;
   if (f.who !== "all") n++;
   return n;
@@ -104,7 +105,7 @@ export function TopBar() {
   );
 }
 
-function SyncPill() {
+export function SyncPill() {
   const sync = useApp((s) => s.sync);
   const demo = useApp((s) => s.demo);
   const live = useApp((s) => s.live);
@@ -198,7 +199,7 @@ export function useKeepOnScreen(ref: React.RefObject<HTMLElement | null>) {
   }, [ref]);
 }
 
-function FilterPopover({ onClose }: { onClose: () => void }) {
+export function FilterPopover({ onClose }: { onClose: () => void }) {
   const f = useApp((s) => s.filters);
   const circles = useApp((s) => s.local.circles);
   const imports = useApp((s) => s.local.imports);
@@ -339,6 +340,10 @@ function FilterPopover({ onClose }: { onClose: () => void }) {
           </select>
         </div>
       )}
+      <label className="frow check">
+        <input type="checkbox" checked={!!f.starredOnly} onChange={(e) => updateFilters({ starredOnly: e.target.checked })} />
+        <span>Only starred friends</span>
+      </label>
       <label className="frow check">
         <input type="checkbox" checked={f.favoritesOnly} onChange={(e) => updateFilters({ favoritesOnly: e.target.checked })} />
         <span>Only VRChat favorites</span>

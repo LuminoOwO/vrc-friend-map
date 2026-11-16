@@ -1,0 +1,79 @@
+/* The beta UI shell. Only layout and chrome: the views and dialogs inside are
+   the classic ones and keep their own styles. */
+.ui2 { height: 100%; display: flex; flex-direction: column; background: var(--bg); color: var(--text); }
+.ui2-grow { flex: 1; }
+.ui2-avatar { display: inline-grid; place-items: center; border-radius: 50%; overflow: hidden; background: var(--node-bg); font-weight: 700; flex: none; }
+.ui2-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.ui2-dot { position: absolute; top: 2px; right: 6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--danger); color: #fff; font-size: 10px; line-height: 16px; font-weight: 700; text-align: center; }
+
+/* ---------- desktop ---------- */
+.ui2-desk { flex: 1; display: flex; min-height: 0; }
+.ui2-rail { width: 68px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0; background: var(--panel); border-right: 1px solid var(--border); }
+.ui2-rail-me { background: none; border: 0; padding: 0; margin-bottom: 10px; cursor: pointer; border-radius: 50%; }
+.ui2-rail-me:focus-visible, .ui2-rail-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ui2-rail-btn { position: relative; width: 56px; padding: 7px 0 5px; border: 0; border-radius: 12px; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+.ui2-rail-btn:hover { background: var(--card-hover); color: var(--text); }
+.ui2-rail-btn.on { background: var(--accent-soft); color: var(--accent-strong); }
+.ui2-rail-label { font-size: 10px; line-height: 1.1; max-width: 54px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui2-main { flex: 1; min-width: 0; position: relative; display: flex; flex-direction: column; }
+.ui2-content { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
+.ui2-bar { position: absolute; z-index: 20; top: 10px; left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 14px; background: color-mix(in srgb, var(--panel) 88%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.ui2-bar + .ui2-content { padding-top: 62px; }
+.ui2-search { display: flex; align-items: center; gap: 6px; padding: 0 10px; height: 34px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--border); min-width: 220px; color: var(--muted); }
+.ui2-search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--text); font: inherit; }
+.ui2-search kbd { font-size: 10px; padding: 1px 5px; border-radius: 5px; border: 1px solid var(--border-strong); cursor: pointer; white-space: nowrap; }
+.ui2-chips { display: flex; gap: 6px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; align-items: center; }
+.ui2-chips .filter-wrap { position: relative; }
+.ui2-chip { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border-radius: 15px; border: 1px solid var(--border); background: var(--chip-bg); color: var(--text); white-space: nowrap; cursor: pointer; font: inherit; font-size: 13px; }
+.ui2-chip:hover { border-color: var(--border-strong); }
+.ui2-chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-strong); }
+.ui2-chip-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--chip, var(--accent)); }
+.ui2-count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.ui2-here-float { position: absolute; z-index: 15; left: 12px; bottom: 12px; max-width: min(420px, 60%); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+.ui2-person { width: clamp(380px, 34vw, 560px); flex: none; display: flex; flex-direction: column; border-left: 1px solid var(--border); background: var(--panel); min-height: 0; overflow: hidden; }
+.ui2-person .profile { position: relative !important; inset: auto !important; width: auto; flex: 1; min-height: 0; border-left: 0; }
+.ui2-person-tabs { flex: none; display: flex; gap: 2px; padding: 6px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; align-items: center; }
+.ui2-person-tabs button:not(.icon-btn) { border: 0; background: none; color: var(--muted); padding: 5px 8px; border-radius: 8px; font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.ui2-person-tabs button:not(.icon-btn):hover { background: var(--card-hover); color: var(--text); }
+
+/* ---------- command palette ---------- */
+.ui2-palette-wrap { align-items: flex-start; padding-top: 12vh; }
+.ui2-palette { width: min(600px, 94vw); background: var(--panel); border: 1px solid var(--border-strong); border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; }
+.ui2-palette .ui2-search { border: 0; border-bottom: 1px solid var(--border); border-radius: 0; height: 48px; background: none; font-size: 15px; }
+.ui2-palette-list { list-style: none; margin: 0; padding: 6px; max-height: 50vh; overflow-y: auto; }
+.ui2-palette-list button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.ui2-palette-list button.on { background: var(--accent-soft); }
+.ui2-empty { padding: 12px; }
+
+/* ---------- phone ---------- */
+.ui2-phone-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.ui2-phone-top { display: flex; gap: 8px; align-items: center; padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px 8px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.ui2-search.phone { flex: 1; min-width: 0; height: 42px; border-radius: 21px; padding-right: 4px; }
+.ui2-phone-main { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; overflow: hidden; }
+.ui2-tabs { display: flex; background: var(--panel); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); }
+.ui2-tab { position: relative; flex: 1; min-height: 58px; border: 0; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font: inherit; font-size: 11px; }
+.ui2-tab.on { color: var(--accent-strong); }
+.ui2-tab.on::before { content: ""; position: absolute; top: 6px; width: 54px; height: 30px; border-radius: 15px; background: var(--accent-soft); z-index: -1; }
+.ui2-tab .ui2-dot { right: calc(50% - 22px); top: 4px; }
+.ui2-page { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+.ui2-me-card { display: flex; gap: 14px; align-items: center; text-align: left; padding: 14px; border-radius: 16px; border: 1px solid var(--border); background: var(--card); color: var(--text); font: inherit; }
+.ui2-list { list-style: none; margin: 0; padding: 0; border-radius: 16px; border: 1px solid var(--border); background: var(--card); overflow: hidden; }
+.ui2-list li + li { border-top: 1px solid var(--border); }
+.ui2-list button { width: 100%; min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; }
+.ui2-fullsheet { position: fixed; inset: 0; z-index: 90; background: var(--bg); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
+.ui2-fullsheet-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--border); }
+.ui2-fullsheet-head h2 { margin: 0; font-size: 18px; }
+.ui2-filters-inline { flex: 1; overflow-y: auto; position: static; }
+.ui2-filters-inline > * { position: static !important; width: auto !important; max-width: none !important; max-height: none !important; box-shadow: none !important; border: 0 !important; transform: none !important; }
+.ui2-sheet-wrap { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, 0.25); display: flex; align-items: flex-end; }
+.ui2-sheet { width: 100%; background: var(--panel); border-radius: 18px 18px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; transition: height 0.22s ease; overflow: hidden; }
+.ui2-sheet.dragging { transition: none; }
+.ui2-handle { flex: none; height: 26px; display: grid; place-items: center; touch-action: none; cursor: grab; }
+.ui2-handle span { width: 40px; height: 5px; border-radius: 3px; background: var(--border-strong); }
+.ui2-sheet-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.ui2-sheet-body .profile { position: relative !important; inset: auto !important; width: auto; height: auto; max-height: none; flex: 1; min-height: 0; border: 0; border-radius: 0; z-index: auto; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+.ui2-phone button, .ui2-phone .icon-btn { min-height: 40px; }
+
+[data-motion="reduce"] .ui2-sheet { transition: none; }
+@media (prefers-reduced-motion: reduce) { :root:not([data-motion="full"]) .ui2-sheet { transition: none; } }
+.ui2-sheet-body .profile-close { position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; }
