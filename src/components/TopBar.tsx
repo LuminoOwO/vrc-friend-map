@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useDerived } from "../derived";
 import { imgSrc } from "../backend";
 import { STATUS_COLORS, PLATFORM_LABEL, TRUST_RANKS, iconUrl } from "../model";
@@ -6,6 +6,7 @@ import { exitDemo } from "../session";
 import { defaultFilters, setState, updateFilters, useApp, type View } from "../store";
 import { syncAll, togglePause } from "../sync";
 import { Icon } from "./Icon";
+import { SyncLogDialog } from "./SyncLogDialog";
 
 const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: "graph", label: "Map", icon: "graph" },
@@ -89,7 +90,7 @@ export function TopBar() {
         {matched.size}/{friends.length}
       </span>
       <SyncPill />
-      <button className="icon-btn" title="Settings" onClick={() => setState({ settingsOpen: true })}>
+      <button className="icon-btn settings-btn" title="Settings" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
         <Icon name="settings" />
       </button>
     </header>
@@ -101,6 +102,7 @@ function SyncPill() {
   const demo = useApp((s) => s.demo);
   const live = useApp((s) => s.live);
   const [, tick] = useState(0);
+  const [logOpen, setLogOpen] = useState(false);
   useEffect(() => {
     if (!sync.backoffUntil) return;
     const t = setInterval(() => tick((n) => n + 1), 1000);
@@ -108,6 +110,11 @@ function SyncPill() {
   }, [sync.backoffUntil]);
 
   if (demo) return null;
+  const logBtn = (
+    <button className="icon-btn tiny" title="Sync log: what each sync did and why something failed" aria-label="Sync log" onClick={() => setLogOpen(true)}>
+      <Icon name="info" size={14} />
+    </button>
+  );
   const wait = sync.backoffUntil ? Math.max(0, Math.round((sync.backoffUntil - Date.now()) / 1000)) : 0;
   return (
     <div className={`sync ${sync.error ? "error" : ""}`} title={sync.error || sync.message}>
@@ -134,12 +141,16 @@ function SyncPill() {
         </>
       ) : (
         <>
-          <span className="sync-text">{sync.error ? "Sync failed" : sync.message || "Not synced yet"}</span>
+          <button className="sync-text linkish" title="Open the sync log" onClick={() => setLogOpen(true)}>
+            {sync.error ? "Sync failed" : sync.message || "Not synced yet"}
+          </button>
           <button className="icon-btn tiny" title="Refresh now" onClick={() => syncAll()}>
             <Icon name="refresh" size={14} />
           </button>
+          {logBtn}
         </>
       )}
+      {logOpen && <SyncLogDialog onClose={() => setLogOpen(false)} />}
     </div>
   );
 }
@@ -160,6 +171,26 @@ function toggleIn(list: string[], v: string) {
   return list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
 }
 
+/** Shift a popover back inside the window if it sticks out left or right. */
+export function useKeepOnScreen(ref: React.RefObject<HTMLElement | null>) {
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const fit = () => {
+      el.style.transform = "";
+      const r = el.getBoundingClientRect();
+      const margin = 8;
+      let dx = 0;
+      if (r.left < margin) dx = margin - r.left;
+      else if (r.right > window.innerWidth - margin) dx = window.innerWidth - margin - r.right;
+      if (dx) el.style.transform = `translateX(${dx}px)`;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [ref]);
+}
+
 function FilterPopover({ onClose }: { onClose: () => void }) {
   const f = useApp((s) => s.filters);
   const circles = useApp((s) => s.local.circles);
@@ -172,6 +203,7 @@ function FilterPopover({ onClose }: { onClose: () => void }) {
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [onClose]);
+  useKeepOnScreen(ref);
 
   return (
     <div className="popover filters" ref={ref}>

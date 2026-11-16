@@ -348,6 +348,7 @@ jobs:
           {
             npx tauri android init --ci
             cat packaging/android/proguard-extra.pro >> src-tauri/gen/android/app/proguard-rules.pro
+            node scripts/android-patch.mjs
             npx tauri android build --apk --ci --target aarch64 --target armv7 --target x86_64
           } 2>&1 | tee "$RUNNER_TEMP/build.log"
       - name: Sign APK

@@ -873,3 +873,49 @@ html { touch-action: pan-x pan-y; -webkit-text-size-adjust: 100%; text-size-adju
 .update-progress span { position: relative; padding-left: 10px; line-height: 22px; }
 .update-result { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .update-result code { flex: 1 1 100%; padding: 6px 8px; border-radius: 8px; background: var(--chip-bg); font-size: 12px; word-break: break-all; }
+
+/* sync log */
+.sync-text.linkish { background: none; border: 0; color: inherit; font: inherit; padding: 0; cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.modal.synclog { width: min(760px, 100%); }
+.synclog-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.synclog-list li { display: grid; grid-template-columns: auto auto 1fr; gap: 2px 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; }
+.synclog-time { color: var(--muted); white-space: nowrap; }
+.synclog-result { font-weight: 600; }
+.synclog-result.ok { color: var(--ok, #4caf50); }
+.synclog-result.failed { color: var(--danger, #e5534b); }
+.synclog-result.interrupted { color: var(--warn, #d29922); }
+.synclog-result.info { color: var(--muted); }
+.synclog-where { overflow-wrap: anywhere; }
+.synclog-detail { grid-column: 1 / -1; color: var(--muted); overflow-wrap: anywhere; font-family: var(--mono, monospace); font-size: 12px; }
+@media (max-width: 640px) { .synclog-list li { grid-template-columns: 1fr auto; } .synclog-where { grid-column: 1 / -1; } }
+
+/* phones: settings in the top right, filters inside the screen */
+@media (max-width: 900px) {
+  .topbar { position: relative; }
+  .topbar .settings-btn { margin-left: auto; }
+  .topbar .filter-wrap { position: static; }
+  .topbar .popover.filters { left: 8px; right: 8px; width: auto; max-height: min(75vh, calc(100dvh - 120px)); overflow-y: auto; overscroll-behavior: contain; }
+  .popover.filters .frow select { max-width: 100%; }
+}
+
+/* checkboxes: room between them, bigger targets on touch screens */
+.check + .check { margin-top: 6px; }
+.check input { flex: none; }
+@media (pointer: coarse) {
+  .check { min-height: 40px; gap: 12px; }
+  .check + .check { margin-top: 2px; }
+  .check input { width: 20px; height: 20px; }
+  .picker-list .check, .chip { min-height: 32px; }
+}
+
+/* interface settings: text size (not the map canvas), fewer animations, unavailable sections */
+:root { --ui-zoom: 1; }
+.topbar, .sidebar, .profile, .modal, .toast, .here-now, .notice { zoom: var(--ui-zoom); }
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="full"]) *, :root:not([data-motion="full"]) *::before, :root:not([data-motion="full"]) *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+.settings-sec.unavailable { opacity: 0.6; }
+.unavailable-note { display: flex; gap: 6px; align-items: center; color: var(--muted); margin: 0 0 6px; }
+.plain-fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.check.dim { opacity: 0.6; }

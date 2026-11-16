@@ -445,6 +445,22 @@ export interface Settings {
   perf: PerfSettings;
   /** App version that last ran with this data (for upgrade/downgrade notes). */
   lastVersion: string;
+  ui: UiSettings;
+}
+
+export interface UiSettings {
+  /** Settings hides what can't work on this platform (else greyed out with why). */
+  hideUnavailable: boolean;
+  /** Phones: short vibrations on taps, toggles and long-press. */
+  haptics: boolean;
+  /** The new beta UI (src/ui2); the classic one stays the default for now. */
+  beta: boolean;
+  /** Text size factor (0.8–1.6). */
+  textScale: number;
+  /** Animations: follow the system, always reduce, or never. */
+  reducedMotion: "system" | "on" | "off";
+  /** Status colors that also differ for red/green color blindness. */
+  colorblind: boolean;
 }
 
 /** People who aren't friends: whose profiles to load and keep. */

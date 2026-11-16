@@ -10,6 +10,7 @@ import { startTray } from "./tray";
 import { startWheelFix } from "./wheelfix";
 import { startKeys } from "./keys";
 import { startUpdateChecks } from "./updates";
+import { installHaptics } from "./haptics";
 
 applySafeArea();
 unlockAudioOnInput();
@@ -18,6 +19,7 @@ startTray();
 startWheelFix();
 startKeys();
 startUpdateChecks();
+installHaptics();
 
 // Dev server only: lets UI test scripts set up state (stripped from builds).
 if (import.meta.env.DEV) {

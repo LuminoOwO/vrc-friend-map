@@ -6,6 +6,7 @@ import { addNewFriendsToPicks } from "./selection";
 import { notifyEvent, removedByMe } from "./notifications";
 import { backend, type ApiResponse } from "./backend";
 import { celebrateNewFriends } from "./notify";
+import { describeError, httpLine, isNetworkError, logSync, wasInterrupted, whenVisible } from "./synclog";
 import { getState, resetSync, setState, setSync, showToast, updateCache, updateLocal } from "./store";
 import type { Friend, Me, MutualInfo, Presence, UserDetail } from "./types";
 
@@ -22,15 +23,21 @@ async function api(path: string, query?: Record<string, string | number | boolea
     const r = await backend.vrcGet(path, query);
     if (r.status === 429) {
       const wait = (r.retry_after ?? 30) * 1000;
+      logSync({ area: "VRChat", step: path, result: "info", detail: `${httpLine(path, 429)}, waiting ${Math.round(wait / 1000)} s`, status: 429 });
       setSync({ backoffUntil: Date.now() + wait, message: "VRChat asked us to slow down, waiting…" });
       continue; // the Rust side holds the next request until the backoff ends
     }
-    if (r.status === 401) throw new SessionExpired("Your VRChat session expired. Log in again.");
+    if (r.status === 401) {
+      logSync({ area: "VRChat", step: path, result: "failed", detail: httpLine(path, 401) + ": session expired", status: 401 });
+      throw new SessionExpired("Your VRChat session expired. Log in again.");
+    }
     if (r.status >= 500) {
+      logSync({ area: "VRChat", step: path, result: "info", detail: `${httpLine(path, r.status)}, retrying`, status: r.status });
       await sleep(4000 * (attempt + 1));
       continue;
     }
     if (getState().sync.backoffUntil) setSync({ backoffUntil: 0, message: "" });
+    if (r.status >= 400 && r.status !== 404) logSync({ area: "VRChat", step: path, result: "info", detail: httpLine(path, r.status), status: r.status });
     return r;
   }
   throw new Error(`VRChat API kept failing for ${path}`);
@@ -48,6 +55,15 @@ function handleError(e: unknown) {
   }
   const msg = e instanceof Error ? e.message : String(e);
   if (msg === "stopped") return;
+  if (isNetworkError(e) && wasInterrupted()) {
+    // Cut off by going to the background: not a failure, try again later.
+    logSync({ area: "VRChat", step: "Sync", result: "interrupted", detail: "The app went to the background; trying again when it's back." });
+    setSync({ running: false, error: "" });
+    whenVisible(() => setTimeout(() => void syncAll(), 1500));
+    return;
+  }
+  const d = describeError(e);
+  logSync({ area: "VRChat", step: "Sync", result: "failed", ...d });
   setSync({ error: msg, running: false });
 }
 
@@ -340,6 +356,7 @@ export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
     if (gen === generation) {
       resetSync();
       setSync({ message: `Updated ${new Date().toLocaleTimeString()}` });
+      logSync({ area: "VRChat", step: opts.friendsOnly ? "Friends" : "Sync", result: "ok", detail: `${Object.keys(getState().cache.friends).length} friends` });
     }
   } catch (e) {
     handleError(e);

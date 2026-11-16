@@ -2,6 +2,7 @@
 // number of servers, download what friends share with you from all of them.
 // Encryption and signatures happen in Rust (src-tauri/src/share.rs); this
 // file decides what to send where, and merges what comes back.
+import { describeError, isNetworkError, logSync, wasInterrupted } from "./synclog";
 import { backend, type InfoResult, type PublishResult } from "./backend";
 import { getState, newServer, normalizeSettings, setState, showToast, updateLocal, updateServer, updateSettings, updateSharing } from "./store";
 import { combineStats } from "./together";
@@ -505,6 +506,7 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
           if (n) notes.push(n);
         } catch (e) {
           const msg = errText(e);
+          logSync({ area: serverName(s), step: "Your devices", result: "failed", ...describeError(msg) });
           notes.push(/unknown kind/.test(msg) ? "Syncing your devices needs a newer vfm-server here (ask its owner to update)." : `Device sync: ${msg}`);
         }
       }
@@ -517,13 +519,21 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
         await fetchLogger(id);
       } catch (e) {
         const msg = errText(e);
+        logSync({ area: serverName(s), step: "Logger", result: "failed", ...describeError(msg) });
         if (/isn't paired|someone else/.test(msg)) updateServer(id, { loggerOwner: false });
         notes.push(`Logger: ${msg}`);
       }
     }
     updateServer(id, { lastSync: Date.now(), lastError: "", lastNote: notes.join(" ") });
+    logSync({ area: serverName(s), step: "Sync", result: "ok", detail: notes.join(" ") });
   } catch (e) {
     const msg = errText(e);
+    const interrupted = isNetworkError(e) && wasInterrupted();
+    logSync({ area: serverName(s), step: "Sync", result: interrupted ? "interrupted" : "failed", ...describeError(msg) });
+    if (interrupted) {
+      updateServer(id, { lastNote: "Interrupted (the app went to the background); tries again next sync." });
+      return;
+    }
     updateServer(id, { lastSync: Date.now(), lastError: msg, lastNote: notes.join(" ") });
     if (/not registered/.test(msg)) updateServer(id, { registered: false });
     if (opts.manual) showToast(`${serverName(s)}: ${msg}`);

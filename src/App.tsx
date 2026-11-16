@@ -153,9 +153,27 @@ export default function App() {
 
 /** Keeps log scanning, time-together stats and automatic groups in step with settings. */
 /** Applies the color theme to the whole page. */
+/** Okabe–Ito based status colors: tell apart with red/green color blindness. */
+const COLORBLIND_STATUS: Record<string, string> = {
+  "--status-joinme": "#56B4E9",
+  "--status-active": "#F0E442",
+  "--status-askme": "#E69F00",
+  "--status-busy": "#D55E00",
+  "--status-offline": "#5f6870",
+  "--status-web": "#CC79A7",
+};
+
 function ThemeSync() {
   const theme = useApp((s) => s.settings.theme);
   const catAccent = useApp((s) => s.settings.catAccent);
+  const ui = useApp((s) => s.settings.ui);
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--ui-zoom", String(ui.textScale));
+    if (ui.reducedMotion === "on") root.dataset.motion = "reduce";
+    else if (ui.reducedMotion === "off") root.dataset.motion = "full";
+    else delete root.dataset.motion;
+  }, [ui.textScale, ui.reducedMotion]);
   // Layout effect: colors must be in place before the first paint of the new theme.
   useLayoutEffect(() => {
     const root = document.documentElement;
@@ -164,9 +182,11 @@ function ThemeSync() {
     // Catppuccin: the variables come from its palette with the chosen accent.
     for (const k of [...root.style]) if (k.startsWith("--") || k === "color-scheme") root.style.removeProperty(k);
     if (isCatFlavor(theme)) for (const [k, v] of Object.entries(catppuccinVars(theme, catAccent))) root.style.setProperty(k, v);
+    if (ui.colorblind) for (const [k, v] of Object.entries(COLORBLIND_STATUS)) root.style.setProperty(k, v);
+    root.style.setProperty("--ui-zoom", String(ui.textScale));
     const cs = getComputedStyle(document.documentElement);
     applyThemeColors((v) => cs.getPropertyValue(v).trim());
-  }, [theme, catAccent]);
+  }, [theme, catAccent, ui.colorblind]);
   return null;
 }
 

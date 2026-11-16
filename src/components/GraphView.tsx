@@ -1667,9 +1667,40 @@ export function GraphView() {
         requestDraw();
       });
 
+    // Pan bounds: the people on the map always stay within reach (at least a
+    // strip of them stays on screen), so you can't get lost in the void.
+    let bounds: { x0: number; y0: number; x1: number; y1: number; at: number } | null = null;
+    const contentBounds = () => {
+      if (bounds && Date.now() - bounds.at < 300) return bounds;
+      let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      for (const n of nodesRef.current.values()) {
+        if (n.x == null || n.y == null) continue;
+        if (n.x - n.hw < x0) x0 = n.x - n.hw;
+        if (n.x + n.hw > x1) x1 = n.x + n.hw;
+        if (n.y - n.hh < y0) y0 = n.y - n.hh;
+        if (n.y + n.hh > y1) y1 = n.y + n.hh;
+      }
+      bounds = x0 === Infinity ? null : { x0, y0, x1, y1, at: Date.now() };
+      return bounds;
+    };
     const zoom = d3
       .zoom<HTMLCanvasElement, unknown>()
       .scaleExtent([0.04, 6])
+      .constrain((t, extent) => {
+        const b = contentBounds();
+        if (!b) return t;
+        const [[vx0, vy0], [vx1, vy1]] = extent;
+        const mx = Math.min((vx1 - vx0) * 0.3, 160);
+        const my = Math.min((vy1 - vy0) * 0.3, 160);
+        const sx0 = t.applyX(b.x0), sx1 = t.applyX(b.x1);
+        const sy0 = t.applyY(b.y0), sy1 = t.applyY(b.y1);
+        let dx = 0, dy = 0;
+        if (sx1 < vx0 + mx) dx = vx0 + mx - sx1;
+        else if (sx0 > vx1 - mx) dx = vx1 - mx - sx0;
+        if (sy1 < vy0 + my) dy = vy0 + my - sy1;
+        else if (sy0 > vy1 - my) dy = vy1 - my - sy0;
+        return dx || dy ? t.translate(dx / t.k, dy / t.k) : t;
+      })
       .on("zoom", (event) => {
         transformRef.current = event.transform;
         lastInteractionRef.current = Date.now();

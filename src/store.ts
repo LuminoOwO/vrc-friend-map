@@ -27,6 +27,7 @@ import type {
   NotifySettings,
   PeopleSelection,
   SyncState,
+  UiSettings,
 } from "./types";
 
 export type View = "graph" | "cards" | "lists" | "activity";
@@ -247,6 +248,15 @@ export const newServer = (url: string): ShareServer => ({
   lastNote: "",
 });
 
+export const defaultUi = (): UiSettings => ({
+  hideUnavailable: true,
+  haptics: false,
+  beta: false,
+  textScale: 1,
+  reducedMotion: "system",
+  colorblind: false,
+});
+
 export const defaultSettings = (): Settings => ({
   contact: "",
   intervalMs: 1200,
@@ -272,6 +282,7 @@ export const defaultSettings = (): Settings => ({
   people: { loadEveryone: false, keep: "potential", showBlocked: false },
   perf: { fps: 60, unfocusedFps: 30, idleAfter: 0, idleFps: 30, screenHz: 0, vsync: true },
   lastVersion: "",
+  ui: defaultUi(),
 });
 
 export const defaultFilters = (): Filters => ({
@@ -438,6 +449,10 @@ export function updatePeople(patch: Partial<Settings["people"]>) {
   if ("keep" in patch) scheduleSave("cache"); // apply the new rule to what's on disk
 }
 
+export function updateUi(patch: Partial<UiSettings>) {
+  updateSettings({ ui: { ...getState().settings.ui, ...patch } });
+}
+
 export function updateSettings(patch: Partial<Settings>) {
   setState((s) => ({ settings: { ...s.settings, ...patch } }));
   scheduleSave("settings");
@@ -565,6 +580,25 @@ const num = (v: unknown, def: number, lo: number, hi: number) =>
   typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def;
 const oneOf = <T extends string>(v: unknown, opts: readonly T[], def: T): T => (opts.includes(v as T) ? (v as T) : def);
 
+/** Settings groups added from 0.12 on: take what's stored where its type
+ *  matches the default (recursively), defaults for the rest. Enums and ranges
+ *  are checked by `fix` when given. Unknown keys are kept. */
+export function shaped<T>(raw: unknown, def: T, fix?: (v: T) => T): T {
+  const walk = (r: unknown, d: unknown): unknown => {
+    if (isObj(d)) {
+      const src = isObj(r) ? r : {};
+      const out: Raw = { ...src };
+      for (const k of Object.keys(d)) out[k] = walk(src[k], (d as Raw)[k]);
+      return out;
+    }
+    if (Array.isArray(d)) return Array.isArray(r) ? r : d;
+    if (typeof d === "number") return typeof r === "number" && Number.isFinite(r) ? r : d;
+    return typeof r === typeof d ? r : d;
+  };
+  const v = walk(raw, def) as T;
+  return fix ? fix(v) : v;
+}
+
 /** Fill in defaults and clamp values; unknown keys are kept as they are. */
 export function normalizeSettings(raw: Raw | null): Settings {
   const d = defaultSettings();
@@ -670,6 +704,11 @@ export function normalizeSettings(raw: Raw | null): Settings {
     },
     sharing: normalizeSharing(raw.sharing),
     lastVersion: typeof raw.lastVersion === "string" ? raw.lastVersion : "",
+    ui: shaped(raw.ui, d.ui, (u) => ({
+      ...u,
+      textScale: num(u.textScale, 1, 0.8, 1.6),
+      reducedMotion: oneOf(u.reducedMotion, ["system", "on", "off"] as const, "system"),
+    })),
   };
   // Format 2 (0.4.0) defaulted to no turning and ring gravity; 0.5.0 changed
   // the defaults. Only switch people who still had those defaults.

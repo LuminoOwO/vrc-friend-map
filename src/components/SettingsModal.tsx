@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { scoreSection } from "../settingsSearch";
-import { backend, isMobile, isTauri, type GraphicsInfo, type GraphicsMode } from "../backend";
+import { backend, type GraphicsInfo, type GraphicsMode } from "../backend";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, wipeEverything } from "../session";
-import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, useApp } from "../store";
+import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, updateUi, useApp } from "../store";
 import { CloseSection, NotificationsSection } from "./NotificationsSection";
 import { WheelFixSection } from "./WheelFixSection";
 import { AgeSection } from "./AgeSection";
@@ -28,6 +28,64 @@ import { Diagnostics } from "./Diagnostics";
 import { FrameRateSection } from "./FrameRateSection";
 import { openServers } from "./ServersModal";
 import { serverName } from "../share";
+import { unavailable } from "../platform";
+import { haptic } from "../haptics";
+import type { UiSettings } from "../types";
+
+function InterfaceSection() {
+  const ui = useApp((s) => s.settings.ui);
+  const set = (patch: Partial<UiSettings>) => updateUi(patch);
+  return (
+    <>
+      <h3>Interface</h3>
+      <label className="check">
+        <input type="checkbox" checked={ui.hideUnavailable} onChange={(e) => set({ hideUnavailable: e.target.checked })} />
+        Hide features not available on this platform
+      </label>
+      <p className="small muted">Off: they're shown greyed out, with why they can't work here.</p>
+      {(!unavailable("haptics") || !ui.hideUnavailable) && (
+        <label className={`check ${unavailable("haptics") ? "dim" : ""}`}>
+          <input
+            type="checkbox"
+            checked={ui.haptics}
+            disabled={!!unavailable("haptics")}
+            onChange={(e) => {
+              set({ haptics: e.target.checked });
+              if (e.target.checked) haptic("toggle", true);
+            }}
+          />
+          Vibrate on taps and toggles (haptics){unavailable("haptics") ? ` – ${unavailable("haptics")}` : ""}
+        </label>
+      )}
+      <div className="row">
+        <label className="field narrow">
+          <span>Text size: {Math.round(ui.textScale * 100)} %</span>
+          <input type="range" min={0.8} max={1.6} step={0.05} value={ui.textScale} onChange={(e) => set({ textScale: Number(e.target.value) })} />
+        </label>
+        <label className="field narrow">
+          <span>Animations</span>
+          <select value={ui.reducedMotion} onChange={(e) => set({ reducedMotion: e.target.value as UiSettings["reducedMotion"] })}>
+            <option value="system">Like the system</option>
+            <option value="on">Fewer animations</option>
+            <option value="off">All animations</option>
+          </select>
+        </label>
+      </div>
+      <label className="check">
+        <input type="checkbox" checked={ui.colorblind} onChange={(e) => set({ colorblind: e.target.checked })} />
+        Color-blind friendly status colors (online / offline also differ in brightness and shape)
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={ui.beta} onChange={(e) => set({ beta: e.target.checked })} />
+        New beta UI
+      </label>
+      <p className="small muted">
+        A redesigned layout for computers and phones, still being worked on. The classic layout stays the default; you can switch back any time
+        (also from the beta's own settings, or by starting the app with <code>--classic-ui</code>).
+      </p>
+    </>
+  );
+}
 
 export function SettingsModal() {
   const settings = useApp((s) => s.settings);
@@ -221,6 +279,10 @@ export function SettingsModal() {
           </div>
         </Sec>
 
+        <Sec id="interface" cat="appearance" title="Interface" keys="hide unavailable platform haptics vibration beta new ui text size font motion animation color blind accessibility">
+          <InterfaceSection />
+        </Sec>
+
         <Sec id="display" cat="appearance" title="Themes" keys="theme colors dark light style look catppuccin accent latte frappe macchiato mocha">
           <h3>Themes</h3>
           <div className="field">
@@ -364,11 +426,9 @@ export function SettingsModal() {
           <PeopleSection />
         </Sec>
 
-        {wheelFixHere && (
-          <Sec id="wheel" cat="performance" title="Mouse wheel" keys="scroll zoom wheel mouse touchpad x11 xlibre input not working">
-            <WheelFixSection />
-          </Sec>
-        )}
+        <Sec id="wheel" cat="performance" title="Mouse wheel" keys="scroll zoom wheel mouse touchpad x11 xlibre input not working" unavailable={wheelFixHere ? null : unavailable("wheelFix") ?? "Only needed on Linux (X11)."}>
+          <WheelFixSection />
+        </Sec>
         <Sec id="diagnostics" cat="performance" title="Diagnostics" keys="fps gpu benchmark debug">
           <Diagnostics />
         </Sec>
@@ -376,13 +436,11 @@ export function SettingsModal() {
         <Sec id="notify" cat="sounds" title="Notifications" keys="sound notification volume chime online offline alert mute ping tune friend added removed joined left world once date waiting">
           <NotificationsSection />
         </Sec>
-        {isTauri && !isMobile && (
-          <Sec id="close" cat="sounds" title="Closing the window" keys="tray minimize background close quit exit">
-            <CloseSection />
-          </Sec>
-        )}
+        <Sec id="close" cat="sounds" title="Closing the window" keys="tray minimize background close quit exit" unavailable={unavailable("closeWindow")}>
+          <CloseSection />
+        </Sec>
 
-        <Sec id="logs" cat="logs" title="Game logs" keys="log folder steam instance here live">
+        <Sec id="logs" cat="logs" title="Game logs" keys="log folder steam instance here live" unavailable={unavailable("gameLogs")}>
           <GameLogSection />
         </Sec>
 
@@ -459,17 +517,32 @@ interface SecCtx {
 const SecContext = createContext<SecCtx | null>(null);
 
 /** One settings section: shown in its category, or when it matches the search. */
-function Sec({ id, cat, title, keys, children }: { id: string; cat: Cat; title: string; keys: string; children: React.ReactNode }) {
+function Sec({ id, cat, title, keys, children, unavailable }: { id: string; cat: Cat; title: string; keys: string; children: React.ReactNode; unavailable?: string | null }) {
   const ctx = useContext(SecContext)!;
+  const hide = useApp((s) => s.settings.ui.hideUnavailable);
   const ref = useRef<HTMLElement>(null);
+  const gone = !!unavailable && hide;
   useLayoutEffect(() => {
+    if (gone) return;
     ctx.register(id, { cat, title, keys, el: ref.current });
     return () => ctx.register(id, null);
   });
+  if (gone) return null;
   const shown = ctx.visible(id, cat);
   return (
-    <section ref={ref} className={`settings-sec ${shown ? "" : "hidden"}`} style={{ order: ctx.order(id) }} data-sec={id}>
-      {children}
+    <section ref={ref} className={`settings-sec ${shown ? "" : "hidden"} ${unavailable ? "unavailable" : ""}`} style={{ order: ctx.order(id) }} data-sec={id}>
+      {unavailable ? (
+        <>
+          <p className="unavailable-note small">
+            <Icon name="info" size={13} /> Not available here: {unavailable}
+          </p>
+          <fieldset disabled className="plain-fieldset">
+            {children}
+          </fieldset>
+        </>
+      ) : (
+        children
+      )}
     </section>
   );
 }
