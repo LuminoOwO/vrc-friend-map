@@ -49,6 +49,31 @@ can be designed around everything. Nothing here is started.
 - [ ] **Map time travel:** a slider showing the map as it was a month or a year ago (who
   joined, who drifted, how clusters changed). Needs keeping snapshots of the graph.
 
+- [ ] **Friends' local time** ("it's 3 am for them"), with where it comes from:
+  - **Verified:** you set their time zone yourself, or they share it through the app (their
+    choice). Your own settings sync only between your devices (device sync), never to anyone.
+  - **Suggested** until you confirm it, shown as "probably" with the reasons: hints in bio,
+    status, pronouns and links ("german fur", flags, city / country names, "EST", "UTC+9"),
+    VRChat's languages field, the groups they're in (a group "Germany VRC" points to Germany),
+    and their usual online hours (weak). When hints disagree (groups "America" and "Japan"),
+    offer the candidates ranked, each with its reasons, and let you pick. Overridable anytime.
+- [ ] **Snooze a friend:** mute one person's notifications for an hour or until tomorrow,
+  without removing their bell.
+- [ ] **Missed notifications:** a list with read / unread, so a dismissed one isn't gone.
+- [ ] **Pending friend requests:** the ones you sent and still wait on; cancel old ones.
+- [ ] **Display name history:** names you've seen someone use (kept on this device), so you
+  know who "xX_Neo_Xx" used to be.
+- [ ] **Your own nicknames:** a private alias per friend, shown on the map instead of or next
+  to their name.
+- [ ] **"Since you were last here":** short summary on opening: who came online, renames, new
+  and removed friends.
+- [ ] **Slot watcher:** a friend's instance is full; notify when a slot opens.
+- [ ] **Path between two people:** the shortest chain of mutual friends connecting them.
+- [ ] **Compare two friends:** shared and non-shared mutuals side by side.
+- [ ] **Your friend list over time:** size, adds and removes per month as a small chart.
+- [ ] **Shared circles:** a circle you and trusted friends edit together, synced over the
+  encrypted sharing.
+
 ## Round 3: more from the game logs
 
 - [ ] **Instance timeline per day:** when you played (from–to), instances in order with times,
@@ -69,6 +94,11 @@ can be designed around everything. Nothing here is started.
   as a picture.
 - [ ] **Popular among your friends:** the worlds your friends visit most this week (from what
   friends share and your own logs).
+
+- [ ] **Photo albums per person:** with screenshots tagged by who was there, each profile shows
+  "your pictures with them".
+- [ ] **Instance replay:** scrub through a past evening in the timeline and watch who was where
+  on the map, minute by minute (game logs + map time travel).
 
 ## Round 4: VRChat content in the app
 
@@ -93,6 +123,12 @@ can be designed around everything. Nothing here is started.
 - [ ] **Custom sounds per friend.** (Clarified 2026-11-16.) Per-event sound files exist; add a
   sound per friend (from the bell on their profile) that plays instead of their generated tune.
 
+- [ ] **World notes and tags:** your own notes and tags on worlds.
+- [ ] **Join from the PC app:** launch VRChat straight into a friend's instance or a world
+  (VRChat launch links; on Linux through Steam / Proton).
+- [ ] **Open VRChat links in the app:** paste or share any VRChat link (profile, world, group,
+  instance) and the app opens it, including from Android's share menu.
+
 ## Round 5: phone in the background
 
 - [ ] **Android background, three ways** (pick in Settings):
@@ -114,6 +150,8 @@ can be designed around everything. Nothing here is started.
 - [ ] **Game-log data from the PC to the phone**, local first: on the same network directly
   from the PC app (time together, groups, activity, live who's here); through the server only
   with a separate server option, off by default.
+
+- [ ] **Android home-screen widget:** starred friends online right now.
 
 ## Round 6: server
 
@@ -173,6 +211,12 @@ can be designed around everything. Nothing here is started.
 - [ ] **Backup and export:** notes, circles, settings and sounds in one encrypted file, to move
   devices without a server.
 - [ ] **Multiple VRChat accounts:** switch between main and alt; each has its own map and data.
+
+- [ ] **Tray menu extras:** online count, starred friends online, quick status switch.
+- [ ] **Now playing in your status** (optional): the song from your music player (MPRIS on
+  Linux) in your status text, with a template and an off switch.
+- [ ] **Discord rich presence** (optional): "in VRChat", never showing private instances unless
+  you allow it.
 
 ## Round 8: UI rework (last)
 
