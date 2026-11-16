@@ -1,7 +1,8 @@
 // All of someone's groups as cards, like the "<name>'s Groups" dialog on vrchat.com.
 import { openImage } from "./ImageViewer";
 import { useEffect } from "react";
-import { backend, imgSrc } from "../backend";
+import { imgSrc } from "../backend";
+import { setState } from "../store";
 import type { UserGroup } from "../types";
 import { Icon } from "./Icon";
 
@@ -28,7 +29,7 @@ export function GroupsModal({ name, groups, onClose }: { name: string; groups: U
         </div>
         <div className="groups-grid">
           {groups.map((g) => (
-            <button key={g.groupId} className="group-card" title="Open the group on vrchat.com" onClick={() => backend.openUrl(`https://vrchat.com/home/group/${g.groupId}`)}>
+            <button key={g.groupId} className="group-card" title="Open the group" onClick={() => { setState({ openGroup: g.groupId }); onClose(); }}>
               <div
                 className={`group-card-banner ${g.bannerUrl ? "viewable" : ""}`}
                 onClick={(e) => {

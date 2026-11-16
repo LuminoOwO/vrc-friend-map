@@ -199,7 +199,7 @@ function VisitCard({ v }: { v: TimelineVisit }) {
         <button className="btn small ghost" onClick={() => setReplay(!replay)}>
           <Icon name="play" size={13} /> {replay ? "Close replay" : "Replay"}
         </button>
-        <button className="btn small ghost" onClick={() => backend.openUrl(`https://vrchat.com/home/world/${v.world}`).catch(() => {})}>
+        <button className="btn small ghost" onClick={() => setState({ openWorld: v.world })}>
           <Icon name="external" size={13} /> World
         </button>
       </div>

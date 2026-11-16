@@ -267,6 +267,8 @@ export interface LocalData {
   blockReasons?: Record<string, BlockReason>;
   /** Instances you watch for a free slot (location → when you started watching). */
   slotWatch?: Record<string, { t: number; name: string }>;
+  /** Your notes and tags on worlds. */
+  worldNotes?: Record<string, { text: string; tags: string[]; t: number }>;
   /** Circles you share with friends (circle id → who may edit it with you). */
   sharedCircles?: Record<string, { with: string[]; owner: string; t: number }>;
 }
@@ -617,6 +619,8 @@ export interface Filters {
   platform: string[];
   circleId: string | null;
   favoritesOnly: boolean;
+  /** Only people in this VRChat favorite friend group (its display name). */
+  favoriteGroup?: string | null;
   listId: string | null;
 }
 
@@ -730,6 +734,8 @@ export interface NotifySettings {
   quiet: QuietHours;
   /** Per circle: events that always notify for its members (e.g. Close friends: came online). */
   circleRules: Record<string, NotifyEvent[]>;
+  /** Per friend: a sound that plays instead of their generated tune ("custom:<id>" or a built-in). */
+  personSounds: Record<string, string>;
   /** Gathering alerts: how many of the chosen people in one instance count. */
   gathering: { min: number; who: "starred" | "circles" | "both"; circleIds: string[] };
 }

@@ -82,6 +82,31 @@ minor releases can change behavior.
 - **Profiles**: avatars someone was seen in (game logs) and your pictures with them.
 - **Who's here**: *now playing* (the video loaded in your instance).
 
+- **VRChat tab**:
+  - *Groups & events*: your groups and the upcoming events of all of them.
+  - *Favorites*: your friend, world and avatar favorite groups with what's in them; rename
+    groups, remove favorites, show a friend group alone on the map (also Filters → *Favorite
+    group*).
+  - *Avatars*: your uploaded avatars and favorite avatars with platforms and performance, the
+    one you're wearing, and switching to one.
+  - *Prints, stickers, emojis* (and gallery pictures and icons): view, open, delete, and upload
+    with a cropper that fits each kind; an animated GIF becomes an animated emoji (frames, speed
+    and the in-game effect).
+  - *World notes*: your notes and tags on worlds, filterable by tag.
+  - *Open a VRChat link*: paste a profile, world, group or instance link (also anywhere in the
+    app with Ctrl+V).
+- **Instance view**: click the people under a friend's world card: world, type, region,
+  owner, slots, every friend inside, and "and N others" (your own instance lists everyone from
+  the game log); *Invite me*, launch, world.
+- **World pages**: description, author, visits, favorites, open public instances, friends there
+  now, your notes and tags.
+- **Group pages**: about (description, links, rules, your roles), join / leave, posts (and
+  writing them), events, open group instances (and opening one), gallery, members (find,
+  only friends); management as far as your roles allow: join requests, invites, kick, ban and
+  unban, roles, group settings, audit log. Every change asks first.
+- **Your own sound per friend** (next to the bell on their profile): plays instead of their
+  generated tune.
+
 ### Changed
 - Map: panning stops before everyone leaves the screen.
 - Phones: the filter menu stays inside the screen; the settings button sits in the top right

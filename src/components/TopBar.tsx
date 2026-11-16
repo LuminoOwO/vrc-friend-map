@@ -16,6 +16,7 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: "activity", label: "Activity", icon: "clock" },
   { key: "insights", label: "Insights", icon: "bulb" },
   { key: "logbook", label: "Logbook", icon: "calendar" },
+  { key: "vrchat", label: "VRChat", icon: "world" },
 ];
 
 function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {
@@ -27,6 +28,7 @@ function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {
   if (f.platform.length) n++;
   if (f.circleId) n++;
   if (f.favoritesOnly) n++;
+  if (f.favoriteGroup) n++;
   if (f.listId) n++;
   if (f.who !== "all") n++;
   return n;
@@ -200,6 +202,8 @@ function FilterPopover({ onClose }: { onClose: () => void }) {
   const f = useApp((s) => s.filters);
   const circles = useApp((s) => s.local.circles);
   const imports = useApp((s) => s.local.imports);
+  const favorites = useApp((s) => s.cache.favorites);
+  const favGroups = [...new Set(Object.values(favorites).flat())].sort();
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const onDown = (e: MouseEvent) => {
@@ -317,6 +321,19 @@ function FilterPopover({ onClose }: { onClose: () => void }) {
             {imports.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.owner.displayName}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {favGroups.length > 0 && (
+        <div className="frow">
+          <span className="flabel">Favorite group</span>
+          <select value={f.favoriteGroup ?? ""} onChange={(e) => updateFilters({ favoriteGroup: e.target.value || null })}>
+            <option value="">Any</option>
+            {favGroups.map((g) => (
+              <option key={g} value={g}>
+                {g}
               </option>
             ))}
           </select>

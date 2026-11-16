@@ -122,31 +122,31 @@ can be designed around everything. Nothing here is started.
 
 ## Round 4: VRChat content in the app
 
-- [ ] **Friends in the same instance.** (Clarified 2026-11-16.) Clicking the player pictures
+- [x] **Friends in the same instance.** (Clarified 2026-11-16.) Clicking the player pictures
   under a friend's world card opens an instance view: world picture, instance type, region,
   owner, people / slots, every friend inside (clickable), "and N others" (VRChat doesn't list
   the rest; your own instance shows everyone from the game log).
-- [ ] **Groups ("clubs"):** description, banner, rules, members (if visible), posts and
+- [x] **Groups ("clubs"):** description, banner, rules, members (if visible), posts and
   announcements, open instances, gallery. Worlds: pictures, description, open instances.
-- [ ] **Group events:** calendar with details.
-- [ ] **Group management**, as far as your roles allow: members and roles, join requests,
+- [x] **Group events:** calendar with details.
+- [x] **Group management**, as far as your roles allow: members and roles, join requests,
   invites, kick / ban, posts and announcements, gallery, audit logs, creating group instances,
   group settings. Every change confirmed; requests spaced out.
-- [ ] **Notes on people:** VRChat's own user notes shown and editable on profiles.
-- [ ] **Favorites:** VRChat's favorite friend groups (Group 1–3) and world / avatar favorite
+- [x] **Notes on people:** VRChat's own user notes shown and editable on profiles.
+- [x] **Favorites:** VRChat's favorite friend groups (Group 1–3) and world / avatar favorite
   lists: show and edit; filter the map by a favorite group.
-- [ ] **Avatars:** your own fully (current, uploaded, favorites, details, platforms,
+- [x] **Avatars:** your own fully (current, uploaded, favorites, details, platforms,
   performance); others as far as VRChat allows (picture, name from the image file) plus the
   game-log names (round 3).
-- [ ] **Prints, stickers, emojis** (VRC+): view, download, delete, and upload with a cropper
+- [x] **Prints, stickers, emojis** (VRC+): view, download, delete, and upload with a cropper
   that fits each kind (animated emojis too).
-- [ ] **Custom sounds per friend.** (Clarified 2026-11-16.) Per-event sound files exist; add a
+- [x] **Custom sounds per friend.** (Clarified 2026-11-16.) Per-event sound files exist; add a
   sound per friend (from the bell on their profile) that plays instead of their generated tune.
 
-- [ ] **World notes and tags:** your own notes and tags on worlds.
-- [ ] **Join from the PC app:** launch VRChat straight into a friend's instance or a world
+- [x] **World notes and tags:** your own notes and tags on worlds.
+- [x] **Join from the PC app:** launch VRChat straight into a friend's instance or a world
   (VRChat launch links; on Linux through Steam / Proton).
-- [ ] **Open VRChat links in the app:** paste or share any VRChat link (profile, world, group,
+- [x] **Open VRChat links in the app:** paste or share any VRChat link (profile, world, group,
   instance) and the app opens it, including from Android's share menu.
 
 ## Round 5: phone in the background

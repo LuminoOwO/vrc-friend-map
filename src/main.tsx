@@ -11,6 +11,7 @@ import { startWheelFix } from "./wheelfix";
 import { startKeys } from "./keys";
 import { startUpdateChecks } from "./updates";
 import { installHaptics } from "./haptics";
+import { installLinkPaste } from "./vrclinks";
 
 applySafeArea();
 unlockAudioOnInput();
@@ -20,6 +21,7 @@ startWheelFix();
 startKeys();
 startUpdateChecks();
 installHaptics();
+installLinkPaste();
 
 // Dev server only: lets UI test scripts set up state (stripped from builds).
 if (import.meta.env.DEV) {

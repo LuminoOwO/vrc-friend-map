@@ -30,7 +30,7 @@ import type {
   UiSettings,
 } from "./types";
 
-export type View = "graph" | "cards" | "lists" | "activity" | "insights" | "logbook";
+export type View = "graph" | "cards" | "lists" | "activity" | "insights" | "logbook" | "vrchat";
 
 export interface Toast {
   id: number;
@@ -105,6 +105,10 @@ export interface AppState {
   pickPair: [string | null, string | null];
   /** Map time travel: show the map as it was at this time (ms), or null for now. */
   timeTravel: number | null;
+  /** Detail dialogs for VRChat content (instance location, group id, world id). */
+  openInstance: string | null;
+  openGroup: string | null;
+  openWorld: string | null;
 }
 
 // ---------- data format versions ----------
@@ -181,6 +185,7 @@ export const defaultNotify = (): NotifySettings => ({
   muteUntil: 0,
   quiet: { enabled: false, from: "23:00", to: "08:00", days: [0, 1, 2, 3, 4, 5, 6], allowStarred: true, allowCircleIds: [] },
   circleRules: {},
+  personSounds: {},
   gathering: { min: 3, who: "both", circleIds: [] },
 });
 
@@ -309,6 +314,7 @@ export const defaultFilters = (): Filters => ({
   platform: [],
   circleId: null,
   favoritesOnly: false,
+  favoriteGroup: null,
   who: "all",
   listId: null,
 });
@@ -372,6 +378,9 @@ let state: AppState = {
   blockAsk: [],
   pickPair: [null, null],
   timeTravel: null,
+  openInstance: null,
+  openGroup: null,
+  openWorld: null,
 };
 
 const listeners = new Set<() => void>();
@@ -535,6 +544,7 @@ function normalizeNotify(raw: unknown, oldSounds: Partial<SoundSettings> | undef
     circleRules: Object.fromEntries(
       Object.entries(isObj(n.circleRules) ? n.circleRules : {}).map(([k, v]) => [k, Array.isArray(v) ? v.filter((e) => NOTIFY_EVENTS.includes(e as NotifyEvent)) : []]),
     ) as Record<string, NotifyEvent[]>,
+    personSounds: Object.fromEntries(Object.entries(isObj(n.personSounds) ? n.personSounds : {}).filter(([, v]) => typeof v === "string" && v)) as Record<string, string>,
     gathering: shaped(n.gathering, d.gathering, (g) => ({ ...g, min: Math.round(num(g.min, 3, 2, 20)), who: oneOf(g.who, ["starred", "circles", "both"] as const, "both") })),
   };
 }
@@ -839,6 +849,7 @@ export function normalizeLocal(raw: Raw | null): LocalData {
     blockReasons: (isObj(raw.blockReasons) ? raw.blockReasons : {}) as LocalData["blockReasons"],
     slotWatch: (isObj(raw.slotWatch) ? raw.slotWatch : {}) as LocalData["slotWatch"],
     sharedCircles: (isObj(raw.sharedCircles) ? raw.sharedCircles : {}) as LocalData["sharedCircles"],
+    worldNotes: (isObj(raw.worldNotes) ? raw.worldNotes : {}) as LocalData["worldNotes"],
   };
   // 0.1.x kept per-friend "first seen" dates; only the change log needs them.
   const legacy = raw as { firstSeen?: Record<string, number>; trackingSince?: number };

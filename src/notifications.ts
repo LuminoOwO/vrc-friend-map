@@ -167,11 +167,16 @@ function part(ref: string): SoundPart | null {
 }
 
 /** What plays for an event about someone: the action sound, then their tune. */
-export function soundFor(event: NotifyEvent, name: string, n: NotifySettings = getState().settings.notify): SoundPart[] {
+export function soundFor(event: NotifyEvent, name: string, n: NotifySettings = getState().settings.notify, userId?: string): SoundPart[] {
   const parts: SoundPart[] = [];
   const a = part(n.actionSounds[event]);
   if (a) parts.push(a);
-  if (n.personTune && name) parts.push({ tune: name });
+  // Their own sound (from the bell on their profile) instead of the generated tune.
+  const own = userId ? n.personSounds?.[userId] : undefined;
+  if (own) {
+    const p = part(own);
+    if (p) parts.push(p);
+  } else if (n.personTune && name) parts.push({ tune: name });
   return parts;
 }
 
@@ -294,7 +299,7 @@ export function notifyEvent(event: NotifyEvent, userId: string, name: string, ex
   recordMissed({ t: now, event, userId, name, text });
 
   if (n.sound && queue.length < 4) {
-    queue.push({ parts: soundFor(event, name, n), volume: n.volume });
+    queue.push({ parts: soundFor(event, name, n, userId), volume: n.volume });
     void drain();
   }
   const background = document.hidden || !document.hasFocus();
@@ -304,10 +309,10 @@ export function notifyEvent(event: NotifyEvent, userId: string, name: string, ex
 }
 
 /** Preview: what an event about `name` would sound like. */
-export function previewEvent(event: NotifyEvent, name: string) {
+export function previewEvent(event: NotifyEvent, name: string, userId?: string) {
   const n = getState().settings.notify;
   queue.length = 0;
-  queue.push({ parts: soundFor(event, name, n), volume: n.volume || 0.5 });
+  queue.push({ parts: soundFor(event, name, n, userId), volume: n.volume || 0.5 });
   void drain();
 }
 

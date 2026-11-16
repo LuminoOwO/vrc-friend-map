@@ -1,5 +1,7 @@
 import { InsightsView } from "./components/InsightsView";
 import { LogbookView } from "./components/LogbookView";
+import { VrchatView } from "./components/VrchatView";
+import { GroupDialog, InstanceDialog, WorldDialog } from "./components/ContentDialogs";
 import { BlockReasonDialog } from "./components/PersonExtras";
 import { startBioCache, stopBioCache } from "./biocache";
 import { startHistory, stopHistory } from "./history";
@@ -136,6 +138,7 @@ export default function App() {
           {view === "activity" && <ActivityView />}
           {view === "insights" && <InsightsView />}
           {view === "logbook" && <LogbookView />}
+          {view === "vrchat" && <VrchatView />}
         </div>
         {selectedId && profileAs === "sidebar" && <DetailPanel id={selectedId} />}
       </div>
@@ -154,6 +157,9 @@ export default function App() {
       <ConfirmUnencrypted />
       <ImageViewer />
       <BlockReasonDialog />
+      <InstanceDialog />
+      <WorldDialog />
+      <GroupDialog />
       <CloseDialog />
       <UpdateDialog />
       <ToastView />

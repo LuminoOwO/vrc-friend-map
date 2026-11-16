@@ -605,6 +605,7 @@ function currentSelf(): SelfData {
     blockReasons: st.local.blockReasons ?? {},
     inviteTemplates: Object.fromEntries((st.local.inviteTemplates ?? []).map((t) => [t.id, t])),
     sharedCircles: st.local.sharedCircles ?? {},
+    worldNotes: st.local.worldNotes ?? {},
   };
 }
 
@@ -621,6 +622,7 @@ function applySelf(d: SelfData) {
     blockReasons: d.blockReasons ?? l.blockReasons,
     inviteTemplates: d.inviteTemplates ? Object.values(d.inviteTemplates) : l.inviteTemplates,
     sharedCircles: d.sharedCircles ?? l.sharedCircles,
+    worldNotes: d.worldNotes ?? l.worldNotes,
   }));
   const st = getState();
   const merged = normalizeSettings({

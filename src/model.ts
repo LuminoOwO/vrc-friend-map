@@ -197,6 +197,7 @@ export function matchesFilters(f: Friend, filters: Filters, ctx: MatchContext): 
   }
   if (filters.platform.length && !filters.platform.includes(platformKey(f))) return false;
   if (filters.favoritesOnly && !ctx.favorites[f.id]?.length) return false;
+  if (filters.favoriteGroup && !ctx.favorites[f.id]?.includes(filters.favoriteGroup)) return false;
   if (ctx.circleMembers && !ctx.circleMembers.has(f.id)) return false;
   if (ctx.listMembers && !ctx.listMembers.has(f.id)) return false;
   return true;

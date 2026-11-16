@@ -36,6 +36,7 @@ export interface SelfData {
   blockReasons?: Record<string, BlockReason>;
   inviteTemplates?: Record<string, InviteTemplate>;
   sharedCircles?: NonNullable<LocalData["sharedCircles"]>;
+  worldNotes?: NonNullable<LocalData["worldNotes"]>;
 }
 
 export interface SelfPayload extends SelfData {
@@ -144,6 +145,7 @@ export function mergeSelf(base: SelfData | null, mine: SelfData, theirs: SelfDat
     blockReasons: theirs.blockReasons === undefined ? mine.blockReasons : mergeRecord(b.blockReasons ?? {}, mine.blockReasons ?? {}, theirs.blockReasons),
     inviteTemplates: theirs.inviteTemplates === undefined ? mine.inviteTemplates : mergeRecord(b.inviteTemplates ?? {}, mine.inviteTemplates ?? {}, theirs.inviteTemplates),
     sharedCircles: theirs.sharedCircles === undefined ? mine.sharedCircles : mergeRecord(b.sharedCircles ?? {}, mine.sharedCircles ?? {}, theirs.sharedCircles),
+    worldNotes: theirs.worldNotes === undefined ? mine.worldNotes : mergeRecord(b.worldNotes ?? {}, mine.worldNotes ?? {}, theirs.worldNotes),
   };
 }
 
@@ -184,5 +186,6 @@ export function readSelf(raw: unknown): SelfData | null {
     blockReasons: p.blockReasons ? rec<BlockReason>(p.blockReasons) : undefined,
     inviteTemplates: p.inviteTemplates ? rec<InviteTemplate>(p.inviteTemplates) : undefined,
     sharedCircles: p.sharedCircles ? rec(p.sharedCircles) : undefined,
+    worldNotes: p.worldNotes ? rec(p.worldNotes) : undefined,
   };
 }

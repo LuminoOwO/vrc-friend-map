@@ -40,6 +40,9 @@ import { applyPipelineEvent, freshenProfile, loadGroups, loadInstance, loadWorld
 import type { Friend, Presence } from "../types";
 import { GroupsModal } from "./GroupsModal";
 import { Icon } from "./Icon";
+import { customSounds, onCustomSounds, previewEvent } from "../notifications";
+import { SOUNDS } from "../notify";
+import { updateNotify } from "../store";
 import { BlockFlags, InviteActions, LocalTime, NicknameAndSnooze, OnlineHistory, PersonLog, StarButton, VrcNote } from "./PersonExtras";
 import { inviteMyself } from "../invites";
 
@@ -453,16 +456,20 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 </button>
               </div>
               <div className="world-info">
-                <h3 className="world-name">{world?.name ?? (demo ? "Demo World" : "Loading world…")}</h3>
+                <h3 className="world-name">
+                  <button className="link-btn" onClick={() => setState({ openWorld: loc.world })} title="World details, your notes">
+                    {world?.name ?? (demo ? "Demo World" : "Loading world…")}
+                  </button>
+                </h3>
                 <div className="world-line">
                   <span className="flag">{loc.flag}</span> {loc.instance} - {loc.type}
                 </div>
-                <div className="world-line">
+                <div className="world-line clickable" role="button" title="Who's in this instance" onClick={() => setState({ openInstance: location })}>
                   <Icon name="users" size={15} /> {instance ? `${instance.users} / ${instance.capacity ?? world?.capacity ?? "?"}` : world?.capacity ? `? / ${world.capacity}` : "…"}
                   {withThem.length > 0 && (
                     <>
                       {" · "}
-                      <span className="face-stack small-faces">
+                      <span className="face-stack small-faces clickable" role="button" title="Who's in this instance" onClick={() => setState({ openInstance: location })}>
                         {withThem.slice(0, 5).map((o) => {
                           const src = imgSrc(iconUrl(o));
                           return <span key={o.id} className="face">{src ? <img src={src} alt="" /> : o.displayName.slice(0, 1)}</span>;
@@ -541,7 +548,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               <ul className="group-list">
                 {groupList.slice(0, 5).map((g) => (
                   <li key={g.groupId}>
-                    <button className="group-row" onClick={() => open(`https://vrchat.com/home/group/${g.groupId}`)} title="Open the group on vrchat.com">
+                    <button className="group-row" onClick={() => setState({ openGroup: g.groupId })} title="Open the group">
                       <span
                         className={`group-icon ${g.iconUrl ? "viewable" : ""}`}
                         title={g.iconUrl ? "View full size" : undefined}
@@ -884,6 +891,51 @@ function ModerationRow({ id, name, friend }: { id: string; name: string; friend:
 function NotifyBell({ id }: { id: string }) {
   const mode = useApp((s) => s.settings.notify.people[id]?.mode ?? "default") as (typeof PERSON_MODES)[number]["value"];
   const label = PERSON_MODES.find((m) => m.value === mode)?.label ?? "";
+  return (
+    <>
+      <BellSelect id={id} mode={mode} label={label} />
+      <PersonSoundSelect id={id} />
+    </>
+  );
+}
+
+/** Their own notification sound instead of the generated tune. */
+function PersonSoundSelect({ id }: { id: string }) {
+  const n = useApp((s) => s.settings.notify);
+  const name = useApp((s) => s.cache.friends[id]?.displayName ?? "");
+  const own = n.personSounds?.[id] ?? "";
+  const [customs, setCustoms] = useState(customSounds());
+  useEffect(() => onCustomSounds(() => setCustoms([...customSounds()])), []);
+  return (
+    <label className={`btn select-btn ${own ? "on" : ""}`} title={own ? "Their own notification sound (instead of their tune)" : "Pick a sound for them (instead of their generated tune)"}>
+      <Icon name="sound" size={16} />
+      <select
+        value={own}
+        onChange={(e) => {
+          const personSounds = { ...(n.personSounds ?? {}) };
+          if (e.target.value) personSounds[id] = e.target.value;
+          else delete personSounds[id];
+          updateNotify({ personSounds });
+          if (e.target.value) setTimeout(() => previewEvent("online", name, id), 50);
+        }}
+      >
+        <option value="">Their tune (from their name)</option>
+        {SOUNDS.map((s) => (
+          <option key={s.value} value={s.value}>
+            {s.label}
+          </option>
+        ))}
+        {customs.map((c) => (
+          <option key={c.id} value={`custom:${c.id}`}>
+            {c.name} (your file)
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function BellSelect({ id, mode, label }: { id: string; mode: (typeof PERSON_MODES)[number]["value"]; label: string }) {
   return (
     <label className={`btn notify-bell ${mode !== "default" ? "on" : ""}`} title={`Notifications for this person: ${label}`}>
       <Icon name={mode === "never" ? "bell-off" : "bell"} size={16} />
