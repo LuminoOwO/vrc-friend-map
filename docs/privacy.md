@@ -60,8 +60,9 @@ In the app's data folder (Settings shows the exact path; on Linux
 | `store/activity.json` | The activity log (4 days). |
 | `store/sounds.json` | Sound files you added for notifications. |
 
-The update check asks GitHub's API about the latest release once a day (nothing about you is
-sent; turn it off in Settings → Account & data → Updates). Updates are downloaded from the
+The update check asks GitHub's API about the latest release every few hours (nothing about you
+is sent; you can turn it off in Settings → Account & data → Updates, though that isn't
+recommended). vfm-server does the same every 12 hours (`[admin] update_check`). Updates are downloaded from the
 project's GitHub releases only.
 
 With device sync on, your circles, dismissed suggestions, notes for friends and per-person

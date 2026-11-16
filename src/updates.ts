@@ -55,7 +55,8 @@ export function newerVersion(a: string, b: string): boolean {
   return false;
 }
 
-const DAY = 864e5;
+/** How often to look for a new version: often, since new versions come quickly right now. */
+const EVERY = 6 * 3600_000;
 let lastCheck = 0;
 
 export async function checkForUpdate(manual = false): Promise<UpdateInfo | null> {
@@ -75,13 +76,13 @@ export async function checkForUpdate(manual = false): Promise<UpdateInfo | null>
   }
 }
 
-/** Check a bit after start and then once a day, if allowed. */
+/** Check a bit after start and then every 6 hours, if allowed (on by default). */
 export function startUpdateChecks() {
   if (!isTauri) return;
   const tick = () => {
     const s = getState();
     if (!s.settings.updates.check || s.demo) return;
-    if (Date.now() - lastCheck > DAY) void checkForUpdate(false);
+    if (Date.now() - lastCheck > EVERY) void checkForUpdate(false);
   };
   setTimeout(tick, 30_000);
   setInterval(tick, 60 * 60_000);

@@ -201,6 +201,12 @@ servers keep working as before). The **new beta UI** is in this release as an op
 - **Filter: only starred friends.**
 
 ### Changed
+- **Update checks every few hours** instead of once a day, and the app asks you to update when a
+  new version is out. You can still turn it off (Settings → Account & data → Updates), but the
+  app now says why that isn't recommended.
+- **vfm-server looks for new versions too** (every 12 hours, `[admin] update_check`, on by
+  default) and shows "vfm-server x.y.z is out" with how to update at the top of the admin page,
+  and in its log. It never updates itself.
 - **Less load on your servers**: a sync where nothing changed is now a few tiny requests. The
   app only uploads your friend list or activity again when it changed (or every 6 hours, so
   friends who joined the server since get it; *Sync now* always uploads), and the server

@@ -13,6 +13,7 @@ mod logger;
 mod push;
 mod store;
 mod upgrade;
+mod updates;
 
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
@@ -211,6 +212,7 @@ fn run(config_path: &Path) -> Result<(), String> {
         if cfg.logger.enabled && lg.has_session() {
             lg.start();
         }
+        updates::spawn(Arc::clone(&app));
         let flush_app = Arc::clone(&app);
         tokio::spawn(async move {
             let mut iv = tokio::time::interval(std::time::Duration::from_secs(300));

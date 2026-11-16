@@ -35,6 +35,8 @@ pub struct App {
     pub admins: crate::admins::Admins,
     pub bans: crate::bans::Bans,
     pub cache: crate::cache::Cache,
+    /// The newest vfm-server release, if checking is on.
+    pub updates: crate::updates::Updates,
     /// Item changes and messages between someone's own devices, for the open
     /// event streams (`/v1/events`).
     pub changes: tokio::sync::broadcast::Sender<Signal>,
@@ -90,6 +92,7 @@ impl App {
             admins: crate::admins::Admins::new(&dir),
             bans: crate::bans::Bans::new(&dir),
             cache: crate::cache::Cache::new(&dir),
+            updates: Default::default(),
             changes: tokio::sync::broadcast::channel(64).0,
             streams: std::sync::atomic::AtomicUsize::new(0),
             closing: tokio::sync::watch::channel(false).0,

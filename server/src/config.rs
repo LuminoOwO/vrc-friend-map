@@ -75,6 +75,8 @@ pub struct AdminSection {
     pub token: String,
     /// Admins need an authenticator code (TOTP) to log in.
     pub totp: bool,
+    /// Look for a newer vfm-server on GitHub every 12 hours (shown on the admin page).
+    pub update_check: bool,
 }
 
 impl Default for ServerSection {
@@ -113,7 +115,7 @@ impl Default for LoggerSection {
 
 impl Default for AdminSection {
     fn default() -> Self {
-        Self { allow: AdminAllow::Lan, token: String::new(), totp: true }
+        Self { allow: AdminAllow::Lan, token: String::new(), totp: true, update_check: true }
     }
 }
 
@@ -274,6 +276,9 @@ allow = {allow}
 token = {token}
 # Admin accounts need an authenticator code (Ente Auth, Aegis, Google Authenticator…).
 totp = {totp}
+# Look for a newer vfm-server on GitHub every 12 hours and say so on the admin page and here.
+# Turning it off isn't recommended: new versions come often and bring fixes.
+update_check = {upcheck}
 "#,
             name = q(&s.name),
             listen = q(&s.listen),
@@ -287,6 +292,7 @@ totp = {totp}
             relay = a.relay,
             handoff = l.hand_off,
             totp = ad.totp,
+            upcheck = ad.update_check,
             reg = q(match a.registration {
                 Registration::Open => "open",
                 Registration::Invite => "invite",

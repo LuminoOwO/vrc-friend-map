@@ -197,7 +197,8 @@ Laid out like VRChat's own profile page:
 - **Notifications:** see [below](#notifications).
 - **Mouse wheel (Linux):** if the wheel neither scrolls nor zooms (seen on XLibre), turn on
   *Fix the mouse wheel*, or start the app with `--wheel-fix`.
-- **Updates:** check once a day (on by default), or *Check now*. *Update now* in the dialog
+- **Updates:** the app looks for new versions every few hours and asks you to update (on by
+  default; turning it off isn't recommended while new versions come this often), or *Check now*. *Update now* in the dialog
   installs it the way this copy was installed; *Skip this version* stops asking for that one.
 - **Closing the window (desktop):** keep running in the tray, quit, or ask.
 - **Open profiles** as a popup or in a side panel.

@@ -33,6 +33,8 @@
   .hint { color: var(--dim); font-size: 13px; margin-top: 6px; }
   #login { max-width: 420px; margin: 12vh auto; }
   .hidden { display:none !important; }
+  .update { border:1px solid var(--warn); border-radius:10px; padding:10px 12px; margin:12px 0; }
+  .update a { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -68,6 +70,7 @@
       <div><h1 id="name">…</h1><div class="dim" id="sub"></div></div>
       <div class="row"><button class="ghost" id="refresh">Refresh</button><button class="ghost" id="logout">Lock</button></div>
     </div>
+    <div id="updateBanner" class="update hidden"></div>
 
     <section>
       <h2>Overview</h2>
@@ -131,6 +134,8 @@
         </div>
         <label style="margin:0"><input type="checkbox" name="relay" style="width:auto"> Pass sounds and settings between someone's own devices live (encrypted, never stored)</label>
         <label><input type="checkbox" name="totp" style="width:auto"> Admins need an authenticator code to log in (recommended)</label>
+        <label><input type="checkbox" name="updateCheck" style="width:auto"> Look for a newer vfm-server every 12 hours (on GitHub) and say so here (recommended)</label>
+        <p class="hint warn hidden" id="updateOffWarn">Not recommended: vfm-server changes quickly right now, and new versions bring fixes, also for security and for changes on VRChat's side. You'd have to look for updates yourself.</p>
         <p class="hint" id="encHint"></p>
         <p class="hint warn" id="envNote"></p>
         <div class="row" style="margin-top:8px"><button>Save</button><span id="saved" class="ok"></span></div>
@@ -234,6 +239,9 @@ async function load() {
   $("#name").textContent = s.info.name;
   $("#sub").textContent = `vfm-server ${s.info.version} · listening on ${s.settings.listen}`;
   $("#addr").textContent = location.origin;
+  const up = s.update, ub = $("#updateBanner");
+  ub.classList.toggle("hidden", !(up && up.newer));
+  if (up && up.newer) ub.innerHTML = `<b>vfm-server ${esc(up.latest)} is out</b> (this is ${esc(s.info.version)}). Update it soon: new versions bring fixes and what newer apps need. <a href="${esc(up.howTo)}" target="_blank" rel="noopener">How to update</a>${up.url ? ` · <a href="${esc(up.url)}" target="_blank" rel="noopener">What's new</a>` : ""}`;
   const encLabel = { "force-off": "Force off", optional: "Optional", recommended: "Recommended", "force-on": "Force on" }[s.info.encryption];
   $("#stats").innerHTML = [
     [s.counts.users, "accounts"], [s.counts.items, "shared items"], [s.counts.sealed, "of them encrypted"], [encLabel, "encryption"], [s.info.registration, "new accounts"],
@@ -258,7 +266,9 @@ async function load() {
 
   const f = $("#settings");
   for (const k of ["name", "motd", "registration", "encryption", "maxItemKb", "maxUsers", "appealContact"]) f[k].value = s.settings[k] ?? "";
-  for (const k of ["loggerEnabled", "trustedProxy", "cacheWorlds", "cacheGroups", "cacheAvatars", "relay", "totp"]) f[k].checked = !!s.settings[k];
+  for (const k of ["loggerEnabled", "trustedProxy", "cacheWorlds", "cacheGroups", "cacheAvatars", "relay", "totp", "updateCheck"]) f[k].checked = !!s.settings[k];
+  $("#updateOffWarn").classList.toggle("hidden", !!s.settings.updateCheck);
+  f.updateCheck.onchange = () => $("#updateOffWarn").classList.toggle("hidden", f.updateCheck.checked);
   const c = s.cache || {};
   $("#cacheStats").textContent = ["world", "group", "avatar"].map((k) => `${c[k]?.entries ?? 0} ${k}s`).join(" · ");
   $("#handOff").checked = !!s.settings.handOff;
@@ -295,7 +305,7 @@ $("#settings").onsubmit = async (e) => {
   await api("/admin/api/settings", { method: "POST", body: JSON.stringify({
     name: f.name.value, motd: f.motd.value, registration: f.registration.value, encryption: f.encryption.value, maxItemKb: +f.maxItemKb.value, maxUsers: +f.maxUsers.value,
     loggerEnabled: f.loggerEnabled.checked, appealContact: f.appealContact.value, trustedProxy: f.trustedProxy.checked,
-    cacheWorlds: f.cacheWorlds.checked, cacheGroups: f.cacheGroups.checked, cacheAvatars: f.cacheAvatars.checked, relay: f.relay.checked, totp: f.totp.checked,
+    cacheWorlds: f.cacheWorlds.checked, cacheGroups: f.cacheGroups.checked, cacheAvatars: f.cacheAvatars.checked, relay: f.relay.checked, totp: f.totp.checked, updateCheck: f.updateCheck.checked,
   }) });
   $("#saved").textContent = "Saved"; setTimeout(() => ($("#saved").textContent = ""), 2000);
   load();

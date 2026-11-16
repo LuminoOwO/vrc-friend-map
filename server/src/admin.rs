@@ -330,7 +330,14 @@ async fn status(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
             "cacheWorlds": cfg.access.cache_worlds, "cacheGroups": cfg.access.cache_groups, "cacheAvatars": cfg.access.cache_avatars,
             "relay": cfg.access.relay,
             "totp": cfg.admin.totp,
+            "updateCheck": cfg.admin.update_check,
         },
+        "update": app.updates.latest.read().unwrap().clone().map(|l| json!({
+            "latest": l.version,
+            "newer": crate::updates::newer(&l.version, crate::api::VERSION),
+            "url": l.url,
+            "howTo": crate::updates::HOW_TO,
+        })),
         "cache": app.cache.stats(),
         "bans": app.bans.list(),
         "counts": { "users": users, "items": items, "sealed": sealed },
@@ -360,6 +367,7 @@ struct SettingsBody {
     cache_avatars: Option<bool>,
     relay: Option<bool>,
     totp: Option<bool>,
+    update_check: Option<bool>,
 }
 
 async fn settings(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<SocketAddr>, headers: HeaderMap, body: Bytes) -> Response {
@@ -427,6 +435,9 @@ async fn settings(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<So
         }
         if let Some(v) = b.totp {
             c.admin.totp = v;
+        }
+        if let Some(v) = b.update_check {
+            c.admin.update_check = v;
         }
         if let Err(e) = c.save(&app.cfg_path) {
             return (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({ "error": e }))).into_response();

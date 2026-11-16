@@ -1062,8 +1062,14 @@ function UpdatesSection() {
       <h3>Updates</h3>
       <label className="check">
         <input type="checkbox" checked={u.check} onChange={(e) => updateSettings({ updates: { ...u, check: e.target.checked } })} />
-        Check for new versions (once a day, on GitHub)
+        Look for new versions automatically and ask me to update (every few hours, on GitHub; recommended)
       </label>
+      {!u.check && (
+        <p className="small warn">
+          Not recommended: the app changes quickly right now, and new versions bring fixes, also for security and for changes on VRChat's side. You'll only
+          hear about updates when you press Check now.
+        </p>
+      )}
       <div className="row">
         <button
           className="btn small"

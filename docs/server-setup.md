@@ -325,6 +325,10 @@ The app warns when a server outside your home network uses plain `http://`.
 
 ## 9. Updating the server
 
+The server looks for a new version every 12 hours and says so at the top of the admin page and
+in its log (`[admin] update_check`, on by default; turning it off isn't recommended, since new
+versions come often and bring fixes). It never updates itself.
+
 Install the new version the same way as the old one; your data stays. At its first start the
 new version upgrades the stored files by itself, after copying them to `data/backups/`. If you
 ever go back to an older vfm-server, it refuses to start rather than damage newer data.
