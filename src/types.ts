@@ -131,6 +131,25 @@ export interface ImportedList {
   removals?: SharedRemoval[];
   /** The owner's notes about people (adult vouches, "keep your distance"). */
   notes?: (ShareNote & { id: string })[];
+  /** Why the owner blocked people (preset reason ids). */
+  blocks?: { id: string; reasons: string[]; t: number }[];
+  /** The owner's time zone (IANA), if they share it. */
+  tz?: string;
+  /** Circles the owner shares with some friends, to edit together. */
+  circles?: SharedCircle[];
+}
+
+export interface SharedCircle {
+  /** "<owner id>:<circle id>" so the same circle is the same everywhere. */
+  key: string;
+  name: string;
+  color: string;
+  members: string[];
+  /** Who may edit it (friend IDs), besides the owner. */
+  with: string[];
+  owner: string;
+  /** Last change (ms): the newest version wins. */
+  t: number;
 }
 
 export interface FriendLogEntry {
@@ -232,6 +251,38 @@ export interface LocalData {
   shareNotes: Record<string, ShareNote>;
   /** Device sync: the state this device and your others last agreed on. */
   selfBase?: import("./devicesync").SelfData | null;
+  /** Starred friends (top of lists, stand out on the map). Synced between your devices. */
+  starred?: string[];
+  /** Your own names for people, shown on the map. Synced between your devices. */
+  nicknames?: Record<string, string>;
+  /** Notifications snoozed until (ms), per person. */
+  snoozed?: Record<string, number>;
+  /** Time zones you set for people (IANA name), or confirmed suggestions. Synced between your devices. */
+  timezones?: Record<string, { tz: string; t: number; how: "set" | "confirmed" }>;
+  /** Saved invite / request-invite messages. */
+  inviteTemplates?: InviteTemplate[];
+  /** Why you blocked people (presets shared like removals; free text stays here). */
+  blockReasons?: Record<string, BlockReason>;
+  /** Instances you watch for a free slot (location → when you started watching). */
+  slotWatch?: Record<string, { t: number; name: string }>;
+  /** Circles you share with friends (circle id → who may edit it with you). */
+  sharedCircles?: Record<string, { with: string[]; owner: string; t: number }>;
+}
+
+export interface InviteTemplate {
+  id: string;
+  text: string;
+  /** Which kind: an invite you send, or a request for an invite. */
+  kind: "invite" | "request";
+  /** VRChat's message slot (0–11) it's stored in, once saved there. */
+  slot?: number;
+}
+
+export interface BlockReason {
+  reasons: string[];
+  /** Your own words (never shared). */
+  text?: string;
+  t: number;
 }
 
 export type NodeStyle = "dot" | "icon" | "card" | "fullcard";
@@ -372,6 +423,10 @@ export interface ShareServer {
   include: PeopleSelection;
   /** Also share whom you stopped being friends with (shown to them as a note on that person). */
   shareRemovals: boolean;
+  /** Also share why you blocked people (preset reasons only), like removals. */
+  shareBlocks: boolean;
+  /** Share your own time zone, so friends see your local time. */
+  shareTimezone: boolean;
   /** Sync your circles and notes with your other devices through this server (encrypted). */
   syncMine: boolean;
   /** Share your notes about people (adult vouches, "keep your distance"). */
@@ -615,7 +670,23 @@ export interface PerfSettings {
 
 // ---------- notifications (src/notifications.ts) ----------
 
-export type NotifyEvent = "added" | "removed" | "online" | "offline" | "joined" | "left";
+export type NotifyEvent =
+  | "added"
+  | "removed"
+  | "online"
+  | "offline"
+  | "joined"
+  | "left"
+  /** A friendiversary (a year, or a round number of months). */
+  | "anniversary"
+  /** Several of your close friends in the same instance. */
+  | "gathering"
+  /** A slot opened in an instance you're watching. */
+  | "slotOpen"
+  /** Someone invited you to their instance. */
+  | "invite"
+  /** Someone asks you for an invite. */
+  | "requestInvite";
 
 /** Per person: follow the general rules (no entry), always, only the next time they come online, or never. */
 export interface NotifyPerson {
@@ -644,6 +715,25 @@ export interface NotifySettings {
   system: "always" | "background" | "never";
   /** Muted until this time (ms); 0 = not muted, -1 = until unmuted. */
   muteUntil: number;
+  /** Do not disturb on a schedule (silent, kept in "missed notifications"). */
+  quiet: QuietHours;
+  /** Per circle: events that always notify for its members (e.g. Close friends: came online). */
+  circleRules: Record<string, NotifyEvent[]>;
+  /** Gathering alerts: how many of the chosen people in one instance count. */
+  gathering: { min: number; who: "starred" | "circles" | "both"; circleIds: string[] };
+}
+
+export interface QuietHours {
+  enabled: boolean;
+  /** "HH:MM", local time; from > to means over midnight. */
+  from: string;
+  to: string;
+  /** Days it applies, 0 = Sunday. */
+  days: number[];
+  /** Starred friends still get through. */
+  allowStarred: boolean;
+  /** Members of these circles still get through. */
+  allowCircleIds: string[];
 }
 
 /** A sound file you added (kept in store/sounds.json). */

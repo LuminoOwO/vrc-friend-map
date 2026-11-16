@@ -56,3 +56,17 @@ describe("device sync merge", () => {
     expect(readSelf({ format: "other" })).toBeNull();
   });
 });
+
+describe("0.12 personal data", () => {
+  it("merges stars and nicknames, and keeps them when the other device is older", async () => {
+    const { mergeSelf } = await import("../devicesync");
+    const base = { circles: [], dismissedGroups: [], shareNotes: {}, notifyPeople: {}, starred: ["a"], nicknames: {} };
+    const mine = { ...base, starred: ["a", "b"], nicknames: { a: "Lu" } };
+    const theirs = { ...base, starred: [], nicknames: { c: "Cee" } };
+    const m = mergeSelf(base, mine, theirs);
+    expect(m.starred).toEqual(["b"]);
+    expect(m.nicknames).toEqual({ a: "Lu", c: "Cee" });
+    const old = { circles: [], dismissedGroups: [], shareNotes: {}, notifyPeople: {} };
+    expect(mergeSelf(base, mine, old).starred).toEqual(["a", "b"]);
+  });
+});

@@ -158,21 +158,24 @@ export const defaultMap = (): MapSettings => ({
 });
 
 export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
-export const NOTIFY_EVENTS: NotifyEvent[] = ["added", "removed", "online", "offline", "joined", "left"];
+export const NOTIFY_EVENTS: NotifyEvent[] = ["added", "removed", "online", "offline", "joined", "left", "anniversary", "gathering", "slotOpen", "invite", "requestInvite"];
 const SOUNDS_REV = 2;
 export const defaultNotify = (): NotifySettings => ({
   soundsRev: SOUNDS_REV,
   enabled: true,
-  events: { added: true, removed: true, online: false, offline: false, joined: false, left: false },
+  events: { added: true, removed: true, online: false, offline: false, joined: false, left: false, anniversary: true, gathering: true, slotOpen: true, invite: true, requestInvite: true },
   scope: "everyone",
   circleIds: [],
   people: {},
   sound: true,
   volume: 0.6,
-  actionSounds: { added: "sparkle", removed: "heartbreak", online: "bell", offline: "soft-fall", joined: "chime", left: "door" },
+  actionSounds: { added: "sparkle", removed: "heartbreak", online: "bell", offline: "soft-fall", joined: "chime", left: "door", anniversary: "fanfare", gathering: "marimba", slotOpen: "coin", invite: "doorbell", requestInvite: "knock" },
   personTune: true,
   system: "background",
   muteUntil: 0,
+  quiet: { enabled: false, from: "23:00", to: "08:00", days: [0, 1, 2, 3, 4, 5, 6], allowStarred: true, allowCircleIds: [] },
+  circleRules: {},
+  gathering: { min: 3, who: "both", circleIds: [] },
 });
 
 export const defaultLogSettings = (): LogSettings => ({
@@ -237,6 +240,8 @@ export const newServer = (url: string): ShareServer => ({
   audienceAutoAdd: true,
   include: allPeople(),
   shareRemovals: false,
+  shareBlocks: false,
+  shareTimezone: false,
   syncMine: true,
   shareNotes: true,
   download: true,
@@ -509,6 +514,16 @@ function normalizeNotify(raw: unknown, oldSounds: Partial<SoundSettings> | undef
     personTune: typeof n.personTune === "boolean" ? n.personTune : d.personTune,
     system: oneOf(n.system, ["always", "background", "never"] as const, d.system),
     muteUntil: typeof n.muteUntil === "number" ? n.muteUntil : 0,
+    quiet: shaped(n.quiet, d.quiet, (q) => ({
+      ...q,
+      from: /^\d\d:\d\d$/.test(q.from) ? q.from : d.quiet.from,
+      to: /^\d\d:\d\d$/.test(q.to) ? q.to : d.quiet.to,
+      days: q.days.filter((x) => Number.isInteger(x) && x >= 0 && x <= 6),
+    })),
+    circleRules: Object.fromEntries(
+      Object.entries(isObj(n.circleRules) ? n.circleRules : {}).map(([k, v]) => [k, Array.isArray(v) ? v.filter((e) => NOTIFY_EVENTS.includes(e as NotifyEvent)) : []]),
+    ) as Record<string, NotifyEvent[]>,
+    gathering: shaped(n.gathering, d.gathering, (g) => ({ ...g, min: Math.round(num(g.min, 3, 2, 20)), who: oneOf(g.who, ["starred", "circles", "both"] as const, "both") })),
   };
 }
 
@@ -748,6 +763,8 @@ function normalizeSharing(raw: unknown): SharingSettings {
             audienceAutoAdd: bool(x.audienceAutoAdd, true),
             include: normalizePick(x.include),
             shareRemovals: bool(x.shareRemovals, false),
+            shareBlocks: bool(x.shareBlocks, false),
+            shareTimezone: bool(x.shareTimezone, false),
             syncMine: bool(x.syncMine, true),
             shareNotes: bool(x.shareNotes, true),
             published: Array.isArray(x.published) ? x.published.filter((c: unknown) => typeof c === "string") : [],
@@ -799,6 +816,14 @@ export function normalizeLocal(raw: Raw | null): LocalData {
     shareNotes: (isObj(raw.shareNotes) ? raw.shareNotes : {}) as LocalData["shareNotes"],
     dismissedGroups: Array.isArray(raw.dismissedGroups) ? raw.dismissedGroups.filter(Array.isArray) : [],
     selfBase: isObj(raw.selfBase) ? (raw.selfBase as LocalData["selfBase"]) : null,
+    starred: Array.isArray(raw.starred) ? raw.starred.filter((x: unknown) => typeof x === "string") : [],
+    nicknames: isObj(raw.nicknames) ? Object.fromEntries(Object.entries(raw.nicknames).filter(([, v]) => typeof v === "string" && v)) as Record<string, string> : {},
+    snoozed: isObj(raw.snoozed) ? Object.fromEntries(Object.entries(raw.snoozed).filter(([, v]) => typeof v === "number" && v > Date.now())) as Record<string, number> : {},
+    timezones: (isObj(raw.timezones) ? raw.timezones : {}) as LocalData["timezones"],
+    inviteTemplates: Array.isArray(raw.inviteTemplates) ? raw.inviteTemplates.filter((t: Raw) => isObj(t) && typeof t.text === "string") : [],
+    blockReasons: (isObj(raw.blockReasons) ? raw.blockReasons : {}) as LocalData["blockReasons"],
+    slotWatch: (isObj(raw.slotWatch) ? raw.slotWatch : {}) as LocalData["slotWatch"],
+    sharedCircles: (isObj(raw.sharedCircles) ? raw.sharedCircles : {}) as LocalData["sharedCircles"],
   };
   // 0.1.x kept per-friend "first seen" dates; only the change log needs them.
   const legacy = raw as { firstSeen?: Record<string, number>; trackingSince?: number };
@@ -927,6 +952,8 @@ export function patchCircle(id: string, patch: Partial<Circle>) {
   updateLocal((l) => ({
     ...l,
     circles: l.circles.map((c) => (c.id === id ? { ...c, ...patch, ...(takeOver && c.auto && !("auto" in patch) ? { auto: false } : {}) } : c)),
+    // A circle shared with friends: your edit is the newest version now.
+    sharedCircles: l.sharedCircles?.[id] && (takeOver || "color" in patch) ? { ...l.sharedCircles, [id]: { ...l.sharedCircles[id], t: Date.now() } } : l.sharedCircles,
   }));
 }
 

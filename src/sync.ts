@@ -6,6 +6,7 @@ import { addNewFriendsToPicks } from "./selection";
 import { notifyEvent, removedByMe } from "./notifications";
 import { backend, type ApiResponse } from "./backend";
 import { celebrateNewFriends } from "./notify";
+import { noteNames, sawOnline } from "./history";
 import { describeError, httpLine, isNetworkError, logSync, wasInterrupted, whenVisible } from "./synclog";
 import { getState, resetSync, setState, setSync, showToast, updateCache, updateLocal } from "./store";
 import type { Friend, Me, MutualInfo, Presence, UserDetail } from "./types";
@@ -184,7 +185,7 @@ export function recordFriendChanges(current: string[], prevFriends: Record<strin
         if (!cur.has(id)) log.push({ t: now, id, name: prevFriends[id]?.displayName ?? id, type: "removed", byMe: removedByMe.has(id), together: wasWithMe(id, now) });
       }
     }
-    return { ...l, logSince: l.logSince || now, lastFriendIds: current, friendLog: log.slice(-500) };
+    return { ...l, logSince: l.logSince || now, lastFriendIds: current, friendLog: log.slice(-5000) };
   });
   return notified;
 }
@@ -348,6 +349,7 @@ export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
   try {
     const me = await fetchMe();
     await fetchFriends(me, gen);
+    noteNames();
     if (!opts.friendsOnly) {
       await fetchFavorites();
       await drainQueue("details", gen);
@@ -654,6 +656,7 @@ export function applyPipelineEvent(type: string, content: any) {
         } else if (type === "friend-offline") {
           presence = "offline";
           friend = { ...friend, status: "offline", location: "offline", last_activity: now, last_platform: content.platform || friend.last_platform };
+          sawOnline(id);
         } else if (type === "friend-location") {
           presence = content.location === "offline" ? presence : "online";
           friend = { ...friend, location: content.location ?? friend.location };

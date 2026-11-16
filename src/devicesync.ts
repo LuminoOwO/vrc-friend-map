@@ -15,12 +15,12 @@
 // one device goes away unless the other changed it, and for single values
 // (a circle's name, a setting) the side that changed it wins, the other
 // device's change if both did.
-import type { Circle, NotifyPerson, Settings, ShareNote } from "./types";
+import type { BlockReason, Circle, InviteTemplate, LocalData, NotifyPerson, Settings, ShareNote } from "./types";
 
 export const SELF_FORMAT = "vrc-friend-map/self-v1";
 
 /** Settings that follow you to other devices (when "Also sync settings" is on). */
-export const SYNCED_SETTINGS = ["theme", "catAccent", "map", "groups", "age", "people", "closeAction"] as const;
+export const SYNCED_SETTINGS = ["theme", "catAccent", "map", "groups", "age", "people", "closeAction", "bios"] as const;
 type SyncedSettings = Partial<Pick<Settings, (typeof SYNCED_SETTINGS)[number]>>;
 
 export interface SelfData {
@@ -29,6 +29,13 @@ export interface SelfData {
   shareNotes: Record<string, ShareNote>;
   notifyPeople: Record<string, NotifyPerson>;
   settings?: SyncedSettings;
+  /** Since 0.12: stars (as a set), nicknames, time zones, block reasons, invite templates, shared circles. */
+  starred?: string[];
+  nicknames?: Record<string, string>;
+  timezones?: NonNullable<LocalData["timezones"]>;
+  blockReasons?: Record<string, BlockReason>;
+  inviteTemplates?: Record<string, InviteTemplate>;
+  sharedCircles?: NonNullable<LocalData["sharedCircles"]>;
 }
 
 export interface SelfPayload extends SelfData {
@@ -130,6 +137,13 @@ export function mergeSelf(base: SelfData | null, mine: SelfData, theirs: SelfDat
     shareNotes: mergeRecord(b.shareNotes, mine.shareNotes, theirs.shareNotes),
     notifyPeople: mergeRecord(b.notifyPeople, mine.notifyPeople, theirs.notifyPeople),
     settings: mergeSettings(b.settings, mine.settings, theirs.settings),
+    // A device with an older app doesn't send these: then nothing changed there.
+    starred: theirs.starred === undefined ? mine.starred : mergeSet(b.starred ?? [], mine.starred ?? [], theirs.starred),
+    nicknames: theirs.nicknames === undefined ? mine.nicknames : mergeRecord(b.nicknames ?? {}, mine.nicknames ?? {}, theirs.nicknames),
+    timezones: theirs.timezones === undefined ? mine.timezones : mergeRecord(b.timezones ?? {}, mine.timezones ?? {}, theirs.timezones),
+    blockReasons: theirs.blockReasons === undefined ? mine.blockReasons : mergeRecord(b.blockReasons ?? {}, mine.blockReasons ?? {}, theirs.blockReasons),
+    inviteTemplates: theirs.inviteTemplates === undefined ? mine.inviteTemplates : mergeRecord(b.inviteTemplates ?? {}, mine.inviteTemplates ?? {}, theirs.inviteTemplates),
+    sharedCircles: theirs.sharedCircles === undefined ? mine.sharedCircles : mergeRecord(b.sharedCircles ?? {}, mine.sharedCircles ?? {}, theirs.sharedCircles),
   };
 }
 
@@ -164,5 +178,11 @@ export function readSelf(raw: unknown): SelfData | null {
     shareNotes: notes,
     notifyPeople: rec<NotifyPerson>(p.notifyPeople),
     settings: p.settings && typeof p.settings === "object" ? p.settings : undefined,
+    starred: Array.isArray(p.starred) ? p.starred.filter((x) => typeof x === "string") : undefined,
+    nicknames: p.nicknames ? rec<string>(p.nicknames) : undefined,
+    timezones: p.timezones ? rec(p.timezones) : undefined,
+    blockReasons: p.blockReasons ? rec<BlockReason>(p.blockReasons) : undefined,
+    inviteTemplates: p.inviteTemplates ? rec<InviteTemplate>(p.inviteTemplates) : undefined,
+    sharedCircles: p.sharedCircles ? rec(p.sharedCircles) : undefined,
   };
 }

@@ -3,12 +3,14 @@
 // Encryption and signatures happen in Rust (src-tauri/src/share.rs); this
 // file decides what to send where, and merges what comes back.
 import { describeError, isNetworkError, logSync, wasInterrupted } from "./synclog";
+import { REASON_IDS } from "./personal";
+import { mergeSharedCircles, outgoingSharedCircles, validSharedCircle } from "./sharedcircles";
 import { backend, type InfoResult, type PublishResult } from "./backend";
 import { getState, newServer, normalizeSettings, setState, showToast, updateLocal, updateServer, updateSettings, updateSharing } from "./store";
 import { combineStats } from "./together";
 import { mergeSelf, readSelf, sameSelf, SELF_FORMAT, SYNCED_SETTINGS, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
 import { selectedIds } from "./selection";
-import type { Settings, EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareNote, ShareServer, SharedData, SharedRemoval } from "./types";
+import type { Settings, EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareNote, ShareServer, SharedData, SharedRemoval, SharedCircle } from "./types";
 
 export const FRIENDS_FORMAT = "vrc-friend-map/friends-v1";
 export const ACTIVITY_FORMAT = "vrc-friend-map/activity-v1";
@@ -270,6 +272,9 @@ interface FriendsPayload {
   friends?: { id: string; displayName: string }[];
   removals?: SharedRemoval[];
   notes?: { id: string; v: string; t: number }[];
+  blocks?: { id: string; reasons: string[]; t: number }[];
+  tz?: string;
+  circles?: SharedCircle[];
 }
 
 /** Friend lists from servers show up under Shared lists, updated on every sync. */
@@ -303,8 +308,17 @@ function applyReceivedLists(d: SharedData) {
             .filter((r) => r && typeof r.id === "string" && typeof r.t === "number")
             .map((r) => ({ id: r.id, t: r.t, byMe: r.byMe === true, together: r.together === true }))
         : undefined,
+      blocks: Array.isArray(p.blocks)
+        ? p.blocks
+            .filter((b) => b && typeof b.id === "string" && typeof b.t === "number" && Array.isArray(b.reasons))
+            .map((b) => ({ id: b.id, t: b.t, reasons: b.reasons.filter((r) => typeof r === "string" && REASON_IDS.has(r)) }))
+            .filter((b) => b.reasons.length)
+        : undefined,
+      tz: typeof p.tz === "string" && /^[A-Za-z_]+(\/[A-Za-z_+\-0-9]+){0,2}$/.test(p.tz) ? p.tz : undefined,
+      circles: Array.isArray(p.circles) ? p.circles.filter(validSharedCircle) : undefined,
     });
   }
+  mergeSharedCircles(lists);
   const local = getState().local;
   const others = local.imports.filter((l) => !l.id.startsWith("srv:"));
   const before = JSON.stringify(local.imports.filter((l) => l.id.startsWith("srv:")));
@@ -353,6 +367,23 @@ function friendsPayload(s: ShareServer): string {
       .slice(-300)
       .map((e) => ({ id: e.id, t: e.t, byMe: e.byMe, together: e.together }));
   }
+  if (s.shareBlocks) {
+    // Preset reasons only; your own words stay on this device.
+    const year = Date.now() - 365 * 864e5;
+    body.blocks = Object.entries(st.local.blockReasons ?? {})
+      .filter(([, b]) => b.t > year && b.reasons.some((r) => REASON_IDS.has(r)))
+      .slice(-500)
+      .map(([id, b]) => ({ id, t: b.t, reasons: b.reasons.filter((r) => REASON_IDS.has(r)) }));
+  }
+  if (s.shareTimezone) {
+    try {
+      body.tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    } catch {
+      // no time zone support
+    }
+  }
+  const circles = outgoingSharedCircles();
+  if (circles.length) body.circles = circles;
   if (s.shareNotes) {
     // Only adult vouches and "keep your distance" exist here; under-18 notes never leave the device.
     body.notes = Object.entries(st.local.shareNotes ?? {})
@@ -568,11 +599,29 @@ function currentSelf(): SelfData {
     shareNotes: st.local.shareNotes ?? {},
     notifyPeople: st.settings.notify.people,
     settings: st.settings.sharing.syncSettings ? syncedSettings(st.settings) : undefined,
+    starred: st.local.starred ?? [],
+    nicknames: st.local.nicknames ?? {},
+    timezones: st.local.timezones ?? {},
+    blockReasons: st.local.blockReasons ?? {},
+    inviteTemplates: Object.fromEntries((st.local.inviteTemplates ?? []).map((t) => [t.id, t])),
+    sharedCircles: st.local.sharedCircles ?? {},
   };
 }
 
 function applySelf(d: SelfData) {
-  updateLocal((l) => ({ ...l, circles: d.circles, dismissedGroups: d.dismissedGroups, shareNotes: d.shareNotes }));
+  updateLocal((l) => ({
+    ...l,
+    circles: d.circles,
+    dismissedGroups: d.dismissedGroups,
+    shareNotes: d.shareNotes,
+    // Older app versions on another device don't send these: keep ours then.
+    starred: d.starred ?? l.starred,
+    nicknames: d.nicknames ?? l.nicknames,
+    timezones: d.timezones ?? l.timezones,
+    blockReasons: d.blockReasons ?? l.blockReasons,
+    inviteTemplates: d.inviteTemplates ? Object.values(d.inviteTemplates) : l.inviteTemplates,
+    sharedCircles: d.sharedCircles ?? l.sharedCircles,
+  }));
   const st = getState();
   const merged = normalizeSettings({
     ...st.settings,

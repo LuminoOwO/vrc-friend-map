@@ -1,4 +1,5 @@
 import { startBioCache, stopBioCache } from "./biocache";
+import { startHistory, stopHistory } from "./history";
 import { ImageViewer } from "./components/ImageViewer";
 import { ActivityView } from "./components/ActivityView";
 import { useEffect, useLayoutEffect, useRef } from "react";
@@ -209,10 +210,12 @@ function LogsAndGroups() {
       startObserving();
       startSharing();
       startBioCache();
+      startHistory();
     } else {
       stopObserving();
       stopSharing();
       stopBioCache();
+      stopHistory();
     }
   }, [mode, demo]);
 

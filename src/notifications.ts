@@ -6,6 +6,7 @@
 import { backend, isTauri } from "./backend";
 import { playParts, type SoundPart } from "./notify";
 import { getState, showToast, updateNotify } from "./store";
+import { recordMissed } from "./history";
 import type { CustomSound, NotifyEvent, NotifySettings } from "./types";
 
 export const EVENT_LABEL: Record<NotifyEvent, string> = {
@@ -15,6 +16,11 @@ export const EVENT_LABEL: Record<NotifyEvent, string> = {
   offline: "Went offline",
   joined: "Joined your instance",
   left: "Left your instance",
+  anniversary: "Friendiversary",
+  gathering: "Close friends gathering",
+  slotOpen: "A slot opened (watched instance)",
+  invite: "Invited you",
+  requestInvite: "Asks you for an invite",
 };
 
 function message(event: NotifyEvent, name: string, world?: string): string {
@@ -31,7 +37,57 @@ function message(event: NotifyEvent, name: string, world?: string): string {
       return `${name} joined ${world ? world : "your instance"}`;
     case "left":
       return `${name} left ${world ? world : "your instance"}`;
+    case "anniversary":
+      return `${world ?? "Today"}: you and ${name} became friends`;
+    case "gathering":
+      return `${name} are together${world ? ` in ${world}` : ""}`;
+    case "slotOpen":
+      return `A slot opened where ${name} is${world ? ` (${world})` : ""}`;
+    case "invite":
+      return `${name} invited you${world ? ` to ${world}` : ""}`;
+    case "requestInvite":
+      return `${name} asks you for an invite`;
   }
+}
+
+// ---------- quiet hours, snooze, stars ----------
+
+const mins = (hhmm: string) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+};
+
+/** Is it quiet time now (Settings → Notifications → Quiet hours)? */
+export function inQuietHours(q: NotifySettings["quiet"], at = new Date()): boolean {
+  if (!q.enabled) return false;
+  const now = at.getHours() * 60 + at.getMinutes();
+  const from = mins(q.from);
+  const to = mins(q.to);
+  if (from === to) return q.days.includes(at.getDay());
+  if (from < to) return q.days.includes(at.getDay()) && now >= from && now < to;
+  // Over midnight: the evening part belongs to today, the morning part to the day it started.
+  if (now >= from) return q.days.includes(at.getDay());
+  if (now < to) return q.days.includes((at.getDay() + 6) % 7);
+  return false;
+}
+
+export function isStarred(id: string): boolean {
+  return getState().local.starred?.includes(id) ?? false;
+}
+
+export function snoozedUntil(id: string): number {
+  return getState().local.snoozed?.[id] ?? 0;
+}
+
+function quietExempt(userId: string, n: NotifySettings): boolean {
+  if (n.quiet.allowStarred && isStarred(userId)) return true;
+  const circles = getState().local.circles;
+  return circles.some((c) => n.quiet.allowCircleIds.includes(c.id) && c.members.includes(userId));
+}
+
+function circleRule(event: NotifyEvent, userId: string, n: NotifySettings): boolean {
+  const circles = getState().local.circles;
+  return circles.some((c) => n.circleRules[c.id]?.includes(event) && c.members.includes(userId));
 }
 
 // ---------- custom sounds (store/sounds.json) ----------
@@ -130,6 +186,11 @@ export function shouldNotify(event: NotifyEvent, userId: string, n: NotifySettin
   if (!n.enabled) return false;
   const person = n.people[userId]?.mode;
   if (person === "never") return false;
+  if (snoozedUntil(userId) > Date.now()) return false;
+  if (!n.events[event] && !circleRule(event, userId, n) && !(person && (event === "online" || event === "joined"))) return false;
+  if (circleRule(event, userId, n)) return true;
+  // Events that aren't about friends' presence: their own switch is all.
+  if (event === "anniversary" || event === "gathering" || event === "slotOpen" || event === "invite" || event === "requestInvite") return n.events[event];
   // Picked people: "came online" (and "joined your world" for always) even when those are off in general.
   if (person === "once" && event === "online") return true;
   if (person === "always" && (event === "online" || event === "joined")) return true;
@@ -221,9 +282,17 @@ export function notifyEvent(event: NotifyEvent, userId: string, name: string, ex
     delete people[userId];
     updateNotify({ people });
   }
-  if (isMuted(n, now)) return true;
-
   const text = message(event, name, extra.world);
+  if (isMuted(n, now)) {
+    recordMissed({ t: now, event, userId, name, text, why: "muted" });
+    return true;
+  }
+  if (inQuietHours(n.quiet) && !quietExempt(userId, n)) {
+    recordMissed({ t: now, event, userId, name, text, why: "quiet" });
+    return true;
+  }
+  recordMissed({ t: now, event, userId, name, text });
+
   if (n.sound && queue.length < 4) {
     queue.push({ parts: soundFor(event, name, n), volume: n.volume });
     void drain();
