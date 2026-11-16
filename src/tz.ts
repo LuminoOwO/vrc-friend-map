@@ -125,8 +125,9 @@ const ABBR: [string, string, string, number][] = [
 ];
 
 const ZONE_LABEL: Record<string, string> = Object.fromEntries([
-  ...COUNTRIES.flatMap((c) => c.zones.map((z) => [z, c.zones.length > 1 ? `${c.name} (${z.split("/").pop()!.replace(/_/g, " ")})` : c.name])),
+  // Places only name zones no country names (later entries win).
   ...PLACES.map(([, z, l]) => [z, l]),
+  ...COUNTRIES.flatMap((c) => c.zones.map((z) => [z, c.zones.length > 1 ? `${c.name} (${z.split("/").pop()!.replace(/_/g, " ")})` : c.name])),
   ["America/New_York", "US East (New York)"],
   ["America/Chicago", "US Central (Chicago)"],
   ["America/Denver", "US Mountain (Denver)"],

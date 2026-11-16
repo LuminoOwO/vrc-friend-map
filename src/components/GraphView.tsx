@@ -1140,21 +1140,14 @@ export function GraphView() {
       const here = extra.here.has(n.id);
       if (n.kind || here) decorate(ctx, n, card, here);
       if (starred.has(n.id) && isMatch) {
-        // A small gold star at the top right of starred friends.
-        const sx = n.x + n.hw * 0.78;
-        const sy = n.y - n.hh * 0.78;
-        const sr = Math.max(4.5 / t.k, Math.min(n.hw, n.hh) * 0.28);
+        // Starred friends: a gold halo (VRChat favorites keep their small star).
         ctx.beginPath();
-        for (let i = 0; i < 10; i++) {
-          const a = -Math.PI / 2 + (i * Math.PI) / 5;
-          const rr = i % 2 ? sr * 0.45 : sr;
-          ctx.lineTo(sx + Math.cos(a) * rr, sy + Math.sin(a) * rr);
-        }
-        ctx.closePath();
-        ctx.fillStyle = PAL.gold;
-        ctx.fill();
-        ctx.lineWidth = 1.2 / t.k;
-        ctx.strokeStyle = PAL.outline;
+        if (card) {
+          const pad = 4 / t.k;
+          ctx.roundRect?.(n.x - n.hw - pad, n.y - n.hh - pad, (n.hw + pad) * 2, (n.hh + pad) * 2, 10 / t.k);
+        } else ctx.arc(n.x, n.y, n.r + 4 / t.k, 0, Math.PI * 2);
+        ctx.lineWidth = 2.2 / t.k;
+        ctx.strokeStyle = PAL.gold;
         ctx.stroke();
       }
       const labelled = n.kind === "me" || (!card && (showLabelsAuto || (focusSet?.has(n.id) && settings.showLabels !== "never") || selected));
