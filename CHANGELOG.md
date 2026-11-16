@@ -142,6 +142,14 @@ minor releases can change behavior.
   item is for them, and look up only the friends who use this, not your whole friend list. The
   server can still see whose items each app downloads. Friends on an app older than this one
   don't get those items until they update.
+- **Your devices sync with each other live** (with *Sync my circles and notes with my other
+  devices* on a new vfm-server): your devices find each other through the server's live
+  connection, then talk straight over your home network, or through the server live when
+  they're apart. Circles, notes and settings go across within seconds and are merged like
+  before, and **your own notification sounds** now reach your other devices too. Everything is
+  sealed and signed with your own key; the server passes it along without storing it (the
+  server owner can turn off passing along bigger messages such as sounds; at home they still
+  go directly).
 - **Settings sync, finer**: pick which groups of settings sync, and keep some on this device
   only.
 - **Never send anything unencrypted** (per server), and a short **safety code** per friend to

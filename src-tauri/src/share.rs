@@ -149,6 +149,8 @@ pub enum WatchEvent {
     Change(String, String),
     /// This connection missed changes: sync everything.
     Resync,
+    /// A sealed message from one of your other devices.
+    Peer(String),
 }
 
 /// One server-sent-events block ("event: …" and "data: …" lines, or a ": comment").
@@ -170,6 +172,10 @@ pub fn parse_event(block: &str) -> Option<WatchEvent> {
             Some(WatchEvent::Change(v["owner"].as_str()?.to_string(), v["kind"].as_str()?.to_string()))
         }
         "resync" => Some(WatchEvent::Resync),
+        "peer" => {
+            let v: Value = serde_json::from_str(&data).ok()?;
+            Some(WatchEvent::Peer(v["blob"].as_str()?.to_string()))
+        }
         _ => None,
     }
 }
@@ -840,6 +846,39 @@ impl ShareState {
         Ok(out)
     }
 
+    // ---------- your own devices ----------
+
+    /// A message for your other devices: signed with your key and sealed to it,
+    /// so only devices holding your key can read it (not the server, not your network).
+    pub async fn seal_for_devices(&self, user: &str, payload: &str) -> Result<String, String> {
+        let id = self.identity(user).await?;
+        let me = Recipient { user_id: user.to_string(), box_pk: id.box_pk() };
+        let env = Envelope::sealed(&id, user, vfm_share::KIND_SELF, now(), payload.as_bytes(), &[me]);
+        serde_json::to_string(&env).map_err(|e| e.to_string())
+    }
+
+    /// Open a message from one of your devices. Older than 15 minutes (a replay): refused.
+    pub async fn open_from_devices(&self, user: &str, blob: &str) -> Result<Value, String> {
+        let id = self.identity(user).await?;
+        let env: Envelope = serde_json::from_str(blob).map_err(|_| "not a device message".to_string())?;
+        if env.owner != user || env.kind != vfm_share::KIND_SELF || env.enc != vfm_share::Enc::Sealed {
+            return Err("not from your devices".into());
+        }
+        if (now() - env.created).abs() > 15 * 60 {
+            return Err("too old".into());
+        }
+        let bytes = env.open(user, &id, &id.sign_pk()).map_err(|e| e.to_string())?;
+        serde_json::from_slice(&bytes).map_err(|e| e.to_string())
+    }
+
+    /// Pass a sealed message to your other devices through a server, live.
+    pub async fn relay_to_devices(&self, url: &str, user: &str, blob: String) -> Result<Value, String> {
+        let url = normalize_url(url)?;
+        let id = self.identity(user).await?;
+        let body = serde_json::to_vec(&json!({ "blob": blob })).map_err(|e| e.to_string())?;
+        self.send(&url, reqwest::Method::POST, "/v1/devices/signal", Some(body), Some((&id, user))).await
+    }
+
     // ---------- live changes ----------
 
     /// Keep `/v1/events` open and call `on` for each thing it says, until the
@@ -1240,6 +1279,26 @@ mod e2e {
         rt(alice.publish(&url, a, "friends", hidden, vec![b.into()], true, true, vec![b.into()])).unwrap();
         assert_eq!(rx.recv_timeout(wait).unwrap(), WatchEvent::Change(a.into(), "friends".into()));
 
+        // Your own devices: a sealed message relayed live, readable only with your key.
+        let (ptx, prx) = std::sync::mpsc::channel();
+        let url3 = url.clone();
+        let alice_phone = std::sync::Arc::new(alice_phone);
+        let phone = alice_phone.clone();
+        std::thread::spawn(move || {
+            let _ = rt(phone.watch(&url3, a, |ev| {
+                if let WatchEvent::Peer(blob) = ev {
+                    let _ = ptx.send(blob);
+                }
+            }));
+        });
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        let blob = rt(alice.seal_for_devices(a, r#"{"type":"hello","from":"pc"}"#)).unwrap();
+        assert!(!blob.contains("hello"));
+        assert!(rt(carol.open_from_devices(c, &blob)).is_err());
+        rt(alice.relay_to_devices(&url, a, blob)).unwrap();
+        let got = rt(alice_phone.open_from_devices(a, &prx.recv_timeout(wait).unwrap())).unwrap();
+        assert_eq!(got["type"], "hello");
+
         // Leaving removes everything.
         rt(alice.unpublish(&url, a, "friends")).unwrap();
         assert!(rt(carol.inbox(&url, c, vec![]))
@@ -1265,5 +1324,6 @@ mod watch_tests {
         );
         assert_eq!(parse_event("event: resync\ndata: {}\n\n"), Some(WatchEvent::Resync));
         assert_eq!(parse_event("event: change\ndata: nope\n\n"), None);
+        assert_eq!(parse_event("event: peer\ndata: {\"blob\":\"x\"}\n\n"), Some(WatchEvent::Peer("x".into())));
     }
 }

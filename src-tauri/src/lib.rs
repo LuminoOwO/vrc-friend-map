@@ -12,6 +12,7 @@ mod images;
 mod linkfetch;
 mod livelog;
 mod osclisten;
+mod peers;
 mod pictures;
 mod pipeline;
 mod share;
@@ -160,6 +161,24 @@ async fn share_inbox(state: AppStateRef<'_>, url: String, owners: Option<Vec<Str
     state.share.inbox(&url, &me, owners.unwrap_or_default()).await
 }
 
+#[tauri::command]
+async fn share_device_seal(state: AppStateRef<'_>, payload: String) -> Result<String, String> {
+    let me = me_id(&state).await?;
+    state.share.seal_for_devices(&me, &payload).await
+}
+
+#[tauri::command]
+async fn share_device_open(state: AppStateRef<'_>, blob: String) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.open_from_devices(&me, &blob).await
+}
+
+#[tauri::command]
+async fn share_device_relay(state: AppStateRef<'_>, url: String, blob: String) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.relay_to_devices(&url, &me, blob).await
+}
+
 /// Open live change streams, one per server URL (see `share_watch`).
 static WATCHERS: std::sync::Mutex<Option<std::collections::HashMap<String, tauri::async_runtime::JoinHandle<()>>>> =
     std::sync::Mutex::new(None);
@@ -206,6 +225,9 @@ fn share_watch(app: AppHandle, urls: Vec<String>) {
                                     }
                                     share::WatchEvent::Change(o, k) => changed(&o, &k, false),
                                     share::WatchEvent::Resync => changed("", "", true),
+                                    share::WatchEvent::Peer(blob) => {
+                                        let _ = app2.emit("device-message", serde_json::json!({ "blob": blob, "via": u2 }));
+                                    }
                                 }
                             })
                             .await;
@@ -889,6 +911,11 @@ pub fn run() {
             share_unpublish,
             share_inbox,
             share_watch,
+            share_device_seal,
+            share_device_open,
+            share_device_relay,
+            peers::peer_listen,
+            peers::peer_send,
             share_pins,
             share_trust_key,
             logger_pair,

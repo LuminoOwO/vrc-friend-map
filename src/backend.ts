@@ -381,6 +381,16 @@ export const backend = {
     unpublish: (url: string, kind: string) => need<unknown>("share_unpublish", { url, kind }),
     /** `owners`: your friends, to also get their hidden-recipient items (servers that can). */
     inbox: (url: string, owners?: string[]) => need<InboxItem[]>("share_inbox", { url, owners: owners ?? null }),
+    /** A message for your other devices, sealed and signed with your key. */
+    deviceSeal: (payload: string) => need<string>("share_device_seal", { payload }),
+    /** Open one from your other devices (refused if not yours or older than 15 minutes). */
+    deviceOpen: (blob: string) => need<unknown>("share_device_open", { blob }),
+    /** Pass one to your other devices through a server, live, never stored. */
+    deviceRelay: (url: string, blob: string) => need<unknown>("share_device_relay", { url, blob }),
+    /** Listen for your other devices on your home network. */
+    peerListen: () => need<{ port: number; addrs: string[] }>("peer_listen"),
+    /** Send one straight to another of your devices on your home network. */
+    peerSend: (addr: string, port: number, blob: string) => need<void>("peer_send", { addr, port, blob }),
     /** Keep a live change stream open to each of these servers (and close the others). */
     watch: (urls: string[]) => need<void>("share_watch", { urls }),
     pins: () => need<Record<string, KeyPin>>("share_pins"),

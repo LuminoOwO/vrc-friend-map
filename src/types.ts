@@ -411,6 +411,8 @@ export interface ServerInfoLite {
   hiddenRecipients?: boolean;
   /** The server can tell the app about changes over one open connection. */
   liveChanges?: boolean;
+  /** The server passes messages between your own devices live. */
+  deviceRelay?: boolean;
 }
 
 export interface ShareServer {

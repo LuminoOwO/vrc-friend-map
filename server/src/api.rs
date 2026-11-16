@@ -35,12 +35,26 @@ pub struct App {
     pub admins: crate::admins::Admins,
     pub bans: crate::bans::Bans,
     pub cache: crate::cache::Cache,
-    /// Item changes, for the open event streams (`/v1/events`).
-    pub changes: tokio::sync::broadcast::Sender<Change>,
+    /// Item changes and messages between someone's own devices, for the open
+    /// event streams (`/v1/events`).
+    pub changes: tokio::sync::broadcast::Sender<Signal>,
     streams: std::sync::atomic::AtomicUsize,
     /// Set when the server stops, so open event streams end (graceful shutdown waits for them).
     pub closing: tokio::sync::watch::Sender<bool>,
 }
+
+/// What the open event streams pass on.
+#[derive(Clone, Debug)]
+pub enum Signal {
+    Change(Change),
+    /// A sealed message from one of `user`'s devices to their others. Never stored.
+    Peer { user: String, blob: Arc<String> },
+}
+
+/// Messages between your own devices up to this size always go through (devices
+/// finding each other); bigger ones only with `[access] relay`.
+const SMALL_SIGNAL: usize = 8 * 1024;
+const MAX_SIGNAL: usize = 4 * 1024 * 1024;
 
 /// An item was stored or removed.
 #[derive(Clone, Debug)]
@@ -76,7 +90,7 @@ impl App {
             admins: crate::admins::Admins::new(&dir),
             bans: crate::bans::Bans::new(&dir),
             cache: crate::cache::Cache::new(&dir),
-            changes: tokio::sync::broadcast::channel(256).0,
+            changes: tokio::sync::broadcast::channel(64).0,
             streams: std::sync::atomic::AtomicUsize::new(0),
             closing: tokio::sync::watch::channel(false).0,
         })
@@ -139,7 +153,7 @@ impl App {
             kinds: KINDS.iter().map(|k| k.to_string()).collect(),
             logger: LoggerInfo { enabled: cfg.logger.enabled, paired: self.logger.owner().is_some(), owner: None },
             motd: cfg.server.motd.clone(),
-            features: vec!["hidden-recipients".into(), "live-changes".into()],
+            features: vec!["hidden-recipients".into(), "live-changes".into(), "device-relay".into()],
         }
     }
 }
@@ -245,6 +259,7 @@ pub fn router(app: Arc<App>) -> Router {
         .route("/v1/inbox", get(inbox))
         .route("/v1/hidden", post(hidden))
         .route("/v1/events", get(events))
+        .route("/v1/devices/signal", post(device_signal))
         .route("/v1/logger/pair", post(logger_pair).delete(logger_unpair))
         .route("/v1/logger/status", get(logger_status))
         .route("/v1/logger/stats", get(logger_stats))
@@ -493,7 +508,7 @@ async fn put_item(
     store.put_item(&env).map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e))?;
     drop(store);
     recipients.extend(env.recipients.iter().cloned());
-    let _ = app.changes.send(Change { owner: user.clone(), kind: kind.clone(), recipients, hidden: env.hidden() });
+    let _ = app.changes.send(Signal::Change(Change { owner: user.clone(), kind: kind.clone(), recipients, hidden: env.hidden() }));
     Ok(Json(json!({ "ok": true, "sealed": sealed, "recipients": env.recipients.len() })).into_response())
 }
 
@@ -512,7 +527,7 @@ async fn delete_item(
         (store.delete_item(&user, &kind), old)
     };
     if let Some(m) = old {
-        let _ = app.changes.send(Change { owner: user.clone(), kind: kind.clone(), recipients: m.recipients, hidden: m.hidden });
+        let _ = app.changes.send(Signal::Change(Change { owner: user.clone(), kind: kind.clone(), recipients: m.recipients, hidden: m.hidden }));
     }
     Ok(Json(json!({ "ok": true, "removed": removed })).into_response())
 }
@@ -611,6 +626,26 @@ async fn hidden(State(app): State<Arc<App>>, headers: HeaderMap, method: Method,
     Ok(Json(json!({ "items": items, "current": current, "identities": identities })).into_response())
 }
 
+#[derive(Deserialize)]
+struct SignalBody {
+    blob: String,
+}
+
+/// Pass a sealed message to your other devices' open event streams, right away
+/// and never stored. The server can't read it (it's sealed to your own key).
+async fn device_signal(State(app): State<Arc<App>>, headers: HeaderMap, method: Method, uri: Uri, body: Bytes) -> ApiResult {
+    let user = authed(&app, &headers, &method, &uri, &body)?;
+    let b: SignalBody = serde_json::from_slice(&body).map_err(|e| err(StatusCode::BAD_REQUEST, e.to_string()))?;
+    if b.blob.len() > MAX_SIGNAL || b.blob.chars().any(|c| c.is_control()) {
+        return Err(err(StatusCode::PAYLOAD_TOO_LARGE, "message too big"));
+    }
+    if b.blob.len() > SMALL_SIGNAL && !app.cfg().access.relay {
+        return Err(err(StatusCode::FORBIDDEN, "this server doesn't pass bigger messages between devices (they sync directly at home)"));
+    }
+    let heard = app.changes.send(Signal::Peer { user, blob: Arc::new(b.blob) }).unwrap_or(0);
+    Ok(Json(json!({ "ok": true, "streams": heard })).into_response())
+}
+
 /// One open connection instead of polling: `event: change` with `{owner, kind}`
 /// whenever something you can fetch changes (or a hidden item, which your app
 /// checks against your friends), a ping every 25 seconds, and `event: resync`
@@ -645,8 +680,13 @@ async fn events(State(app): State<Arc<App>>, headers: HeaderMap, method: Method,
                     return Some((Ok::<_, std::convert::Infallible>(Bytes::from_static(b": open\n\n")), (rx, tick, user, open, closing)));
                 }
                 msg = rx.recv() => match msg {
-                    Ok(c) if c.for_user(&user) => {
+                    Ok(Signal::Change(c)) if c.for_user(&user) => {
                         let line = format!("event: change\ndata: {}\n\n", json!({ "owner": c.owner, "kind": c.kind }));
+                        return Some((Ok(Bytes::from(line)), (rx, tick, user, open, closing)));
+                    }
+                    Ok(Signal::Peer { user: u, blob }) if u == user => {
+                        // The blob is base64 inside JSON: one line, nothing to escape.
+                        let line = format!("event: peer\ndata: {}\n\n", json!({ "blob": blob.as_str() }));
                         return Some((Ok(Bytes::from(line)), (rx, tick, user, open, closing)));
                     }
                     Ok(_) => continue,

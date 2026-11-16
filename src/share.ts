@@ -89,6 +89,7 @@ function lite(r: InfoResult): ServerInfoLite {
     maxItemBytes: i.max_item_bytes,
     hiddenRecipients: (i.features ?? []).includes("hidden-recipients"),
     liveChanges: (i.features ?? []).includes("live-changes"),
+    deviceRelay: (i.features ?? []).includes("device-relay"),
   };
 }
 
@@ -634,6 +635,36 @@ async function syncDevices(s: ShareServer): Promise<string> {
   return changedHere ? "Took over changes from your other devices." : "";
 }
 
+/** Your circles, notes and settings, as your other devices get them directly. */
+export function selfForDevices(): SelfPayload {
+  return { format: SELF_FORMAT, t: Date.now(), ...currentSelf() };
+}
+
+/**
+ * Merge what another of your devices sent directly. The common base stays the
+ * one from the last server sync (both devices descend from it), so the server's
+ * copy is merged correctly later. Returns whether to send the result back.
+ */
+export function takeSelfFromDevice(raw: unknown): { changedHere: boolean; sendBack: boolean } | null {
+  const theirs = readSelf(raw);
+  if (!theirs) return null;
+  const mine = currentSelf();
+  const merged = mergeSelf(getState().local.selfBase ?? null, mine, theirs);
+  const changedHere = !sameSelf(merged, mine);
+  if (changedHere) applySelf(merged);
+  return { changedHere, sendBack: !sameSelf(merged, theirs) };
+}
+
+/** Servers your devices can meet on: they relay, you sync your devices there, encrypted. */
+export function deviceServers(): ShareServer[] {
+  return getState().settings.sharing.servers.filter((s) => s.registered && s.syncMine && s.info?.deviceRelay && !s.keyChanged && serverSwitch(s).on);
+}
+
+/** A change from your own devices' data, compared without its timestamp. */
+export function selfKey(): string {
+  return JSON.stringify(currentSelf());
+}
+
 function currentSelf(): SelfData {
   const st = getState();
   return {
@@ -789,6 +820,8 @@ export function startSharing() {
   if (timer) return;
   nextAt = Date.now() + 20_000;
   void startWatching();
+  // Loaded lazily: peers.ts builds on this file.
+  void import("./peers").then((m) => m.startPeers());
   timer = setInterval(() => {
     const st = getState();
     const sh = st.settings.sharing;
@@ -813,4 +846,5 @@ export function stopSharing() {
   live.clear();
   watchedKey = "";
   if (isTauri) void backend.share.watch([]).catch(() => {});
+  void import("./peers").then((m) => m.stopPeers());
 }

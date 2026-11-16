@@ -204,11 +204,11 @@ can be designed around everything. Nothing here is started.
   owner's appeal / support email, shown in the app.
 - [x] **Less load on the server:** (Done except own devices syncing directly, which is the device-to-device item below.) "nothing changed" answers instead of resending, one open
   connection instead of polling, own devices syncing directly.
-- [ ] **Device-to-device sync:** devices on the same network find each other and sync directly
+- [x] **Device-to-device sync:** (Done: direct at home, else live through the server; directly across routers (hole punching) not done.) devices on the same network find each other and sync directly
   (circles, notes, settings, notification sounds); the server only says "your other device is
   online" over a light open connection. Outside the network: direct if the routers allow it,
   else passed through the server live without storing (server option).
-- [ ] **Notification sounds synced between your devices** through the device-to-device sync
+- [x] **Notification sounds synced between your devices** through the device-to-device sync
   (server setting whether it may pass them along; never stored there).
 - [x] **Settings sync, finer:** exists since 0.11 (*Also sync settings*); add choosing which
   groups of settings sync, and per-device overrides.

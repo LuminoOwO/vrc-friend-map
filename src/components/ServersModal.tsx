@@ -24,6 +24,7 @@ import type { EncDefault, EncPolicy, ShareServer } from "../types";
 import { Icon } from "./Icon";
 import { PeopleChooser } from "./PeopleChooser";
 import { newerVersion } from "../updates";
+import { knownPeers, onPeers, type Peer } from "../peers";
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -520,6 +521,7 @@ function ServerCard({ server: s }: { server: ShareServer }) {
                   Sync my circles and notes with my other devices
                 </label>
                 <Why text="Your circles, dismissed group suggestions, what you tell friends about people, and per-person notification rules (and settings, if that's on below) go to this server encrypted for your own key only, so the server can't read them. Your other devices pick them up when they sync; edits on both are merged. Your other devices need the same key: Copy key to another device. Age notes stay on each device." />
+                {s.syncMine && s.info?.deviceRelay && <DevicesHere url={s.url} />}
                 <label className="check">
                   <input type="checkbox" checked={s.shareRemovals} disabled={!s.shareFriends} onChange={(e) => set({ shareRemovals: e.target.checked })} />
                   My friend removals
@@ -693,4 +695,21 @@ export function ConfirmUnencrypted() {
 
 export function openServers() {
   setState({ serversOpen: true, settingsOpen: false });
+}
+
+/** Your other devices seen through this server, and how they're reached. */
+function DevicesHere({ url }: { url: string }) {
+  const [list, setList] = useState<Peer[]>(() => knownPeers());
+  useEffect(() => {
+    const update = () => setList(knownPeers());
+    return onPeers(update);
+  }, []);
+  const here = list.filter((p) => p.via === url || p.direct);
+  return (
+    <p className="small muted indent">
+      {here.length
+        ? `Live with ${here.map((p) => `${p.name} (${p.direct ? "directly, at home" : "through this server"})`).join(", ")}: changes and your own notification sounds go across within seconds.`
+        : "Your other devices sync live once they're online too (directly at home, else through this server). Sounds you added go along."}
+    </p>
+  );
 }

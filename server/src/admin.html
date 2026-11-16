@@ -129,6 +129,7 @@
           <label style="margin:0"><input type="checkbox" name="cacheAvatars" style="width:auto"> Avatars</label>
           <span class="dim" id="cacheStats"></span>
         </div>
+        <label style="margin:0"><input type="checkbox" name="relay" style="width:auto"> Pass sounds and settings between someone's own devices live (encrypted, never stored)</label>
         <label><input type="checkbox" name="totp" style="width:auto"> Admins need an authenticator code to log in (recommended)</label>
         <p class="hint" id="encHint"></p>
         <p class="hint warn" id="envNote"></p>
@@ -257,7 +258,7 @@ async function load() {
 
   const f = $("#settings");
   for (const k of ["name", "motd", "registration", "encryption", "maxItemKb", "maxUsers", "appealContact"]) f[k].value = s.settings[k] ?? "";
-  for (const k of ["loggerEnabled", "trustedProxy", "cacheWorlds", "cacheGroups", "cacheAvatars", "totp"]) f[k].checked = !!s.settings[k];
+  for (const k of ["loggerEnabled", "trustedProxy", "cacheWorlds", "cacheGroups", "cacheAvatars", "relay", "totp"]) f[k].checked = !!s.settings[k];
   const c = s.cache || {};
   $("#cacheStats").textContent = ["world", "group", "avatar"].map((k) => `${c[k]?.entries ?? 0} ${k}s`).join(" · ");
   $("#handOff").checked = !!s.settings.handOff;
@@ -294,7 +295,7 @@ $("#settings").onsubmit = async (e) => {
   await api("/admin/api/settings", { method: "POST", body: JSON.stringify({
     name: f.name.value, motd: f.motd.value, registration: f.registration.value, encryption: f.encryption.value, maxItemKb: +f.maxItemKb.value, maxUsers: +f.maxUsers.value,
     loggerEnabled: f.loggerEnabled.checked, appealContact: f.appealContact.value, trustedProxy: f.trustedProxy.checked,
-    cacheWorlds: f.cacheWorlds.checked, cacheGroups: f.cacheGroups.checked, cacheAvatars: f.cacheAvatars.checked, totp: f.totp.checked,
+    cacheWorlds: f.cacheWorlds.checked, cacheGroups: f.cacheGroups.checked, cacheAvatars: f.cacheAvatars.checked, relay: f.relay.checked, totp: f.totp.checked,
   }) });
   $("#saved").textContent = "Saved"; setTimeout(() => ($("#saved").textContent = ""), 2000);
   load();

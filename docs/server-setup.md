@@ -181,6 +181,10 @@ On the admin page you can set:
   on by default): apps that loaded a public world, group or avatar put it on the server, and the
   others read it from there first, so VRChat gets fewer requests. Only public data, and every
   entry expires within a week. Each person can still turn it off per server in the app.
+- **Pass messages between someone's own devices** (`relay`, on by default): with it, a
+  person's devices sync live through the server when they aren't on the same network, sounds
+  included. The messages are sealed to their own key and never stored. Off: only small ones
+  pass (so devices can still find each other), and devices sync directly at home.
 
 ### Who uses it, and bans
 

@@ -328,6 +328,7 @@ async fn status(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
             "loggerEnabled": cfg.logger.enabled, "listen": cfg.server.listen,
             "handOff": cfg.logger.hand_off, "appealContact": cfg.server.appeal_contact, "trustedProxy": cfg.server.trusted_proxy,
             "cacheWorlds": cfg.access.cache_worlds, "cacheGroups": cfg.access.cache_groups, "cacheAvatars": cfg.access.cache_avatars,
+            "relay": cfg.access.relay,
             "totp": cfg.admin.totp,
         },
         "cache": app.cache.stats(),
@@ -357,6 +358,7 @@ struct SettingsBody {
     cache_worlds: Option<bool>,
     cache_groups: Option<bool>,
     cache_avatars: Option<bool>,
+    relay: Option<bool>,
     totp: Option<bool>,
 }
 
@@ -419,6 +421,9 @@ async fn settings(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<So
         }
         if let Some(v) = b.cache_avatars {
             c.access.cache_avatars = v;
+        }
+        if let Some(v) = b.relay {
+            c.access.relay = v;
         }
         if let Some(v) = b.totp {
             c.admin.totp = v;

@@ -40,6 +40,9 @@ pub struct AccessSection {
     pub cache_worlds: bool,
     pub cache_groups: bool,
     pub cache_avatars: bool,
+    /// Pass bigger messages between someone's own devices live (sounds, settings), never storing them.
+    /// Off: only small ones (devices finding each other), and they sync directly at home.
+    pub relay: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -97,6 +100,7 @@ impl Default for AccessSection {
             cache_worlds: true,
             cache_groups: true,
             cache_avatars: true,
+            relay: true,
         }
     }
 }
@@ -245,6 +249,9 @@ max_users = {users}
 cache_worlds = {cw}
 cache_groups = {cg}
 cache_avatars = {ca}
+# Pass messages between a person's own devices live (encrypted; sounds, settings), never stored.
+# Off: only small ones, so devices can still find each other and sync directly at home.
+relay = {relay}
 
 [logger]
 # Log your friends' instance hopping 24/7 after you pair the app with this server.
@@ -277,6 +284,7 @@ totp = {totp}
             cw = a.cache_worlds,
             cg = a.cache_groups,
             ca = a.cache_avatars,
+            relay = a.relay,
             handoff = l.hand_off,
             totp = ad.totp,
             reg = q(match a.registration {
