@@ -4,9 +4,13 @@
 //! to where you run it) and prints the admin token. See server/README.md.
 
 mod admin;
+mod admins;
 mod api;
+mod bans;
+mod cache;
 mod config;
 mod logger;
+mod push;
 mod store;
 mod upgrade;
 
@@ -25,6 +29,7 @@ Commands:
   invite [--uses N] [--days N] [--note TEXT]
                       Make an invite code (default: 1 use, 7 days)
   pair-code           Make a one-time code to pair the app's logger (15 min)
+  admin-code          Make a one-time code to create the first admin account (30 min)
   status              Show accounts, shared items and the logger
   remove-user USR_ID  Delete an account and what it shared (e.g. a lost key)
   token [--new]       Show (or replace) the admin page token
@@ -56,6 +61,12 @@ fn main() {
         "pair-code" => with_config(&config_path).map(|(c, _)| {
             let code = logger::Logger::pair_code_file(&c.data_dir(&config_path).join("logger"));
             println!("Pairing code: {code}\nEnter it in the app within 15 minutes (Settings → Servers → this server → Pair logger).");
+        }),
+        "admin-code" => with_config(&config_path).map(|(c, _)| {
+            let dir = c.data_dir(&config_path);
+            let _ = std::fs::create_dir_all(&dir);
+            let code = admins::Admins::setup_code_file(&dir);
+            println!("Admin setup code: {code}\nOpen the admin page within 30 minutes and create your admin account with it.");
         }),
         "status" => cmd_status(&config_path),
         "healthcheck" => cmd_healthcheck(&config_path),

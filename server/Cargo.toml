@@ -25,6 +25,9 @@ futures-util = { version = "0.3", default-features = false, features = ["sink", 
 rand = "0.8"
 sha2 = "0.10"
 hex = "0.4"
+hmac = "0.12"
+sha1 = "0.10"
+aes-gcm = "0.10"
 
 [profile.release]
 opt-level = "s"

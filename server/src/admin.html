@@ -39,8 +39,28 @@
 <main>
   <section id="login">
     <h1>vfm-server admin</h1>
-    <p class="dim">Enter the admin token. It's the <code>token</code> line in <code>vfm-server.toml</code>, and the server prints it when it starts.</p>
-    <form id="loginForm"><input id="token" type="password" autocomplete="current-password" placeholder="Admin token"><div class="row" style="margin-top:10px"><button>Open</button><span id="loginErr" class="bad"></span></div></form>
+    <form id="accountForm" class="hidden">
+      <label>Name</label><input id="aName" autocomplete="username">
+      <label>Password</label><input id="aPass" type="password" autocomplete="current-password">
+      <label id="aCodeLabel">Code from your authenticator app</label><input id="aCode" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+      <div class="row" style="margin-top:10px"><button>Log in</button><span id="accErr" class="bad"></span></div>
+    </form>
+    <form id="setupForm" class="hidden">
+      <p class="dim">No admin account yet. Make the first one with a setup code: run <code>vfm-server admin-code</code> on the server (or use the admin token below).</p>
+      <label>Setup code</label><input id="sCode" autocomplete="off">
+      <label>Your admin name</label><input id="sName" autocomplete="username">
+      <label>Password (10+ characters)</label><input id="sPass" type="password" autocomplete="new-password">
+      <div class="row" style="margin-top:10px"><button>Create admin</button><span id="setupErr" class="bad"></span></div>
+    </form>
+    <div id="totpOut" class="hidden" style="margin-top:12px">
+      <p>Add this to your authenticator app (Ente Auth, Aegis, Google Authenticator…), then log in with the code it shows:</p>
+      <div class="big" style="font-size:18px;word-break:break-all" id="totpSecret"></div>
+      <p class="hint"><a id="totpLink" href="#">Open in authenticator app</a> (on a phone)</p>
+    </div>
+    <details style="margin-top:16px"><summary class="dim">Use the admin token instead</summary>
+      <p class="dim">It's the <code>token</code> line in <code>vfm-server.toml</code>; the server prints it when it starts.</p>
+      <form id="loginForm"><input id="token" type="password" autocomplete="off" placeholder="Admin token"><div class="row" style="margin-top:10px"><button>Open</button><span id="loginErr" class="bad"></span></div></form>
+    </details>
   </section>
 
   <div id="app" class="hidden">
@@ -67,6 +87,24 @@
     </section>
 
     <section>
+      <h2>This server's own VRChat login</h2>
+      <p class="hint">Your own account only. The server keeps VRChat's live connection around the clock: invites go to your phone (UnifiedPush) and friends' locations are logged with your PC off. VRChat may end the session now and then; log in here again then. Logging in from a server's address can make VRChat ask for an email code.</p>
+      <form id="vrcLogin" class="grid">
+        <div><label>VRChat username or email</label><input name="username" autocomplete="off"></div>
+        <div><label>Password</label><input name="password" type="password" autocomplete="off"></div>
+        <div style="align-self:end"><button>Log in to VRChat</button></div>
+      </form>
+      <form id="vrc2fa" class="row hidden" style="margin-top:10px">
+        <select name="method" style="width:auto"></select>
+        <input name="code" placeholder="2FA code" style="width:160px" autocomplete="one-time-code">
+        <button>Confirm</button>
+      </form>
+      <span id="vrcMsg"></span>
+      <label style="margin-top:12px"><input type="checkbox" id="handOff" style="width:auto"> Hand off to my PC: while my PC app runs (with its live connection), the server lets go and takes over again a few minutes after the PC app closes</label>
+      <p class="hint" id="pushHint"></p>
+    </section>
+
+    <section>
       <h2>Settings</h2>
       <form id="settings">
         <label>Server name</label><input name="name" maxlength="80">
@@ -82,6 +120,16 @@
           <div><label>Max accounts</label><input name="maxUsers" type="number" min="1"></div>
         </div>
         <label><input type="checkbox" name="loggerEnabled" style="width:auto"> Logger enabled</label>
+        <label>Appeal contact (shown to people you ban: email, Discord name…)</label><input name="appealContact" maxlength="200">
+        <label><input type="checkbox" name="trustedProxy" style="width:auto"> Behind a reverse proxy: take visitors' addresses from X-Forwarded-For</label>
+        <label>Shared cache of public VRChat info (fewer requests to VRChat)</label>
+        <div class="row">
+          <label style="margin:0"><input type="checkbox" name="cacheWorlds" style="width:auto"> Worlds</label>
+          <label style="margin:0"><input type="checkbox" name="cacheGroups" style="width:auto"> Groups</label>
+          <label style="margin:0"><input type="checkbox" name="cacheAvatars" style="width:auto"> Avatars</label>
+          <span class="dim" id="cacheStats"></span>
+        </div>
+        <label><input type="checkbox" name="totp" style="width:auto"> Admins need an authenticator code to log in (recommended)</label>
         <p class="hint" id="encHint"></p>
         <p class="hint warn" id="envNote"></p>
         <div class="row" style="margin-top:8px"><button>Save</button><span id="saved" class="ok"></span></div>
@@ -103,13 +151,37 @@
     <section>
       <h2>People</h2>
       <p class="hint">Only public keys are stored. Encrypted items can't be read here; you see who shares with how many people, and the size.</p>
-      <table><thead><tr><th>VRChat ID / key</th><th>Shared</th><th>Joined</th><th>Last seen</th><th></th></tr></thead><tbody id="users"></tbody></table>
+      <table><thead><tr><th>Who</th><th>Shared</th><th>Joined</th><th>Last seen</th><th></th></tr></thead><tbody id="users"></tbody></table>
+    </section>
+
+    <section>
+      <h2>Bans</h2>
+      <p class="hint">Banned people see the reason (if you give one) and your appeal contact in the app. IP bans are rough: home addresses change and mobile carriers share one address between many people.</p>
+      <form id="banForm" class="row">
+        <select name="kind" style="width:auto"><option value="user">Account (usr_…)</option><option value="ip">IP address</option></select>
+        <input name="value" placeholder="usr_… or 203.0.113.7" style="flex:2;min-width:200px">
+        <input name="reason" placeholder="Reason (optional, they see it)" style="flex:2;min-width:160px">
+        <button>Ban</button>
+      </form>
+      <table style="margin-top:10px"><thead><tr><th>Banned</th><th>Reason</th><th>When</th><th></th></tr></thead><tbody id="bans"></tbody></table>
+    </section>
+
+    <section>
+      <h2>Admins</h2>
+      <table><thead><tr><th>Name</th><th>Authenticator</th><th>Last login</th><th></th></tr></thead><tbody id="admins"></tbody></table>
+      <form id="adminForm" class="row" style="margin-top:10px">
+        <input name="name" placeholder="Name" style="flex:1;min-width:120px" autocomplete="off">
+        <input name="password" type="password" placeholder="Password (10+)" style="flex:1;min-width:140px" autocomplete="new-password">
+        <button>Add or reset</button>
+      </form>
+      <div id="adminTotp" class="hidden hint" style="margin-top:8px"></div>
     </section>
   </div>
 </main>
 <script>
 const $ = (s) => document.querySelector(s);
 let token = sessionStorage.getItem("vfm-admin") || "";
+let session = sessionStorage.getItem("vfm-admin-session") || "";
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const when = (t) => (t ? new Date(t * 1000).toLocaleString() : "–");
 const ago = (t) => { if (!t) return "never"; const s = Date.now() / 1000 - t; if (s < 90) return "just now"; if (s < 5400) return Math.round(s / 60) + " min ago"; if (s < 129600) return Math.round(s / 3600) + " h ago"; return Math.round(s / 86400) + " days ago"; };
@@ -117,14 +189,39 @@ const kb = (b) => (b > 1024 * 1024 ? (b / 1048576).toFixed(1) + " MB" : Math.max
 const ENC = { "force-off": "Uploads must be readable. The app warns people before every upload that the server can read their data.", optional: "People choose; the switch starts off.", recommended: "People choose; the switch starts on.", "force-on": "Only end-to-end encrypted uploads. This server can't read anything people share." };
 
 async function api(path, opts = {}) {
-  const res = await fetch(path, { ...opts, headers: { "x-admin-token": token, "content-type": "application/json", ...(opts.headers || {}) } });
-  if (res.status === 401) { lock("Wrong token"); throw new Error("401"); }
+  const res = await fetch(path, { ...opts, headers: { "x-admin-token": token, "x-admin-session": session, "content-type": "application/json", ...(opts.headers || {}) } });
+  if (res.status === 401 && !path.endsWith("/login")) { lock("Please log in"); throw new Error("401"); }
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || res.statusText);
   return data;
 }
 
-function lock(msg) { token = ""; sessionStorage.removeItem("vfm-admin"); $("#app").classList.add("hidden"); $("#login").classList.remove("hidden"); $("#loginErr").textContent = msg || ""; }
+function lock(msg) {
+  if (session) fetch("/admin/api/logout", { method: "POST", headers: { "x-admin-session": session } }).catch(() => {});
+  token = ""; session = ""; sessionStorage.removeItem("vfm-admin"); sessionStorage.removeItem("vfm-admin-session");
+  $("#app").classList.add("hidden"); $("#login").classList.remove("hidden"); $("#loginErr").textContent = msg || ""; $("#accErr").textContent = msg || "";
+  fetch("/admin/api/auth").then((r) => r.json()).then((a) => {
+    $("#accountForm").classList.toggle("hidden", !a.admins);
+    $("#setupForm").classList.toggle("hidden", !!a.admins);
+    $("#aCodeLabel").textContent = a.totp ? "Code from your authenticator app" : "Code from your authenticator app (if you set one up)";
+  }).catch(() => {});
+}
+$("#accountForm").onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api("/admin/api/login", { method: "POST", body: JSON.stringify({ name: $("#aName").value.trim(), password: $("#aPass").value, code: $("#aCode").value.trim() }) });
+    session = r.session; sessionStorage.setItem("vfm-admin-session", session); $("#aPass").value = ""; $("#aCode").value = "";
+    await load();
+  } catch (err) { $("#accErr").textContent = err.message; }
+};
+$("#setupForm").onsubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const r = await api("/admin/api/setup", { method: "POST", body: JSON.stringify({ setup_code: $("#sCode").value.trim(), name: $("#sName").value.trim(), password: $("#sPass").value }) });
+    $("#setupForm").classList.add("hidden"); $("#accountForm").classList.remove("hidden"); $("#aName").value = $("#sName").value.trim();
+    if (r.secret) { $("#totpSecret").textContent = r.secret; $("#totpLink").href = r.otpauth; $("#totpOut").classList.remove("hidden"); }
+  } catch (err) { $("#setupErr").textContent = err.message; }
+};
 
 $("#loginForm").onsubmit = async (e) => { e.preventDefault(); token = $("#token").value.trim(); try { await load(); sessionStorage.setItem("vfm-admin", token); } catch {} };
 $("#logout").onclick = () => lock("");
@@ -159,8 +256,18 @@ async function load() {
   $("#forgetBtn").classList.toggle("hidden", !L.paired);
 
   const f = $("#settings");
-  for (const k of ["name", "motd", "registration", "encryption", "maxItemKb", "maxUsers"]) f[k].value = s.settings[k];
-  f.loggerEnabled.checked = s.settings.loggerEnabled;
+  for (const k of ["name", "motd", "registration", "encryption", "maxItemKb", "maxUsers", "appealContact"]) f[k].value = s.settings[k] ?? "";
+  for (const k of ["loggerEnabled", "trustedProxy", "cacheWorlds", "cacheGroups", "cacheAvatars", "totp"]) f[k].checked = !!s.settings[k];
+  const c = s.cache || {};
+  $("#cacheStats").textContent = ["world", "group", "avatar"].map((k) => `${c[k]?.entries ?? 0} ${k}s`).join(" · ");
+  $("#handOff").checked = !!s.settings.handOff;
+  $("#pushHint").textContent = L.paired ? `${L.handedOff ? "Handed off to your PC right now. " : ""}Phones taking pushes: ${L.pushTargets ?? 0} (set up in the app on the phone: Settings → Phone in the background → Push).${L.waitingFor2fa ? " A login is waiting for its 2FA code." : ""}` : "";
+  const b = s.bans || { users: {}, ips: {} };
+  const banRows = [...Object.entries(b.users).map(([v, x]) => ["user", v, x]), ...Object.entries(b.ips).map(([v, x]) => ["ip", v, x])];
+  $("#bans").innerHTML = banRows.map(([k, v, x]) => `<tr><td class="mono">${esc(v)} <span class="pill">${k === "ip" ? "IP" : "account"}</span></td><td>${esc(x.reason) || '<span class="dim">no reason</span>'}</td><td>${ago(x.t)}${x.by ? ` <span class="dim">by ${esc(x.by)}</span>` : ""}</td><td><button class="ghost" data-unban="${k}/${esc(v)}">Unban</button></td></tr>`).join("") || `<tr><td colspan=4 class="dim">Nobody is banned.</td></tr>`;
+  api("/admin/api/admins").then((a) => {
+    $("#admins").innerHTML = a.admins.map((x) => `<tr><td>${esc(x.name)}${x.name === a.me ? ' <span class="pill">you</span>' : ""}</td><td>${x.totp ? '<span class="ok">set up</span>' : '<span class="warn">none</span>'}</td><td>${ago(x.lastLogin)}</td><td>${x.name === a.me ? "" : `<button class="danger" data-admin="${esc(x.name)}">Remove</button>`}</td></tr>`).join("") || `<tr><td colspan=4 class="dim">No admin accounts yet (you're using the admin token).</td></tr>`;
+  }).catch(() => {});
   // Fields fixed by VFM_* environment variables (container setups).
   const ENV = { name: "VFM_NAME", motd: "VFM_MOTD", registration: "VFM_REGISTRATION", encryption: "VFM_ENCRYPTION", maxItemKb: "VFM_MAX_ITEM_KB", maxUsers: "VFM_MAX_USERS", loggerEnabled: "VFM_LOGGER" };
   for (const [k, v] of Object.entries(ENV)) {
@@ -172,17 +279,23 @@ async function load() {
   $("#encHint").textContent = ENC[f.encryption.value];
 
   $("#invites").innerHTML = Object.entries(s.invites).map(([code, i]) => `<tr><td class="mono">${esc(code)}</td><td>${i.uses_left}</td><td>${i.expires ? when(i.expires) : "never"}</td><td>${esc(i.note)}</td><td><button class="danger" data-inv="${esc(code)}">Delete</button></td></tr>`).join("") || `<tr><td colspan=5 class="dim">No open invite codes.</td></tr>`;
-  $("#users").innerHTML = s.users.map((u) => `<tr><td><div class="mono">${esc(u.id)}</div><div class="dim mono">${esc(u.fingerprint)}</div></td>
+  $("#users").innerHTML = s.users.map((u) => `<tr><td>${u.name ? `<b>${esc(u.name)}</b>` : ""}${u.banned != null ? ' <span class="pill bad">banned</span>' : ""}<div class="mono">${esc(u.id)}</div><div class="dim mono">${esc(u.fingerprint)}</div><div class="dim">${esc(u.app || "")}${u.lastIp ? ` · ${esc(u.lastIp)}` : ""} · ${kb(u.bytes || 0)} stored</div></td>
       <td>${u.items.map((i) => `<div>${esc(i.kind)} <span class="pill ${i.sealed ? "ok" : "warn"}">${i.sealed ? "encrypted" : "readable"}</span> <span class="dim">→ ${i.recipients} · ${kb(i.bytes)} · ${ago(i.created)}</span></div>`).join("") || `<span class="dim">nothing</span>`}</td>
       <td>${ago(u.registered)}${u.invite ? `<div class="dim mono">${esc(u.invite)}</div>` : ""}</td><td>${ago(u.lastSeen)}</td>
-      <td><button class="danger" data-user="${esc(u.id)}" title="Delete the account and what it shared. They can sign up again with a new key.">Remove</button></td></tr>`).join("") || `<tr><td colspan=5 class="dim">Nobody yet.</td></tr>`;
+      <td><button class="danger" data-user="${esc(u.id)}" title="Delete the account and what it shared. They can sign up again with a new key.">Remove</button>
+        <button class="danger" data-ban="${esc(u.id)}" title="Ban this account (and delete what it shared)">Ban</button>
+        ${u.lastIp ? `<button class="ghost" data-banip="${esc(u.lastIp)}" title="Ban the address they last used">Ban IP</button>` : ""}</td></tr>`).join("") || `<tr><td colspan=5 class="dim">Nobody yet.</td></tr>`;
 }
 
 $("#settings").encryption.onchange = (e) => ($("#encHint").textContent = ENC[e.target.value]);
 $("#settings").onsubmit = async (e) => {
   e.preventDefault();
   const f = e.target;
-  await api("/admin/api/settings", { method: "POST", body: JSON.stringify({ name: f.name.value, motd: f.motd.value, registration: f.registration.value, encryption: f.encryption.value, maxItemKb: +f.maxItemKb.value, maxUsers: +f.maxUsers.value, loggerEnabled: f.loggerEnabled.checked }) });
+  await api("/admin/api/settings", { method: "POST", body: JSON.stringify({
+    name: f.name.value, motd: f.motd.value, registration: f.registration.value, encryption: f.encryption.value, maxItemKb: +f.maxItemKb.value, maxUsers: +f.maxUsers.value,
+    loggerEnabled: f.loggerEnabled.checked, appealContact: f.appealContact.value, trustedProxy: f.trustedProxy.checked,
+    cacheWorlds: f.cacheWorlds.checked, cacheGroups: f.cacheGroups.checked, cacheAvatars: f.cacheAvatars.checked, totp: f.totp.checked,
+  }) });
   $("#saved").textContent = "Saved"; setTimeout(() => ($("#saved").textContent = ""), 2000);
   load();
 };
@@ -196,6 +309,14 @@ $("#inviteForm").onsubmit = async (e) => {
 document.addEventListener("click", async (e) => {
   const inv = e.target.closest("[data-inv]");
   if (inv) { await api("/admin/api/invites/" + encodeURIComponent(inv.dataset.inv), { method: "DELETE" }); load(); }
+  const unban = e.target.closest("[data-unban]");
+  if (unban) { const [k, ...v] = unban.dataset.unban.split("/"); await api(`/admin/api/bans/${k}/${encodeURIComponent(v.join("/"))}`, { method: "DELETE" }); load(); }
+  const ban = e.target.closest("[data-ban]");
+  if (ban) { const reason = prompt(`Ban ${ban.dataset.ban}? Reason they'll see (optional):`); if (reason !== null) { await api("/admin/api/bans", { method: "POST", body: JSON.stringify({ kind: "user", value: ban.dataset.ban, reason, delete: true }) }); load(); } }
+  const banip = e.target.closest("[data-banip]");
+  if (banip) { const reason = prompt(`Ban the address ${banip.dataset.banip}? Everyone using it is shut out. Reason (optional):`); if (reason !== null) { await api("/admin/api/bans", { method: "POST", body: JSON.stringify({ kind: "ip", value: banip.dataset.banip, reason }) }); load(); } }
+  const adm = e.target.closest("[data-admin]");
+  if (adm && confirm(`Remove the admin ${adm.dataset.admin}?`)) { await api("/admin/api/admins/" + encodeURIComponent(adm.dataset.admin), { method: "DELETE" }); load(); }
   const user = e.target.closest("[data-user]");
   if (user && confirm(`Remove ${user.dataset.user} and everything they shared here?`)) { await api("/admin/api/users/" + encodeURIComponent(user.dataset.user), { method: "DELETE" }); load(); }
 });
@@ -203,7 +324,48 @@ $("#pairBtn").onclick = async () => { const r = await api("/admin/api/pair-code"
 $("#unpairBtn").onclick = async () => { if (confirm("Stop logging and unpair? The history so far is kept.")) { await api("/admin/api/logger/unpair", { method: "POST", body: "{}" }); load(); } };
 $("#forgetBtn").onclick = async () => { if (confirm("Unpair and delete all logged history?")) { await api("/admin/api/logger/unpair", { method: "POST", body: '{"forget":true}' }); load(); } };
 
-if (token) load().catch(() => {});
+$("#banForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  try { await api("/admin/api/bans", { method: "POST", body: JSON.stringify({ kind: f.kind.value, value: f.value.value.trim(), reason: f.reason.value }) }); f.value.value = ""; f.reason.value = ""; load(); } catch (err) { alert(err.message); }
+};
+$("#adminForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  try {
+    const r = await api("/admin/api/admins", { method: "POST", body: JSON.stringify({ name: f.name.value.trim(), password: f.password.value }) });
+    $("#adminTotp").innerHTML = r.secret ? `Authenticator key for ${esc(f.name.value)}: <b class="mono">${esc(r.secret)}</b> (<a href="${esc(r.otpauth)}">open in app</a>). Show it only once to that person.` : "Saved.";
+    $("#adminTotp").classList.remove("hidden"); f.password.value = ""; load();
+  } catch (err) { alert(err.message); }
+};
+$("#handOff").onchange = async (e) => { await api("/admin/api/settings", { method: "POST", body: JSON.stringify({ handOff: e.target.checked }) }); load(); };
+$("#vrcLogin").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  $("#vrcMsg").textContent = "Logging in…"; $("#vrcMsg").className = "dim";
+  try {
+    const r = await api("/admin/api/vrchat/login", { method: "POST", body: JSON.stringify({ username: f.username.value, password: f.password.value }) });
+    f.password.value = "";
+    if (r.needs && r.needs.length) {
+      const labels = { totp: "Authenticator code", otp: "Recovery code", emailOtp: "Code from email" };
+      $("#vrc2fa").method.innerHTML = r.needs.map((m) => `<option value="${esc(m)}">${esc(labels[m] || m)}</option>`).join("");
+      $("#vrc2fa").classList.remove("hidden");
+      $("#vrcMsg").textContent = "VRChat asks for a 2FA code."; $("#vrcMsg").className = "warn";
+    } else { $("#vrcMsg").textContent = "Logged in. The server connects now."; $("#vrcMsg").className = "ok"; load(); }
+  } catch (err) { $("#vrcMsg").textContent = err.message; $("#vrcMsg").className = "bad"; }
+};
+$("#vrc2fa").onsubmit = async (e) => {
+  e.preventDefault();
+  const f = e.target;
+  try {
+    await api("/admin/api/vrchat/2fa", { method: "POST", body: JSON.stringify({ method: f.method.value, code: f.code.value }) });
+    f.code.value = ""; f.classList.add("hidden");
+    $("#vrcMsg").textContent = "Logged in. The server connects now."; $("#vrcMsg").className = "ok"; load();
+  } catch (err) { $("#vrcMsg").textContent = err.message; $("#vrcMsg").className = "bad"; }
+};
+
+if (token || session) load().catch(() => {});
+else lock("");
 </script>
 </body>
 </html>

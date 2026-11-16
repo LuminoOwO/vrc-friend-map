@@ -7,6 +7,7 @@ import { notifyEvent, removedByMe } from "./notifications";
 import { backend, type ApiResponse } from "./backend";
 import { celebrateNewFriends } from "./notify";
 import { noteNames, sawOnline } from "./history";
+import { cacheGet, cachePut } from "./serverlink";
 import { describeError, httpLine, isNetworkError, logSync, wasInterrupted, whenVisible } from "./synclog";
 import { getState, resetSync, setState, setSync, showToast, updateCache, updateLocal } from "./store";
 import type { Friend, Me, MutualInfo, Presence, UserDetail } from "./types";
@@ -391,6 +392,15 @@ export async function freshenProfile(id: string) {
 const worldLoading = new Set<string>();
 
 /** World name/picture for a location, cached a week. */
+/** Only what VRChat shows everyone about a world (for the shared cache). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function publicWorld(w: any) {
+  const keep = ["id", "name", "description", "authorId", "authorName", "imageUrl", "thumbnailImageUrl", "capacity", "recommendedCapacity", "favorites", "visits", "tags", "created_at", "updated_at", "releaseStatus", "unityPackages"];
+  const out: Record<string, unknown> = {};
+  for (const k of keep) if (k in w) out[k] = k === "unityPackages" ? (w[k] ?? []).map((p: { platform?: string }) => ({ platform: p.platform })) : w[k];
+  return out;
+}
+
 export async function loadWorld(worldId: string) {
   const s = getState();
   if (s.demo || !worldId.startsWith("wrld_") || worldLoading.has(worldId)) return;
@@ -398,9 +408,16 @@ export async function loadWorld(worldId: string) {
   if (have && Date.now() - have.fetchedAt < 7 * 86400000) return;
   worldLoading.add(worldId);
   try {
-    const r = await backend.vrcGet(`/worlds/${encodeURIComponent(worldId)}`);
-    if (r.status !== 200 || !r.data?.id) return;
-    const w = r.data;
+    // Your servers' shared cache first (public info, a week at most).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let w = await cacheGet<any>("world", worldId, 7 * 864e5);
+    if (!w) {
+      const r = await backend.vrcGet(`/worlds/${encodeURIComponent(worldId)}`);
+      if (r.status !== 200 || !r.data?.id) return;
+      w = r.data;
+      cachePut("world", worldId, publicWorld(r.data));
+    }
+    if (!w) return;
     const info = { id: worldId, name: String(w.name ?? "World"), imageUrl: w.imageUrl, thumbnailImageUrl: w.thumbnailImageUrl, capacity: w.capacity, authorName: w.authorName, fetchedAt: Date.now() };
     updateCache((c) => ({ ...c, worlds: { ...(c.worlds ?? {}), [worldId]: info } }));
   } catch {

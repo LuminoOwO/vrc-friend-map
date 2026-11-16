@@ -20,7 +20,22 @@ import type { BlockReason, Circle, InviteTemplate, LocalData, NotifyPerson, Sett
 export const SELF_FORMAT = "vrc-friend-map/self-v1";
 
 /** Settings that follow you to other devices (when "Also sync settings" is on). */
-export const SYNCED_SETTINGS = ["theme", "catAccent", "map", "groups", "age", "people", "closeAction", "bios"] as const;
+export const SYNCED_SETTINGS = ["theme", "catAccent", "map", "groups", "age", "people", "closeAction", "bios", "notesLine", "insights", "ui"] as const;
+
+/** Groups of settings you can sync or keep per device (Servers → Also sync settings). */
+export const SETTING_GROUPS: { id: string; label: string; keys: (typeof SYNCED_SETTINGS)[number][] }[] = [
+  { id: "look", label: "Look (theme, colors, interface)", keys: ["theme", "catAccent", "ui"] },
+  { id: "map", label: "Map options", keys: ["map"] },
+  { id: "groups", label: "Group detection", keys: ["groups"] },
+  { id: "people", label: "People (age hints, bios, red flags, insights)", keys: ["age", "people", "bios", "notesLine", "insights"] },
+  { id: "window", label: "Closing the window", keys: ["closeAction"] },
+];
+
+/** The settings keys that sync, given the chosen groups and this device's exceptions. */
+export function syncedKeys(groups: string[], localOnly: string[]): (typeof SYNCED_SETTINGS)[number][] {
+  const on = SETTING_GROUPS.filter((g) => (!groups.length || groups.includes(g.id)) && !localOnly.includes(g.id));
+  return on.flatMap((g) => g.keys);
+}
 type SyncedSettings = Partial<Pick<Settings, (typeof SYNCED_SETTINGS)[number]>>;
 
 export interface SelfData {
@@ -158,7 +173,7 @@ export function sameSelf(a: SelfData, b: SelfData): boolean {
 /** Settings without the per-device parts. */
 export function syncedSettings(s: Settings): SyncedSettings {
   const out: Record<string, unknown> = {};
-  for (const k of SYNCED_SETTINGS) out[k] = s[k];
+  for (const k of syncedKeys(s.sharing.syncGroups ?? [], s.sharing.localOnly ?? [])) out[k] = s[k];
   return JSON.parse(JSON.stringify(out)) as SyncedSettings;
 }
 

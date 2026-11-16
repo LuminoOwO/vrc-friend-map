@@ -8,7 +8,7 @@ import { mergeSharedCircles, outgoingSharedCircles, validSharedCircle } from "./
 import { backend, type InfoResult, type PublishResult } from "./backend";
 import { getState, newServer, normalizeSettings, setState, showToast, updateLocal, updateServer, updateSettings, updateSharing } from "./store";
 import { combineStats } from "./together";
-import { mergeSelf, readSelf, sameSelf, SELF_FORMAT, SYNCED_SETTINGS, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
+import { mergeSelf, readSelf, sameSelf, SELF_FORMAT, syncedKeys, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
 import { selectedIds } from "./selection";
 import type { Settings, EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareNote, ShareServer, SharedData, SharedRemoval, SharedCircle } from "./types";
 
@@ -457,7 +457,9 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
     const sw = serverSwitch(s);
     const wanted = s.upload ? (["friends", "activity"] as const).filter((k) => (k === "friends" ? s!.shareFriends : s!.shareActivity)) : [];
     const blocked = wanted.length > 0 && sw.warn && !s.ackUnencrypted;
-    if (blocked) {
+    if (wanted.length > 0 && !sw.on && getState().settings.sharing.neverUnencrypted) {
+      notes.push("Nothing uploaded: this server would get it unencrypted, and you chose to never send anything unencrypted.");
+    } else if (blocked) {
       if (opts.manual) {
         // Ask; the dialog calls syncServer again after you confirm.
         setState({ confirmUnencrypted: id });
@@ -634,7 +636,8 @@ function applySelf(d: SelfData) {
   });
   // Only the synced parts change; everything per device stays as it is.
   const patch: Partial<Settings> = { notify: { ...st.settings.notify, people: merged.notify.people } };
-  if (st.settings.sharing.syncSettings && d.settings) for (const k of SYNCED_SETTINGS) (patch as Record<string, unknown>)[k] = merged[k];
+  if (st.settings.sharing.syncSettings && d.settings)
+    for (const k of syncedKeys(st.settings.sharing.syncGroups, st.settings.sharing.localOnly)) if (k in d.settings) (patch as Record<string, unknown>)[k] = merged[k];
   updateSettings(patch);
 }
 

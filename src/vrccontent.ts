@@ -5,6 +5,8 @@
 import { backend, type ApiResponse } from "./backend";
 import { getState, updateCache } from "./store";
 import { errorText, vrcWrite } from "./writes";
+import { cacheGet, cachePut } from "./serverlink";
+import { publicWorld } from "./sync";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Json = any;
@@ -99,6 +101,7 @@ export interface WorldFull {
 export async function worldFull(id: string): Promise<WorldFull | null> {
   const d = await get(`/worlds/${id}`);
   if (!d) return null;
+  cachePut("world", id, publicWorld(d));
   updateCache((c) => ({ ...c, worlds: { ...(c.worlds ?? {}), [id]: { id, name: d.name, imageUrl: d.imageUrl, thumbnailImageUrl: d.thumbnailImageUrl, capacity: d.capacity, authorName: d.authorName, fetchedAt: Date.now() } } }));
   return {
     id,
@@ -402,7 +405,10 @@ export async function favoriteAvatars(): Promise<AvatarInfo[]> {
 }
 
 export async function avatar(id: string): Promise<AvatarInfo | null> {
+  const cached = await cacheGet("avatar", id, 864e5);
+  if (cached) return avatarOf(cached);
   const d = await get(`/avatars/${id}`);
+  if (d && d.releaseStatus === "public") cachePut("avatar", id, d);
   return d ? avatarOf(d) : null;
 }
 

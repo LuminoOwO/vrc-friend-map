@@ -496,3 +496,43 @@ export function PersonLog({ id, name }: { id: string; name: string }) {
     </div>
   );
 }
+
+/** Both people's encryption keys as one code to compare (in person, in VRChat): same code = nobody swapped a key. */
+export function SafetyCode({ id, name }: { id: string; name: string }) {
+  const pin = useApp((s) => s.keyPins?.[id]);
+  const [mine, setMine] = useState<string | null>(null);
+  const [code, setCode] = useState("");
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    void import("../backend").then(({ backend }) => backend.share.identity().then((m) => setMine(m.fingerprint), () => setMine(null)));
+  }, []);
+  useEffect(() => {
+    if (!pin || !mine) return;
+    const [a, b] = [mine, pin.fingerprint].sort();
+    void crypto.subtle.digest("SHA-256", new TextEncoder().encode(`vfm-safety|${a}|${b}`)).then((h) => {
+      const bytes = new Uint8Array(h);
+      const groups: string[] = [];
+      for (let i = 0; i < 6; i++) groups.push(String(((bytes[i * 3] << 16) | (bytes[i * 3 + 1] << 8) | bytes[i * 3 + 2]) % 100000).padStart(5, "0"));
+      setCode(groups.join(" "));
+    });
+  }, [pin, mine]);
+  if (!pin || !mine) return null;
+  return (
+    <div className="profile-block" data-flip-fade>
+      <button className="age-head" onClick={() => setOpen(!open)} aria-expanded={open}>
+        <h3>Encryption</h3>
+        <span className="age-headline">{pin.offered ? "their key changed: check the code" : "compare a code to be sure"}</span>
+        <Icon name={open ? "chevron-up" : "chevron-down"} size={14} />
+      </button>
+      {open && (
+        <>
+          <p className="safety-code">{code}</p>
+          <p className="small muted">
+            Ask {name} to open your profile in their app: if they see the same code, what you share with each other can't be read or swapped by a
+            server in between. It changes only if one of you gets a new key.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}

@@ -21,6 +21,8 @@ pub struct ShareState {
     dir: PathBuf,
     http: reqwest::Client,
     lock: Mutex<()>,
+    /// Your VRChat display name, sent along so the server owner's user list shows it.
+    pub name: std::sync::Mutex<String>,
 }
 
 #[derive(Default, Serialize, Deserialize)]
@@ -140,7 +142,7 @@ impl ShareState {
             .connect_timeout(Duration::from_secs(10))
             .build()
             .expect("http client");
-        ShareState { dir: data_dir.join("share"), http, lock: Mutex::new(()) }
+        ShareState { dir: data_dir.join("share"), http, lock: Mutex::new(()), name: std::sync::Mutex::new(String::new()) }
     }
 
     fn read<T: for<'de> Deserialize<'de> + Default>(&self, name: &str) -> T {
@@ -199,6 +201,10 @@ impl ShareState {
         let body = body.unwrap_or_default();
         if let Some((id, user)) = signer {
             req = req.header("authorization", auth::sign_request(id, user, method.as_str(), path, &body, now()));
+            let name: String = self.name.lock().map(|n| n.chars().filter(|c| c.is_ascii_graphic() || *c == ' ').take(40).collect()).unwrap_or_default();
+            if !name.is_empty() {
+                req = req.header("x-vrc-name", name);
+            }
         }
         if !body.is_empty() {
             req = req.header("content-type", "application/json").body(body);
@@ -213,10 +219,29 @@ impl ShareState {
         let status = res.status();
         let v: Value = res.json().await.unwrap_or(Value::Null);
         if !status.is_success() {
+            if v.get("banned").and_then(Value::as_bool) == Some(true) {
+                let reason = v.get("reason").and_then(Value::as_str).filter(|r| !r.is_empty()).map(|r| format!(" Reason: {r}.")).unwrap_or_default();
+                let appeal = v.get("appeal").and_then(Value::as_str).filter(|r| !r.is_empty()).map(|r| format!(" To appeal: {r}.")).unwrap_or_default();
+                return Err(format!("You're banned from this server.{reason}{appeal}"));
+            }
             let msg = v.get("error").and_then(Value::as_str).map(str::to_string).unwrap_or_else(|| format!("server answered {status}"));
             return Err(msg);
         }
         Ok(v)
+    }
+
+    /// Small signed calls the UI makes directly: the shared cache, the logger's
+    /// heartbeat (hand-off) and push targets.
+    pub async fn call(&self, url: &str, user: &str, method: &str, path: &str, body: Option<Value>) -> Result<Value, String> {
+        const ALLOWED: &[&str] = &["/v1/cache/", "/v1/logger/heartbeat", "/v1/logger/push"];
+        if !ALLOWED.iter().any(|p| path.starts_with(p)) || path.contains("..") || path.contains('?') {
+            return Err("not allowed".into());
+        }
+        let url = normalize_url(url)?;
+        let id = self.identity(user).await?;
+        let method = reqwest::Method::from_bytes(method.as_bytes()).map_err(|e| e.to_string())?;
+        let body = body.map(|b| serde_json::to_vec(&b).unwrap_or_default());
+        self.send(&url, method, path, body, Some((&id, user))).await
     }
 
     pub async fn info(&self, raw_url: &str) -> Result<InfoResult, String> {

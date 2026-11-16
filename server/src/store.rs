@@ -58,6 +58,14 @@ pub struct UserRecord {
     pub last_seen: i64,
     #[serde(default)]
     pub invite: Option<String>,
+    /// Last address and app version seen (for the admin page).
+    #[serde(default)]
+    pub last_ip: String,
+    #[serde(default)]
+    pub last_ua: String,
+    /// VRChat display name the app sent along (cosmetic, for the admin page).
+    #[serde(default)]
+    pub name: String,
 }
 
 #[derive(Default, Serialize, Deserialize)]

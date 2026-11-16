@@ -22,6 +22,11 @@ pub struct ServerSection {
     pub motd: String,
     /// Where data lives; relative paths are next to the config file.
     pub data_dir: String,
+    /// Shown to banned people, so they can ask why or appeal (an email address, a Discord name…).
+    pub appeal_contact: String,
+    /// Behind a reverse proxy: take the visitor's address from X-Forwarded-For
+    /// (only when the request comes from this machine or the local network).
+    pub trusted_proxy: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -31,6 +36,10 @@ pub struct AccessSection {
     pub encryption: EncryptionPolicy,
     pub max_item_kb: usize,
     pub max_users: usize,
+    /// Shared cache of public VRChat info, per kind.
+    pub cache_worlds: bool,
+    pub cache_groups: bool,
+    pub cache_avatars: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -43,6 +52,8 @@ pub struct LoggerSection {
     pub contact: String,
     /// Keep the raw join/leave history (hops-YYYY-MM.jsonl), months. 0 = don't keep.
     pub keep_hops_months: u32,
+    /// Give the live connection to the owner's PC app while it runs, take it back when it's gone.
+    pub hand_off: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Copy)]
@@ -59,29 +70,46 @@ pub enum AdminAllow {
 pub struct AdminSection {
     pub allow: AdminAllow,
     pub token: String,
+    /// Admins need an authenticator code (TOTP) to log in.
+    pub totp: bool,
 }
 
 impl Default for ServerSection {
     fn default() -> Self {
-        Self { name: "VRC Friend Map server".into(), listen: "0.0.0.0:8787".into(), motd: String::new(), data_dir: "vfm-data".into() }
+        Self {
+            name: "VRC Friend Map server".into(),
+            listen: "0.0.0.0:8787".into(),
+            motd: String::new(),
+            data_dir: "vfm-data".into(),
+            appeal_contact: String::new(),
+            trusted_proxy: false,
+        }
     }
 }
 
 impl Default for AccessSection {
     fn default() -> Self {
-        Self { registration: Registration::Invite, encryption: EncryptionPolicy::Recommended, max_item_kb: 1024, max_users: 500 }
+        Self {
+            registration: Registration::Invite,
+            encryption: EncryptionPolicy::Recommended,
+            max_item_kb: 1024,
+            max_users: 500,
+            cache_worlds: true,
+            cache_groups: true,
+            cache_avatars: true,
+        }
     }
 }
 
 impl Default for LoggerSection {
     fn default() -> Self {
-        Self { enabled: true, resync_minutes: 30, contact: String::new(), keep_hops_months: 12 }
+        Self { enabled: true, resync_minutes: 30, contact: String::new(), keep_hops_months: 12, hand_off: true }
     }
 }
 
 impl Default for AdminSection {
     fn default() -> Self {
-        Self { allow: AdminAllow::Lan, token: String::new() }
+        Self { allow: AdminAllow::Lan, token: String::new(), totp: true }
     }
 }
 
@@ -195,6 +223,10 @@ listen = {listen}
 motd = {motd}
 # Folder for data, relative to this file.
 data_dir = {data}
+# Shown to people you ban, so they can ask why or appeal (email, Discord name…). Optional.
+appeal_contact = {appeal}
+# Behind a reverse proxy (Caddy, nginx…): read the visitor's address from X-Forwarded-For.
+trusted_proxy = {proxy}
 
 [access]
 # Who can create an account: "open", "invite" (needs a code: vfm-server invite) or "closed".
@@ -208,6 +240,11 @@ encryption = {enc}
 # Largest single upload (friend list / activity), in KB.
 max_item_kb = {kb}
 max_users = {users}
+# Shared cache of public VRChat info: apps put worlds / groups / avatars they loaded here and
+# read them from here first, so VRChat gets fewer requests. Only public data; a week at most.
+cache_worlds = {cw}
+cache_groups = {cg}
+cache_avatars = {ca}
 
 [logger]
 # Log your friends' instance hopping 24/7 after you pair the app with this server.
@@ -218,18 +255,30 @@ resync_minutes = {resync}
 contact = {contact}
 # Months of raw join/leave history to keep (0 = only keep the totals).
 keep_hops_months = {keep}
+# While the owner's PC app runs with its own live connection, the server lets go of
+# VRChat and takes over again a few minutes after the PC app is gone.
+hand_off = {handoff}
 
 [admin]
 # Admin page at http://<this machine>:<port>/admin
 #   "off", "local" (this machine only), "lan" (home network), "any"
 allow = {allow}
-# Needed to open the admin page. Keep it secret.
+# Opens the admin page and makes the first admin account. Keep it secret.
 token = {token}
+# Admin accounts need an authenticator code (Ente Auth, Aegis, Google Authenticator…).
+totp = {totp}
 "#,
             name = q(&s.name),
             listen = q(&s.listen),
             motd = q(&s.motd),
             data = q(&s.data_dir),
+            appeal = q(&s.appeal_contact),
+            proxy = s.trusted_proxy,
+            cw = a.cache_worlds,
+            cg = a.cache_groups,
+            ca = a.cache_avatars,
+            handoff = l.hand_off,
+            totp = ad.totp,
             reg = q(match a.registration {
                 Registration::Open => "open",
                 Registration::Invite => "invite",

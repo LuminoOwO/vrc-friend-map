@@ -221,6 +221,9 @@ export const defaultSharing = (): SharingSettings => ({
   intervalMin: 30,
   useShared: true,
   useLogger: true,
+  syncGroups: [],
+  localOnly: [],
+  neverUnencrypted: false,
   servers: [],
 });
 
@@ -803,6 +806,7 @@ function normalizeSharing(raw: unknown): SharingSettings {
             loggerOwner: bool(x.loggerOwner, false),
             ackUnencrypted: bool(x.ackUnencrypted, false),
             keyChanged: bool(x.keyChanged, false),
+            useCache: bool(x.useCache, true),
           };
         })
     : [];
@@ -815,6 +819,9 @@ function normalizeSharing(raw: unknown): SharingSettings {
     intervalMin: num(r.intervalMin, d.intervalMin, 10, 24 * 60),
     useShared: bool(r.useShared, d.useShared),
     useLogger: bool(r.useLogger, d.useLogger),
+    syncGroups: Array.isArray(r.syncGroups) ? r.syncGroups.filter((x: unknown) => typeof x === "string") : [],
+    localOnly: Array.isArray(r.localOnly) ? r.localOnly.filter((x: unknown) => typeof x === "string") : [],
+    neverUnencrypted: bool(r.neverUnencrypted, false),
     servers,
   };
 }

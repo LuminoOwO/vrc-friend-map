@@ -439,6 +439,8 @@ export interface ShareServer {
   shareBlocks: boolean;
   /** Share your own time zone, so friends see your local time. */
   shareTimezone: boolean;
+  /** Use this server's shared cache of public VRChat info (worlds, groups, avatars). */
+  useCache?: boolean;
   /** Sync your circles and notes with your other devices through this server (encrypted). */
   syncMine: boolean;
   /** Share your notes about people (adult vouches, "keep your distance"). */
@@ -478,6 +480,12 @@ export interface SharingSettings {
   useShared: boolean;
   /** Use your own loggers' totals for group suggestions. */
   useLogger: boolean;
+  /** Which groups of settings sync (when syncSettings is on); empty = all. */
+  syncGroups: string[];
+  /** Settings groups this device keeps to itself even when they sync elsewhere. */
+  localOnly: string[];
+  /** Never upload anything that isn't end-to-end encrypted, whatever a server allows. */
+  neverUnencrypted: boolean;
   servers: ShareServer[];
 }
 

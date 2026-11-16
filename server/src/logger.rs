@@ -112,6 +112,27 @@ struct Inner {
     hops: Vec<String>,
     last_tick: i64,
     last_save: i64,
+    /// The owner's PC app said it holds the live connection (hand-off), unix seconds.
+    pc_heartbeat: i64,
+    /// The connection was handed to the owner's PC.
+    handed_off: bool,
+    /// The owner's phones in push mode (UnifiedPush endpoint + key).
+    push: PushTargets,
+    /// A dashboard login waiting for its 2FA code.
+    pending: Option<Session>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Default)]
+pub struct PushTargets {
+    #[serde(default)]
+    pub targets: std::collections::BTreeMap<String, PushTarget>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct PushTarget {
+    pub endpoint: String,
+    pub key: String,
+    pub t: i64,
 }
 
 pub struct Logger {
@@ -122,6 +143,8 @@ pub struct Logger {
     ua: String,
     resync_secs: i64,
     keep_months: u32,
+    /// Server setting: give the connection to the owner's PC while it runs (default on).
+    pub hand_off: std::sync::atomic::AtomicBool,
 }
 
 fn pair_key(a: &str, b: &str) -> String {
@@ -158,6 +181,7 @@ impl Logger {
             None
         };
         let totals: Totals = read_json(&dir.join("totals.json"));
+        let push: PushTargets = read_json(&dir.join("push.json"));
         let contact = contact.trim();
         let ua = if contact.is_empty() {
             format!("vfm-server/{} (+https://github.com/LuminoOwO/vrc-friend-map)", crate::api::VERSION)
@@ -167,12 +191,13 @@ impl Logger {
         let http = reqwest::Client::builder().gzip(true).timeout(Duration::from_secs(30)).build().expect("http client");
         Arc::new(Logger {
             dir,
-            inner: Mutex::new(Inner { owner, session, totals, message: "Not paired yet".into(), ..Default::default() }),
+            inner: Mutex::new(Inner { owner, session, totals, push, message: "Not paired yet".into(), ..Default::default() }),
             generation: AtomicU64::new(0),
             http,
             ua,
             resync_secs: (resync_minutes.max(10) * 60) as i64,
             keep_months,
+            hand_off: std::sync::atomic::AtomicBool::new(true),
         })
     }
 
@@ -296,6 +321,176 @@ impl Logger {
         eprintln!("logger unpaired{}", if forget { " and history deleted" } else { "" });
     }
 
+    // ---------- logging in from the admin page ----------
+
+    async fn post_json(&self, s: Option<&Session>, path: &str, body: &Value, basic: Option<String>) -> Result<(u16, Value, Vec<String>), String> {
+        let mut req = self
+            .http
+            .request(if path == "/auth/user" { reqwest::Method::GET } else { reqwest::Method::POST }, format!("{API}{path}"))
+            .header(reqwest::header::USER_AGENT, &self.ua)
+            .header(reqwest::header::ACCEPT, "application/json");
+        if let Some(s) = s {
+            req = req.header(reqwest::header::COOKIE, Self::cookie(s));
+        }
+        if let Some(b) = basic {
+            req = req.header(reqwest::header::AUTHORIZATION, b);
+        }
+        if path != "/auth/user" {
+            req = req.json(body);
+        }
+        let res = req.send().await.map_err(|e| e.to_string())?;
+        let status = res.status().as_u16();
+        let cookies: Vec<String> = res.headers().get_all(reqwest::header::SET_COOKIE).iter().filter_map(|v| v.to_str().ok().map(str::to_string)).collect();
+        let body = res.json::<Value>().await.unwrap_or(Value::Null);
+        Ok((status, body, cookies))
+    }
+
+    fn cookie_value(cookies: &[String], name: &str) -> Option<String> {
+        cookies.iter().find_map(|c| {
+            let first = c.split(';').next()?.trim();
+            let (k, v) = first.split_once('=')?;
+            (k == name && !v.is_empty()).then(|| v.to_string())
+        })
+    }
+
+    /// Log in with username and password (admin page only). Returns the 2FA
+    /// methods VRChat asks for, or an empty list when it's done.
+    pub async fn login_password(self: &Arc<Self>, username: &str, password: &str) -> Result<Vec<String>, String> {
+        fn enc(s: &str) -> String {
+            s.bytes()
+                .map(|b| match b {
+                    b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => (b as char).to_string(),
+                    _ => format!("%{b:02X}"),
+                })
+                .collect()
+        }
+        use crate::push::b64_encode as encode;
+        let basic = format!("Basic {}", encode(format!("{}:{}", enc(username.trim()), enc(password)).as_bytes()));
+        let (status, me, cookies) = self.post_json(None, "/auth/user", &Value::Null, Some(basic)).await?;
+        if status == 401 {
+            return Err("VRChat says the username or password is wrong".into());
+        }
+        if status == 429 {
+            return Err("VRChat says too many tries; wait a while".into());
+        }
+        let auth = Self::cookie_value(&cookies, "auth").ok_or_else(|| format!("VRChat didn't start a session ({status})"))?;
+        let session = Session { auth, two_factor: None };
+        if let Some(methods) = me.get("requiresTwoFactorAuth").and_then(Value::as_array) {
+            let m: Vec<String> = methods.iter().filter_map(|v| v.as_str().map(str::to_string)).collect();
+            self.inner.lock().unwrap().pending = Some(session);
+            return Ok(m);
+        }
+        self.finish_login(session).await?;
+        Ok(vec![])
+    }
+
+    /// The 2FA code for a waiting login: "totp" (authenticator app), "otp" (recovery code) or "emailOtp".
+    pub async fn login_2fa(self: &Arc<Self>, method: &str, code: &str) -> Result<(), String> {
+        let session = self.inner.lock().unwrap().pending.clone().ok_or("no login is waiting for a code")?;
+        let path = match method {
+            "totp" => "/auth/twofactorauth/totp/verify",
+            "otp" => "/auth/twofactorauth/otp/verify",
+            "emailOtp" => "/auth/twofactorauth/emailotp/verify",
+            _ => return Err("unknown 2FA method".into()),
+        };
+        let (status, body, cookies) = self.post_json(Some(&session), path, &json!({ "code": code.trim() }), None).await?;
+        if status != 200 || body.get("verified").and_then(Value::as_bool) == Some(false) {
+            return Err("VRChat didn't accept that code".into());
+        }
+        let two = Self::cookie_value(&cookies, "twoFactorAuth");
+        let session = Session { auth: session.auth, two_factor: two };
+        self.inner.lock().unwrap().pending = None;
+        self.finish_login(session).await
+    }
+
+    async fn finish_login(self: &Arc<Self>, session: Session) -> Result<(), String> {
+        let (status, me) = self.get(&session, "/auth/user").await?;
+        let id = me.get("id").and_then(Value::as_str).unwrap_or("").to_string();
+        if status != 200 || id.is_empty() {
+            return Err(format!("VRChat didn't return the account ({status})"));
+        }
+        self.pair(&id, &session.auth, session.two_factor.clone()).await
+    }
+
+    // ---------- hand-off to the owner's PC ----------
+
+    /// The owner's PC app is running with its own live connection.
+    pub fn pc_heartbeat(&self) {
+        self.inner.lock().unwrap().pc_heartbeat = now();
+    }
+
+    /// Called every minute: hand the connection to the PC while it's there,
+    /// take it back a few minutes after it's gone.
+    fn hand_off_check(self: &Arc<Self>, hand_off: bool, t: i64) {
+        let (pc_here, handed, paired) = {
+            let g = self.inner.lock().unwrap();
+            (t - g.pc_heartbeat < 4 * 60, g.handed_off, g.session.is_some())
+        };
+        if !paired {
+            return;
+        }
+        if hand_off && pc_here && !handed {
+            self.generation.fetch_add(1, Ordering::SeqCst);
+            let mut g = self.inner.lock().unwrap();
+            g.handed_off = true;
+            g.connected = false;
+            g.message = "Handed off to your PC (it holds the live connection now)".into();
+            eprintln!("logger: handed off to the owner's PC");
+        } else if handed && (!pc_here || !hand_off) {
+            self.inner.lock().unwrap().handed_off = false;
+            eprintln!("logger: taking the connection back");
+            self.start();
+        }
+    }
+
+    // ---------- push to the owner's phones ----------
+
+    pub fn set_push(&self, device: &str, target: Option<PushTarget>) -> Result<(), String> {
+        let mut g = self.inner.lock().unwrap();
+        match target {
+            Some(t) => {
+                g.push.targets.insert(device.to_string(), t);
+            }
+            None => {
+                g.push.targets.remove(device);
+            }
+        }
+        write_json(&self.dir.join("push.json"), &g.push, true)
+    }
+
+    fn notification(&self, c: &Value) {
+        let kind = c.get("type").and_then(Value::as_str).unwrap_or("");
+        let from = c.get("senderUsername").and_then(Value::as_str).unwrap_or("Someone");
+        let (title, body) = match kind {
+            "invite" => {
+                let world = c.pointer("/details/worldName").and_then(Value::as_str).unwrap_or("their instance");
+                ("Invite", format!("{from} invited you to {world}"))
+            }
+            "requestInvite" => ("Invite request", format!("{from} asks you for an invite")),
+            "friendRequest" => ("Friend request", format!("{from} sent you a friend request")),
+            _ => return,
+        };
+        let targets: Vec<PushTarget> = self.inner.lock().unwrap().push.targets.values().cloned().collect();
+        if targets.is_empty() {
+            return;
+        }
+        let msg = json!({ "title": title, "body": body, "tag": format!("{kind}:{from}"), "kind": kind }).to_string();
+        let http = self.http.clone();
+        tokio::spawn(async move {
+            for t in targets {
+                let Some(sealed) = crate::push::seal(&t.key, msg.as_bytes()) else { continue };
+                let _ = http
+                    .post(&t.endpoint)
+                    .header(reqwest::header::CONTENT_TYPE, "application/octet-stream")
+                    .header("TTL", "86400")
+                    .header("Urgency", "high")
+                    .body(sealed)
+                    .send()
+                    .await;
+            }
+        });
+    }
+
     // ---------- status / stats ----------
 
     pub fn status(&self) -> Value {
@@ -317,6 +512,10 @@ impl Logger {
             "since": g.totals.since,
             "pairs": g.totals.pairs.len(),
             "lastResync": g.last_resync,
+            "handedOff": g.handed_off,
+            "pcHeartbeat": g.pc_heartbeat,
+            "pushTargets": g.push.targets.len(),
+            "waitingFor2fa": g.pending.is_some(),
         })
     }
 
@@ -364,6 +563,7 @@ impl Logger {
             loop {
                 iv.tick().await;
                 me.tick(now());
+                me.hand_off_check(me.hand_off.load(Ordering::SeqCst), now());
                 n += 1;
                 if n % (24 * 60) == 0 {
                     me.prune_hops();
@@ -528,6 +728,10 @@ impl Logger {
     }
 
     fn event(&self, kind: &str, c: &Value, t: i64) {
+        if kind == "notification" {
+            self.notification(c);
+            return;
+        }
         let Some(id) = c.get("userId").and_then(Value::as_str) else { return };
         let mut g = self.inner.lock().unwrap();
         g.last_event = t;

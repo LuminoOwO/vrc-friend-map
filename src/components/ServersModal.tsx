@@ -1,5 +1,6 @@
 // Settings → Servers: vfm-servers you share through (exchange) and/or that
 // log your friends for you (logger). See share.ts for the rules.
+import { SETTING_GROUPS } from "../devicesync";
 import { useEffect, useState } from "react";
 import { backend, isTauri, type LoggerStatus, type MyIdentity } from "../backend";
 import { fmtDate } from "../model";
@@ -220,7 +221,41 @@ export function ServersModal() {
           </label>
           <label className="check">
             <input type="checkbox" checked={sharing.syncSettings} onChange={(e) => updateSharing({ syncSettings: e.target.checked })} />
-            Also sync settings between my devices (theme, map, groups, age hints; not frame rate, tray or graphics)
+            Also sync settings between my devices (not frame rate, tray, graphics or phone settings)
+          </label>
+          {sharing.syncSettings && (
+            <div className="indent">
+              {SETTING_GROUPS.map((g) => {
+                const synced = !sharing.syncGroups.length || sharing.syncGroups.includes(g.id);
+                const local = sharing.localOnly.includes(g.id);
+                return (
+                  <div key={g.id} className="row tight">
+                    <label className="check">
+                      <input
+                        type="checkbox"
+                        checked={synced}
+                        onChange={(e) => {
+                          const all = SETTING_GROUPS.map((x) => x.id);
+                          const cur = sharing.syncGroups.length ? sharing.syncGroups : all;
+                          updateSharing({ syncGroups: e.target.checked ? [...cur, g.id] : cur.filter((x) => x !== g.id) });
+                        }}
+                      />
+                      {g.label}
+                    </label>
+                    {synced && (
+                      <label className="check small muted">
+                        <input type="checkbox" checked={local} onChange={(e) => updateSharing({ localOnly: e.target.checked ? [...sharing.localOnly, g.id] : sharing.localOnly.filter((x) => x !== g.id) })} />
+                        keep this device's own
+                      </label>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          <label className="check">
+            <input type="checkbox" checked={sharing.neverUnencrypted} onChange={(e) => updateSharing({ neverUnencrypted: e.target.checked })} />
+            Never send anything unencrypted (whatever a server allows)
           </label>
           <label className="check">
             <input type="checkbox" checked={sharing.useShared} onChange={(e) => updateSharing({ useShared: e.target.checked })} />
@@ -496,6 +531,10 @@ function ServerCard({ server: s }: { server: ShareServer }) {
                 <label className="check">
                   <input type="checkbox" checked={s.shareTimezone} disabled={!s.shareFriends} onChange={(e) => set({ shareTimezone: e.target.checked })} />
                   My time zone (so friends see my local time)
+                </label>
+                <label className="check">
+                  <input type="checkbox" checked={s.useCache !== false} onChange={(e) => set({ useCache: e.target.checked })} />
+                  Use this server's shared cache of public VRChat info (worlds, avatars), so VRChat gets fewer requests
                 </label>
                 <Why text="Friend list: your friends' names and IDs, so friends see your connections even when VRChat hides mutuals. Activity: how much time pairs of your friends spent in the same instance (from your game logs, live locations and loggers), which makes their group suggestions better. Friend removals: whom you stopped being friends with in the last year, and whether they were in your instance then; your friends see it as a note on that person's profile, so they can ask you about it. Notes about people: only what you chose to tell friends on someone's profile (over 18, probably over 18, or keep your distance); notes saying someone is under 18 never leave your device. Nothing else is sent." />
               </div>

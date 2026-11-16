@@ -43,7 +43,7 @@ import { Icon } from "./Icon";
 import { customSounds, onCustomSounds, previewEvent } from "../notifications";
 import { SOUNDS } from "../notify";
 import { updateNotify } from "../store";
-import { BlockFlags, InviteActions, LocalTime, NicknameAndSnooze, OnlineHistory, PersonLog, StarButton, VrcNote } from "./PersonExtras";
+import { BlockFlags, InviteActions, LocalTime, NicknameAndSnooze, OnlineHistory, PersonLog, SafetyCode, StarButton, VrcNote } from "./PersonExtras";
 import { inviteMyself } from "../invites";
 
 const REGION_FLAG: Record<string, string> = { us: "🇺🇸", use: "🇺🇸", usw: "🇺🇸", eu: "🇪🇺", jp: "🇯🇵" };
@@ -384,6 +384,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               {relation === "friend" && <OnlineHistory id={id} name={f.displayName} online={p === "online"} />}
               {relation !== "me" && <VrcNote id={id} />}
               {relation !== "me" && !demo && <PersonLog id={id} name={f.displayName} />}
+              {relation === "friend" && !demo && <SafetyCode id={id} name={f.displayName} />}
               <div className="profile-block">
                 <h3 data-flip-fade>Profile</h3>
                 <dl className="facts with-icons">

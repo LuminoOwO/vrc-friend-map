@@ -32,11 +32,48 @@ pub struct App {
     /// Settings fixed by VFM_* variables (the admin page shows them locked).
     pub env_locked: Vec<String>,
     rate: Mutex<HashMap<String, (i64, u32)>>,
+    pub admins: crate::admins::Admins,
+    pub bans: crate::bans::Bans,
+    pub cache: crate::cache::Cache,
 }
 
 impl App {
     pub fn new(cfg: Config, cfg_path: PathBuf, store: Store, logger: Arc<Logger>, env_locked: Vec<String>) -> Arc<App> {
-        Arc::new(App { cfg: RwLock::new(cfg), cfg_path, store: Mutex::new(store), logger, env_locked, rate: Mutex::new(HashMap::new()) })
+        let dir = store.dir.clone();
+        logger.hand_off.store(cfg.logger.hand_off, std::sync::atomic::Ordering::SeqCst);
+        Arc::new(App {
+            cfg: RwLock::new(cfg),
+            cfg_path,
+            store: Mutex::new(store),
+            logger,
+            env_locked,
+            rate: Mutex::new(HashMap::new()),
+            admins: crate::admins::Admins::new(&dir),
+            bans: crate::bans::Bans::new(&dir),
+            cache: crate::cache::Cache::new(&dir),
+        })
+    }
+
+    /// The visitor's address: the connection's, or (with [server] trusted_proxy, from a
+    /// proxy on this machine or network) the first X-Forwarded-For entry.
+    pub fn client_ip(&self, peer: std::net::IpAddr, headers: &HeaderMap) -> std::net::IpAddr {
+        if self.cfg().server.trusted_proxy && crate::admin::lan(peer) {
+            if let Some(ip) = headers
+                .get("x-forwarded-for")
+                .and_then(|v| v.to_str().ok())
+                .and_then(|v| v.split(',').next())
+                .and_then(|v| v.trim().parse().ok())
+            {
+                return ip;
+            }
+        }
+        peer
+    }
+
+    /// 403 for banned people, with the reason and where to appeal.
+    pub fn banned_response(&self, reason: &str) -> Response {
+        let appeal = self.cfg().server.appeal_contact;
+        (StatusCode::FORBIDDEN, Json(json!({ "error": "banned", "banned": true, "reason": reason, "appeal": appeal }))).into_response()
     }
 
     pub fn cfg(&self) -> Config {
@@ -78,16 +115,27 @@ impl App {
     }
 }
 
-pub struct ApiError(StatusCode, String);
+pub enum ApiError {
+    Msg(StatusCode, String),
+    Full(Response),
+}
+
+#[allow(non_snake_case)]
+fn ApiError(r: Response) -> ApiError {
+    ApiError::Full(r)
+}
 
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        (self.0, Json(json!({ "error": self.1 }))).into_response()
+        match self {
+            ApiError::Msg(code, msg) => (code, Json(json!({ "error": msg }))).into_response(),
+            ApiError::Full(r) => r,
+        }
     }
 }
 
 fn err(code: StatusCode, msg: impl Into<String>) -> ApiError {
-    ApiError(code, msg.into())
+    ApiError::Msg(code, msg.into())
 }
 
 type ApiResult = Result<Response, ApiError>;
@@ -119,12 +167,46 @@ fn authed(app: &App, headers: &HeaderMap, method: &Method, uri: &Uri, body: &[u8
     if !store.use_nonce(&h.user, &h.nonce) {
         return Err(err(StatusCode::UNAUTHORIZED, "request was already used"));
     }
+    if let Some(b) = app.bans.user(&h.user) {
+        return Err(ApiError(app.banned_response(&b.reason)));
+    }
     store.touch(&h.user);
+    // For the admin page's user list: where from, which app version.
+    let ip = headers.get(PEER_HEADER).and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
+    let ua = headers.get("user-agent").and_then(|v| v.to_str().ok()).unwrap_or("").chars().take(80).collect::<String>();
+    let name = headers.get("x-vrc-name").and_then(|v| v.to_str().ok()).unwrap_or("").chars().take(40).collect::<String>();
+    if let Some(u) = store.users.users.get_mut(&h.user) {
+        u.last_ip = ip;
+        u.last_ua = ua;
+        if !name.is_empty() {
+            u.name = name;
+        }
+    }
     Ok(h.user)
+}
+
+/// Set by the middleware below (never by the client: it's overwritten).
+pub const PEER_HEADER: &str = "x-vfm-peer";
+
+/// Every request: note the visitor's address for the handlers, and refuse banned addresses.
+async fn peer_and_bans(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<SocketAddr>, mut req: axum::extract::Request, next: axum::middleware::Next) -> Response {
+    let ip = app.client_ip(addr.ip(), req.headers());
+    if let Some(b) = app.bans.ip(&ip.to_string()) {
+        if !req.uri().path().starts_with("/admin") {
+            return app.banned_response(&b.reason);
+        }
+    }
+    if let Ok(v) = ip.to_string().parse() {
+        req.headers_mut().insert(PEER_HEADER, v);
+    }
+    next.run(req).await
 }
 
 pub fn router(app: Arc<App>) -> Router {
     Router::new()
+        .route("/v1/cache/{kind}/{id}", get(cache_get).put(cache_put))
+        .route("/v1/logger/heartbeat", post(logger_heartbeat))
+        .route("/v1/logger/push", put(logger_push_set).delete(logger_push_delete))
         .route("/", get(landing))
         .route("/v1/info", get(info))
         .route("/v1/register", post(register))
@@ -137,7 +219,80 @@ pub fn router(app: Arc<App>) -> Router {
         .route("/v1/logger/stats", get(logger_stats))
         .merge(crate::admin::router())
         .layer(axum::extract::DefaultBodyLimit::max(8 * 1024 * 1024))
+        .layer(axum::middleware::from_fn_with_state(Arc::clone(&app), peer_and_bans))
         .with_state(app)
+}
+
+// ---------- shared cache of public VRChat info ----------
+
+fn cache_on(cfg: &Config, kind: &str) -> bool {
+    match kind {
+        "world" => cfg.access.cache_worlds,
+        "group" => cfg.access.cache_groups,
+        "avatar" => cfg.access.cache_avatars,
+        _ => false,
+    }
+}
+
+async fn cache_get(State(app): State<Arc<App>>, Path((kind, id)): Path<(String, String)>, headers: HeaderMap, method: Method, uri: Uri) -> ApiResult {
+    authed(&app, &headers, &method, &uri, b"")?;
+    if !cache_on(&app.cfg(), &kind) {
+        return Err(err(StatusCode::NOT_FOUND, "this server doesn't cache that"));
+    }
+    match app.cache.get(&kind, &id) {
+        Some((data, at)) => Ok(Json(json!({ "data": data, "at": at })).into_response()),
+        None => Err(err(StatusCode::NOT_FOUND, "not cached")),
+    }
+}
+
+async fn cache_put(State(app): State<Arc<App>>, Path((kind, id)): Path<(String, String)>, headers: HeaderMap, method: Method, uri: Uri, body: Bytes) -> ApiResult {
+    let user = authed(&app, &headers, &method, &uri, &body)?;
+    if !cache_on(&app.cfg(), &kind) {
+        return Err(err(StatusCode::NOT_FOUND, "this server doesn't cache that"));
+    }
+    if !app.allow(&format!("cache/{user}"), 300) {
+        return Err(err(StatusCode::TOO_MANY_REQUESTS, "slow down"));
+    }
+    app.cache.put(&kind, &id, &body).map_err(|e| err(StatusCode::BAD_REQUEST, e))?;
+    Ok(Json(json!({ "ok": true })).into_response())
+}
+
+// ---------- the owner's PC and phones (logger) ----------
+
+async fn logger_heartbeat(State(app): State<Arc<App>>, headers: HeaderMap, method: Method, uri: Uri, body: Bytes) -> ApiResult {
+    let user = authed(&app, &headers, &method, &uri, &body)?;
+    require_logger_owner(&app, &user)?;
+    app.logger.pc_heartbeat();
+    Ok(Json(json!({ "ok": true, "handOff": app.cfg().logger.hand_off })).into_response())
+}
+
+#[derive(Deserialize)]
+struct PushBody {
+    device: String,
+    endpoint: String,
+    key: String,
+}
+
+async fn logger_push_set(State(app): State<Arc<App>>, headers: HeaderMap, method: Method, uri: Uri, body: Bytes) -> ApiResult {
+    let user = authed(&app, &headers, &method, &uri, &body)?;
+    require_logger_owner(&app, &user)?;
+    let b: PushBody = serde_json::from_slice(&body).map_err(|e| err(StatusCode::BAD_REQUEST, e.to_string()))?;
+    if !b.endpoint.starts_with("https://") || b.endpoint.len() > 600 || b.device.is_empty() || b.device.len() > 64 || crate::push::b64_decode(&b.key).map(|k| k.len()) != Some(32) {
+        return Err(err(StatusCode::BAD_REQUEST, "bad push target"));
+    }
+    app.logger
+        .set_push(&b.device, Some(crate::logger::PushTarget { endpoint: b.endpoint, key: b.key, t: now() }))
+        .map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    Ok(Json(json!({ "ok": true })).into_response())
+}
+
+async fn logger_push_delete(State(app): State<Arc<App>>, headers: HeaderMap, method: Method, uri: Uri, body: Bytes) -> ApiResult {
+    let user = authed(&app, &headers, &method, &uri, &body)?;
+    require_logger_owner(&app, &user)?;
+    let b: Value = serde_json::from_slice(&body).unwrap_or(Value::Null);
+    let device = b.get("device").and_then(Value::as_str).unwrap_or("");
+    app.logger.set_push(device, None).map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    Ok(Json(json!({ "ok": true })).into_response())
 }
 
 async fn landing(State(app): State<Arc<App>>) -> Html<String> {
@@ -218,7 +373,7 @@ async fn register(
             Some(code.chars().take(4).collect::<String>() + "…")
         }
     };
-    store.users.users.insert(id.user_id.clone(), UserRecord { identity: id.clone(), registered: now(), last_seen: now(), invite });
+    store.users.users.insert(id.user_id.clone(), UserRecord { identity: id.clone(), registered: now(), last_seen: now(), invite, last_ip: String::new(), last_ua: String::new(), name: String::new() });
     store.save_users().map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e))?;
     eprintln!("registered {}", id.user_id);
     Ok((StatusCode::CREATED, Json(json!({ "ok": true, "existing": false }))).into_response())

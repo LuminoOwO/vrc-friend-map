@@ -84,6 +84,21 @@ async fn share_me(state: AppStateRef<'_>, url: String) -> Result<serde_json::Val
     state.share.me(&url, &me).await
 }
 
+/// Signed small calls to a server (cache, heartbeat, push targets; see ShareState::call).
+#[tauri::command]
+async fn share_call(state: AppStateRef<'_>, url: String, method: String, path: String, body: Option<serde_json::Value>) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.call(&url, &me, &method, &path, body).await
+}
+
+/// Your display name, sent along with requests to servers (for their owner's user list).
+#[tauri::command]
+fn share_set_name(state: AppStateRef<'_>, name: String) {
+    if let Ok(mut n) = state.share.name.lock() {
+        *n = name;
+    }
+}
+
 #[tauri::command]
 async fn share_leave(state: AppStateRef<'_>, url: String) -> Result<serde_json::Value, String> {
     let me = me_id(&state).await?;
@@ -621,6 +636,8 @@ pub fn run() {
             share_me,
             share_leave,
             share_publish,
+            share_call,
+            share_set_name,
             share_unpublish,
             share_inbox,
             share_pins,

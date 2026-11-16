@@ -1057,3 +1057,4 @@ textarea { width: 100%; box-sizing: border-box; font: inherit; color: var(--text
 .open-link { margin-left: auto; }
 .open-link input { min-width: 260px; }
 .clickable { cursor: pointer; }
+.safety-code { font-family: var(--mono, monospace); font-size: 18px; letter-spacing: 0.08em; text-align: center; padding: 8px; border: 1px dashed var(--border-strong); border-radius: 10px; }
