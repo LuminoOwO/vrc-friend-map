@@ -1058,3 +1058,8 @@ textarea { width: 100%; box-sizing: border-box; font: inherit; color: var(--text
 .open-link input { min-width: 260px; }
 .clickable { cursor: pointer; }
 .safety-code { font-family: var(--mono, monospace); font-size: 18px; letter-spacing: 0.08em; text-align: center; padding: 8px; border: 1px dashed var(--border-strong); border-radius: 10px; }
+
+/* VRChat tab → Avatars → In game now (OSC) */
+.osc-toggles { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px 12px; margin: 8px 0; }
+.osc-history { list-style: none; padding: 0; margin: 4px 0; }
+.osc-history li { padding: 2px 0; }

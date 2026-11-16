@@ -218,7 +218,7 @@ can be designed around everything. Nothing here is started.
 
 ## Round 7: extras
 
-- [x] **OSC** (Chatbox done; avatar history, avatar toggles and AFK / muted still open.) (VRChat's official interface, PC and Quest over the network; only your own data):
+- [x] **OSC** (VRChat's official interface, PC and Quest over the network; only your own data):
   chatbox messages ("Lumi just came online", now playing, play time), a history of your own
   avatars, avatar toggles from the app, AFK / muted shown in the app.
 - [x] **Steam play time into your bio:** read VRChat's play time from Steam's files (or the web

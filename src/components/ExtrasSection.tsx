@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { backend, isMobile, isTauri } from "../backend";
 import { describeBackup, makeBackup, openBackup, restoreBackup } from "../backup";
 import { bioWithLine, chatbox, fill, nowPlaying, songText, steamPlaytime, type NowPlaying, type Playtime } from "../extras";
+import { useOscLive } from "../osclive";
 import { showToast, updateSettings, useApp } from "../store";
 import type { ExtrasSettings } from "../types";
 
@@ -70,6 +71,39 @@ export function OscSection() {
           </button>
         </div>
       </div>
+      <OscListen />
+    </>
+  );
+}
+
+function OscListen() {
+  const [x, set] = useExtras();
+  const o = x.osc;
+  const live = useOscLive();
+  return (
+    <>
+      <label className="check">
+        <input type="checkbox" checked={o.listen} onChange={(e) => set("osc", { listen: e.target.checked })} />
+        <span>Listen to VRChat: your avatar, its toggles (VRChat tab → Avatars), AFK and muted, and a history of the avatars you wore</span>
+      </label>
+      {o.listen && (
+        <div className="indent">
+          <label className="field narrow">
+            <span>VRChat sends to port</span>
+            <input type="number" min={1} max={65535} value={o.listenPort} onChange={(e) => set("osc", { listenPort: Number(e.target.value) || 9001 })} />
+          </label>
+          <p className="small muted">
+            {live.error
+              ? live.error
+              : live.listening
+                ? live.avatar
+                  ? `Connected: ${live.config?.name || live.avatar}.`
+                  : "Listening; VRChat tells the app your avatar once you change it or reset OSC (Action Menu → Options → OSC → Reset Config)."
+                : "Starting…"}{" "}
+            Only from this PC, or from the address above for a Quest.
+          </p>
+        </div>
+      )}
     </>
   );
 }

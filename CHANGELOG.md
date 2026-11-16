@@ -144,6 +144,11 @@ minor releases can change behavior.
 - **Chatbox over OSC** (Settings → Notifications): a line of your own every few minutes (template with
   now playing, play time…) and "★ X came online" for starred friends, in VRChat's chatbox.
   Only to this PC or your home network (a Quest too); only while VRChat runs.
+- **Listening to VRChat over OSC** (Settings → Notifications → Chatbox (OSC) → *Listen to
+  VRChat*, off by default): VRChat tab → Avatars shows the avatar you're wearing in game, AFK /
+  muted / earmuffs, and its toggles, which you can set from the app (on / off, numbers,
+  sliders, from the OSC file VRChat writes for each avatar); plus a history of the avatars you
+  wore, on this device. Only from this PC, or from your Quest's address.
 - **Now playing in your status** (Linux, through `playerctl`): the song in your VRChat status
   text after it played for 20 seconds, at most every 90 seconds; your own status comes back
   when the music stops.

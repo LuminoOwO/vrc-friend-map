@@ -570,6 +570,10 @@ export interface ExtrasSettings {
     starredOnline: boolean;
     /** Only while VRChat runs here (the live game log says so); off for a Quest. */
     onlyInGame: boolean;
+    /** Listen to what VRChat sends: your avatar, its toggles, AFK and muted. */
+    listen: boolean;
+    /** VRChat's OSC output port (9001 unless changed in VRChat). */
+    listenPort: number;
   };
   nowPlaying: {
     /** Put the song into your VRChat status text (32 characters). */

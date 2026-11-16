@@ -10,6 +10,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { backend, isMobile, isTauri } from "./backend";
 import { presenceOf } from "./model";
+import { startOscLive, stopOscLive } from "./osclive";
 import { recordSteamTotal } from "./steamdays";
 import { getState, subscribeState } from "./store";
 import { fetchProfile } from "./sync";
@@ -199,6 +200,7 @@ async function bioTick() {
 
 export function startExtras() {
   if (!extrasHere || timers.length) return;
+  startOscLive();
   timers.push(setInterval(() => void pollSong(), 15_000));
   timers.push(setInterval(() => void oscTick(), 5_000));
   timers.push(setInterval(() => void bioTick(), 30 * 60_000));
@@ -226,6 +228,7 @@ export function startExtras() {
 }
 
 export function stopExtras() {
+  stopOscLive();
   timers.forEach(clearInterval);
   timers = [];
   unsub?.();
