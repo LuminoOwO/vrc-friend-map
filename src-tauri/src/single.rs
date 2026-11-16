@@ -19,7 +19,10 @@ mod imp {
     static ON_SHOW: OnceLock<Show> = OnceLock::new();
 
     fn socket_path() -> PathBuf {
-        let dir = std::env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from).filter(|d| d.is_dir()).unwrap_or_else(std::env::temp_dir);
+        let dir = std::env::var_os("XDG_RUNTIME_DIR")
+            .map(PathBuf::from)
+            .filter(|d| d.is_dir())
+            .unwrap_or_else(std::env::temp_dir);
         // SAFETY: getuid never fails.
         let uid = unsafe { libc_getuid() };
         dir.join(format!("vrc-friend-map-{uid}.sock"))
@@ -32,7 +35,9 @@ mod imp {
 
     /// Returns false when another copy is running (it was asked to show itself).
     pub fn claim() -> bool {
-        if std::env::args().any(|a| a.starts_with("--type=")) || std::env::var_os("VRC_FRIEND_MAP_MULTI").is_some() {
+        if std::env::args().any(|a| a.starts_with("--type="))
+            || std::env::var_os("VRC_FRIEND_MAP_MULTI").is_some()
+        {
             return true;
         }
         let path = socket_path();

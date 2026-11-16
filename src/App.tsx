@@ -8,6 +8,7 @@ import { startHistory, stopHistory } from "./history";
 import { startWatchers, stopWatchers } from "./watchers";
 import { startNotesLine, stopNotesLine } from "./notesline";
 import { startServerLink } from "./serverlink";
+import { startExtras, stopExtras } from "./extras";
 import { ImageViewer } from "./components/ImageViewer";
 import { ActivityView } from "./components/ActivityView";
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -268,6 +269,7 @@ function LogsAndGroups() {
       startWatchers();
       startNotesLine();
       startServerLink();
+      startExtras();
     } else {
       stopObserving();
       stopSharing();
@@ -275,6 +277,7 @@ function LogsAndGroups() {
       stopHistory();
       stopWatchers();
       stopNotesLine();
+      stopExtras();
     }
   }, [mode, demo]);
 

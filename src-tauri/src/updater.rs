@@ -89,7 +89,11 @@ pub struct UpdateInfo {
 
 fn client() -> Result<reqwest::Client, String> {
     reqwest::Client::builder()
-        .user_agent(concat!("vrc-friend-map/", env!("CARGO_PKG_VERSION"), " (update check)"))
+        .user_agent(concat!(
+            "vrc-friend-map/",
+            env!("CARGO_PKG_VERSION"),
+            " (update check)"
+        ))
         .connect_timeout(Duration::from_secs(10))
         .build()
         .map_err(|e| e.to_string())
@@ -97,13 +101,23 @@ fn client() -> Result<reqwest::Client, String> {
 
 /// 0.10.2 → [0, 10, 2]; anything after a '-' (pre-release) is ignored.
 fn version_parts(v: &str) -> Vec<u64> {
-    v.trim().trim_start_matches('v').split('-').next().unwrap_or("").split('.').map(|p| p.parse().unwrap_or(0)).collect()
+    v.trim()
+        .trim_start_matches('v')
+        .split('-')
+        .next()
+        .unwrap_or("")
+        .split('.')
+        .map(|p| p.parse().unwrap_or(0))
+        .collect()
 }
 
 pub fn is_newer(latest: &str, current: &str) -> bool {
     let (a, b) = (version_parts(latest), version_parts(current));
     for i in 0..a.len().max(b.len()) {
-        let (x, y) = (a.get(i).copied().unwrap_or(0), b.get(i).copied().unwrap_or(0));
+        let (x, y) = (
+            a.get(i).copied().unwrap_or(0),
+            b.get(i).copied().unwrap_or(0),
+        );
         if x != y {
             return x > y;
         }
@@ -128,10 +142,15 @@ pub fn install_kind() -> Kind {
     if cfg!(target_os = "ios") {
         return Kind::Ios;
     }
-    let exe = std::env::current_exe().ok().and_then(|p| p.canonicalize().ok()).unwrap_or_default();
+    let exe = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.canonicalize().ok())
+        .unwrap_or_default();
     if cfg!(target_os = "windows") {
         let s = exe.to_string_lossy().to_lowercase();
-        let local = std::env::var("LOCALAPPDATA").unwrap_or_default().to_lowercase();
+        let local = std::env::var("LOCALAPPDATA")
+            .unwrap_or_default()
+            .to_lowercase();
         if !local.is_empty() && s.starts_with(&local) && s.contains("vrc friend map") {
             return Kind::WindowsSetup;
         }
@@ -141,7 +160,11 @@ pub fn install_kind() -> Kind {
         return Kind::WindowsPortable;
     }
     if cfg!(target_os = "macos") {
-        return if mac_bundle(&exe).is_some() { Kind::Mac } else { Kind::Unknown };
+        return if mac_bundle(&exe).is_some() {
+            Kind::Mac
+        } else {
+            Kind::Unknown
+        };
     }
     // Linux
     if Path::new("/.flatpak-info").exists() {
@@ -152,10 +175,20 @@ pub fn install_kind() -> Kind {
     }
     let s = exe.to_string_lossy();
     if s.starts_with("/usr/") || s.starts_with("/opt/") {
-        if which("dpkg-query") && std::process::Command::new("dpkg-query").args(["-W", "vrc-friend-map"]).output().is_ok_and(|o| o.status.success()) {
+        if which("dpkg-query")
+            && std::process::Command::new("dpkg-query")
+                .args(["-W", "vrc-friend-map"])
+                .output()
+                .is_ok_and(|o| o.status.success())
+        {
             return Kind::Deb;
         }
-        if which("rpm") && std::process::Command::new("rpm").args(["-q", "vrc-friend-map"]).output().is_ok_and(|o| o.status.success()) {
+        if which("rpm")
+            && std::process::Command::new("rpm")
+                .args(["-q", "vrc-friend-map"])
+                .output()
+                .is_ok_and(|o| o.status.success())
+        {
             return Kind::Rpm;
         }
         return Kind::Unknown;
@@ -169,7 +202,8 @@ pub fn install_kind() -> Kind {
 }
 
 fn which(cmd: &str) -> bool {
-    std::env::var_os("PATH").is_some_and(|p| std::env::split_paths(&p).any(|d| d.join(cmd).is_file()))
+    std::env::var_os("PATH")
+        .is_some_and(|p| std::env::split_paths(&p).any(|d| d.join(cmd).is_file()))
 }
 
 /// /Applications/VRC Friend Map.app from …/Contents/MacOS/vrc-friend-map.
@@ -194,14 +228,20 @@ fn asset_for(kind: Kind, v: &str, assets: &[GhAsset]) -> Option<Asset> {
         Kind::Ios => format!("vrc-friend-map_{v}_ios-unsigned.ipa"),
         Kind::Unknown => return None,
     };
-    assets.iter().find(|x| x.name == want).map(|x| Asset { name: x.name.clone(), url: x.browser_download_url.clone(), size: x.size })
+    assets.iter().find(|x| x.name == want).map(|x| Asset {
+        name: x.name.clone(),
+        url: x.browser_download_url.clone(),
+        size: x.size,
+    })
 }
 
 #[tauri::command]
 pub async fn update_check() -> Result<UpdateInfo, String> {
     let c = client()?;
     let r: GhRelease = c
-        .get(format!("https://api.github.com/repos/{REPO}/releases/latest"))
+        .get(format!(
+            "https://api.github.com/repos/{REPO}/releases/latest"
+        ))
         .header("Accept", "application/vnd.github+json")
         .timeout(Duration::from_secs(20))
         .send()
@@ -218,8 +258,17 @@ pub async fn update_check() -> Result<UpdateInfo, String> {
     let latest = r.tag_name.trim_start_matches('v').to_string();
     let kind = install_kind();
     let asset = asset_for(kind, &latest, &r.assets);
-    let sums = r.assets.iter().find(|a| a.name == "SHA256SUMS").map(|a| a.browser_download_url.clone());
-    let can_install = asset.is_some() && sums.is_some() && !matches!(kind, Kind::Flatpak | Kind::Ios | Kind::Android | Kind::Unknown);
+    let sums = r
+        .assets
+        .iter()
+        .find(|a| a.name == "SHA256SUMS")
+        .map(|a| a.browser_download_url.clone());
+    let can_install = asset.is_some()
+        && sums.is_some()
+        && !matches!(
+            kind,
+            Kind::Flatpak | Kind::Ios | Kind::Android | Kind::Unknown
+        );
     Ok(UpdateInfo {
         current: CURRENT.to_string(),
         newer: is_newer(&latest, CURRENT),
@@ -255,8 +304,20 @@ struct Progress {
     total: u64,
 }
 
-async fn download<R: Runtime>(app: &AppHandle<R>, c: &reqwest::Client, url: &str, to: &Path) -> Result<Vec<u8>, String> {
-    let mut resp = c.get(url).timeout(Duration::from_secs(900)).send().await.map_err(|e| e.to_string())?.error_for_status().map_err(|e| e.to_string())?;
+async fn download<R: Runtime>(
+    app: &AppHandle<R>,
+    c: &reqwest::Client,
+    url: &str,
+    to: &Path,
+) -> Result<Vec<u8>, String> {
+    let mut resp = c
+        .get(url)
+        .timeout(Duration::from_secs(900))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .error_for_status()
+        .map_err(|e| e.to_string())?;
     let total = resp.content_length().unwrap_or(0);
     let mut body = Vec::with_capacity(total as usize);
     let mut last = 0;
@@ -282,7 +343,9 @@ fn check_sum(sums: &str, name: &str, body: &[u8]) -> Result<(), String> {
         .ok_or("the release's checksum list doesn't have this file")?;
     let got = hex::encode(Sha256::digest(body));
     if got != want {
-        return Err("the download doesn't match the release's checksum; nothing was installed".into());
+        return Err(
+            "the download doesn't match the release's checksum; nothing was installed".into(),
+        );
     }
     Ok(())
 }
@@ -291,7 +354,12 @@ fn check_sum(sums: &str, name: &str, body: &[u8]) -> Result<(), String> {
 /// (e.g. Flatpak: where the file went and the command); otherwise the app quits
 /// and the new version starts.
 #[tauri::command]
-pub async fn update_install<R: Runtime>(app: AppHandle<R>, asset_url: String, asset_name: String, sums_url: String) -> Result<String, String> {
+pub async fn update_install<R: Runtime>(
+    app: AppHandle<R>,
+    asset_url: String,
+    asset_name: String,
+    sums_url: String,
+) -> Result<String, String> {
     release_url(&asset_url)?;
     release_url(&sums_url)?;
     if asset_name.contains('/') || asset_name.contains('\\') || asset_name.starts_with('.') {
@@ -299,7 +367,16 @@ pub async fn update_install<R: Runtime>(app: AppHandle<R>, asset_url: String, as
     }
     let kind = install_kind();
     let c = client()?;
-    let sums = c.get(&sums_url).send().await.map_err(|e| e.to_string())?.error_for_status().map_err(|e| e.to_string())?.text().await.map_err(|e| e.to_string())?;
+    let sums = c
+        .get(&sums_url)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?
+        .error_for_status()
+        .map_err(|e| e.to_string())?
+        .text()
+        .await
+        .map_err(|e| e.to_string())?;
     let dir = update_dir()?;
     let file = dir.join(&asset_name);
     let body = download(&app, &c, &asset_url, &file).await?;
@@ -320,7 +397,10 @@ fn quit_for_update<R: Runtime>(app: &AppHandle<R>) {
 fn relaunch_after_exit<R: Runtime>(app: &AppHandle<R>, cmd: &str) -> Result<String, String> {
     let pid = std::process::id();
     let script = format!("while kill -0 {pid} 2>/dev/null; do sleep 0.2; done; sleep 0.5; {cmd}");
-    std::process::Command::new("sh").args(["-c", &script]).spawn().map_err(|e| e.to_string())?;
+    std::process::Command::new("sh")
+        .args(["-c", &script])
+        .spawn()
+        .map_err(|e| e.to_string())?;
     quit_for_update(app);
     Ok(String::new())
 }
@@ -397,15 +477,27 @@ fn install<R: Runtime>(app: &AppHandle<R>, kind: Kind, file: &Path) -> Result<St
 }
 
 #[cfg(target_os = "windows")]
-fn windows_install<R: Runtime>(app: &AppHandle<R>, kind: Kind, file: &Path) -> Result<String, String> {
+fn windows_install<R: Runtime>(
+    app: &AppHandle<R>,
+    kind: Kind,
+    file: &Path,
+) -> Result<String, String> {
     use std::process::Command;
     match kind {
         Kind::WindowsSetup => {
             // Tauri's NSIS installer: /P = passive (progress only), /R = start the app afterwards.
-            Command::new(file).args(["/P", "/R"]).spawn().map_err(|e| e.to_string())?;
+            Command::new(file)
+                .args(["/P", "/R"])
+                .spawn()
+                .map_err(|e| e.to_string())?;
         }
         Kind::WindowsMsi => {
-            Command::new("msiexec").arg("/i").arg(file).arg("/passive").spawn().map_err(|e| e.to_string())?;
+            Command::new("msiexec")
+                .arg("/i")
+                .arg(file)
+                .arg("/passive")
+                .spawn()
+                .map_err(|e| e.to_string())?;
         }
         _ => {
             // Portable: a running .exe can be renamed but not overwritten.
@@ -422,7 +514,10 @@ fn windows_install<R: Runtime>(app: &AppHandle<R>, kind: Kind, file: &Path) -> R
                 "while (Get-Process -Id {pid} -ErrorAction SilentlyContinue) {{ Start-Sleep -Milliseconds 200 }}; Start-Process -FilePath '{}'",
                 exe.to_string_lossy().replace('\'', "''")
             );
-            Command::new("powershell").args(["-NoProfile", "-WindowStyle", "Hidden", "-Command", &script]).spawn().map_err(|e| e.to_string())?;
+            Command::new("powershell")
+                .args(["-NoProfile", "-WindowStyle", "Hidden", "-Command", &script])
+                .spawn()
+                .map_err(|e| e.to_string())?;
         }
     }
     quit_for_update(app);
@@ -432,20 +527,39 @@ fn windows_install<R: Runtime>(app: &AppHandle<R>, kind: Kind, file: &Path) -> R
 #[cfg(target_os = "macos")]
 fn mac_install<R: Runtime>(app: &AppHandle<R>, file: &Path) -> Result<String, String> {
     use std::process::Command;
-    let exe = std::env::current_exe().map_err(|e| e.to_string())?.canonicalize().map_err(|e| e.to_string())?;
+    let exe = std::env::current_exe()
+        .map_err(|e| e.to_string())?
+        .canonicalize()
+        .map_err(|e| e.to_string())?;
     let bundle = mac_bundle(&exe).ok_or("not running from an .app")?;
     let mount = file.parent().unwrap().join("mnt");
     std::fs::create_dir_all(&mount).map_err(|e| e.to_string())?;
-    let ok = Command::new("hdiutil").args(["attach", "-nobrowse", "-readonly", "-mountpoint"]).arg(&mount).arg(file).status().map_err(|e| e.to_string())?.success();
+    let ok = Command::new("hdiutil")
+        .args(["attach", "-nobrowse", "-readonly", "-mountpoint"])
+        .arg(&mount)
+        .arg(file)
+        .status()
+        .map_err(|e| e.to_string())?
+        .success();
     if !ok {
         return Err("couldn't open the .dmg".into());
     }
-    let new_app = std::fs::read_dir(&mount).map_err(|e| e.to_string())?.flatten().map(|e| e.path()).find(|p| p.extension().is_some_and(|x| x == "app"));
+    let new_app = std::fs::read_dir(&mount)
+        .map_err(|e| e.to_string())?
+        .flatten()
+        .map(|e| e.path())
+        .find(|p| p.extension().is_some_and(|x| x == "app"));
     let result = (|| -> Result<(), String> {
         let new_app = new_app.ok_or("no app in the .dmg")?;
         let staged = bundle.with_extension("app.new");
         let _ = std::fs::remove_dir_all(&staged);
-        if !Command::new("ditto").arg(&new_app).arg(&staged).status().map_err(|e| e.to_string())?.success() {
+        if !Command::new("ditto")
+            .arg(&new_app)
+            .arg(&staged)
+            .status()
+            .map_err(|e| e.to_string())?
+            .success()
+        {
             return Err(format!("can't write next to {}", bundle.display()));
         }
         let old = bundle.with_extension("app.old");
@@ -458,11 +572,20 @@ fn mac_install<R: Runtime>(app: &AppHandle<R>, file: &Path) -> Result<String, St
         let _ = std::fs::remove_dir_all(&old);
         Ok(())
     })();
-    let _ = Command::new("hdiutil").args(["detach", "-quiet"]).arg(&mount).status();
+    let _ = Command::new("hdiutil")
+        .args(["detach", "-quiet"])
+        .arg(&mount)
+        .status();
     result?;
     let pid = std::process::id();
-    let script = format!("while kill -0 {pid} 2>/dev/null; do sleep 0.2; done; open -n {}", shell_quote(&bundle));
-    Command::new("sh").args(["-c", &script]).spawn().map_err(|e| e.to_string())?;
+    let script = format!(
+        "while kill -0 {pid} 2>/dev/null; do sleep 0.2; done; open -n {}",
+        shell_quote(&bundle)
+    );
+    Command::new("sh")
+        .args(["-c", &script])
+        .spawn()
+        .map_err(|e| e.to_string())?;
     quit_for_update(app);
     Ok(String::new())
 }
@@ -482,15 +605,24 @@ mod tests {
 
     #[test]
     fn only_this_projects_releases() {
-        assert!(release_url("https://github.com/LuminoOwO/vrc-friend-map/releases/download/v1/x.deb").is_ok());
-        assert!(release_url("https://evil.example/LuminoOwO/vrc-friend-map/releases/download/v1/x.deb").is_err());
+        assert!(release_url(
+            "https://github.com/LuminoOwO/vrc-friend-map/releases/download/v1/x.deb"
+        )
+        .is_ok());
+        assert!(release_url(
+            "https://evil.example/LuminoOwO/vrc-friend-map/releases/download/v1/x.deb"
+        )
+        .is_err());
         assert!(release_url("https://github.com/someone/else/releases/download/v1/x.deb").is_err());
     }
 
     #[test]
     fn checksums() {
         let body = b"hello";
-        let sums = format!("{}  a.deb\nffff  b.deb\n", hex::encode(Sha256::digest(body)));
+        let sums = format!(
+            "{}  a.deb\nffff  b.deb\n",
+            hex::encode(Sha256::digest(body))
+        );
         assert!(check_sum(&sums, "a.deb", body).is_ok());
         assert!(check_sum(&sums, "b.deb", body).is_err());
         assert!(check_sum(&sums, "c.deb", body).is_err());
@@ -498,11 +630,25 @@ mod tests {
 
     #[test]
     fn asset_names() {
-        let mk = |n: &str| GhAsset { name: n.into(), browser_download_url: format!("https://github.com/{REPO}/releases/download/v1/{n}"), size: 1 };
-        let assets = vec![mk("vrc-friend-map_1.0.0_amd64.deb"), mk("vrc-friend-map-1.0.0-x86_64.AppImage"), mk("vrc-friend-map_1.0.0_windows-x64-setup.exe")];
+        let mk = |n: &str| GhAsset {
+            name: n.into(),
+            browser_download_url: format!("https://github.com/{REPO}/releases/download/v1/{n}"),
+            size: 1,
+        };
+        let assets = vec![
+            mk("vrc-friend-map_1.0.0_amd64.deb"),
+            mk("vrc-friend-map-1.0.0-x86_64.AppImage"),
+            mk("vrc-friend-map_1.0.0_windows-x64-setup.exe"),
+        ];
         if cfg!(target_arch = "x86_64") {
-            assert_eq!(asset_for(Kind::Deb, "1.0.0", &assets).unwrap().name, "vrc-friend-map_1.0.0_amd64.deb");
-            assert_eq!(asset_for(Kind::AppImage, "1.0.0", &assets).unwrap().name, "vrc-friend-map-1.0.0-x86_64.AppImage");
+            assert_eq!(
+                asset_for(Kind::Deb, "1.0.0", &assets).unwrap().name,
+                "vrc-friend-map_1.0.0_amd64.deb"
+            );
+            assert_eq!(
+                asset_for(Kind::AppImage, "1.0.0", &assets).unwrap().name,
+                "vrc-friend-map-1.0.0-x86_64.AppImage"
+            );
         }
         assert!(asset_for(Kind::WindowsSetup, "1.0.0", &assets).is_some());
         assert!(asset_for(Kind::Unknown, "1.0.0", &assets).is_none());

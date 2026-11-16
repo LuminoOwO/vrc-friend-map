@@ -32,7 +32,11 @@ pub fn listen(
         let root = (xl.XDefaultRootWindow)(display);
         let mut bits = [0u8; 4];
         xinput2::XISetMask(&mut bits, xinput2::XI_RawButtonPress);
-        let mut mask = xinput2::XIEventMask { deviceid: xinput2::XIAllMasterDevices, mask_len: bits.len() as c_int, mask: bits.as_mut_ptr() };
+        let mut mask = xinput2::XIEventMask {
+            deviceid: xinput2::XIAllMasterDevices,
+            mask_len: bits.len() as c_int,
+            mask: bits.as_mut_ptr(),
+        };
         (xi.XISelectEvents)(display, root, &mut mask, 1);
         (xl.XFlush)(display);
         running.store(true, Ordering::SeqCst);
@@ -47,7 +51,8 @@ pub fn listen(
                 if w == win {
                     return true;
                 }
-                let (mut r, mut parent, mut kids, mut n): (c_ulong, c_ulong, *mut c_ulong, c_uint) = (0, 0, std::ptr::null_mut(), 0);
+                let (mut r, mut parent, mut kids, mut n): (c_ulong, c_ulong, *mut c_ulong, c_uint) =
+                    (0, 0, std::ptr::null_mut(), 0);
                 if (xl.XQueryTree)(display, w, &mut r, &mut parent, &mut kids, &mut n) == 0 {
                     return false;
                 }
@@ -76,7 +81,11 @@ pub fn listen(
                 continue;
             }
             let raw = &*(cookie.data as *const xinput2::XIRawEvent);
-            let detail = if cookie.evtype == xinput2::XI_RawButtonPress { raw.detail } else { 0 };
+            let detail = if cookie.evtype == xinput2::XI_RawButtonPress {
+                raw.detail
+            } else {
+                0
+            };
             (xl.XFreeEventData)(display, &mut cookie);
             let (dx, dy) = match detail {
                 4 => (0, -1),
@@ -87,8 +96,13 @@ pub fn listen(
             };
             // Where is the pointer, and is our window the one under it?
             let (mut r, mut child) = (0, 0);
-            let (mut rx, mut ry, mut wx, mut wy, mut m): (c_int, c_int, c_int, c_int, c_uint) = (0, 0, 0, 0, 0);
-            if (xl.XQueryPointer)(display, root, &mut r, &mut child, &mut rx, &mut ry, &mut wx, &mut wy, &mut m) == 0 || !ours_under(child) {
+            let (mut rx, mut ry, mut wx, mut wy, mut m): (c_int, c_int, c_int, c_int, c_uint) =
+                (0, 0, 0, 0, 0);
+            if (xl.XQueryPointer)(
+                display, root, &mut r, &mut child, &mut rx, &mut ry, &mut wx, &mut wy, &mut m,
+            ) == 0
+                || !ours_under(child)
+            {
                 continue;
             }
             let (mut x, mut y, mut c) = (0, 0, 0);

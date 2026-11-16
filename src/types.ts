@@ -543,6 +543,8 @@ export interface Settings {
   insights: { drifting: boolean };
   /** Android: background mode, refresh rate, widget, root log reading (src/phone.ts). */
   phone: PhoneSettings;
+  /** Chatbox over OSC, now playing in your status, Steam play time in your bio (src/extras.ts). */
+  extras: ExtrasSettings;
 }
 
 export interface PhoneSettings {
@@ -552,6 +554,35 @@ export interface PhoneSettings {
   widget: boolean;
   /** Read VRChat's logs with root (rooted phones, rooted Quest). */
   rootLogs: boolean;
+}
+
+/** Desktop extras, all off by default and kept on this device. */
+export interface ExtrasSettings {
+  osc: {
+    enabled: boolean;
+    /** VRChat on this PC (127.0.0.1) or a Quest on your network. */
+    host: string;
+    port: number;
+    /** A line every so often from this template: {song} {time} {online} {here} {playtime}. Empty: none. */
+    template: string;
+    everySecs: number;
+    /** "★ Lumi came online" when a starred friend comes online. */
+    starredOnline: boolean;
+    /** Only while VRChat runs here (the live game log says so); off for a Quest. */
+    onlyInGame: boolean;
+  };
+  nowPlaying: {
+    /** Put the song into your VRChat status text (32 characters). */
+    status: boolean;
+    /** {title} {artist} {song} (= "artist – title"). */
+    template: string;
+  };
+  playtime: {
+    /** Keep a line with your VRChat hours in your bio, once a day. */
+    bio: boolean;
+    /** {hours}: your total hours. The line is found again by this template. */
+    template: string;
+  };
 }
 
 /** Reading everyone's profile slowly in the background (src/biocache.ts). */

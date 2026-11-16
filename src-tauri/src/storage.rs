@@ -7,7 +7,9 @@ use std::path::{Path, PathBuf};
 pub fn valid_name(name: &str) -> bool {
     !name.is_empty()
         && name.len() <= 40
-        && name.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')
+        && name
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_' || c == '-')
 }
 
 /// Atomic write; on Unix the file is readable by the owner only.
@@ -55,7 +57,13 @@ impl Store {
         }
         let tag: String = tag
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '-' { c } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '.' || c == '-' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .take(60)
             .collect();
         let dir = self.dir.join("backups");
@@ -103,21 +111,38 @@ pub fn hash_ids(salt: &str, ids: &[String]) -> Vec<String> {
 pub fn sanitize_filename(name: &str) -> String {
     let cleaned: String = name
         .chars()
-        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' { c } else { '_' })
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' || c == '.' {
+                c
+            } else {
+                '_'
+            }
+        })
         .take(80)
         .collect();
-    if cleaned.ends_with(".json") { cleaned } else { format!("{cleaned}.json") }
+    if cleaned.ends_with(".json") {
+        cleaned
+    } else {
+        format!("{cleaned}.json")
+    }
 }
 
 pub fn dir_size(dir: &Path) -> u64 {
     std::fs::read_dir(dir)
-        .map(|rd| rd.flatten().filter_map(|e| e.metadata().ok()).map(|m| m.len()).sum())
+        .map(|rd| {
+            rd.flatten()
+                .filter_map(|e| e.metadata().ok())
+                .map(|m| m.len())
+                .sum()
+        })
         .unwrap_or(0)
 }
 
 /// Keep the image cache under `max_bytes` by deleting the oldest files.
 pub fn prune_dir(dir: &Path, max_bytes: u64) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     let mut files: Vec<(std::time::SystemTime, u64, PathBuf)> = rd
         .flatten()
         .filter_map(|e| {

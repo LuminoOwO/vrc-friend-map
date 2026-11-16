@@ -32,6 +32,7 @@ import { unavailable } from "../platform";
 import { haptic } from "../haptics";
 import { bioProgress } from "../biocache";
 import { PhoneSection } from "./PhoneSection";
+import { BackupSection, NowPlayingSection, OscSection, PlaytimeSection } from "./ExtrasSection";
 import { flagLine } from "../notesline";
 import { loadSlots, saveSlot, type MessageSlot } from "../invites";
 import type { UiSettings } from "../types";
@@ -256,9 +257,10 @@ export function SettingsModal() {
 
   // Opened for a specific part (e.g. from group suggestions).
   useEffect(() => {
-    if (tab === "groups" || tab === "logs") setCat("logs");
     if (tab !== "general") {
       const id = tab;
+      const c = sections.current.get(id)?.cat ?? (id === "groups" || id === "logs" ? "logs" : null);
+      if (c) setCat(c);
       requestAnimationFrame(() => sections.current.get(id)?.el?.scrollIntoView({ block: "start" }));
       setState({ settingsTab: "general" });
     }
@@ -606,6 +608,18 @@ export function SettingsModal() {
           <GroupSection />
         </Sec>
 
+        <Sec id="osc" cat="sounds" title="Chatbox (OSC)" keys="osc chatbox vrchat game message came online song quest" unavailable={unavailable("osc")}>
+          <OscSection />
+        </Sec>
+        <Sec id="nowplaying" cat="account" title="Now playing in your status" keys="music song spotify mpris playerctl status text" unavailable={unavailable("mpris")}>
+          <NowPlayingSection />
+        </Sec>
+        <Sec id="playtime" cat="account" title="Steam play time in your bio" keys="steam hours play time bio" unavailable={unavailable("steam")}>
+          <PlaytimeSection />
+        </Sec>
+        <Sec id="backup" cat="account" title="Backup to another device" keys="backup export import restore move device encrypted password file">
+          <BackupSection />
+        </Sec>
         <Sec id="data" cat="account" title="Local data" keys="storage cache delete backup folder">
           <h3>Local data</h3>
           {demo ? (

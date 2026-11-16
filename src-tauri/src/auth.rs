@@ -51,7 +51,9 @@ fn is_vrchat_page(url: &Url) -> bool {
 }
 
 pub async fn start<R: Runtime>(app: AppHandle<R>, state: Arc<AppState>) -> Result<(), String> {
-    let login_url: Url = LOGIN_URL.parse().map_err(|e: url::ParseError| e.to_string())?;
+    let login_url: Url = LOGIN_URL
+        .parse()
+        .map_err(|e: url::ParseError| e.to_string())?;
 
     #[cfg(desktop)]
     {
@@ -71,7 +73,9 @@ pub async fn start<R: Runtime>(app: AppHandle<R>, state: Arc<AppState>) -> Resul
     }
     #[cfg(mobile)]
     {
-        let main = app.get_webview_window("main").ok_or("main window missing")?;
+        let main = app
+            .get_webview_window("main")
+            .ok_or("main window missing")?;
         let current = main.url().map_err(|e| e.to_string())?;
         if !is_vrchat_page(&current) {
             *state.login.app_url.lock().await = Some(current);
@@ -88,8 +92,14 @@ pub async fn start<R: Runtime>(app: AppHandle<R>, state: Arc<AppState>) -> Resul
             state2.login.running.store(false, Ordering::SeqCst);
             finish(&app2, &state2).await;
             let event = match result {
-                Ok(name) => LoginEvent { ok: true, message: name },
-                Err(msg) => LoginEvent { ok: false, message: msg },
+                Ok(name) => LoginEvent {
+                    ok: true,
+                    message: name,
+                },
+                Err(msg) => LoginEvent {
+                    ok: false,
+                    message: msg,
+                },
             };
             let _ = app2.emit("login-finished", event);
         });
@@ -127,7 +137,9 @@ async fn finish<R: Runtime>(app: &AppHandle<R>, state: &Arc<AppState>) {
 }
 
 /// Pick the `auth` and `twoFactorAuth` values out of (name, value) pairs.
-fn pick_session(pairs: impl IntoIterator<Item = (String, String)>) -> (Option<String>, Option<String>) {
+fn pick_session(
+    pairs: impl IntoIterator<Item = (String, String)>,
+) -> (Option<String>, Option<String>) {
     let mut auth = None;
     let mut two_factor = None;
     for (name, value) in pairs {
@@ -163,7 +175,11 @@ async fn read_cookies<R: Runtime>(w: WebviewWindow<R>) -> (Option<String>, Optio
         for u in COOKIE_URLS {
             let Ok(url) = u.parse::<Url>() else { continue };
             if let Ok(cookies) = w.cookies_for_url(url) {
-                pairs.extend(cookies.iter().map(|c| (c.name().to_string(), c.value().to_string())));
+                pairs.extend(
+                    cookies
+                        .iter()
+                        .map(|c| (c.name().to_string(), c.value().to_string())),
+                );
             }
         }
         pick_session(pairs)
@@ -180,7 +196,10 @@ async fn read_cookies<R: Runtime>(w: WebviewWindow<R>) -> (Option<String>, Optio
     let (tx, rx) = std::sync::mpsc::channel::<Vec<String>>();
     let sent = w.with_webview(move |pw| {
         pw.jni_handle().exec(move |env, _activity, _webview| {
-            let headers = COOKIE_URLS.iter().filter_map(|u| android_cookie_header(env, u)).collect();
+            let headers = COOKIE_URLS
+                .iter()
+                .filter_map(|u| android_cookie_header(env, u))
+                .collect();
             let _ = tx.send(headers);
         });
     });
@@ -200,11 +219,21 @@ async fn read_cookies<R: Runtime>(w: WebviewWindow<R>) -> (Option<String>, Optio
 fn android_cookie_header(env: &mut jni::JNIEnv, url: &str) -> Option<String> {
     let result = (|| -> jni::errors::Result<Option<String>> {
         let cm = env
-            .call_static_method("android/webkit/CookieManager", "getInstance", "()Landroid/webkit/CookieManager;", &[])?
+            .call_static_method(
+                "android/webkit/CookieManager",
+                "getInstance",
+                "()Landroid/webkit/CookieManager;",
+                &[],
+            )?
             .l()?;
         let jurl = env.new_string(url)?;
         let v = env
-            .call_method(&cm, "getCookie", "(Ljava/lang/String;)Ljava/lang/String;", &[(&jurl).into()])?
+            .call_method(
+                &cm,
+                "getCookie",
+                "(Ljava/lang/String;)Ljava/lang/String;",
+                &[(&jurl).into()],
+            )?
             .l()?;
         if v.is_null() {
             return Ok(None);
@@ -257,13 +286,20 @@ async fn poll<R: Runtime>(app: &AppHandle<R>, state: &Arc<AppState>) -> Result<S
         }
         last_checked = Some(pair);
         last_check_at = Instant::now();
-        match state.api.validate_and_store(&auth, two_factor.as_deref()).await {
+        match state
+            .api
+            .validate_and_store(&auth, two_factor.as_deref())
+            .await
+        {
             Ok(Some(info)) => return Ok(info.display_name.unwrap_or_default()),
             Ok(None) => continue,
             Err(e) => {
                 let _ = app.emit(
                     "login-progress",
-                    LoginEvent { ok: false, message: e },
+                    LoginEvent {
+                        ok: false,
+                        message: e,
+                    },
                 );
             }
         }
@@ -277,7 +313,10 @@ mod tests {
     #[test]
     fn cookie_header_parsing() {
         let pairs = parse_cookie_header("foo=1; auth=authcookie_abc; twoFactorAuth=xyz;  empty=");
-        assert_eq!(pick_session(pairs), (Some("authcookie_abc".into()), Some("xyz".into())));
+        assert_eq!(
+            pick_session(pairs),
+            (Some("authcookie_abc".into()), Some("xyz".into()))
+        );
         assert_eq!(pick_session(parse_cookie_header("")), (None, None));
         assert_eq!(pick_session(parse_cookie_header("auth=")), (None, None));
     }

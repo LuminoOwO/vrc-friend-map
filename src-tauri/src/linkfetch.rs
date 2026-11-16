@@ -47,7 +47,10 @@ fn public_ip(ip: IpAddr) -> bool {
 fn resolve_public(url: &url::Url) -> Result<SocketAddr, String> {
     let host = url.host_str().ok_or("no host")?;
     let port = url.port_or_known_default().ok_or("no port")?;
-    let addrs: Vec<SocketAddr> = (host, port).to_socket_addrs().map_err(|e| e.to_string())?.collect();
+    let addrs: Vec<SocketAddr> = (host, port)
+        .to_socket_addrs()
+        .map_err(|e| e.to_string())?
+        .collect();
     if addrs.is_empty() {
         return Err("host not found".into());
     }
@@ -65,27 +68,50 @@ pub async fn fetch_link_text(url: String) -> Result<String, String> {
             return Err("only http and https links".into());
         }
         let u = current.clone();
-        let addr = tauri::async_runtime::spawn_blocking(move || resolve_public(&u)).await.map_err(|e| e.to_string())??;
+        let addr = tauri::async_runtime::spawn_blocking(move || resolve_public(&u))
+            .await
+            .map_err(|e| e.to_string())??;
         let host = current.host_str().unwrap_or_default().to_string();
         let client = reqwest::Client::builder()
             .redirect(reqwest::redirect::Policy::none())
             .timeout(Duration::from_secs(8))
             .connect_timeout(Duration::from_secs(5))
             .resolve(&host, addr)
-            .user_agent(concat!("Mozilla/5.0 (compatible; vrc-friend-map/", env!("CARGO_PKG_VERSION"), ")"))
+            .user_agent(concat!(
+                "Mozilla/5.0 (compatible; vrc-friend-map/",
+                env!("CARGO_PKG_VERSION"),
+                ")"
+            ))
             .build()
             .map_err(|e| e.to_string())?;
-        let mut resp = client.get(current.clone()).send().await.map_err(|e| e.to_string())?;
+        let mut resp = client
+            .get(current.clone())
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
         if resp.status().is_redirection() {
-            let loc = resp.headers().get(reqwest::header::LOCATION).and_then(|v| v.to_str().ok()).ok_or("redirect without a target")?;
+            let loc = resp
+                .headers()
+                .get(reqwest::header::LOCATION)
+                .and_then(|v| v.to_str().ok())
+                .ok_or("redirect without a target")?;
             current = current.join(loc).map_err(|e| e.to_string())?;
             continue;
         }
         if !resp.status().is_success() {
             return Err(format!("HTTP {}", resp.status().as_u16()));
         }
-        let ctype = resp.headers().get(reqwest::header::CONTENT_TYPE).and_then(|v| v.to_str().ok()).unwrap_or("").to_ascii_lowercase();
-        if !(ctype.is_empty() || ctype.starts_with("text/") || ctype.contains("html") || ctype.contains("json")) {
+        let ctype = resp
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("")
+            .to_ascii_lowercase();
+        if !(ctype.is_empty()
+            || ctype.starts_with("text/")
+            || ctype.contains("html")
+            || ctype.contains("json"))
+        {
             return Err("not a text page".into());
         }
         let mut body: Vec<u8> = Vec::new();
@@ -107,7 +133,19 @@ mod tests {
 
     #[test]
     fn private_addresses_are_refused() {
-        for a in ["127.0.0.1", "10.1.2.3", "192.168.0.1", "172.16.5.4", "169.254.1.1", "100.64.0.1", "0.0.0.0", "::1", "fe80::1", "fd00::1", "::ffff:192.168.1.1"] {
+        for a in [
+            "127.0.0.1",
+            "10.1.2.3",
+            "192.168.0.1",
+            "172.16.5.4",
+            "169.254.1.1",
+            "100.64.0.1",
+            "0.0.0.0",
+            "::1",
+            "fe80::1",
+            "fd00::1",
+            "::ffff:192.168.1.1",
+        ] {
             assert!(!public_ip(a.parse().unwrap()), "{a} should be refused");
         }
         for a in ["1.1.1.1", "8.8.8.8", "2606:4700:4700::1111"] {
@@ -129,7 +167,9 @@ pub async fn push_send(endpoint: String, body: String) -> Result<u16, String> {
         return Err("message too big".into());
     }
     let u = url.clone();
-    let addr = tauri::async_runtime::spawn_blocking(move || resolve_public(&u)).await.map_err(|e| e.to_string())??;
+    let addr = tauri::async_runtime::spawn_blocking(move || resolve_public(&u))
+        .await
+        .map_err(|e| e.to_string())??;
     let host = url.host_str().unwrap_or_default().to_string();
     let client = reqwest::Client::builder()
         .redirect(reqwest::redirect::Policy::none())

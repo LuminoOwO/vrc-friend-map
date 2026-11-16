@@ -108,19 +108,28 @@ pub fn video_in(rest: &str) -> Option<(String, Option<String>)> {
         return None;
     }
     // Only the request, not the resolved stream URL (that's a long CDN link).
-    if lower.contains("resolved to") || lower.contains("resolving url") && rest.contains("' resolved") {
+    if lower.contains("resolved to")
+        || lower.contains("resolving url") && rest.contains("' resolved")
+    {
         return None;
     }
     let start = rest.find("https://").or_else(|| rest.find("http://"))?;
     let tail = &rest[start..];
-    let end = tail.find(|c: char| c == '\'' || c == '"' || c == ' ' || c == ',' || c == '>' || c == ')').unwrap_or(tail.len());
+    let end = tail
+        .find(|c: char| c == '\'' || c == '"' || c == ' ' || c == ',' || c == '>' || c == ')')
+        .unwrap_or(tail.len());
     let url = tail[..end].trim_end_matches(['.', ',']).to_string();
     if url.len() < 12 || url.len() > 600 {
         return None;
     }
     let by = rest
         .find("requested by ")
-        .map(|i| rest[i + 13..].trim().trim_end_matches(['.', ')']).to_string())
+        .map(|i| {
+            rest[i + 13..]
+                .trim()
+                .trim_end_matches(['.', ')'])
+                .to_string()
+        })
         .filter(|n| !n.is_empty() && n.len() < 64);
     Some((url, by))
 }
@@ -155,7 +164,13 @@ pub struct History {
 /// "2026.11.08 21:13:49" -> naive seconds since 1970 (wall clock as if UTC).
 pub fn parse_ts(line: &str) -> Option<i64> {
     let b = line.as_bytes();
-    if b.len() < 19 || b[4] != b'.' || b[7] != b'.' || b[10] != b' ' || b[13] != b':' || b[16] != b':' {
+    if b.len() < 19
+        || b[4] != b'.'
+        || b[7] != b'.'
+        || b[10] != b' '
+        || b[13] != b':'
+        || b[16] != b':'
+    {
         return None;
     }
     let num = |r: std::ops::Range<usize>| -> Option<i64> {
@@ -200,7 +215,12 @@ pub fn split_player(rest: &str) -> Option<(&str, &str)> {
 
 fn access_of(instance: &str) -> String {
     if instance.contains("~private(") {
-        if instance.contains("~canRequestInvite") { "invite+" } else { "invite" }.into()
+        if instance.contains("~canRequestInvite") {
+            "invite+"
+        } else {
+            "invite"
+        }
+        .into()
     } else if instance.contains("~friends(") {
         "friends".into()
     } else if instance.contains("~hidden(") {
@@ -233,7 +253,9 @@ struct OpenVisit {
 
 impl OpenVisit {
     fn close(mut self, at: i64, local: &Option<String>) -> Visit {
-        let end = at.max(self.visit.start).min(self.visit.start + MAX_VISIT_SECS);
+        let end = at
+            .max(self.visit.start)
+            .min(self.visit.start + MAX_VISIT_SECS);
         for (id, from) in self.open.drain() {
             self.visit.players.push(Stint { id, from, to: end });
         }
@@ -247,7 +269,9 @@ impl OpenVisit {
             self.visit.players.retain(|s| &s.id != me);
         }
         self.visit.players.retain(|s| s.to > s.from);
-        self.visit.players.sort_by(|a, b| a.from.cmp(&b.from).then(a.id.cmp(&b.id)));
+        self.visit
+            .players
+            .sort_by(|a, b| a.from.cmp(&b.from).then(a.id.cmp(&b.id)));
         self.visit
     }
 }
@@ -276,7 +300,11 @@ pub fn parse_log(text: &str) -> Parsed {
                 }
                 if !rest.starts_with("[Behaviour]") {
                     if let Some((url, by)) = video_in(rest) {
-                        let dup = cur.visit.videos.last().is_some_and(|v| v.url == url && ts - v.t < 30);
+                        let dup = cur
+                            .visit
+                            .videos
+                            .last()
+                            .is_some_and(|v| v.url == url && ts - v.t < 30);
                         if !dup && cur.visit.videos.len() < 500 {
                             cur.visit.videos.push(VideoEvent { t: ts, url, by });
                         }
@@ -285,15 +313,26 @@ pub fn parse_log(text: &str) -> Parsed {
                 }
             }
         }
-        let Some(pos) = line.find("[Behaviour] ") else { continue };
+        let Some(pos) = line.find("[Behaviour] ") else {
+            continue;
+        };
         let rest = &line[pos + 12..];
         if let Some(p) = rest.strip_prefix("Switching ") {
             if let (Some(cur), Some(i)) = (current.as_mut(), p.find(" to avatar ")) {
                 let name = p[..i].trim().to_string();
                 let avatar = p[i + 11..].trim().to_string();
-                if !name.is_empty() && !avatar.is_empty() && avatar.len() < 200 && cur.visit.avatars.len() < 2000 {
+                if !name.is_empty()
+                    && !avatar.is_empty()
+                    && avatar.len() < 200
+                    && cur.visit.avatars.len() < 2000
+                {
                     let id = cur.names.get(&name).cloned();
-                    cur.visit.avatars.push(AvatarEvent { t: ts, id, name, avatar });
+                    cur.visit.avatars.push(AvatarEvent {
+                        t: ts,
+                        id,
+                        name,
+                        avatar,
+                    });
                 }
             }
             continue;
@@ -328,7 +367,9 @@ pub fn parse_log(text: &str) -> Parsed {
                 names: HashMap::new(),
             });
         } else if let Some(p) = rest.strip_prefix("OnPlayerJoined ") {
-            let (Some(v), Some((name, id))) = (current.as_mut(), split_player(p)) else { continue };
+            let (Some(v), Some((name, id))) = (current.as_mut(), split_player(p)) else {
+                continue;
+            };
             v.open.entry(id.to_string()).or_insert(ts);
             v.names.insert(name.to_string(), id.to_string());
             out.names.insert(id.to_string(), name.to_string());
@@ -336,9 +377,15 @@ pub fn parse_log(text: &str) -> Parsed {
                 out.local_id = Some(id.to_string());
             }
         } else if let Some(p) = rest.strip_prefix("OnPlayerLeft ") {
-            let (Some(v), Some((_, id))) = (current.as_mut(), split_player(p)) else { continue };
+            let (Some(v), Some((_, id))) = (current.as_mut(), split_player(p)) else {
+                continue;
+            };
             if let Some(from) = v.open.remove(id) {
-                v.visit.players.push(Stint { id: id.to_string(), from, to: ts });
+                v.visit.players.push(Stint {
+                    id: id.to_string(),
+                    from,
+                    to: ts,
+                });
             }
         } else if rest.trim_end() == "OnLeftRoom" {
             if let Some(mut v) = current.take() {
@@ -346,7 +393,10 @@ pub fn parse_log(text: &str) -> Parsed {
                 finished.push(v);
             }
         } else if let Some(p) = rest.strip_prefix("Initialized PlayerAPI \"") {
-            if let Some(name) = p.strip_suffix("\" is local").or_else(|| p.trim_end().strip_suffix("\" is local")) {
+            if let Some(name) = p
+                .strip_suffix("\" is local")
+                .or_else(|| p.trim_end().strip_suffix("\" is local"))
+            {
                 if out.local_id.is_none() {
                     if let Some(id) = current.as_ref().and_then(|v| v.names.get(name)) {
                         out.local_id = Some(id.clone());
@@ -380,7 +430,13 @@ pub fn detect_dirs() -> Vec<PathBuf> {
     #[cfg(target_os = "windows")]
     {
         if let Ok(profile) = std::env::var("USERPROFILE") {
-            out.push(PathBuf::from(profile).join("AppData").join("LocalLow").join("VRChat").join("VRChat"));
+            out.push(
+                PathBuf::from(profile)
+                    .join("AppData")
+                    .join("LocalLow")
+                    .join("VRChat")
+                    .join("VRChat"),
+            );
         }
     }
     #[cfg(target_os = "linux")]
@@ -397,7 +453,10 @@ pub fn detect_dirs() -> Vec<PathBuf> {
             let mut libraries: Vec<PathBuf> = Vec::new();
             for root in roots.iter().filter(|r| r.is_dir()) {
                 libraries.push(root.clone());
-                for vdf in [root.join("steamapps/libraryfolders.vdf"), root.join("config/libraryfolders.vdf")] {
+                for vdf in [
+                    root.join("steamapps/libraryfolders.vdf"),
+                    root.join("config/libraryfolders.vdf"),
+                ] {
                     if let Ok(text) = std::fs::read_to_string(&vdf) {
                         libraries.extend(library_paths(&text).into_iter().map(PathBuf::from));
                     }
@@ -458,19 +517,30 @@ pub struct LogStore {
 
 impl LogStore {
     pub fn new(path: PathBuf) -> Self {
-        Self { path, cache: Mutex::new(None) }
+        Self {
+            path,
+            cache: Mutex::new(None),
+        }
     }
 
     fn load(&self) -> Result<History, String> {
         match std::fs::read(&self.path) {
-            Ok(bytes) => serde_json::from_slice::<History>(&bytes).map_err(|e| format!("history.json: {e}")),
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(History { version: HISTORY_VERSION, ..Default::default() }),
+            Ok(bytes) => {
+                serde_json::from_slice::<History>(&bytes).map_err(|e| format!("history.json: {e}"))
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(History {
+                version: HISTORY_VERSION,
+                ..Default::default()
+            }),
             Err(e) => Err(e.to_string()),
         }
     }
 
     fn with_history<T>(&self, f: impl FnOnce(&mut History) -> T) -> Result<T, String> {
-        let mut guard = self.cache.lock().map_err(|_| "log history lock poisoned".to_string())?;
+        let mut guard = self
+            .cache
+            .lock()
+            .map_err(|_| "log history lock poisoned".to_string())?;
         if guard.is_none() {
             *guard = Some(self.load()?);
         }
@@ -483,8 +553,14 @@ impl LogStore {
     }
 
     pub fn clear(&self) -> Result<(), String> {
-        let mut guard = self.cache.lock().map_err(|_| "log history lock poisoned".to_string())?;
-        *guard = Some(History { version: HISTORY_VERSION, ..Default::default() });
+        let mut guard = self
+            .cache
+            .lock()
+            .map_err(|_| "log history lock poisoned".to_string())?;
+        *guard = Some(History {
+            version: HISTORY_VERSION,
+            ..Default::default()
+        });
         match std::fs::remove_file(&self.path) {
             Ok(()) => Ok(()),
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
@@ -494,8 +570,16 @@ impl LogStore {
 
     /// Read new or changed log files from `dirs` and fold them into history.
     /// `retention_days` = 0 keeps everything.
-    pub fn scan(&self, dirs: &[PathBuf], retention_days: u32, now_naive: i64) -> Result<ScanReport, String> {
-        let mut report = ScanReport { dirs: dirs.iter().map(|d| d.display().to_string()).collect(), ..Default::default() };
+    pub fn scan(
+        &self,
+        dirs: &[PathBuf],
+        retention_days: u32,
+        now_naive: i64,
+    ) -> Result<ScanReport, String> {
+        let mut report = ScanReport {
+            dirs: dirs.iter().map(|d| d.display().to_string()).collect(),
+            ..Default::default()
+        };
         let mut changed = false;
         let mut newer: Option<u32> = None;
         self.with_history(|h| {
@@ -552,8 +636,21 @@ impl LogStore {
                     for (id, n) in parsed.names {
                         h.names.insert(id, n);
                     }
-                    let extra = h.files.get(&name).map(|f| f.extra.clone()).unwrap_or_default();
-                    h.files.insert(name, FileEntry { size, mtime, local_id: parsed.local_id, visits: parsed.visits, extra });
+                    let extra = h
+                        .files
+                        .get(&name)
+                        .map(|f| f.extra.clone())
+                        .unwrap_or_default();
+                    h.files.insert(
+                        name,
+                        FileEntry {
+                            size,
+                            mtime,
+                            local_id: parsed.local_id,
+                            visits: parsed.visits,
+                            extra,
+                        },
+                    );
                     report.files_read += 1;
                     changed = true;
                 }
@@ -568,7 +665,8 @@ impl LogStore {
                 let before = h.files.len();
                 // Forget files whose visits all expired, unless the file is still on disk
                 // (then the entry stops it from being read again every scan).
-                h.files.retain(|name, f| !f.visits.is_empty() || seen_names.contains(name));
+                h.files
+                    .retain(|name, f| !f.visits.is_empty() || seen_names.contains(name));
                 changed |= h.files.len() != before;
             }
             fill_summary(h, &mut report);
@@ -644,14 +742,27 @@ pub fn timeline(h: &History, from: i64, to: i64) -> Vec<TimelineVisit> {
             players: v
                 .players
                 .iter()
-                .map(|p| TimelineStint { id: p.id.clone(), name: h.names.get(&p.id).cloned().unwrap_or_default(), from: p.from, to: p.to })
+                .map(|p| TimelineStint {
+                    id: p.id.clone(),
+                    name: h.names.get(&p.id).cloned().unwrap_or_default(),
+                    from: p.from,
+                    to: p.to,
+                })
                 .collect(),
             videos: v.videos.clone(),
             shots: v.shots.clone(),
             avatars: v
                 .avatars
                 .iter()
-                .map(|a| AvatarEvent { id: a.id.clone().or_else(|| h.names.iter().find(|(_, n)| **n == a.name).map(|(id, _)| id.clone())), ..a.clone() })
+                .map(|a| AvatarEvent {
+                    id: a.id.clone().or_else(|| {
+                        h.names
+                            .iter()
+                            .find(|(_, n)| **n == a.name)
+                            .map(|(id, _)| id.clone())
+                    }),
+                    ..a.clone()
+                })
                 .collect(),
         })
         .collect();
@@ -711,9 +822,20 @@ pub fn met_people(h: &History, q: &MetQuery) -> Vec<MetPerson> {
     let mut out: Vec<MetPerson> = acc
         .into_iter()
         .filter(|(_, (secs, _, _))| *secs >= q.min_secs)
-        .map(|(id, (secs, visits, last))| MetPerson { id: id.to_string(), name: h.names.get(id).cloned().unwrap_or_default(), secs, visits, last })
+        .map(|(id, (secs, visits, last))| MetPerson {
+            id: id.to_string(),
+            name: h.names.get(id).cloned().unwrap_or_default(),
+            secs,
+            visits,
+            last,
+        })
         .collect();
-    out.sort_by(|a, b| b.secs.partial_cmp(&a.secs).unwrap_or(std::cmp::Ordering::Equal).then(a.id.cmp(&b.id)));
+    out.sort_by(|a, b| {
+        b.secs
+            .partial_cmp(&a.secs)
+            .unwrap_or(std::cmp::Ordering::Equal)
+            .then(a.id.cmp(&b.id))
+    });
     out.truncate(q.limit.min(500));
     out
 }
@@ -721,8 +843,18 @@ pub fn met_people(h: &History, q: &MetQuery) -> Vec<MetPerson> {
 fn fill_summary(h: &History, report: &mut ScanReport) {
     report.files_stored = h.files.len();
     report.visits = h.files.values().map(|f| f.visits.len()).sum();
-    report.first = h.files.values().flat_map(|f| f.visits.iter().map(|v| v.start)).min().unwrap_or(0);
-    report.last = h.files.values().flat_map(|f| f.visits.iter().map(|v| v.end)).max().unwrap_or(0);
+    report.first = h
+        .files
+        .values()
+        .flat_map(|f| f.visits.iter().map(|v| v.start))
+        .min()
+        .unwrap_or(0);
+    report.last = h
+        .files
+        .values()
+        .flat_map(|f| f.visits.iter().map(|v| v.end))
+        .max()
+        .unwrap_or(0);
 }
 
 // ---------------------------------------------------------------- statistics
@@ -785,7 +917,12 @@ fn day_of(t: i64) -> i64 {
 }
 
 pub fn compute_stats(h: &History, q: &StatsQuery) -> Stats {
-    let index: HashMap<&str, u32> = q.friend_ids.iter().enumerate().map(|(i, id)| (id.as_str(), i as u32)).collect();
+    let index: HashMap<&str, u32> = q
+        .friend_ids
+        .iter()
+        .enumerate()
+        .map(|(i, id)| (id.as_str(), i as u32))
+        .collect();
     let n = q.friend_ids.len();
     let crowd = |others: usize| -> f64 {
         let o = others.max(1) as f64;
@@ -819,7 +956,11 @@ pub fn compute_stats(h: &History, q: &StatsQuery) -> Stats {
     for (v, local) in visits {
         stats.visits += 1;
         stats.play_secs += (v.end - v.start) as f64;
-        stats.first = if stats.first == 0 { v.start } else { stats.first.min(v.start) };
+        stats.first = if stats.first == 0 {
+            v.start
+        } else {
+            stats.first.min(v.start)
+        };
         stats.last = stats.last.max(v.end);
 
         // +1 / -1 events; `None` = someone who isn't a friend (still counts toward crowd size).
@@ -870,7 +1011,9 @@ pub fn compute_stats(h: &History, q: &StatsQuery) -> Stats {
                 }
                 i += 1;
             }
-            let Some(&(next, _, _)) = events.get(i) else { break };
+            let Some(&(next, _, _)) = events.get(i) else {
+                break;
+            };
             let dt = (next - t) as f64;
             if dt <= 0.0 || others == 0 || present.is_empty() {
                 continue;
@@ -959,7 +1102,9 @@ pub fn compute_stats(h: &History, q: &StatsQuery) -> Stats {
             last: acc.last,
         })
         .collect();
-    stats.pairs.sort_by(|x, y| y.weighted.total_cmp(&x.weighted));
+    stats
+        .pairs
+        .sort_by(|x, y| y.weighted.total_cmp(&x.weighted));
     stats
 }
 
@@ -974,7 +1119,12 @@ pub fn now_naive_fallback() -> i64 {
 }
 
 pub fn dirs_from_strings(dirs: &[String]) -> Vec<PathBuf> {
-    dirs.iter().map(|d| d.trim()).filter(|d| !d.is_empty()).map(PathBuf::from).filter(|p| p.is_absolute()).collect()
+    dirs.iter()
+        .map(|d| d.trim())
+        .filter(|d| !d.is_empty())
+        .map(PathBuf::from)
+        .filter(|p| p.is_absolute())
+        .collect()
 }
 
 #[cfg(test)]
@@ -1006,7 +1156,20 @@ mod tests {
         assert_eq!(v.avatars.len(), 1);
         assert_eq!(v.avatars[0].avatar, "Fox Girl v2");
         assert_eq!(v.avatars[0].id.as_deref(), Some("usr_alice00000"));
-        let h = History { version: HISTORY_VERSION, files: [("a".to_string(), FileEntry { visits: p.visits.clone(), ..Default::default() })].into_iter().collect(), names: p.names.into_iter().collect(), extra: Default::default() };
+        let h = History {
+            version: HISTORY_VERSION,
+            files: [(
+                "a".to_string(),
+                FileEntry {
+                    visits: p.visits.clone(),
+                    ..Default::default()
+                },
+            )]
+            .into_iter()
+            .collect(),
+            names: p.names.into_iter().collect(),
+            extra: Default::default(),
+        };
         let t = timeline(&h, 0, i64::MAX);
         assert_eq!(t.len(), 1);
         assert_eq!(t[0].players[0].name, "Alice");
@@ -1040,14 +1203,41 @@ mod tests {
     fn met_people_are_not_friends() {
         let p = parse_log(SAMPLE);
         let mut h = History::default();
-        h.files.insert("a".into(), FileEntry { local_id: p.local_id.clone(), visits: p.visits.clone(), ..Default::default() });
+        h.files.insert(
+            "a".into(),
+            FileEntry {
+                local_id: p.local_id.clone(),
+                visits: p.visits.clone(),
+                ..Default::default()
+            },
+        );
         h.names = p.names.clone().into_iter().collect();
-        let met = met_people(&h, &MetQuery { exclude: vec!["usr_alice00000".into()], min_secs: 0.0, limit: 10 });
-        assert!(met.iter().all(|m| m.id != "usr_alice00000" && m.id != "usr_me0000000"));
-        let stranger = met.iter().find(|m| m.id == "usr_strange0000").expect("stranger");
+        let met = met_people(
+            &h,
+            &MetQuery {
+                exclude: vec!["usr_alice00000".into()],
+                min_secs: 0.0,
+                limit: 10,
+            },
+        );
+        assert!(met
+            .iter()
+            .all(|m| m.id != "usr_alice00000" && m.id != "usr_me0000000"));
+        let stranger = met
+            .iter()
+            .find(|m| m.id == "usr_strange0000")
+            .expect("stranger");
         assert_eq!(stranger.name, "Stranger");
         assert!(stranger.secs > 0.0 && stranger.visits == 1);
-        assert!(met_people(&h, &MetQuery { exclude: vec![], min_secs: 1e9, limit: 10 }).is_empty());
+        assert!(met_people(
+            &h,
+            &MetQuery {
+                exclude: vec![],
+                min_secs: 1e9,
+                limit: 10
+            }
+        )
+        .is_empty());
     }
 
     #[test]
@@ -1060,7 +1250,10 @@ mod tests {
 
     #[test]
     fn player_names_with_parens() {
-        assert_eq!(split_player("Alice (A) (usr_alice00000)"), Some(("Alice (A)", "usr_alice00000")));
+        assert_eq!(
+            split_player("Alice (A) (usr_alice00000)"),
+            Some(("Alice (A)", "usr_alice00000"))
+        );
         assert_eq!(split_player("NoId"), None);
     }
 
@@ -1075,42 +1268,90 @@ mod tests {
         assert_eq!(v0.access, "invite");
         assert_eq!(v0.end - v0.start, 13 * 60 + 10);
         // Self is not stored; Alice closed at OnLeftRoom, Bob at his leave.
-        let ids: Vec<_> = v0.players.iter().map(|s| (s.id.as_str(), s.to - s.from)).collect();
-        assert_eq!(ids, vec![("usr_alice00000", 12 * 60 + 59), ("usr_bob0000000", 10 * 60)]);
+        let ids: Vec<_> = v0
+            .players
+            .iter()
+            .map(|s| (s.id.as_str(), s.to - s.from))
+            .collect();
+        assert_eq!(
+            ids,
+            vec![
+                ("usr_alice00000", 12 * 60 + 59),
+                ("usr_bob0000000", 10 * 60)
+            ]
+        );
         let v1 = &p.visits[1];
         assert_eq!(v1.world_name, "Big Club");
         assert_eq!(v1.access, "group public");
         // Visit runs to the last timestamp in the file.
         assert_eq!(v1.end - v1.start, 40 * 60 + 10);
-        let carol = v1.players.iter().find(|s| s.id == "usr_carol000000").unwrap();
+        let carol = v1
+            .players
+            .iter()
+            .find(|s| s.id == "usr_carol000000")
+            .unwrap();
         assert_eq!(carol.to - carol.from, 30 * 60);
-        assert_eq!(p.names.get("usr_alice00000").map(String::as_str), Some("Alice (A)"));
+        assert_eq!(
+            p.names.get("usr_alice00000").map(String::as_str),
+            Some("Alice (A)")
+        );
     }
 
     #[test]
     fn stats_and_crowd_weighting() {
         let p = parse_log(SAMPLE);
-        let mut h = History { version: HISTORY_VERSION, ..Default::default() };
-        h.files.insert("output_log_x.txt".into(), FileEntry { local_id: p.local_id, visits: p.visits, ..Default::default() });
+        let mut h = History {
+            version: HISTORY_VERSION,
+            ..Default::default()
+        };
+        h.files.insert(
+            "output_log_x.txt".into(),
+            FileEntry {
+                local_id: p.local_id,
+                visits: p.visits,
+                ..Default::default()
+            },
+        );
         let q = StatsQuery {
-            friend_ids: vec!["usr_alice00000".into(), "usr_bob0000000".into(), "usr_carol000000".into()],
+            friend_ids: vec![
+                "usr_alice00000".into(),
+                "usr_bob0000000".into(),
+                "usr_carol000000".into(),
+            ],
             self_id: None,
             crowd: "off".into(),
             since: None,
         };
         let s = compute_stats(&h, &q);
-        let pair = |a: &str, b: &str| s.pairs.iter().find(|p| (p.a == a && p.b == b) || (p.a == b && p.b == a)).cloned();
+        let pair = |a: &str, b: &str| {
+            s.pairs
+                .iter()
+                .find(|p| (p.a == a && p.b == b) || (p.a == b && p.b == a))
+                .cloned()
+        };
         // Alice+Bob: 21:14 -> 21:24 in the first room.
-        assert_eq!(pair("usr_alice00000", "usr_bob0000000").unwrap().secs, 600.0);
+        assert_eq!(
+            pair("usr_alice00000", "usr_bob0000000").unwrap().secs,
+            600.0
+        );
         // Alice+Carol: 30 min in the club.
-        assert_eq!(pair("usr_alice00000", "usr_carol000000").unwrap().secs, 1800.0);
+        assert_eq!(
+            pair("usr_alice00000", "usr_carol000000").unwrap().secs,
+            1800.0
+        );
         assert!(pair("usr_bob0000000", "usr_carol000000").is_none());
         let alice = s.people.iter().find(|p| p.id == "usr_alice00000").unwrap();
         assert_eq!(alice.secs, (12 * 60 + 59 + 40 * 60) as f64);
         assert_eq!(alice.visits, 2);
 
         // Strong crowd weighting: in the club 3 others are present (Alice, Carol, stranger).
-        let s2 = compute_stats(&h, &StatsQuery { crowd: "strong".into(), ..q });
+        let s2 = compute_stats(
+            &h,
+            &StatsQuery {
+                crowd: "strong".into(),
+                ..q
+            },
+        );
         let ac = s2.pairs.iter().find(|p| p.secs == 1800.0).unwrap();
         assert!((ac.weighted - 600.0).abs() < 1e-6);
     }
@@ -1118,8 +1359,14 @@ mod tests {
     #[test]
     fn vdf_library_paths() {
         let vdf = "\"libraryfolders\"\n{\n\t\"0\"\n\t{\n\t\t\"path\"\t\t\"/home/u/.local/share/Steam\"\n\t}\n\t\"1\"\n\t{\n\t\t\"path\"\t\t\"/mnt/500gb/SteamLibrary\"\n\t}\n}";
-        assert_eq!(library_paths(vdf), vec!["/home/u/.local/share/Steam", "/mnt/500gb/SteamLibrary"]);
-        assert_eq!(library_paths("\"path\"\t\t\"D:\\\\SteamLibrary\""), vec!["D:\\SteamLibrary"]);
+        assert_eq!(
+            library_paths(vdf),
+            vec!["/home/u/.local/share/Steam", "/mnt/500gb/SteamLibrary"]
+        );
+        assert_eq!(
+            library_paths("\"path\"\t\t\"D:\\\\SteamLibrary\""),
+            vec!["D:\\SteamLibrary"]
+        );
     }
 
     #[test]
@@ -1140,27 +1387,60 @@ mod real_logs {
 
     #[test]
     fn real_logs() {
-        let Ok(dir) = std::env::var("VRCFM_REAL_LOGS") else { return };
+        let Ok(dir) = std::env::var("VRCFM_REAL_LOGS") else {
+            return;
+        };
         let tmp = std::env::temp_dir().join(format!("vrcfm-test-{}", std::process::id()));
         let store = LogStore::new(tmp.join("history.json"));
         let t0 = std::time::Instant::now();
-        let r = store.scan(&[PathBuf::from(&dir)], 0, now_naive_fallback()).unwrap();
-        println!("scan: {:?} in {:?}", (r.files_seen, r.files_read, r.visits, r.bytes), t0.elapsed());
+        let r = store
+            .scan(&[PathBuf::from(&dir)], 0, now_naive_fallback())
+            .unwrap();
+        println!(
+            "scan: {:?} in {:?}",
+            (r.files_seen, r.files_read, r.visits, r.bytes),
+            t0.elapsed()
+        );
         let h = store.load().unwrap();
         let mut everyone: Vec<String> = h.names.keys().cloned().collect();
         everyone.sort();
         for (name, f) in &h.files {
             let players: usize = f.visits.iter().map(|v| v.players.len()).sum();
-            println!("{name}: local_id={} visits={} stints={players}", f.local_id.is_some(), f.visits.len());
+            println!(
+                "{name}: local_id={} visits={} stints={players}",
+                f.local_id.is_some(),
+                f.visits.len()
+            );
             for v in &f.visits {
-                println!("  {} min, {} players, access={}", (v.end - v.start) / 60, v.players.len(), v.access);
+                println!(
+                    "  {} min, {} players, access={}",
+                    (v.end - v.start) / 60,
+                    v.players.len(),
+                    v.access
+                );
             }
         }
         let t1 = std::time::Instant::now();
-        let s = store.stats(&StatsQuery { friend_ids: everyone, self_id: None, crowd: "strong".into(), since: None }).unwrap();
-        println!("stats: people={} pairs={} visits={} play_h={:.1} in {:?}", s.people.len(), s.pairs.len(), s.visits, s.play_secs / 3600.0, t1.elapsed());
+        let s = store
+            .stats(&StatsQuery {
+                friend_ids: everyone,
+                self_id: None,
+                crowd: "strong".into(),
+                since: None,
+            })
+            .unwrap();
+        println!(
+            "stats: people={} pairs={} visits={} play_h={:.1} in {:?}",
+            s.people.len(),
+            s.pairs.len(),
+            s.visits,
+            s.play_secs / 3600.0,
+            t1.elapsed()
+        );
         // A second scan reads nothing new.
-        let r2 = store.scan(&[PathBuf::from(&dir)], 0, now_naive_fallback()).unwrap();
+        let r2 = store
+            .scan(&[PathBuf::from(&dir)], 0, now_naive_fallback())
+            .unwrap();
         assert_eq!(r2.files_read, 0);
         let _ = std::fs::remove_dir_all(tmp);
     }

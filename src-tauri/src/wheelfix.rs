@@ -40,7 +40,8 @@ pub struct WheelFixState {
 }
 
 pub fn forced_on() -> bool {
-    std::env::args().any(|a| a == "--wheel-fix") || std::env::var("VRC_FRIEND_MAP_WHEEL_FIX").is_ok_and(|v| v == "1")
+    std::env::args().any(|a| a == "--wheel-fix")
+        || std::env::var("VRC_FRIEND_MAP_WHEEL_FIX").is_ok_and(|v| v == "1")
 }
 
 pub fn set_enabled<R: Runtime>(app: &AppHandle<R>, on: bool) {
@@ -60,7 +61,11 @@ pub fn wheel_fix_set<R: Runtime>(app: AppHandle<R>, enabled: bool) -> WheelFixSt
 
 #[tauri::command]
 pub fn wheel_fix_state() -> WheelFixState {
-    WheelFixState { enabled: ENABLED.load(Ordering::SeqCst), running: RUNNING.load(Ordering::SeqCst), forced: forced_on() }
+    WheelFixState {
+        enabled: ENABLED.load(Ordering::SeqCst),
+        running: RUNNING.load(Ordering::SeqCst),
+        forced: forced_on(),
+    }
 }
 
 #[cfg(not(all(target_os = "linux", desktop)))]
@@ -69,7 +74,9 @@ fn start<R: Runtime>(_app: AppHandle<R>) {}
 #[cfg(all(target_os = "linux", desktop))]
 fn start<R: Runtime>(app: AppHandle<R>) {
     use raw_window_handle::{HasWindowHandle, RawWindowHandle};
-    let Some(window) = app.get_webview_window("main") else { return };
+    let Some(window) = app.get_webview_window("main") else {
+        return;
+    };
     let xid = match window.window_handle().map(|h| h.as_raw()) {
         Ok(RawWindowHandle::Xlib(h)) => h.window,
         Ok(RawWindowHandle::Xcb(h)) => h.window.get() as std::os::raw::c_ulong,
@@ -92,8 +99,19 @@ fn start<R: Runtime>(app: AppHandle<R>) {
 #[cfg(all(target_os = "linux", desktop))]
 fn listen<R: Runtime>(app: &AppHandle<R>, our: std::os::raw::c_ulong) -> Result<(), String> {
     x11::listen(our, &ENABLED, &RUNNING, |x, y, dx, dy| {
-        let scale = app.get_webview_window("main").and_then(|w| w.scale_factor().ok()).unwrap_or(1.0);
-        let _ = app.emit("native-wheel", NativeWheel { x: x as f64 / scale, y: y as f64 / scale, dx, dy });
+        let scale = app
+            .get_webview_window("main")
+            .and_then(|w| w.scale_factor().ok())
+            .unwrap_or(1.0);
+        let _ = app.emit(
+            "native-wheel",
+            NativeWheel {
+                x: x as f64 / scale,
+                y: y as f64 / scale,
+                dx,
+                dy,
+            },
+        );
     })
 }
 

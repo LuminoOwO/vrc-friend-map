@@ -34,8 +34,13 @@ pub fn call<R: Runtime>(app: &AppHandle<R>, command: &str, args: Value) -> Resul
     #[cfg(target_os = "android")]
     {
         use tauri::Manager;
-        let vfm = app.try_state::<Vfm<R>>().ok_or("the Android plugin isn't loaded")?;
-        return vfm.0.run_mobile_plugin::<Value>(command, args).map_err(|e| e.to_string());
+        let vfm = app
+            .try_state::<Vfm<R>>()
+            .ok_or("the Android plugin isn't loaded")?;
+        return vfm
+            .0
+            .run_mobile_plugin::<Value>(command, args)
+            .map_err(|e| e.to_string());
     }
     #[cfg(not(target_os = "android"))]
     Err("only on Android".into())
@@ -48,9 +53,15 @@ pub fn root_copy_logs(dest: &std::path::Path) -> Result<usize, String> {
     {
         use std::process::Command;
         let su = |cmd: &str| -> Result<String, String> {
-            let out = Command::new("su").args(["-c", cmd]).output().map_err(|e| format!("no root access ({e})"))?;
+            let out = Command::new("su")
+                .args(["-c", cmd])
+                .output()
+                .map_err(|e| format!("no root access ({e})"))?;
             if !out.status.success() {
-                return Err(format!("root command failed: {}", String::from_utf8_lossy(&out.stderr).trim()));
+                return Err(format!(
+                    "root command failed: {}",
+                    String::from_utf8_lossy(&out.stderr).trim()
+                ));
             }
             Ok(String::from_utf8_lossy(&out.stdout).into_owned())
         };
@@ -60,13 +71,23 @@ pub fn root_copy_logs(dest: &std::path::Path) -> Result<usize, String> {
         let mut n = 0;
         for dir in pkgs.lines().map(str::trim).filter(|l| !l.is_empty()) {
             let files = su(&format!("ls {dir}/files/ 2>/dev/null")).unwrap_or_default();
-            for f in files.lines().map(str::trim).filter(|f| f.starts_with("output_log_") && f.ends_with(".txt")) {
+            for f in files
+                .lines()
+                .map(str::trim)
+                .filter(|f| f.starts_with("output_log_") && f.ends_with(".txt"))
+            {
                 if f.contains('/') || f.contains("..") || f.contains('\'') {
                     continue;
                 }
-                let bytes = Command::new("su").args(["-c", &format!("cat '{dir}/files/{f}'")]).output().map_err(|e| e.to_string())?.stdout;
+                let bytes = Command::new("su")
+                    .args(["-c", &format!("cat '{dir}/files/{f}'")])
+                    .output()
+                    .map_err(|e| e.to_string())?
+                    .stdout;
                 let target = dest.join(f);
-                let same = std::fs::metadata(&target).map(|m| m.len() == bytes.len() as u64).unwrap_or(false);
+                let same = std::fs::metadata(&target)
+                    .map(|m| m.len() == bytes.len() as u64)
+                    .unwrap_or(false);
                 if !same {
                     std::fs::write(&target, &bytes).map_err(|e| e.to_string())?;
                 }
@@ -74,7 +95,9 @@ pub fn root_copy_logs(dest: &std::path::Path) -> Result<usize, String> {
             }
         }
         if n == 0 {
-            return Err("root works, but no VRChat log files were found (is VRChat installed here?)".into());
+            return Err(
+                "root works, but no VRChat log files were found (is VRChat installed here?)".into(),
+            );
         }
         Ok(n)
     }

@@ -123,7 +123,12 @@ pub enum Os {
 
 /// Environment variables to set for `mode`. `get` reads the current environment,
 /// so variables the user set themselves are left alone (or appended to).
-pub fn env_plan(mode: Mode, os: Os, dmabuf_default: bool, get: &dyn Fn(&str) -> Option<String>) -> Vec<(String, Option<String>)> {
+pub fn env_plan(
+    mode: Mode,
+    os: Os,
+    dmabuf_default: bool,
+    get: &dyn Fn(&str) -> Option<String>,
+) -> Vec<(String, Option<String>)> {
     let mut out: Vec<(String, Option<String>)> = Vec::new();
     match os {
         Os::Linux => {
@@ -139,7 +144,9 @@ pub fn env_plan(mode: Mode, os: Os, dmabuf_default: bool, get: &dyn Fn(&str) -> 
                 Mode::Gpu => {
                     // Variables the user set themselves are left alone, even if they
                     // contradict this mode.
-                    if get("WEBKIT_FORCE_COMPOSITING_MODE").is_none() && get("WEBKIT_DISABLE_COMPOSITING_MODE").is_none() {
+                    if get("WEBKIT_FORCE_COMPOSITING_MODE").is_none()
+                        && get("WEBKIT_DISABLE_COMPOSITING_MODE").is_none()
+                    {
                         out.push(("WEBKIT_FORCE_COMPOSITING_MODE".into(), Some("1".into())));
                     }
                 }
@@ -231,7 +238,11 @@ pub fn chromium_switches(mode: Mode) -> Vec<&'static str> {
     match mode {
         Mode::Auto => vec![],
         // Also on GPUs/drivers Chromium would normally avoid.
-        Mode::Gpu => vec!["ignore-gpu-blocklist", "enable-gpu-rasterization", "enable-zero-copy"],
+        Mode::Gpu => vec![
+            "ignore-gpu-blocklist",
+            "enable-gpu-rasterization",
+            "enable-zero-copy",
+        ],
         Mode::Software => vec!["disable-gpu", "disable-gpu-compositing"],
     }
 }
@@ -281,14 +292,22 @@ fn chromium_sandbox_unusable() -> bool {
     // comes down to whether unprivileged user namespaces are allowed, below.
     let helper = std::env::var_os("CHROME_DEVEL_SANDBOX")
         .map(std::path::PathBuf::from)
-        .or_else(|| std::env::current_exe().ok().and_then(|e| e.parent().map(|d| d.join("chrome-sandbox"))));
+        .or_else(|| {
+            std::env::current_exe()
+                .ok()
+                .and_then(|e| e.parent().map(|d| d.join("chrome-sandbox")))
+        });
     let helper_ok = helper
         .and_then(|p| std::fs::metadata(p).ok())
         .is_some_and(|m| m.uid() == 0 && m.mode() & 0o4000 != 0 && m.mode() & 0o001 != 0);
     if helper_ok {
         return false;
     }
-    let read = |p: &str| std::fs::read_to_string(p).ok().and_then(|s| s.trim().parse::<u64>().ok());
+    let read = |p: &str| {
+        std::fs::read_to_string(p)
+            .ok()
+            .and_then(|s| s.trim().parse::<u64>().ok())
+    };
     read("/proc/sys/kernel/apparmor_restrict_unprivileged_userns") == Some(1)
         || read("/proc/sys/kernel/unprivileged_userns_clone") == Some(0)
         || read("/proc/sys/user/max_user_namespaces") == Some(0)
@@ -343,7 +362,16 @@ fn graphics_env() -> Vec<(String, String)> {
                 || k.starts_with("CHROME_")
                 || matches!(
                     k.as_str(),
-                    "XDG_SESSION_TYPE" | "XDG_CURRENT_DESKTOP" | "WAYLAND_DISPLAY" | "DISPLAY" | "LIBGL_ALWAYS_SOFTWARE" | "GDK_BACKEND" | "GSK_RENDERER" | "MESA_LOADER_DRIVER_OVERRIDE" | "DRI_PRIME" | "APPIMAGE"
+                    "XDG_SESSION_TYPE"
+                        | "XDG_CURRENT_DESKTOP"
+                        | "WAYLAND_DISPLAY"
+                        | "DISPLAY"
+                        | "LIBGL_ALWAYS_SOFTWARE"
+                        | "GDK_BACKEND"
+                        | "GSK_RENDERER"
+                        | "MESA_LOADER_DRIVER_OVERRIDE"
+                        | "DRI_PRIME"
+                        | "APPIMAGE"
                 )
         })
         .collect();
@@ -378,7 +406,8 @@ mod tests {
 
     #[test]
     fn identifier_matches_tauri_conf() {
-        let conf: serde_json::Value = serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
+        let conf: serde_json::Value =
+            serde_json::from_str(include_str!("../tauri.conf.json")).unwrap();
         assert_eq!(conf["identifier"], IDENTIFIER);
     }
 
@@ -392,7 +421,10 @@ mod tests {
 
     #[test]
     fn env_override_wins_only_when_valid() {
-        assert_eq!(effective(Some("software"), Mode::Gpu), (Mode::Software, true));
+        assert_eq!(
+            effective(Some("software"), Mode::Gpu),
+            (Mode::Software, true)
+        );
         assert_eq!(effective(Some("junk"), Mode::Gpu), (Mode::Gpu, false));
         assert_eq!(effective(None, Mode::Auto), (Mode::Auto, false));
     }
@@ -400,26 +432,51 @@ mod tests {
     #[test]
     fn linux_auto_keeps_existing_behaviour() {
         let p = env_plan(Mode::Auto, Os::Linux, false, &none);
-        assert_eq!(p, vec![("WEBKIT_DISABLE_DMABUF_RENDERER".to_string(), Some("1".to_string()))]);
+        assert_eq!(
+            p,
+            vec![(
+                "WEBKIT_DISABLE_DMABUF_RENDERER".to_string(),
+                Some("1".to_string())
+            )]
+        );
         assert!(env_plan(Mode::Auto, Os::Linux, true, &none).is_empty());
     }
 
     #[test]
     fn linux_gpu_and_software() {
         let gpu = env_plan(Mode::Gpu, Os::Linux, false, &none);
-        assert!(gpu.contains(&("WEBKIT_FORCE_COMPOSITING_MODE".to_string(), Some("1".to_string()))));
+        assert!(gpu.contains(&(
+            "WEBKIT_FORCE_COMPOSITING_MODE".to_string(),
+            Some("1".to_string())
+        )));
         // The user's own variables are never changed.
-        let own = env_plan(Mode::Gpu, Os::Linux, false, &|k| (k == "WEBKIT_DISABLE_COMPOSITING_MODE").then(|| "1".into()));
-        assert!(own.iter().all(|(k, _)| k != "WEBKIT_DISABLE_COMPOSITING_MODE" && k != "WEBKIT_FORCE_COMPOSITING_MODE"));
+        let own = env_plan(Mode::Gpu, Os::Linux, false, &|k| {
+            (k == "WEBKIT_DISABLE_COMPOSITING_MODE").then(|| "1".into())
+        });
+        assert!(own
+            .iter()
+            .all(|(k, _)| k != "WEBKIT_DISABLE_COMPOSITING_MODE"
+                && k != "WEBKIT_FORCE_COMPOSITING_MODE"));
         let sw = env_plan(Mode::Software, Os::Linux, false, &none);
-        assert!(sw.contains(&("WEBKIT_DISABLE_COMPOSITING_MODE".to_string(), Some("1".to_string()))));
+        assert!(sw.contains(&(
+            "WEBKIT_DISABLE_COMPOSITING_MODE".to_string(),
+            Some("1".to_string())
+        )));
         assert!(sw.iter().all(|(k, _)| k != "LIBGL_ALWAYS_SOFTWARE"));
     }
 
     #[test]
     fn windows_flags_append_to_user_args() {
-        let p = env_plan(Mode::Software, Os::Windows, false, &|k| (k == "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").then(|| "--foo".into()));
-        assert_eq!(p, vec![("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS".to_string(), Some("--foo --disable-gpu --disable-gpu-compositing".to_string()))]);
+        let p = env_plan(Mode::Software, Os::Windows, false, &|k| {
+            (k == "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS").then(|| "--foo".into())
+        });
+        assert_eq!(
+            p,
+            vec![(
+                "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS".to_string(),
+                Some("--foo --disable-gpu --disable-gpu-compositing".to_string())
+            )]
+        );
         assert!(env_plan(Mode::Auto, Os::Windows, false, &none).is_empty());
         assert!(env_plan(Mode::Gpu, Os::Other, false, &none).is_empty());
     }

@@ -67,7 +67,10 @@ pub struct ApiSettings {
 
 impl Default for ApiSettings {
     fn default() -> Self {
-        Self { contact: String::new(), interval_ms: 1200 }
+        Self {
+            contact: String::new(),
+            interval_ms: 1200,
+        }
     }
 }
 
@@ -129,7 +132,12 @@ impl ApiClient {
         let mut s = s;
         // Never go faster than one request per second, whatever the UI asks.
         s.interval_ms = s.interval_ms.clamp(1000, 10_000);
-        s.contact = s.contact.chars().filter(|c| !c.is_control()).take(120).collect();
+        s.contact = s
+            .contact
+            .chars()
+            .filter(|c| !c.is_control())
+            .take(120)
+            .collect();
         *self.settings.write().await = s;
     }
 
@@ -149,7 +157,11 @@ impl ApiClient {
                 user_id: Some(s.user_id.clone()),
                 display_name: Some(s.display_name.clone()),
             },
-            None => SessionInfo { logged_in: false, user_id: None, display_name: None },
+            None => SessionInfo {
+                logged_in: false,
+                user_id: None,
+                display_name: None,
+            },
         }
     }
 
@@ -235,7 +247,10 @@ impl ApiClient {
                 .http
                 .get(format!("{base}/auth/user"))
                 .header(reqwest::header::USER_AGENT, &ua)
-                .header(reqwest::header::COOKIE, Self::cookie_header(auth, two_factor))
+                .header(
+                    reqwest::header::COOKIE,
+                    Self::cookie_header(auth, two_factor),
+                )
                 .header(reqwest::header::ACCEPT, "application/json")
                 .send()
                 .await
@@ -304,7 +319,11 @@ impl ApiClient {
         }
         let text = res.text().await.unwrap_or_default();
         let data = serde_json::from_str(&text).unwrap_or(Value::String(text));
-        Ok(ApiResponse { status, data, retry_after })
+        Ok(ApiResponse {
+            status,
+            data,
+            retry_after,
+        })
     }
 
     /// The only calls that change anything on VRChat: send or cancel one
@@ -315,8 +334,13 @@ impl ApiClient {
             return Err("invalid user".into());
         }
         self.write_cooldown().await?;
-        let method = if cancel { reqwest::Method::DELETE } else { reqwest::Method::POST };
-        self.send(method, &format!("/user/{user_id}/friendRequest")).await
+        let method = if cancel {
+            reqwest::Method::DELETE
+        } else {
+            reqwest::Method::POST
+        };
+        self.send(method, &format!("/user/{user_id}/friendRequest"))
+            .await
     }
 
     /// Changes to your account go out one at a time, at most one every 3 s,
@@ -338,11 +362,20 @@ impl ApiClient {
             return Err("invalid user".into());
         }
         self.write_cooldown().await?;
-        self.send(reqwest::Method::DELETE, &format!("/auth/user/friends/{user_id}")).await
+        self.send(
+            reqwest::Method::DELETE,
+            &format!("/auth/user/friends/{user_id}"),
+        )
+        .await
     }
 
     /// Block, mute, hide their avatar, ... (`undo` removes it again).
-    pub async fn moderate(&self, user_id: &str, kind: &str, undo: bool) -> Result<ApiResponse, String> {
+    pub async fn moderate(
+        &self,
+        user_id: &str,
+        kind: &str,
+        undo: bool,
+    ) -> Result<ApiResponse, String> {
         if !valid_user_id(user_id) {
             return Err("invalid user".into());
         }
@@ -352,28 +385,56 @@ impl ApiClient {
         self.write_cooldown().await?;
         let body = serde_json::json!({ "moderated": user_id, "type": kind });
         if undo {
-            self.send_json(reqwest::Method::PUT, "/auth/user/unplayermoderate", Some(body)).await
+            self.send_json(
+                reqwest::Method::PUT,
+                "/auth/user/unplayermoderate",
+                Some(body),
+            )
+            .await
         } else {
-            self.send_json(reqwest::Method::POST, "/auth/user/playermoderations", Some(body)).await
+            self.send_json(
+                reqwest::Method::POST,
+                "/auth/user/playermoderations",
+                Some(body),
+            )
+            .await
         }
     }
 
     /// Save your own profile (a button click in Profile → Edit): status, status text and
     /// pronouns go to /users/{id}, bio, links, languages and the look to /profile/{id}
     /// (VRChat split them in 2026). Only these fields pass; one write cooldown for both.
-    pub async fn update_profile(&self, user_id: &str, user: serde_json::Value, profile: serde_json::Value) -> Result<Vec<ApiResponse>, String> {
+    pub async fn update_profile(
+        &self,
+        user_id: &str,
+        user: serde_json::Value,
+        profile: serde_json::Value,
+    ) -> Result<Vec<ApiResponse>, String> {
         const USER_FIELDS: &[&str] = &["status", "statusDescription", "pronouns"];
-        const PROFILE_FIELDS: &[&str] =
-            &["bio", "bioLinks", "languages", "themeId", "backgroundType", "backgroundGradientTop", "backgroundGradientBottom", "bannerType", "bannerColor"];
+        const PROFILE_FIELDS: &[&str] = &[
+            "bio",
+            "bioLinks",
+            "languages",
+            "themeId",
+            "backgroundType",
+            "backgroundGradientTop",
+            "backgroundGradientBottom",
+            "bannerType",
+            "bannerColor",
+        ];
         if !valid_user_id(user_id) {
             return Err("invalid user".into());
         }
-        let only = |v: serde_json::Value, keep: &[&str]| -> serde_json::Map<String, serde_json::Value> {
-            match v {
-                serde_json::Value::Object(m) => m.into_iter().filter(|(k, _)| keep.contains(&k.as_str())).collect(),
-                _ => serde_json::Map::new(),
-            }
-        };
+        let only =
+            |v: serde_json::Value, keep: &[&str]| -> serde_json::Map<String, serde_json::Value> {
+                match v {
+                    serde_json::Value::Object(m) => m
+                        .into_iter()
+                        .filter(|(k, _)| keep.contains(&k.as_str()))
+                        .collect(),
+                    _ => serde_json::Map::new(),
+                }
+            };
         let user = only(user, USER_FIELDS);
         let profile = only(profile, PROFILE_FIELDS);
         if user.is_empty() && profile.is_empty() {
@@ -382,10 +443,24 @@ impl ApiClient {
         self.write_cooldown().await?;
         let mut out = vec![];
         if !user.is_empty() {
-            out.push(self.send_json(reqwest::Method::PUT, &format!("/users/{user_id}"), Some(serde_json::Value::Object(user))).await?);
+            out.push(
+                self.send_json(
+                    reqwest::Method::PUT,
+                    &format!("/users/{user_id}"),
+                    Some(serde_json::Value::Object(user)),
+                )
+                .await?,
+            );
         }
         if !profile.is_empty() {
-            out.push(self.send_json(reqwest::Method::PUT, &format!("/profile/{user_id}"), Some(serde_json::Value::Object(profile))).await?);
+            out.push(
+                self.send_json(
+                    reqwest::Method::PUT,
+                    &format!("/profile/{user_id}"),
+                    Some(serde_json::Value::Object(profile)),
+                )
+                .await?,
+            );
         }
         Ok(out)
     }
@@ -393,32 +468,67 @@ impl ApiClient {
     /// One allow-listed write (see WRITES): only the listed body fields pass.
     /// Spaced like every request (acquire_slot); the UI queues writes and
     /// only makes them for something you did or switched on.
-    pub async fn write(&self, method: &str, path: &str, body: Option<Value>) -> Result<ApiResponse, String> {
-        let fields = write_rule(method, path).ok_or_else(|| format!("write not allowed: {method} {path}"))?;
+    pub async fn write(
+        &self,
+        method: &str,
+        path: &str,
+        body: Option<Value>,
+    ) -> Result<ApiResponse, String> {
+        let fields = write_rule(method, path)
+            .ok_or_else(|| format!("write not allowed: {method} {path}"))?;
         let body = match body {
-            Some(Value::Object(m)) if !fields.is_empty() => {
-                Some(Value::Object(m.into_iter().filter(|(k, _)| fields.contains(&k.as_str())).collect()))
-            }
+            Some(Value::Object(m)) if !fields.is_empty() => Some(Value::Object(
+                m.into_iter()
+                    .filter(|(k, _)| fields.contains(&k.as_str()))
+                    .collect(),
+            )),
             _ if fields.is_empty() => None,
             other => other.filter(|v| v.is_object()),
         };
-        let method = reqwest::Method::from_bytes(method.to_ascii_uppercase().as_bytes()).map_err(|e| e.to_string())?;
+        let method = reqwest::Method::from_bytes(method.to_ascii_uppercase().as_bytes())
+            .map_err(|e| e.to_string())?;
         self.send_json(method, path, body).await
     }
 
     /// Upload an image file (prints, stickers, emojis, group icons/banners).
     /// `kind`: "print" goes to /prints, everything else to /file/image with
     /// the given tag. Only images up to 10 MB.
-    pub async fn upload_image(&self, kind: &str, bytes: Vec<u8>, mime: &str, fields: Vec<(String, String)>) -> Result<ApiResponse, String> {
-        const TAGS: &[&str] = &["gallery", "icon", "emoji", "sticker", "print", "emojianimated"];
-        const FIELDS: &[&str] = &["tag", "animationStyle", "maskTag", "frames", "framesOverTime", "timestamp", "note", "worldId", "worldName"];
+    pub async fn upload_image(
+        &self,
+        kind: &str,
+        bytes: Vec<u8>,
+        mime: &str,
+        fields: Vec<(String, String)>,
+    ) -> Result<ApiResponse, String> {
+        const TAGS: &[&str] = &[
+            "gallery",
+            "icon",
+            "emoji",
+            "sticker",
+            "print",
+            "emojianimated",
+        ];
+        const FIELDS: &[&str] = &[
+            "tag",
+            "animationStyle",
+            "maskTag",
+            "frames",
+            "framesOverTime",
+            "timestamp",
+            "note",
+            "worldId",
+            "worldName",
+        ];
         if !TAGS.contains(&kind) {
             return Err("unknown upload kind".into());
         }
         if bytes.len() > 10 * 1024 * 1024 {
             return Err("image too big (max 10 MB)".into());
         }
-        if !matches!(mime, "image/png" | "image/jpeg" | "image/gif" | "image/webp") {
+        if !matches!(
+            mime,
+            "image/png" | "image/jpeg" | "image/gif" | "image/webp"
+        ) {
             return Err("only PNG, JPEG, GIF or WebP".into());
         }
         let session = self.session.read().await.clone().ok_or("not logged in")?;
@@ -426,17 +536,31 @@ impl ApiClient {
         self.acquire_slot().await;
         let ua = self.user_agent().await;
         let ext = mime.trim_start_matches("image/");
-        let part = reqwest::multipart::Part::bytes(bytes).file_name(format!("image.{ext}")).mime_str(mime).map_err(|e| e.to_string())?;
-        let mut form = reqwest::multipart::Form::new().part(if kind == "print" { "image" } else { "file" }, part);
-        for (k, v) in fields.into_iter().filter(|(k, _)| FIELDS.contains(&k.as_str())) {
+        let part = reqwest::multipart::Part::bytes(bytes)
+            .file_name(format!("image.{ext}"))
+            .mime_str(mime)
+            .map_err(|e| e.to_string())?;
+        let mut form = reqwest::multipart::Form::new()
+            .part(if kind == "print" { "image" } else { "file" }, part);
+        for (k, v) in fields
+            .into_iter()
+            .filter(|(k, _)| FIELDS.contains(&k.as_str()))
+        {
             form = form.text(k, v);
         }
-        let path = if kind == "print" { "/prints" } else { "/file/image" };
+        let path = if kind == "print" {
+            "/prints"
+        } else {
+            "/file/image"
+        };
         let res = self
             .http
             .post(format!("{}{}", session.base, path))
             .header(reqwest::header::USER_AGENT, ua)
-            .header(reqwest::header::COOKIE, Self::cookie_header(&session.auth, session.two_factor.as_deref()))
+            .header(
+                reqwest::header::COOKIE,
+                Self::cookie_header(&session.auth, session.two_factor.as_deref()),
+            )
             .multipart(form)
             .send()
             .await
@@ -444,7 +568,11 @@ impl ApiClient {
         let status = res.status().as_u16();
         let text = res.text().await.unwrap_or_default();
         let data = serde_json::from_str(&text).unwrap_or(Value::String(text));
-        Ok(ApiResponse { status, data, retry_after: None })
+        Ok(ApiResponse {
+            status,
+            data,
+            retry_after: None,
+        })
     }
 
     /// Friend status: isFriend, outgoingRequest, incomingRequest.
@@ -452,14 +580,23 @@ impl ApiClient {
         if !valid_user_id(user_id) {
             return Err("invalid user".into());
         }
-        self.send(reqwest::Method::GET, &format!("/user/{user_id}/friendStatus")).await
+        self.send(
+            reqwest::Method::GET,
+            &format!("/user/{user_id}/friendStatus"),
+        )
+        .await
     }
 
     async fn send(&self, method: reqwest::Method, path: &str) -> Result<ApiResponse, String> {
         self.send_json(method, path, None).await
     }
 
-    async fn send_json(&self, method: reqwest::Method, path: &str, body: Option<Value>) -> Result<ApiResponse, String> {
+    async fn send_json(
+        &self,
+        method: reqwest::Method,
+        path: &str,
+        body: Option<Value>,
+    ) -> Result<ApiResponse, String> {
         let session = self.session.read().await.clone().ok_or("not logged in")?;
         self.acquire_slot().await;
         let ua = self.user_agent().await;
@@ -467,7 +604,10 @@ impl ApiClient {
             .http
             .request(method, format!("{}{}", session.base, path))
             .header(reqwest::header::USER_AGENT, ua)
-            .header(reqwest::header::COOKIE, Self::cookie_header(&session.auth, session.two_factor.as_deref()))
+            .header(
+                reqwest::header::COOKIE,
+                Self::cookie_header(&session.auth, session.two_factor.as_deref()),
+            )
             .header(reqwest::header::ACCEPT, "application/json");
         if let Some(b) = body {
             req = req.json(&b);
@@ -482,12 +622,18 @@ impl ApiClient {
         }
         let text = res.text().await.unwrap_or_default();
         let data = serde_json::from_str(&text).unwrap_or(Value::String(text));
-        Ok(ApiResponse { status, data, retry_after })
+        Ok(ApiResponse {
+            status,
+            data,
+            retry_after,
+        })
     }
 
     /// Invalidate the session on VRChat's side (best effort).
     pub async fn server_logout(&self) {
-        let Some(session) = self.session.read().await.clone() else { return };
+        let Some(session) = self.session.read().await.clone() else {
+            return;
+        };
         self.acquire_slot().await;
         let ua = self.user_agent().await;
         let _ = self
@@ -504,7 +650,11 @@ impl ApiClient {
 
     /// Fetch an image. The auth cookie is only attached for VRChat API hosts.
     pub async fn fetch_image(&self, url: &url::Url) -> Result<(Vec<u8>, String), String> {
-        let _permit = self.image_slots.acquire().await.map_err(|e| e.to_string())?;
+        let _permit = self
+            .image_slots
+            .acquire()
+            .await
+            .map_err(|e| e.to_string())?;
         {
             let mut next = self.image_limiter.lock().await;
             let now = Instant::now();
@@ -517,7 +667,10 @@ impl ApiClient {
             }
         }
         let ua = self.user_agent().await;
-        let mut req = self.http.get(url.as_str()).header(reqwest::header::USER_AGENT, ua);
+        let mut req = self
+            .http
+            .get(url.as_str())
+            .header(reqwest::header::USER_AGENT, ua);
         let host = url.host_str().unwrap_or_default();
         if host == "api.vrchat.cloud" || host == "vrchat.com" {
             if let Some(s) = self.session.read().await.clone() {
@@ -564,7 +717,11 @@ pub const WRITES: &[(&str, &str, &[&str])] = &[
     // notes on people (VRChat's own, shown in game)
     ("POST", "/userNotes", &["targetUserId", "note"]),
     // invites and invite requests, invite message templates
-    ("POST", "/requestInvite/{usr}", &["messageSlot", "requestSlot"]),
+    (
+        "POST",
+        "/requestInvite/{usr}",
+        &["messageSlot", "requestSlot"],
+    ),
     ("POST", "/invite/{usr}", &["instanceId", "messageSlot"]),
     ("POST", "/invite/myself/to/{id}", &[]),
     ("PUT", "/message/{usr}/{msg}/{n}", &["message"]),
@@ -575,33 +732,93 @@ pub const WRITES: &[(&str, &str, &[&str])] = &[
     // favorites
     ("POST", "/favorites", &["type", "favoriteId", "tags"]),
     ("DELETE", "/favorites/{fvrt}", &[]),
-    ("PUT", "/favorite/group/{word}/{word}/{usr}", &["displayName", "visibility", "tags"]),
+    (
+        "PUT",
+        "/favorite/group/{word}/{word}/{usr}",
+        &["displayName", "visibility", "tags"],
+    ),
     // avatars
     ("PUT", "/avatars/{avtr}/select", &[]),
     // groups (as far as your roles allow; VRChat checks the rest)
     ("POST", "/groups/{grp}/join", &["confirmOverrideBlock"]),
     ("POST", "/groups/{grp}/leave", &[]),
-    ("PUT", "/groups/{grp}", &["name", "shortCode", "description", "joinState", "iconId", "bannerId", "languages", "links", "rules", "tags"]),
-    ("PUT", "/groups/{grp}/members/{usr}", &["visibility", "isSubscribedToAnnouncements", "managerNotes"]),
+    (
+        "PUT",
+        "/groups/{grp}",
+        &[
+            "name",
+            "shortCode",
+            "description",
+            "joinState",
+            "iconId",
+            "bannerId",
+            "languages",
+            "links",
+            "rules",
+            "tags",
+        ],
+    ),
+    (
+        "PUT",
+        "/groups/{grp}/members/{usr}",
+        &["visibility", "isSubscribedToAnnouncements", "managerNotes"],
+    ),
     ("DELETE", "/groups/{grp}/members/{usr}", &[]),
     ("PUT", "/groups/{grp}/members/{usr}/roles/{grol}", &[]),
     ("DELETE", "/groups/{grp}/members/{usr}/roles/{grol}", &[]),
     ("PUT", "/groups/{grp}/requests/{usr}", &["action", "block"]),
-    ("POST", "/groups/{grp}/invites", &["userId", "confirmOverrideBlock"]),
+    (
+        "POST",
+        "/groups/{grp}/invites",
+        &["userId", "confirmOverrideBlock"],
+    ),
     ("DELETE", "/groups/{grp}/invites/{usr}", &[]),
     ("POST", "/groups/{grp}/bans", &["userId"]),
     ("DELETE", "/groups/{grp}/bans/{usr}", &[]),
-    ("POST", "/groups/{grp}/posts", &["title", "text", "imageId", "sendNotification", "roleIds", "visibility"]),
+    (
+        "POST",
+        "/groups/{grp}/posts",
+        &[
+            "title",
+            "text",
+            "imageId",
+            "sendNotification",
+            "roleIds",
+            "visibility",
+        ],
+    ),
     ("DELETE", "/groups/{grp}/posts/{id}", &[]),
     ("DELETE", "/groups/{grp}/galleries/{id}/images/{id}", &[]),
-    ("POST", "/instances", &["worldId", "type", "region", "ownerId", "roleIds", "groupAccessType", "queueEnabled", "canRequestInvite", "hardClose", "inviteOnly", "ageGate", "displayName"]),
+    (
+        "POST",
+        "/instances",
+        &[
+            "worldId",
+            "type",
+            "region",
+            "ownerId",
+            "roleIds",
+            "groupAccessType",
+            "queueEnabled",
+            "canRequestInvite",
+            "hardClose",
+            "inviteOnly",
+            "ageGate",
+            "displayName",
+        ],
+    ),
     // prints, stickers, emojis
     ("DELETE", "/prints/{prnt}", &[]),
     ("DELETE", "/file/{file}", &[]),
 ];
 
 fn id_with(seg: &str, prefix: &str) -> bool {
-    seg.len() > prefix.len() && seg.len() <= 64 && seg.starts_with(prefix) && seg.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+    seg.len() > prefix.len()
+        && seg.len() <= 64
+        && seg.starts_with(prefix)
+        && seg
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }
 
 fn seg_ok(pat: &str, seg: &str) -> bool {
@@ -617,8 +834,20 @@ fn seg_ok(pat: &str, seg: &str) -> bool {
         "{prnt}" => id_with(seg, "prnt_"),
         "{n}" => !seg.is_empty() && seg.len() <= 3 && seg.chars().all(|c| c.is_ascii_digit()),
         "{msg}" => matches!(seg, "message" | "response" | "request" | "requestResponse"),
-        "{word}" => !seg.is_empty() && seg.len() <= 64 && seg.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-'),
-        "{id}" => !seg.is_empty() && seg.len() <= 200 && seg.chars().all(|c| c.is_ascii_alphanumeric() || "_-:~().".contains(c)),
+        "{word}" => {
+            !seg.is_empty()
+                && seg.len() <= 64
+                && seg
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        }
+        "{id}" => {
+            !seg.is_empty()
+                && seg.len() <= 200
+                && seg
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || "_-:~().".contains(c))
+        }
         lit => lit == seg,
     }
 }
@@ -634,15 +863,18 @@ pub fn write_rule(method: &str, path: &str) -> Option<&'static [&'static str]> {
             return None;
         }
         let ps: Vec<&str> = pat.split('/').collect();
-        (ps.len() == segs.len() && ps.iter().zip(&segs).all(|(p, s)| seg_ok(p, s))).then_some(*fields)
+        (ps.len() == segs.len() && ps.iter().zip(&segs).all(|(p, s)| seg_ok(p, s)))
+            .then_some(*fields)
     })
 }
 
 pub const MODERATIONS: [&str; 5] = ["block", "mute", "muteChat", "hideAvatar", "showAvatar"];
 
 pub fn valid_user_id(id: &str) -> bool {
-    id.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
-        && ((id.starts_with("usr_") && (8..=64).contains(&id.len())) || (id.len() == 10 && !id.contains(['_', '-'])))
+    id.chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+        && ((id.starts_with("usr_") && (8..=64).contains(&id.len()))
+            || (id.len() == 10 && !id.contains(['_', '-'])))
 }
 
 fn retry_after_secs(res: &reqwest::Response) -> Option<u64> {
@@ -659,13 +891,18 @@ mod write_tests {
 
     #[test]
     fn profile_endpoint_is_readable() {
-        assert!(super::ALLOWED_GET_PREFIXES.iter().any(|p| "/profile/usr_x".starts_with(p)));
+        assert!(super::ALLOWED_GET_PREFIXES
+            .iter()
+            .any(|p| "/profile/usr_x".starts_with(p)));
     }
 
     #[test]
     fn writes_are_allow_listed() {
         let u = "usr_c1644b5b-3ca4-45b4-97c6-a2a0de70d469";
-        assert_eq!(super::write_rule("POST", "/userNotes"), Some(&["targetUserId", "note"][..]));
+        assert_eq!(
+            super::write_rule("POST", "/userNotes"),
+            Some(&["targetUserId", "note"][..])
+        );
         assert!(super::write_rule("POST", &format!("/requestInvite/{u}")).is_some());
         assert!(super::write_rule("PUT", &format!("/message/{u}/message/3")).is_some());
         assert!(super::write_rule("PUT", &format!("/message/{u}/evil/3")).is_none());
@@ -681,7 +918,15 @@ mod write_tests {
     fn friend_request_ids_cant_change_the_path() {
         assert!(valid_user_id("usr_c1644b5b-3ca4-45b4-97c6-a2a0de70d469"));
         assert!(valid_user_id("8JoV9XEdpo"));
-        for bad in ["usr_../../auth", "usr_a/b", "usr_a?x=1", "usr_", "", "grp_abcdefgh", "usr_a b"] {
+        for bad in [
+            "usr_../../auth",
+            "usr_a/b",
+            "usr_a?x=1",
+            "usr_",
+            "",
+            "grp_abcdefgh",
+            "usr_a b",
+        ] {
             assert!(!valid_user_id(bad), "{bad}");
         }
     }

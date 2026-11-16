@@ -55,11 +55,21 @@ enum Outcome {
     AuthRejected(String),
 }
 
-fn emit_status<R: Runtime>(app: &AppHandle<R>, state: &AppState, connected: bool, message: &str, fatal: bool) {
+fn emit_status<R: Runtime>(
+    app: &AppHandle<R>,
+    state: &AppState,
+    connected: bool,
+    message: &str,
+    fatal: bool,
+) {
     state.pipeline.connected.store(connected, Ordering::SeqCst);
     let _ = app.emit(
         "vrc-pipeline-status",
-        PipelineStatus { connected, message: message.to_string(), fatal },
+        PipelineStatus {
+            connected,
+            message: message.to_string(),
+            fatal,
+        },
     );
 }
 
@@ -97,10 +107,22 @@ async fn run<R: Runtime>(app: AppHandle<R>, state: Arc<AppState>, gen: u64) {
             }
             Ok(Outcome::Closed) => {
                 backoff_secs = 5;
-                emit_status(&app, &state, false, "Live connection closed, reconnecting…", false);
+                emit_status(
+                    &app,
+                    &state,
+                    false,
+                    "Live connection closed, reconnecting…",
+                    false,
+                );
             }
             Err(e) => {
-                emit_status(&app, &state, false, &format!("Live updates unavailable: {e}"), false);
+                emit_status(
+                    &app,
+                    &state,
+                    false,
+                    &format!("Live updates unavailable: {e}"),
+                    false,
+                );
             }
         }
         // Wait before reconnecting (with jitter), but react quickly to stop().
@@ -123,14 +145,20 @@ async fn connect_and_listen<R: Runtime>(
 ) -> Result<Outcome, String> {
     let mut url = url::Url::parse(PIPELINE_URL).map_err(|e| e.to_string())?;
     url.query_pairs_mut().append_pair("authToken", token);
-    let mut req = url.as_str().into_client_request().map_err(|e| e.to_string())?;
+    let mut req = url
+        .as_str()
+        .into_client_request()
+        .map_err(|e| e.to_string())?;
     let ua = HeaderValue::from_str(&state.api.user_agent().await).map_err(|e| e.to_string())?;
     req.headers_mut().insert("User-Agent", ua);
 
-    let (mut ws, _) = tokio::time::timeout(Duration::from_secs(20), tokio_tungstenite::connect_async(req))
-        .await
-        .map_err(|_| "connection timed out".to_string())?
-        .map_err(|e| e.to_string())?;
+    let (mut ws, _) = tokio::time::timeout(
+        Duration::from_secs(20),
+        tokio_tungstenite::connect_async(req),
+    )
+    .await
+    .map_err(|_| "connection timed out".to_string())?
+    .map_err(|e| e.to_string())?;
     emit_status(app, state, true, "Live updates on", false);
 
     loop {
@@ -170,11 +198,15 @@ enum Parsed {
 /// Messages look like `{"type":"friend-online","content":"{\"userId\":…}"}`;
 /// errors look like `{"err":"…"}`.
 fn parse_message(text: &str) -> Parsed {
-    let Ok(outer) = serde_json::from_str::<Value>(text) else { return Parsed::Ignore };
+    let Ok(outer) = serde_json::from_str::<Value>(text) else {
+        return Parsed::Ignore;
+    };
     if let Some(err) = outer.get("err").and_then(Value::as_str) {
         return Parsed::AuthError(format!("VRChat rejected the live connection: {err}"));
     }
-    let Some(kind) = outer.get("type").and_then(Value::as_str) else { return Parsed::Ignore };
+    let Some(kind) = outer.get("type").and_then(Value::as_str) else {
+        return Parsed::Ignore;
+    };
     if !FORWARDED.contains(&kind) {
         return Parsed::Ignore;
     }
@@ -206,12 +238,18 @@ mod tests {
 
     #[test]
     fn ignores_other_events_and_garbage() {
-        assert_eq!(parse_message(r#"{"type":"user-update","content":"{}"}"#), Parsed::Ignore);
+        assert_eq!(
+            parse_message(r#"{"type":"user-update","content":"{}"}"#),
+            Parsed::Ignore
+        );
         assert_eq!(parse_message("not json"), Parsed::Ignore);
     }
 
     #[test]
     fn reports_auth_errors() {
-        assert!(matches!(parse_message(r#"{"err":"authToken doesn't correspond with an active session"}"#), Parsed::AuthError(_)));
+        assert!(matches!(
+            parse_message(r#"{"err":"authToken doesn't correspond with an active session"}"#),
+            Parsed::AuthError(_)
+        ));
     }
 }

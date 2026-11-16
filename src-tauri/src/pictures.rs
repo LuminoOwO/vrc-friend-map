@@ -32,7 +32,12 @@ pub fn detect() -> Vec<PathBuf> {
     {
         if let Ok(profile) = std::env::var("USERPROFILE") {
             out.push(PathBuf::from(&profile).join("Pictures").join("VRChat"));
-            out.push(PathBuf::from(&profile).join("OneDrive").join("Pictures").join("VRChat"));
+            out.push(
+                PathBuf::from(&profile)
+                    .join("OneDrive")
+                    .join("Pictures")
+                    .join("VRChat"),
+            );
         }
     }
     #[cfg(target_os = "linux")]
@@ -56,7 +61,13 @@ pub fn detect() -> Vec<PathBuf> {
 }
 
 fn is_picture(p: &Path) -> bool {
-    matches!(p.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).as_deref(), Some("png" | "jpg" | "jpeg" | "webp"))
+    matches!(
+        p.extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.to_ascii_lowercase())
+            .as_deref(),
+        Some("png" | "jpg" | "jpeg" | "webp")
+    )
 }
 
 /// "VRChat_2026-11-08_21-15-00.123_1920x1080.png" → (naive seconds, width, height).
@@ -87,7 +98,9 @@ pub fn parse_name(name: &str) -> (Option<i64>, Option<u32>, Option<u32>) {
 }
 
 fn walk(dir: &Path, depth: usize, out: &mut Vec<Picture>) {
-    let Ok(rd) = std::fs::read_dir(dir) else { return };
+    let Ok(rd) = std::fs::read_dir(dir) else {
+        return;
+    };
     for e in rd.flatten() {
         let p = e.path();
         let Ok(meta) = e.metadata() else { continue };
@@ -102,8 +115,20 @@ fn walk(dir: &Path, depth: usize, out: &mut Vec<Picture>) {
         }
         let name = e.file_name().to_string_lossy().to_string();
         let (t, width, height) = parse_name(&name);
-        let mtime = meta.modified().ok().and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok()).map(|d| d.as_secs() as i64).unwrap_or(0);
-        out.push(Picture { path: p.display().to_string(), name, t: t.unwrap_or(mtime), size: meta.len(), width, height });
+        let mtime = meta
+            .modified()
+            .ok()
+            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+            .map(|d| d.as_secs() as i64)
+            .unwrap_or(0);
+        out.push(Picture {
+            path: p.display().to_string(),
+            name,
+            t: t.unwrap_or(mtime),
+            size: meta.len(),
+            width,
+            height,
+        });
     }
 }
 
@@ -115,17 +140,28 @@ pub fn list(dirs: &[PathBuf]) -> Vec<Picture> {
     }
     out.sort_by(|a, b| b.t.cmp(&a.t));
     if let Ok(mut allowed) = ALLOWED.lock() {
-        *allowed = dirs.iter().filter_map(|d| std::fs::canonicalize(d).ok()).collect();
+        *allowed = dirs
+            .iter()
+            .filter_map(|d| std::fs::canonicalize(d).ok())
+            .collect();
     }
     out
 }
 
 fn not_found() -> Response<Vec<u8>> {
-    Response::builder().status(404).header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*").body(Vec::new()).unwrap()
+    Response::builder()
+        .status(404)
+        .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+        .body(Vec::new())
+        .unwrap()
 }
 
 /// `vrcpic://localhost/<percent-encoded path>`
-pub fn handle<R: Runtime>(_ctx: UriSchemeContext<'_, R>, request: Request<Vec<u8>>, responder: UriSchemeResponder) {
+pub fn handle<R: Runtime>(
+    _ctx: UriSchemeContext<'_, R>,
+    request: Request<Vec<u8>>,
+    responder: UriSchemeResponder,
+) {
     let path = request.uri().path().to_string();
     tauri::async_runtime::spawn_blocking(move || {
         responder.respond(serve(&path).unwrap_or_else(|_| not_found()));
@@ -133,14 +169,25 @@ pub fn handle<R: Runtime>(_ctx: UriSchemeContext<'_, R>, request: Request<Vec<u8
 }
 
 fn serve(path: &str) -> Result<Response<Vec<u8>>, String> {
-    let decoded = percent_encoding::percent_decode_str(path.trim_start_matches('/')).decode_utf8().map_err(|e| e.to_string())?.to_string();
+    let decoded = percent_encoding::percent_decode_str(path.trim_start_matches('/'))
+        .decode_utf8()
+        .map_err(|e| e.to_string())?
+        .to_string();
     let file = std::fs::canonicalize(PathBuf::from(&decoded)).map_err(|e| e.to_string())?;
-    let ok = ALLOWED.lock().map(|a| a.iter().any(|d| file.starts_with(d))).unwrap_or(false);
+    let ok = ALLOWED
+        .lock()
+        .map(|a| a.iter().any(|d| file.starts_with(d)))
+        .unwrap_or(false);
     if !ok || !is_picture(&file) {
         return Err("not allowed".into());
     }
     let bytes = std::fs::read(&file).map_err(|e| e.to_string())?;
-    let ct = match file.extension().and_then(|e| e.to_str()).map(|e| e.to_ascii_lowercase()).as_deref() {
+    let ct = match file
+        .extension()
+        .and_then(|e| e.to_str())
+        .map(|e| e.to_ascii_lowercase())
+        .as_deref()
+    {
         Some("png") => "image/png",
         Some("webp") => "image/webp",
         _ => "image/jpeg",

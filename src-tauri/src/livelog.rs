@@ -125,7 +125,9 @@ impl Tracker {
                 }
             }
         }
-        let Some(pos) = line.find("[Behaviour] ") else { return };
+        let Some(pos) = line.find("[Behaviour] ") else {
+            return;
+        };
         let rest = &line[pos + 12..];
         if let Some(p) = rest.strip_prefix("Switching ") {
             if let Some(i) = p.find(" to avatar ") {
@@ -153,7 +155,9 @@ impl Tracker {
             self.snap.since = ts;
             self.event(ts, "world", "", "", false);
         } else if let Some(p) = rest.strip_prefix("OnPlayerJoined ") {
-            let Some((name, id)) = split_player(p) else { return };
+            let Some((name, id)) = split_player(p) else {
+                return;
+            };
             if !self.snap.active {
                 return;
             }
@@ -161,11 +165,25 @@ impl Tracker {
                 self.snap.local_id = Some(id.to_string());
             }
             if !self.here.contains_key(id) {
-                self.here.insert(id.to_string(), LivePlayer { id: id.to_string(), name: name.to_string(), since: ts, avatar: None });
-                let is_me = self.snap.local_id.as_deref() == Some(id) || self.local_name.as_deref() == Some(name);
+                self.here.insert(
+                    id.to_string(),
+                    LivePlayer {
+                        id: id.to_string(),
+                        name: name.to_string(),
+                        since: ts,
+                        avatar: None,
+                    },
+                );
+                let is_me = self.snap.local_id.as_deref() == Some(id)
+                    || self.local_name.as_deref() == Some(name);
                 if !is_me {
                     // VRChat lists everyone who's already there within a few seconds of you loading in.
-                    let me_in = self.snap.local_id.as_ref().and_then(|m| self.here.get(m)).map(|p| p.since);
+                    let me_in = self
+                        .snap
+                        .local_id
+                        .as_ref()
+                        .and_then(|m| self.here.get(m))
+                        .map(|p| p.since);
                     let initial = match me_in {
                         Some(t) => ts - t <= 3,
                         None => ts - self.snap.since <= 30,
@@ -189,7 +207,11 @@ impl Tracker {
             if let Some(name) = p.trim_end().strip_suffix("\" is local") {
                 self.local_name = Some(name.to_string());
                 if self.snap.local_id.is_none() {
-                    self.snap.local_id = self.here.values().find(|pl| pl.name == name).map(|pl| pl.id.clone());
+                    self.snap.local_id = self
+                        .here
+                        .values()
+                        .find(|pl| pl.name == name)
+                        .map(|pl| pl.id.clone());
                 }
             }
         }
@@ -208,7 +230,8 @@ impl Tracker {
     fn snapshot(&self) -> Snapshot {
         let mut s = self.snap.clone();
         s.players = self.here.values().cloned().collect();
-        s.players.sort_by(|a, b| a.since.cmp(&b.since).then(a.name.cmp(&b.name)));
+        s.players
+            .sort_by(|a, b| a.since.cmp(&b.since).then(a.name.cmp(&b.name)));
         s
     }
 }
@@ -217,13 +240,17 @@ impl Tracker {
 fn newest_log(dirs: &[PathBuf]) -> Option<PathBuf> {
     let mut best: Option<(std::time::SystemTime, PathBuf)> = None;
     for d in dirs {
-        let Ok(rd) = std::fs::read_dir(d) else { continue };
+        let Ok(rd) = std::fs::read_dir(d) else {
+            continue;
+        };
         for e in rd.flatten() {
             let name = e.file_name().to_string_lossy().to_string();
             if !(name.starts_with("output_log_") && name.ends_with(".txt")) {
                 continue;
             }
-            let Ok(m) = e.metadata().and_then(|m| m.modified()) else { continue };
+            let Ok(m) = e.metadata().and_then(|m| m.modified()) else {
+                continue;
+            };
             if best.as_ref().map(|(t, _)| m > *t).unwrap_or(true) {
                 best = Some((m, e.path()));
             }
@@ -245,7 +272,10 @@ fn vrchat_running() -> Option<bool> {
                 continue;
             }
             if let Ok(cmd) = std::fs::read(e.path().join("cmdline")) {
-                if cmd.windows(10).any(|w| w.eq_ignore_ascii_case(b"VRChat.exe")) {
+                if cmd
+                    .windows(10)
+                    .any(|w| w.eq_ignore_ascii_case(b"VRChat.exe"))
+                {
                     return Some(true);
                 }
             }
@@ -261,7 +291,11 @@ fn vrchat_running() -> Option<bool> {
             .creation_flags(CREATE_NO_WINDOW)
             .output()
             .ok()?;
-        Some(String::from_utf8_lossy(&out.stdout).to_ascii_lowercase().contains("vrchat.exe"))
+        Some(
+            String::from_utf8_lossy(&out.stdout)
+                .to_ascii_lowercase()
+                .contains("vrchat.exe"),
+        )
     }
     #[cfg(not(any(target_os = "linux", target_os = "windows")))]
     {
@@ -323,7 +357,13 @@ impl LiveLog {
 
     /// Events with a `seq` above `since`, oldest first.
     pub fn events_since(&self, since: u64) -> Vec<LiveEvent> {
-        self.events.lock().unwrap().iter().filter(|e| e.seq > since).cloned().collect()
+        self.events
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|e| e.seq > since)
+            .cloned()
+            .collect()
     }
 
     fn take_events(&self, t: &mut Tracker) -> Vec<LiveEvent> {
@@ -365,12 +405,20 @@ impl LiveLog {
                 let newest = newest_log(&dirs);
                 if newest.as_deref() != state.as_ref().map(|s| s.path.as_path()) {
                     // A new log = VRChat started again; read it from the beginning.
-                    state = newest.map(|path| FileState { path, offset: 0, partial: Vec::new() });
+                    state = newest.map(|path| FileState {
+                        path,
+                        offset: 0,
+                        partial: Vec::new(),
+                    });
                     tracker = Tracker::default();
                 }
                 if let Some(f) = state.as_mut() {
                     let _ = read_new(f, &mut tracker);
-                    tracker.snap.file = f.path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+                    tracker.snap.file = f
+                        .path
+                        .file_name()
+                        .map(|n| n.to_string_lossy().to_string())
+                        .unwrap_or_default();
                 }
                 // Every ~15 s while "in an instance": did VRChat crash?
                 if tracker.snap.active && ticks % 10 == 0 {
@@ -443,7 +491,10 @@ mod tests {
 2026.11.08 21:30:05 Debug      -  VRCApplication: HandleApplicationQuit at 1234
 ";
         let ev = events_of(log);
-        let kinds: Vec<_> = ev.iter().map(|e| (e.kind, e.name.as_str(), e.initial)).collect();
+        let kinds: Vec<_> = ev
+            .iter()
+            .map(|e| (e.kind, e.name.as_str(), e.initial))
+            .collect();
         assert_eq!(
             kinds,
             vec![
@@ -493,8 +544,13 @@ mod tests {
         );
         let s = snapshot_of(&more);
         assert_eq!(s.world_name, "Club");
-        assert_eq!(s.players.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(), vec!["usr_carol000000", "usr_me0000000"]);
-        let quit = format!("{more}2026.11.08 23:00:00 Log        -  VRCApplication: OnApplicationQuit at 1234\n");
+        assert_eq!(
+            s.players.iter().map(|p| p.id.as_str()).collect::<Vec<_>>(),
+            vec!["usr_carol000000", "usr_me0000000"]
+        );
+        let quit = format!(
+            "{more}2026.11.08 23:00:00 Log        -  VRCApplication: OnApplicationQuit at 1234\n"
+        );
         let s = snapshot_of(&quit);
         assert!(!s.active && s.closed && s.players.is_empty());
     }
@@ -505,14 +561,24 @@ mod tests {
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("output_log_2026-11-08_21-13-40.txt");
         std::fs::write(&path, LOG).unwrap();
-        let mut f = FileState { path: path.clone(), offset: 0, partial: Vec::new() };
+        let mut f = FileState {
+            path: path.clone(),
+            offset: 0,
+            partial: Vec::new(),
+        };
         let mut t = Tracker::default();
         read_new(&mut f, &mut t).unwrap();
         assert_eq!(t.snapshot().players.len(), 2);
         // Half a line: nothing yet.
         use std::io::Write;
-        let mut w = std::fs::OpenOptions::new().append(true).open(&path).unwrap();
-        w.write_all(b"2026.11.08 21:30:00 Debug      -  [Behaviour] OnPlayerJoined Dave (usr_dave00").unwrap();
+        let mut w = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
+        w.write_all(
+            b"2026.11.08 21:30:00 Debug      -  [Behaviour] OnPlayerJoined Dave (usr_dave00",
+        )
+        .unwrap();
         read_new(&mut f, &mut t).unwrap();
         assert_eq!(t.snapshot().players.len(), 2);
         w.write_all(b"00000)\n").unwrap();
@@ -532,7 +598,9 @@ mod real {
     fn real_logs() {
         let dir = std::env::var("VFM_REAL_LOGS").expect("VFM_REAL_LOGS");
         for e in std::fs::read_dir(dir).unwrap().flatten() {
-            let Ok(text) = std::fs::read_to_string(e.path()) else { continue };
+            let Ok(text) = std::fs::read_to_string(e.path()) else {
+                continue;
+            };
             if !text.contains("[Behaviour]") {
                 continue;
             }

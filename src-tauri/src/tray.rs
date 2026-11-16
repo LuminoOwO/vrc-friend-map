@@ -24,6 +24,8 @@ static CLOSE_ACTION: AtomicU8 = AtomicU8::new(0);
 static QUITTING: AtomicBool = AtomicBool::new(false);
 /// "Muted until 18:30" (shown in the menu), or None when not muted.
 static MUTED: Mutex<Option<String>> = Mutex::new(None);
+/// "12 friends online" and starred friends online (id, name) for the menu.
+static EXTRAS: Mutex<(Option<String>, Vec<(String, String)>)> = Mutex::new((None, Vec::new()));
 
 #[cfg(desktop)]
 fn build_menu<R: Runtime, M: Manager<R>>(app: &M) -> tauri::Result<Menu<R>> {
@@ -32,14 +34,76 @@ fn build_menu<R: Runtime, M: Manager<R>>(app: &M) -> tauri::Result<Menu<R>> {
     let sep1 = PredefinedMenuItem::separator(app)?;
     let quit = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
     let sep2 = PredefinedMenuItem::separator(app)?;
+    let (online, people) = EXTRAS.lock().map(|e| e.clone()).unwrap_or_default();
+    let mut items: Vec<Box<dyn tauri::menu::IsMenuItem<R>>> = vec![Box::new(open), Box::new(sep1)];
+    if let Some(label) = online {
+        items.push(Box::new(MenuItem::with_id(
+            app,
+            "online",
+            &label,
+            false,
+            None::<&str>,
+        )?));
+    }
+    if !people.is_empty() {
+        let entries: Vec<MenuItem<R>> = people
+            .iter()
+            .take(15)
+            .map(|(id, name)| {
+                MenuItem::with_id(app, format!("person:{id}"), name, true, None::<&str>)
+            })
+            .collect::<tauri::Result<_>>()?;
+        let refs: Vec<&dyn tauri::menu::IsMenuItem<R>> = entries
+            .iter()
+            .map(|m| m as &dyn tauri::menu::IsMenuItem<R>)
+            .collect();
+        items.push(Box::new(Submenu::with_id_and_items(
+            app,
+            "starred",
+            "Starred friends online",
+            true,
+            &refs,
+        )?));
+    }
+    items.push(Box::new(Submenu::with_id_and_items(
+        app,
+        "status",
+        "Your status",
+        true,
+        &[
+            &MenuItem::with_id(app, "status:join me", "Join me", true, None::<&str>)?,
+            &MenuItem::with_id(app, "status:active", "Online", true, None::<&str>)?,
+            &MenuItem::with_id(app, "status:ask me", "Ask me", true, None::<&str>)?,
+            &MenuItem::with_id(app, "status:busy", "Busy", true, None::<&str>)?,
+        ],
+    )?));
+    items.push(Box::new(MenuItem::with_id(
+        app,
+        "sync",
+        "Sync now",
+        true,
+        None::<&str>,
+    )?));
+    items.push(Box::new(PredefinedMenuItem::separator(app)?));
     match muted {
         Some(label) => {
-            let status = MenuItem::with_id(app, "status", &label, false, None::<&str>)?;
-            let unmute = MenuItem::with_id(app, "unmute", "Unmute notifications", true, None::<&str>)?;
-            Menu::with_items(app, &[&open, &sep1, &status, &unmute, &sep2, &quit])
+            items.push(Box::new(MenuItem::with_id(
+                app,
+                "status",
+                &label,
+                false,
+                None::<&str>,
+            )?));
+            items.push(Box::new(MenuItem::with_id(
+                app,
+                "unmute",
+                "Unmute notifications",
+                true,
+                None::<&str>,
+            )?));
         }
         None => {
-            let mute = Submenu::with_id_and_items(
+            items.push(Box::new(Submenu::with_id_and_items(
                 app,
                 "mute",
                 "Mute notifications",
@@ -49,13 +113,28 @@ fn build_menu<R: Runtime, M: Manager<R>>(app: &M) -> tauri::Result<Menu<R>> {
                     &MenuItem::with_id(app, "mute:60", "For 1 hour", true, None::<&str>)?,
                     &MenuItem::with_id(app, "mute:240", "For 4 hours", true, None::<&str>)?,
                     &MenuItem::with_id(app, "mute:480", "For 8 hours", true, None::<&str>)?,
-                    &MenuItem::with_id(app, "mute:tomorrow", "Until tomorrow morning", true, None::<&str>)?,
-                    &MenuItem::with_id(app, "mute:forever", "Until I turn it back on", true, None::<&str>)?,
+                    &MenuItem::with_id(
+                        app,
+                        "mute:tomorrow",
+                        "Until tomorrow morning",
+                        true,
+                        None::<&str>,
+                    )?,
+                    &MenuItem::with_id(
+                        app,
+                        "mute:forever",
+                        "Until I turn it back on",
+                        true,
+                        None::<&str>,
+                    )?,
                 ],
-            )?;
-            Menu::with_items(app, &[&open, &sep1, &mute, &sep2, &quit])
+            )?));
         }
     }
+    items.push(Box::new(sep2));
+    items.push(Box::new(quit));
+    let refs: Vec<&dyn tauri::menu::IsMenuItem<R>> = items.iter().map(|b| b.as_ref()).collect();
+    Menu::with_items(app, &refs)
 }
 
 pub fn show_main<R: Runtime>(app: &AppHandle<R>) {
@@ -87,8 +166,15 @@ pub fn setup<R: Runtime>(app: &AppHandle<R>) {
                 match id {
                     "open" => show_main(app),
                     "quit" => quit(app),
-                    "unmute" => {
-                        let _ = app.emit("tray-action", "unmute");
+                    _ if id.starts_with("status:") => {
+                        let _ = app.emit("tray-action", id);
+                    }
+                    "unmute" | "sync" => {
+                        let _ = app.emit("tray-action", id);
+                    }
+                    _ if id.starts_with("person:") => {
+                        show_main(app);
+                        let _ = app.emit("tray-action", id);
                     }
                     _ if id.starts_with("mute:") => {
                         let _ = app.emit("tray-action", id);
@@ -97,7 +183,12 @@ pub fn setup<R: Runtime>(app: &AppHandle<R>) {
                 }
             })
             .on_tray_icon_event(|tray, event| {
-                if let TrayIconEvent::Click { button: MouseButton::Left, button_state: MouseButtonState::Up, .. } = event {
+                if let TrayIconEvent::Click {
+                    button: MouseButton::Left,
+                    button_state: MouseButtonState::Up,
+                    ..
+                } = event
+                {
                     show_main(tray.app_handle());
                 }
             });
@@ -115,8 +206,13 @@ pub fn setup<R: Runtime>(app: &AppHandle<R>) {
 
 /// Window close: hide to the tray, quit, or ask the page.
 pub fn on_window_event<R: Runtime>(window: &tauri::Window<R>, event: &WindowEvent) {
-    let WindowEvent::CloseRequested { api, .. } = event else { return };
-    if QUITTING.load(Ordering::SeqCst) || !AVAILABLE.load(Ordering::SeqCst) || window.label() != "main" {
+    let WindowEvent::CloseRequested { api, .. } = event else {
+        return;
+    };
+    if QUITTING.load(Ordering::SeqCst)
+        || !AVAILABLE.load(Ordering::SeqCst)
+        || window.label() != "main"
+    {
         return; // close normally
     }
     match CLOSE_ACTION.load(Ordering::SeqCst) {
@@ -158,6 +254,38 @@ pub fn tray_set_muted<R: Runtime>(app: AppHandle<R>, label: Option<String>) -> R
     if let Some(tray) = app.tray_by_id(TRAY_ID) {
         let menu = build_menu(&app).map_err(|e| e.to_string())?;
         tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+/// The menu's extra lines: how many friends are online, starred ones online.
+#[tauri::command]
+pub fn tray_set_extras<R: Runtime>(
+    app: AppHandle<R>,
+    online: Option<String>,
+    people: Vec<(String, String)>,
+) -> Result<(), String> {
+    if let Ok(mut e) = EXTRAS.lock() {
+        *e = (
+            online.map(|s| s.chars().take(60).collect()),
+            people
+                .into_iter()
+                .take(15)
+                .map(|(i, n)| (i.chars().take(64).collect(), n.chars().take(40).collect()))
+                .collect(),
+        );
+    }
+    #[cfg(desktop)]
+    if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        let menu = build_menu(&app).map_err(|e| e.to_string())?;
+        tray.set_menu(Some(menu)).map_err(|e| e.to_string())?;
+        let tip = EXTRAS
+            .lock()
+            .ok()
+            .and_then(|e| e.0.clone())
+            .map(|o| format!("VRC Friend Map · {o}"))
+            .unwrap_or_else(|| "VRC Friend Map".into());
+        let _ = tray.set_tooltip(Some(tip));
     }
     Ok(())
 }

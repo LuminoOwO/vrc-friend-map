@@ -129,6 +129,15 @@ async function saveCustoms() {
   listeners.forEach((l) => l());
 }
 
+/** Backup restore: add these sounds (same id: replaced). */
+export async function restoreCustomSounds(list: CustomSound[]) {
+  await loadCustomSounds();
+  const ok = list.filter((s) => s?.id && typeof s.data === "string" && s.data.startsWith("data:audio/") && s.data.length < MAX_SOUND_BYTES * 1.5);
+  const ids = new Set(ok.map((s) => s.id));
+  customs = [...customs.filter((c) => !ids.has(c.id)), ...ok];
+  await saveCustoms();
+}
+
 export const MAX_SOUND_BYTES = 1_000_000;
 
 /** Add an audio file as a sound; returns its "custom:<id>" reference. */
