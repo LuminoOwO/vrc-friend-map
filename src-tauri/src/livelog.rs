@@ -24,6 +24,9 @@ pub struct LivePlayer {
     pub name: String,
     /// When they joined (log time, naive seconds).
     pub since: i64,
+    /// The avatar they switched to last (as the log names it), if seen.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<String>,
 }
 
 #[derive(Clone, Debug, Default, Serialize, PartialEq, Eq)]
@@ -44,6 +47,9 @@ pub struct Snapshot {
     pub file: String,
     /// VRChat isn't running (it quit, or the process is gone).
     pub closed: bool,
+    /// The last video link a player in this instance loaded (now playing).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub video: Option<crate::gamelogs::VideoEvent>,
 }
 
 /// One thing that happened, for the activity log.
@@ -108,8 +114,29 @@ impl Tracker {
             self.snap.closed = true;
             return;
         }
+        if self.snap.active {
+            if let Some(pos) = line.find("  -  ") {
+                let rest = line[pos + 5..].trim_start();
+                if !rest.starts_with("[Behaviour]") {
+                    if let Some((url, by)) = crate::gamelogs::video_in(rest) {
+                        self.snap.video = Some(crate::gamelogs::VideoEvent { t: ts, url, by });
+                        return;
+                    }
+                }
+            }
+        }
         let Some(pos) = line.find("[Behaviour] ") else { return };
         let rest = &line[pos + 12..];
+        if let Some(p) = rest.strip_prefix("Switching ") {
+            if let Some(i) = p.find(" to avatar ") {
+                let name = p[..i].trim();
+                let avatar = p[i + 11..].trim().to_string();
+                if let Some(pl) = self.here.values_mut().find(|x| x.name == name) {
+                    pl.avatar = Some(avatar);
+                }
+            }
+            return;
+        }
         if let Some(name) = rest.strip_prefix("Entering Room: ") {
             self.pending_world_name = name.trim().to_string();
         } else if let Some(inst) = rest.strip_prefix("Joining ") {
@@ -134,7 +161,7 @@ impl Tracker {
                 self.snap.local_id = Some(id.to_string());
             }
             if !self.here.contains_key(id) {
-                self.here.insert(id.to_string(), LivePlayer { id: id.to_string(), name: name.to_string(), since: ts });
+                self.here.insert(id.to_string(), LivePlayer { id: id.to_string(), name: name.to_string(), since: ts, avatar: None });
                 let is_me = self.snap.local_id.as_deref() == Some(id) || self.local_name.as_deref() == Some(name);
                 if !is_me {
                     // VRChat lists everyone who's already there within a few seconds of you loading in.
@@ -175,6 +202,7 @@ impl Tracker {
         self.snap.world_id.clear();
         self.snap.world_name.clear();
         self.snap.since = 0;
+        self.snap.video = None;
     }
 
     fn snapshot(&self) -> Snapshot {

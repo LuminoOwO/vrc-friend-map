@@ -27,7 +27,8 @@ use std::sync::Mutex;
 use crate::storage::write_private;
 
 /// Format of `history.json`. Bump when the stored shape changes incompatibly.
-pub const HISTORY_VERSION: u32 = 1;
+/// 2 (0.12): visits also keep video links, screenshots and avatar switches.
+pub const HISTORY_VERSION: u32 = 2;
 
 /// A visit longer than this is treated as a log glitch and clipped.
 const MAX_VISIT_SECS: i64 = 36 * 3600;
@@ -56,6 +57,72 @@ pub struct Visit {
     pub end: i64,
     #[serde(default)]
     pub players: Vec<Stint>,
+    /// Video links played in this instance (video players log them).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub videos: Vec<VideoEvent>,
+    /// Pictures you took here (VRChat's camera logs the file).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub shots: Vec<ShotEvent>,
+    /// Avatars people switched to (display name as logged; the id when known).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub avatars: Vec<AvatarEvent>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+pub struct VideoEvent {
+    pub t: i64,
+    pub url: String,
+    /// Who asked for it, when the video player logs that.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub by: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct ShotEvent {
+    pub t: i64,
+    pub path: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub struct AvatarEvent {
+    pub t: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    pub name: String,
+    pub avatar: String,
+}
+
+/// A link in a video player line ("[Video Playback] Attempting to resolve URL 'https://…'",
+/// "[USharpVideo] Started video load for URL: https://…, requested by Name", ProTV, iwaSync…).
+pub fn video_in(rest: &str) -> Option<(String, Option<String>)> {
+    let lower = rest.to_ascii_lowercase();
+    let is_player = rest.starts_with("[Video Playback]")
+        || rest.starts_with("[USharpVideo]")
+        || rest.starts_with("[ProTV]")
+        || rest.starts_with("[AVProVideo]")
+        || rest.starts_with("[iwaSync")
+        || rest.starts_with("[VideoTXL]")
+        || rest.starts_with("[YamaPlayer]")
+        || lower.contains("video") && (lower.contains("url") || lower.contains("loading"));
+    if !is_player {
+        return None;
+    }
+    // Only the request, not the resolved stream URL (that's a long CDN link).
+    if lower.contains("resolved to") || lower.contains("resolving url") && rest.contains("' resolved") {
+        return None;
+    }
+    let start = rest.find("https://").or_else(|| rest.find("http://"))?;
+    let tail = &rest[start..];
+    let end = tail.find(|c: char| c == '\'' || c == '"' || c == ' ' || c == ',' || c == '>' || c == ')').unwrap_or(tail.len());
+    let url = tail[..end].trim_end_matches(['.', ',']).to_string();
+    if url.len() < 12 || url.len() > 600 {
+        return None;
+    }
+    let by = rest
+        .find("requested by ")
+        .map(|i| rest[i + 13..].trim().trim_end_matches(['.', ')']).to_string())
+        .filter(|n| !n.is_empty() && n.len() < 64);
+    Some((url, by))
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -196,8 +263,41 @@ pub fn parse_log(text: &str) -> Parsed {
     for line in text.lines() {
         let Some(ts) = parse_ts(line) else { continue };
         last_ts = last_ts.max(ts);
+        // Lines outside [Behaviour]: video players and the camera.
+        if let Some(cur) = current.as_mut() {
+            if let Some(pos) = line.find("  -  ") {
+                let rest = line[pos + 5..].trim_start();
+                if let Some(p) = rest.strip_prefix("[VRC Camera] Took screenshot to: ") {
+                    let path = p.trim().to_string();
+                    if path.len() < 1000 && cur.visit.shots.len() < 500 {
+                        cur.visit.shots.push(ShotEvent { t: ts, path });
+                    }
+                    continue;
+                }
+                if !rest.starts_with("[Behaviour]") {
+                    if let Some((url, by)) = video_in(rest) {
+                        let dup = cur.visit.videos.last().is_some_and(|v| v.url == url && ts - v.t < 30);
+                        if !dup && cur.visit.videos.len() < 500 {
+                            cur.visit.videos.push(VideoEvent { t: ts, url, by });
+                        }
+                        continue;
+                    }
+                }
+            }
+        }
         let Some(pos) = line.find("[Behaviour] ") else { continue };
         let rest = &line[pos + 12..];
+        if let Some(p) = rest.strip_prefix("Switching ") {
+            if let (Some(cur), Some(i)) = (current.as_mut(), p.find(" to avatar ")) {
+                let name = p[..i].trim().to_string();
+                let avatar = p[i + 11..].trim().to_string();
+                if !name.is_empty() && !avatar.is_empty() && avatar.len() < 200 && cur.visit.avatars.len() < 2000 {
+                    let id = cur.names.get(&name).cloned();
+                    cur.visit.avatars.push(AvatarEvent { t: ts, id, name, avatar });
+                }
+            }
+            continue;
+        }
 
         if let Some(name) = rest.strip_prefix("Entering Room: ") {
             pending_name = name.trim().to_string();
@@ -220,6 +320,9 @@ pub fn parse_log(text: &str) -> Parsed {
                     start: ts,
                     end: ts,
                     players: Vec::new(),
+                    videos: Vec::new(),
+                    shots: Vec::new(),
+                    avatars: Vec::new(),
                 },
                 open: HashMap::new(),
                 names: HashMap::new(),
@@ -401,7 +504,11 @@ impl LogStore {
                 return;
             }
             if h.version < HISTORY_VERSION {
-                // No older formats exist yet; future migrations go here.
+                // 1 -> 2: read the files again for videos, screenshots and avatars
+                // (files no longer on disk keep their visits as they are).
+                for f in h.files.values_mut() {
+                    f.mtime = -1;
+                }
                 h.version = HISTORY_VERSION;
                 changed = true;
             }
@@ -493,6 +600,68 @@ impl LogStore {
     pub fn met(&self, q: &MetQuery) -> Result<Vec<MetPerson>, String> {
         self.with_history(|h| met_people(h, q))
     }
+
+    pub fn timeline(&self, from: i64, to: i64) -> Result<Vec<TimelineVisit>, String> {
+        self.with_history(|h| timeline(h, from, to))
+    }
+}
+
+/// A visit for the timeline, with names.
+#[derive(Serialize, Clone, Debug)]
+pub struct TimelineVisit {
+    pub world: String,
+    pub world_name: String,
+    pub access: String,
+    pub start: i64,
+    pub end: i64,
+    pub players: Vec<TimelineStint>,
+    pub videos: Vec<VideoEvent>,
+    pub shots: Vec<ShotEvent>,
+    pub avatars: Vec<AvatarEvent>,
+}
+
+#[derive(Serialize, Clone, Debug)]
+pub struct TimelineStint {
+    pub id: String,
+    pub name: String,
+    pub from: i64,
+    pub to: i64,
+}
+
+/// Visits that overlap [from, to) (naive seconds), oldest first, at most 3000.
+pub fn timeline(h: &History, from: i64, to: i64) -> Vec<TimelineVisit> {
+    let mut out: Vec<TimelineVisit> = h
+        .files
+        .values()
+        .flat_map(|f| f.visits.iter())
+        .filter(|v| v.end > from && v.start < to)
+        .map(|v| TimelineVisit {
+            world: v.world.clone(),
+            world_name: v.world_name.clone(),
+            access: v.access.clone(),
+            start: v.start,
+            end: v.end,
+            players: v
+                .players
+                .iter()
+                .map(|p| TimelineStint { id: p.id.clone(), name: h.names.get(&p.id).cloned().unwrap_or_default(), from: p.from, to: p.to })
+                .collect(),
+            videos: v.videos.clone(),
+            shots: v.shots.clone(),
+            avatars: v
+                .avatars
+                .iter()
+                .map(|a| AvatarEvent { id: a.id.clone().or_else(|| h.names.iter().find(|(_, n)| **n == a.name).map(|(id, _)| id.clone())), ..a.clone() })
+                .collect(),
+        })
+        .collect();
+    out.sort_by_key(|v| v.start);
+    // Two log files can hold the same visit (a crash and restart): keep one.
+    out.dedup_by(|b, a| a.world == b.world && (a.start - b.start).abs() < 5);
+    if out.len() > 3000 {
+        out.drain(..out.len() - 3000);
+    }
+    out
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -811,6 +980,37 @@ pub fn dirs_from_strings(dirs: &[String]) -> Vec<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn videos_shots_and_avatars() {
+        let log = "\
+2026.11.08 21:13:49 Debug      -  [Behaviour] Entering Room: Movie Night
+2026.11.08 21:13:49 Debug      -  [Behaviour] Joining wrld_aaaa:1~friends(usr_me0000000)~region(eu)
+2026.11.08 21:13:58 Debug      -  [Behaviour] OnPlayerJoined Me Myself (usr_me0000000)
+2026.11.08 21:13:59 Debug      -  [Behaviour] Initialized PlayerAPI \"Me Myself\" is local
+2026.11.08 21:14:00 Debug      -  [Behaviour] OnPlayerJoined Alice (usr_alice00000)
+2026.11.08 21:14:05 Debug      -  [Behaviour] Switching Alice to avatar Fox Girl v2
+2026.11.08 21:15:00 Debug      -  [Video Playback] Attempting to resolve URL 'https://www.youtube.com/watch?v=abc123'
+2026.11.08 21:15:01 Debug      -  [Video Playback] URL 'https://www.youtube.com/watch?v=abc123' resolved to 'https://rr1.googlevideo.com/x'
+2026.11.08 21:16:00 Debug      -  [USharpVideo] Started video load for URL: https://youtu.be/xyz987, requested by Alice
+2026.11.08 21:17:00 Log        -  [VRC Camera] Took screenshot to: C:\\Users\\me\\Pictures\\VRChat\\2026-11\\VRChat_2026-11-08_21-17-00.123_1920x1080.png
+2026.11.08 21:20:00 Debug      -  [Behaviour] OnLeftRoom
+";
+        let p = parse_log(log);
+        let v = &p.visits[0];
+        assert_eq!(v.videos.len(), 2, "{:?}", v.videos);
+        assert_eq!(v.videos[0].url, "https://www.youtube.com/watch?v=abc123");
+        assert_eq!(v.videos[1].by.as_deref(), Some("Alice"));
+        assert_eq!(v.shots.len(), 1);
+        assert!(v.shots[0].path.ends_with("1920x1080.png"));
+        assert_eq!(v.avatars.len(), 1);
+        assert_eq!(v.avatars[0].avatar, "Fox Girl v2");
+        assert_eq!(v.avatars[0].id.as_deref(), Some("usr_alice00000"));
+        let h = History { version: HISTORY_VERSION, files: [("a".to_string(), FileEntry { visits: p.visits.clone(), ..Default::default() })].into_iter().collect(), names: p.names.into_iter().collect(), extra: Default::default() };
+        let t = timeline(&h, 0, i64::MAX);
+        assert_eq!(t.len(), 1);
+        assert_eq!(t[0].players[0].name, "Alice");
+    }
 
     const SAMPLE: &str = "\
 2026.11.08 21:13:42 Debug      -  Odin Serializer started

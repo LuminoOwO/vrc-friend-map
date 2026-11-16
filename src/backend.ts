@@ -222,6 +222,12 @@ export const backend = {
     const { openUrl } = await import("@tauri-apps/plugin-opener");
     await openUrl(url);
   },
+  /** Show a file in the system's file manager. */
+  async revealPath(path: string): Promise<void> {
+    if (!isTauri) return;
+    const { revealItemInDir } = await import("@tauri-apps/plugin-opener");
+    await revealItemInDir(path);
+  },
   /** linux, windows, macos, android, ios — or "browser". */
   async platform(): Promise<string> {
     if (!isTauri) return "browser";
@@ -240,6 +246,18 @@ export const backend = {
   },
   async logsStats(query: { friend_ids: string[]; self_id: string | null; crowd: string; since: number | null }): Promise<PresenceStats> {
     return invoke<PresenceStats>("logs_stats", { query });
+  },
+  async logsTimeline(from: number, to: number): Promise<import("./logbook").TimelineVisit[]> {
+    if (!isTauri) return [];
+    return invoke("logs_timeline", { from, to });
+  },
+  async picturesDetect(): Promise<string[]> {
+    if (!isTauri) return [];
+    return invoke("pictures_detect");
+  },
+  async picturesList(dirs: string[]): Promise<import("./logbook").Picture[]> {
+    if (!isTauri) return [];
+    return invoke("pictures_list", { dirs });
   },
   async logsClear(): Promise<void> {
     if (isTauri) await invoke("logs_clear");

@@ -30,7 +30,7 @@ import type {
   UiSettings,
 } from "./types";
 
-export type View = "graph" | "cards" | "lists" | "activity" | "insights";
+export type View = "graph" | "cards" | "lists" | "activity" | "insights" | "logbook";
 
 export interface Toast {
   id: number;
@@ -191,6 +191,7 @@ export const defaultLogSettings = (): LogSettings => ({
   scanMinutes: 5,
   retentionDays: 0,
   live: true,
+  pictureDirs: [],
 });
 
 export const defaultGroupSettings = (): GroupSettings => ({
@@ -701,6 +702,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       scanMinutes: num(l.scanMinutes, d.logs.scanMinutes, 1, 120),
       retentionDays: num(l.retentionDays, d.logs.retentionDays, 0, 3650),
       live: typeof l.live === "boolean" ? l.live : d.logs.live,
+      pictureDirs: Array.isArray(l.pictureDirs) ? l.pictureDirs.filter((x: unknown) => typeof x === "string") : [],
     },
     groups: {
       ...g,

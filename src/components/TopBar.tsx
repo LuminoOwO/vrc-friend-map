@@ -15,6 +15,7 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: "lists", label: "Shared lists", icon: "share" },
   { key: "activity", label: "Activity", icon: "clock" },
   { key: "insights", label: "Insights", icon: "bulb" },
+  { key: "logbook", label: "Logbook", icon: "calendar" },
 ];
 
 function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {

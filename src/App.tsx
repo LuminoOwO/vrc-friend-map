@@ -1,4 +1,5 @@
 import { InsightsView } from "./components/InsightsView";
+import { LogbookView } from "./components/LogbookView";
 import { BlockReasonDialog } from "./components/PersonExtras";
 import { startBioCache, stopBioCache } from "./biocache";
 import { startHistory, stopHistory } from "./history";
@@ -134,6 +135,7 @@ export default function App() {
           {view === "lists" && <SharedLists />}
           {view === "activity" && <ActivityView />}
           {view === "insights" && <InsightsView />}
+          {view === "logbook" && <LogbookView />}
         </div>
         {selectedId && profileAs === "sidebar" && <DetailPanel id={selectedId} />}
       </div>

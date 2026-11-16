@@ -46,6 +46,10 @@ export interface HistoryData {
   lastOpen: { t: number; friends: string[]; names: Record<string, string> } | null;
   /** Anniversaries already announced ("id|yyyy-mm-dd"). */
   announced: string[];
+  /** Friend minutes per world per day (last 14 days), for "popular among your friends". */
+  worlds: Record<string, Record<string, number>>;
+  /** Your diary notes per day ("2026-11-08"). */
+  diary: Record<string, string>;
 }
 
 const FILE = "history";
@@ -54,7 +58,7 @@ const SAMPLE_MIN = 5;
 /** Every week, older observations count this much less (half after ~13 weeks). */
 const WEEKLY_FADE = 0.95;
 
-const empty = (): HistoryData => ({ seen: {}, me: newSeen(), names: {}, missed: [], lastOpen: null, announced: [] });
+const empty = (): HistoryData => ({ seen: {}, me: newSeen(), names: {}, missed: [], lastOpen: null, announced: [], worlds: {}, diary: {} });
 const newSeen = (): SeenInfo => ({ last: 0, hours: new Array(HOURS).fill(0), total: 0 });
 
 let data: HistoryData = empty();
@@ -119,6 +123,8 @@ export function normalizeHistory(raw: unknown): HistoryData {
     missed: Array.isArray(r.missed) ? r.missed.filter((m) => m && typeof m.t === "number").slice(-500) : [],
     lastOpen: r.lastOpen && typeof r.lastOpen.t === "number" ? r.lastOpen : null,
     announced: Array.isArray(r.announced) ? r.announced.slice(-2000) : [],
+    worlds: (r.worlds && typeof r.worlds === "object" ? r.worlds : {}) as HistoryData["worlds"],
+    diary: (r.diary && typeof r.diary === "object" ? r.diary : {}) as HistoryData["diary"],
   };
 }
 
@@ -151,12 +157,21 @@ export function sample(now = Date.now()) {
   const s = getState();
   if (s.demo || s.mode !== "app") return;
   let any = false;
+  const day = new Date(now).toISOString().slice(0, 10);
+  const worlds = (data.worlds[day] ??= {});
   for (const [id, p] of Object.entries(s.cache.presence)) {
     if (p !== "online") continue;
     const info = (data.seen[id] ??= newSeen());
     addMinutes(info, now, SAMPLE_MIN);
     any = true;
+    const loc = s.cache.friends[id]?.location ?? "";
+    if (loc.startsWith("wrld_")) {
+      const w = loc.split(":")[0];
+      worlds[w] = (worlds[w] ?? 0) + SAMPLE_MIN;
+    }
   }
+  // Keep two weeks.
+  for (const k of Object.keys(data.worlds)) if (now - Date.parse(k) > 15 * 864e5) delete data.worlds[k];
   // You: in game per the live game log, or (phones, no logs) your own presence.
   const meOnline = (!!s.here?.active && !s.here.closed && !!s.here.location) || s.cache.presence[s.cache.me?.id ?? ""] === "online";
   if (meOnline) addMinutes(data.me, now, SAMPLE_MIN);
@@ -394,4 +409,20 @@ export function describeHours(hours: number[]): string {
     for (const d of [1, 2, 3, 4, 5, 6, 0]) if (byDay.has(d)) parts.push(`${DAYS[d]} ${keyOf(d)}`);
   }
   return parts.join("; ");
+}
+
+/** Worlds your friends spent the most time in over the last `days` days (from live locations). */
+export function popularWorlds(days = 7, now = Date.now()): { world: string; minutes: number }[] {
+  const sum = new Map<string, number>();
+  for (const [day, w] of Object.entries(data.worlds)) {
+    if (now - Date.parse(day) > days * 864e5) continue;
+    for (const [id, m] of Object.entries(w)) sum.set(id, (sum.get(id) ?? 0) + m);
+  }
+  return [...sum.entries()].map(([world, minutes]) => ({ world, minutes })).sort((a, b) => b.minutes - a.minutes);
+}
+
+export function setDiary(day: string, text: string) {
+  if (text.trim()) data.diary[day] = text.slice(0, 5000);
+  else delete data.diary[day];
+  changed();
 }

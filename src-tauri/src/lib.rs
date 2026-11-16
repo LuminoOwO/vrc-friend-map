@@ -7,6 +7,7 @@ mod gdk4_stubs;
 mod gamelogs;
 pub mod graphics;
 mod images;
+mod pictures;
 mod linkfetch;
 mod livelog;
 mod pipeline;
@@ -272,6 +273,30 @@ async fn logs_stats(state: AppStateRef<'_>, query: gamelogs::StatsQuery) -> Resu
     tauri::async_runtime::spawn_blocking(move || st.logs.stats(&query)).await.map_err(|e| e.to_string())?
 }
 
+/// VRChat's picture folders found on this machine.
+#[tauri::command]
+fn pictures_detect() -> Vec<String> {
+    pictures::detect().into_iter().map(|p| p.display().to_string()).collect()
+}
+
+/// Pictures in these folders (empty: the detected ones), newest first.
+#[tauri::command]
+async fn pictures_list(dirs: Vec<String>) -> Result<Vec<pictures::Picture>, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let dirs: Vec<PathBuf> = if dirs.is_empty() { pictures::detect() } else { dirs.into_iter().map(PathBuf::from).filter(|p| p.is_dir()).collect() };
+        pictures::list(&dirs)
+    })
+    .await
+    .map_err(|e| e.to_string())
+}
+
+/// Visits between two times (naive seconds) for the timeline, with names, videos, pictures, avatars.
+#[tauri::command]
+async fn logs_timeline(state: AppStateRef<'_>, from: i64, to: i64) -> Result<Vec<gamelogs::TimelineVisit>, String> {
+    let st = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || st.logs.timeline(from, to)).await.map_err(|e| e.to_string())?
+}
+
 /// People from your game logs who aren't friends, by time with you.
 #[tauri::command]
 async fn logs_met(state: AppStateRef<'_>, query: gamelogs::MetQuery) -> Result<Vec<gamelogs::MetPerson>, String> {
@@ -485,6 +510,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .register_asynchronous_uri_scheme_protocol("vrcimg", images::handle)
+        .register_asynchronous_uri_scheme_protocol("vrcpic", pictures::handle)
         .setup(|app| {
             let data_dir = app.path().app_data_dir()?;
             let cache_dir = app.path().app_cache_dir()?;
@@ -545,6 +571,9 @@ pub fn run() {
             moderate_user,
             update_profile,
             vrc_write,
+            logs_timeline,
+            pictures_detect,
+            pictures_list,
             vrc_upload_image,
             storage_info,
             live_start,

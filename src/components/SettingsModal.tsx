@@ -709,6 +709,51 @@ const RETENTION = [
   [365, "1 year"],
 ] as const;
 
+function PictureFolders() {
+  const ls = useApp((s) => s.settings.logs);
+  const [found, setFound] = useState<string[]>([]);
+  const [d, setD] = useState("");
+  useEffect(() => {
+    backend.picturesDetect().then(setFound, () => setFound([]));
+  }, []);
+  return (
+    <div className="field">
+      <span>Picture folders (Logbook → Pictures)</span>
+      <ul className="path-list">
+        {found.map((p) => (
+          <li key={p}>
+            <code>{p}</code> <span className="muted small">(found)</span>
+          </li>
+        ))}
+        {ls.pictureDirs.map((p) => (
+          <li key={p}>
+            <code>{p}</code>
+            <button className="icon-btn tiny" title="Remove" onClick={() => updateLogSettings({ pictureDirs: ls.pictureDirs.filter((x) => x !== p) })}>
+              <Icon name="close" size={12} />
+            </button>
+          </li>
+        ))}
+        {!found.length && !ls.pictureDirs.length && <li className="muted small">No VRChat picture folder found automatically.</li>}
+      </ul>
+      <form
+        className="inline-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const v = d.trim();
+          if (!v || ls.pictureDirs.includes(v)) return;
+          updateLogSettings({ pictureDirs: [...ls.pictureDirs, v] });
+          setD("");
+        }}
+      >
+        <input value={d} placeholder="/path/to/Pictures/VRChat" onChange={(e) => setD(e.target.value)} />
+        <button className="btn" type="submit" disabled={!d.trim()} title="Add folder">
+          <Icon name="plus" size={16} />
+        </button>
+      </form>
+    </div>
+  );
+}
+
 function GameLogSection() {
   const logs = useApp((s) => s.logs);
   const ls = useApp((s) => s.settings.logs);
@@ -783,6 +828,7 @@ function GameLogSection() {
         </form>
         <small>Full path of the folder that contains the output_log_….txt files.</small>
       </div>
+      <PictureFolders />
       <div className="row">
         <label className="field narrow">
           <span>Check for new entries every</span>

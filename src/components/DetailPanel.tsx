@@ -40,7 +40,7 @@ import { applyPipelineEvent, freshenProfile, loadGroups, loadInstance, loadWorld
 import type { Friend, Presence } from "../types";
 import { GroupsModal } from "./GroupsModal";
 import { Icon } from "./Icon";
-import { BlockFlags, InviteActions, LocalTime, NicknameAndSnooze, OnlineHistory, StarButton, VrcNote } from "./PersonExtras";
+import { BlockFlags, InviteActions, LocalTime, NicknameAndSnooze, OnlineHistory, PersonLog, StarButton, VrcNote } from "./PersonExtras";
 import { inviteMyself } from "../invites";
 
 const REGION_FLAG: Record<string, string> = { us: "🇺🇸", use: "🇺🇸", usw: "🇺🇸", eu: "🇪🇺", jp: "🇯🇵" };
@@ -380,6 +380,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               {relation === "friend" && <LocalTime id={id} name={f.displayName} />}
               {relation === "friend" && <OnlineHistory id={id} name={f.displayName} online={p === "online"} />}
               {relation !== "me" && <VrcNote id={id} />}
+              {relation !== "me" && !demo && <PersonLog id={id} name={f.displayName} />}
               <div className="profile-block">
                 <h3 data-flip-fade>Profile</h3>
                 <dl className="facts with-icons">

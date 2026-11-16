@@ -25,6 +25,8 @@ import { setState, showToast, useApp } from "../store";
 import { ALL_ZONES, differenceFromMe, isNightThere, timeIn, zoneLabel } from "../tz";
 import { requestInvite } from "../invites";
 import { Icon } from "./Icon";
+import { usePersonLog } from "./LogbookView";
+import { pictureSrc } from "../logbook";
 
 export function StarButton({ id }: { id: string }) {
   const on = useApp((s) => s.local.starred?.includes(id) ?? false);
@@ -457,4 +459,40 @@ export function InviteActions({ id, name, location, full, worldName }: { id: str
 /** For the history store to be loaded where the profile is used first. */
 export function useHistoryReady() {
   return useHistory(() => history().seen);
+}
+
+/** From your game logs: avatars they were seen in, and your pictures with them. */
+export function PersonLog({ id, name }: { id: string; name: string }) {
+  const data = usePersonLog(id, name);
+  const [open, setOpen] = useState(false);
+  if (!data || (!data.pics.length && !data.avatars.length)) return null;
+  return (
+    <div className="profile-block" data-flip-fade>
+      <h3>From your game logs</h3>
+      {data.avatars.length > 0 && (
+        <p className="small">
+          <b>Avatars seen:</b> {data.avatars.slice(0, open ? 40 : 6).map((a) => a.avatar).join(", ")}
+          {data.avatars.length > 6 && (
+            <button className="btn link small" onClick={() => setOpen(!open)}>
+              {open ? "less" : `+${data.avatars.length - 6} more`}
+            </button>
+          )}
+        </p>
+      )}
+      {data.pics.length > 0 && (
+        <>
+          <p className="small">
+            <b>Your pictures with {name}:</b> {data.pics.length}
+          </p>
+          <div className="pic-grid small-pics">
+            {data.pics.slice(0, 12).map((p) => (
+              <a key={p.path} className="pic" href={pictureSrc(p.path)} target="_blank" rel="noreferrer" title={p.worldName}>
+                <img src={pictureSrc(p.path)} alt="" loading="lazy" />
+              </a>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }

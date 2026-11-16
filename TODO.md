@@ -96,28 +96,28 @@ can be designed around everything. Nothing here is started.
 
 ## Round 3: more from the game logs
 
-- [ ] **Instance timeline per day:** when you played (from–to), instances in order with times,
+- [x] **Instance timeline per day:** when you played (from–to), instances in order with times,
   who joined / left when, video links. A "today" summary.
-- [ ] **Rankings and stats:** worlds by time, people by time together, who with whom in which
+- [x] **Rankings and stats:** worlds by time, people by time together, who with whom in which
   world, play-time heatmap, longest sessions, streaks, first met, most often together per world.
-- [ ] **Video player links:** list with time, world, link (copy / open), who requested it where
+- [x] **Video player links:** list with time, world, link (copy / open), who requested it where
   the player logs that, titles via oEmbed (optional), search, export, "now playing" in who's here.
-- [ ] **Screenshots:** gallery of the VRChat pictures folder; each picture tagged with the world
+- [x] **Screenshots:** gallery of the VRChat pictures folder; each picture tagged with the world
   and people present at that minute (from the logs); full-screen, copy, save, share. Phone: its
   own pictures (photo permission) and the PC's through device sync.
-- [ ] **Other people's avatars from the log:** the log records which avatar each person in your
+- [x] **Other people's avatars from the log:** the log records which avatar each person in your
   instance switches to; show their current avatar and a history on their profile.
 
-- [ ] **Diary:** an automatic journal per day (worlds, people met, screenshots, your own
+- [x] **Diary:** an automatic journal per day (worlds, people met, screenshots, your own
   short note), with "on this day a year ago".
-- [ ] **Year in review:** a Wrapped-style summary of your year; private unless you export it
+- [x] **Year in review:** a Wrapped-style summary of your year; private unless you export it
   as a picture.
-- [ ] **Popular among your friends:** the worlds your friends visit most this week (from what
+- [x] **Popular among your friends:** the worlds your friends visit most this week (from what
   friends share and your own logs).
 
-- [ ] **Photo albums per person:** with screenshots tagged by who was there, each profile shows
+- [x] **Photo albums per person:** with screenshots tagged by who was there, each profile shows
   "your pictures with them".
-- [ ] **Instance replay:** scrub through a past evening in the timeline and watch who was where
+- [x] **Instance replay:** scrub through a past evening in the timeline and watch who was where
   on the map, minute by minute (game logs + map time travel).
 
 ## Round 4: VRChat content in the app

@@ -2,7 +2,7 @@
 // A readable list (friends first), one row of pictures, or just a button:
 // Map options' choice, switched with the buttons in its header.
 import { useEffect, useMemo, useState } from "react";
-import { imgSrc } from "../backend";
+import { backend, imgSrc } from "../backend";
 import { othersHere } from "../live";
 import { naiveToDate } from "../logs";
 import { iconUrl, presenceLabel, presenceOf, statusColor } from "../model";
@@ -119,6 +119,11 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
         <Icon name="users" size={12} /> {inside}
         {capacity ? ` / ${capacity}` : ""}
       </span>
+      {here?.video && (
+        <button className="link-btn now-playing" title={`Now playing${here.video.by ? ` (by ${here.video.by})` : ""}: ${here.video.url}`} onClick={() => backend.openUrl(here.video!.url).catch(() => {})}>
+          <Icon name="video" size={12} /> now playing
+        </button>
+      )}
     </span>
   );
   const moveBtn = (

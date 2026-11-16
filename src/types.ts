@@ -355,6 +355,8 @@ export interface LogSettings {
   retentionDays: number;
   /** Follow the log as VRChat writes it: who's in your instance right now. */
   live: boolean;
+  /** Picture folders added by hand (VRChat's own are found automatically). */
+  pictureDirs: string[];
 }
 
 export interface GroupSettings {
@@ -634,6 +636,8 @@ export interface LivePlayer {
   id: string;
   name: string;
   since: number;
+  /** The avatar they switched to last (game log). */
+  avatar?: string;
 }
 
 export interface LiveSnapshot {
@@ -646,6 +650,8 @@ export interface LiveSnapshot {
   localId: string | null;
   file: string;
   closed: boolean;
+  /** Now playing: the last video link loaded in this instance. */
+  video?: { t: number; url: string; by?: string };
 }
 
 /** Someone from the game logs who isn't a friend. */

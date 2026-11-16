@@ -64,6 +64,24 @@ minor releases can change behavior.
 - Stars, nicknames, time zones, block reasons, invite messages and shared circles sync between
   your devices.
 
+- **Logbook** (new tab, from your game logs; all on this device):
+  - *Day by day*: when you played (sessions from–to), every instance in order with who was there,
+    who joined and left when, video links, pictures taken; your own diary note for the day;
+    "a year ago" on this day; an **instance replay** (scrub through a visit and see who was there,
+    and in which avatar, minute by minute).
+  - *Rankings*: worlds by time (and who's most often with you there), people by time together
+    with first met, when you play (week heatmap), longest sessions, streaks, busiest day, and
+    worlds popular among your friends this week (from their live locations).
+  - *Video links*: every link a video player loaded, with time, world and who asked for it
+    (where the player logs it); open, copy, search, export as CSV.
+  - *Pictures*: your VRChat pictures (found automatically on Windows and in the Proton folder on
+    Linux; add your own in Settings → Game logs), each tagged with the world and the people there
+    at that minute; search by world or person, full view, show in folder, save a copy.
+  - *Year in review*: hours, top worlds and people, streaks, pictures and videos, new friends;
+    save it as a picture.
+- **Profiles**: avatars someone was seen in (game logs) and your pictures with them.
+- **Who's here**: *now playing* (the video loaded in your instance).
+
 ### Changed
 - Map: panning stops before everyone leaves the screen.
 - Phones: the filter menu stays inside the screen; the settings button sits in the top right
