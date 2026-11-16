@@ -3,7 +3,12 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
-## Unreleased
+## 0.12.0 (2026-11-16)
+
+Update your **vfm-server** too: live changes instead of polling, devices syncing with each
+other, hiding who you share with and "nothing changed" answers need the new server (older
+servers keep working as before). The **new beta UI** is in this release as an opt-in preview
+(Settings → Appearance → Interface); it becomes the main UI in a later release.
 
 ### Added
 - **Sync log** (click the sync status, or the ⓘ next to it): every sync step with time, result and
