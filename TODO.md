@@ -202,7 +202,7 @@ can be designed around everything. Nothing here is started.
 - [x] **Bans:** by account and by IP (caveats: changing home IPs, mobile carriers share IPs,
   reverse proxies need a trusted-proxy setting). Banned users get the reason (if given) and the
   owner's appeal / support email, shown in the app.
-- [ ] **Less load on the server:** ("Nothing changed" answers and skipping unchanged uploads done; one open connection and own devices syncing directly still open.) "nothing changed" answers instead of resending, one open
+- [x] **Less load on the server:** (Done except own devices syncing directly, which is the device-to-device item below.) "nothing changed" answers instead of resending, one open
   connection instead of polling, own devices syncing directly.
 - [ ] **Device-to-device sync:** devices on the same network find each other and sync directly
   (circles, notes, settings, notification sounds); the server only says "your other device is

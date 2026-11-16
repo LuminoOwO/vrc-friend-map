@@ -160,6 +160,73 @@ async fn share_inbox(state: AppStateRef<'_>, url: String, owners: Option<Vec<Str
     state.share.inbox(&url, &me, owners.unwrap_or_default()).await
 }
 
+/// Open live change streams, one per server URL (see `share_watch`).
+static WATCHERS: std::sync::Mutex<Option<std::collections::HashMap<String, tauri::async_runtime::JoinHandle<()>>>> =
+    std::sync::Mutex::new(None);
+
+/// Keep one live change stream open per server in `urls` (and close the others).
+/// Emits `share-live` {url, live} and `share-changed` {url, owner, kind, resync}.
+#[tauri::command]
+fn share_watch(app: AppHandle, urls: Vec<String>) {
+    use tauri::Emitter;
+    let mut guard = WATCHERS.lock().unwrap();
+    let map = guard.get_or_insert_with(Default::default);
+    map.retain(|url, task| {
+        let keep = urls.contains(url);
+        if !keep {
+            task.abort();
+        }
+        keep
+    });
+    for url in urls {
+        if map.contains_key(&url) {
+            continue;
+        }
+        let app = app.clone();
+        let u = url.clone();
+        let task = tauri::async_runtime::spawn(async move {
+            let state = app.state::<Arc<AppState>>().inner().clone();
+            let mut wait = 5u64;
+            loop {
+                let result = match me_id(&state).await {
+                    Ok(me) => {
+                        let app2 = app.clone();
+                        let u2 = u.clone();
+                        let mut opened = false;
+                        let r = state
+                            .share
+                            .watch(&u, &me, |ev| {
+                                let changed = |owner: &str, kind: &str, resync: bool| {
+                                    let _ = app2.emit("share-changed", serde_json::json!({ "url": u2, "owner": owner, "kind": kind, "resync": resync }));
+                                };
+                                match ev {
+                                    share::WatchEvent::Open => {
+                                        opened = true;
+                                        let _ = app2.emit("share-live", serde_json::json!({ "url": u2, "live": true }));
+                                    }
+                                    share::WatchEvent::Change(o, k) => changed(&o, &k, false),
+                                    share::WatchEvent::Resync => changed("", "", true),
+                                }
+                            })
+                            .await;
+                        if opened {
+                            wait = 5;
+                        }
+                        r
+                    }
+                    Err(e) => Err(e),
+                };
+                let _ = app.emit("share-live", serde_json::json!({ "url": u, "live": false }));
+                // Older servers can't: don't keep knocking.
+                let old = matches!(&result, Err(e) if e.contains("older vfm-server"));
+                tokio::time::sleep(std::time::Duration::from_secs(if old { 3600 } else { wait })).await;
+                wait = (wait * 2).min(300);
+            }
+        });
+        map.insert(url, task);
+    }
+}
+
 #[tauri::command]
 async fn share_pins(state: AppStateRef<'_>) -> Result<serde_json::Value, String> {
     Ok(state.share.pins().await)
@@ -821,6 +888,7 @@ pub fn run() {
             share_set_name,
             share_unpublish,
             share_inbox,
+            share_watch,
             share_pins,
             share_trust_key,
             logger_pair,

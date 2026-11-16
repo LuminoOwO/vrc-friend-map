@@ -381,6 +381,8 @@ export const backend = {
     unpublish: (url: string, kind: string) => need<unknown>("share_unpublish", { url, kind }),
     /** `owners`: your friends, to also get their hidden-recipient items (servers that can). */
     inbox: (url: string, owners?: string[]) => need<InboxItem[]>("share_inbox", { url, owners: owners ?? null }),
+    /** Keep a live change stream open to each of these servers (and close the others). */
+    watch: (urls: string[]) => need<void>("share_watch", { urls }),
     pins: () => need<Record<string, KeyPin>>("share_pins"),
     trustKey: (user: string) => need<void>("share_trust_key", { user }),
     loggerPair: (url: string, code: string) => need<unknown>("logger_pair", { url, code }),

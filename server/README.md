@@ -272,5 +272,6 @@ For other clients:
 | `PUT/DELETE /v1/items/{friends\|activity}` | your uploads |
 | `GET /v1/inbox` | items addressed to you, with their owners' keys. Has an `ETag`; send it back as `If-None-Match` and an unchanged inbox answers `304 Not Modified` with no body |
 | `POST /v1/hidden` | hidden-recipient items: `{}` lists which exist (owner, kind, created); `{"owners": [...], "have": {"owner\|kind": created}}` returns those owners' items you don't have yet, with their keys. Servers that have it list `"hidden-recipients"` in `features` of `/v1/info` |
+| `GET /v1/events` | one open connection instead of polling (server-sent events): `event: change` with `{owner, kind}` when something you can fetch changes (or any hidden item; the app checks the owner), `event: resync` if the connection fell behind, a `: ping` every 25 seconds. Feature `"live-changes"` |
 | `GET/DELETE /v1/me` | your account |
 | `POST/DELETE /v1/logger/pair`, `GET /v1/logger/status`, `GET /v1/logger/stats` | logger (owner only; stats come sealed and signed by the server) |

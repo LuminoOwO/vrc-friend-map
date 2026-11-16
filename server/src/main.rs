@@ -224,6 +224,7 @@ fn run(config_path: &Path) -> Result<(), String> {
         axum::serve(listener, api::router(app).into_make_service_with_connect_info::<SocketAddr>())
             .with_graceful_shutdown(async move {
                 shutdown_signal().await;
+                let _ = shutdown_app.closing.send(true);
                 println!("Stopping…");
                 shutdown_app.logger.save_now();
                 shutdown_app.store.lock().unwrap().flush();

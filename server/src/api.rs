@@ -35,7 +35,32 @@ pub struct App {
     pub admins: crate::admins::Admins,
     pub bans: crate::bans::Bans,
     pub cache: crate::cache::Cache,
+    /// Item changes, for the open event streams (`/v1/events`).
+    pub changes: tokio::sync::broadcast::Sender<Change>,
+    streams: std::sync::atomic::AtomicUsize,
+    /// Set when the server stops, so open event streams end (graceful shutdown waits for them).
+    pub closing: tokio::sync::watch::Sender<bool>,
 }
+
+/// An item was stored or removed.
+#[derive(Clone, Debug)]
+pub struct Change {
+    pub owner: String,
+    pub kind: String,
+    /// Who could fetch it (before and after the change).
+    pub recipients: Vec<String>,
+    pub hidden: bool,
+}
+
+impl Change {
+    /// Whether `user`'s app should hear of it: they can fetch it, or it's a
+    /// hidden item (their app checks whether the owner is a friend).
+    pub fn for_user(&self, user: &str) -> bool {
+        self.hidden || self.recipients.iter().any(|r| r == user)
+    }
+}
+
+const MAX_STREAMS: usize = 2000;
 
 impl App {
     pub fn new(cfg: Config, cfg_path: PathBuf, store: Store, logger: Arc<Logger>, env_locked: Vec<String>) -> Arc<App> {
@@ -51,6 +76,9 @@ impl App {
             admins: crate::admins::Admins::new(&dir),
             bans: crate::bans::Bans::new(&dir),
             cache: crate::cache::Cache::new(&dir),
+            changes: tokio::sync::broadcast::channel(256).0,
+            streams: std::sync::atomic::AtomicUsize::new(0),
+            closing: tokio::sync::watch::channel(false).0,
         })
     }
 
@@ -111,7 +139,7 @@ impl App {
             kinds: KINDS.iter().map(|k| k.to_string()).collect(),
             logger: LoggerInfo { enabled: cfg.logger.enabled, paired: self.logger.owner().is_some(), owner: None },
             motd: cfg.server.motd.clone(),
-            features: vec!["hidden-recipients".into()],
+            features: vec!["hidden-recipients".into(), "live-changes".into()],
         }
     }
 }
@@ -216,6 +244,7 @@ pub fn router(app: Arc<App>) -> Router {
         .route("/v1/items/{kind}", put(put_item).delete(delete_item))
         .route("/v1/inbox", get(inbox))
         .route("/v1/hidden", post(hidden))
+        .route("/v1/events", get(events))
         .route("/v1/logger/pair", post(logger_pair).delete(logger_unpair))
         .route("/v1/logger/status", get(logger_status))
         .route("/v1/logger/stats", get(logger_stats))
@@ -460,7 +489,11 @@ async fn put_item(
             return Err(err(StatusCode::CONFLICT, "a newer version is already stored"));
         }
     }
+    let mut recipients = store.items.get(&(user.clone(), kind.clone())).map(|m| m.recipients.clone()).unwrap_or_default();
     store.put_item(&env).map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    drop(store);
+    recipients.extend(env.recipients.iter().cloned());
+    let _ = app.changes.send(Change { owner: user.clone(), kind: kind.clone(), recipients, hidden: env.hidden() });
     Ok(Json(json!({ "ok": true, "sealed": sealed, "recipients": env.recipients.len() })).into_response())
 }
 
@@ -473,7 +506,14 @@ async fn delete_item(
     body: Bytes,
 ) -> ApiResult {
     let user = authed(&app, &headers, &method, &uri, &body)?;
-    let removed = app.store.lock().unwrap().delete_item(&user, &kind);
+    let (removed, old) = {
+        let mut store = app.store.lock().unwrap();
+        let old = store.items.get(&(user.clone(), kind.clone())).cloned();
+        (store.delete_item(&user, &kind), old)
+    };
+    if let Some(m) = old {
+        let _ = app.changes.send(Change { owner: user.clone(), kind: kind.clone(), recipients: m.recipients, hidden: m.hidden });
+    }
     Ok(Json(json!({ "ok": true, "removed": removed })).into_response())
 }
 
@@ -569,6 +609,65 @@ async fn hidden(State(app): State<Arc<App>>, headers: HeaderMap, method: Method,
         }
     }
     Ok(Json(json!({ "items": items, "current": current, "identities": identities })).into_response())
+}
+
+/// One open connection instead of polling: `event: change` with `{owner, kind}`
+/// whenever something you can fetch changes (or a hidden item, which your app
+/// checks against your friends), a ping every 25 seconds, and `event: resync`
+/// if this connection fell behind. Text/event-stream (SSE).
+async fn events(State(app): State<Arc<App>>, headers: HeaderMap, method: Method, uri: Uri) -> ApiResult {
+    use std::sync::atomic::Ordering;
+    let user = authed(&app, &headers, &method, &uri, b"")?;
+    if app.streams.fetch_add(1, Ordering::SeqCst) >= MAX_STREAMS {
+        app.streams.fetch_sub(1, Ordering::SeqCst);
+        return Err(err(StatusCode::SERVICE_UNAVAILABLE, "too many open connections; the app polls instead"));
+    }
+    struct Open(Arc<App>);
+    impl Drop for Open {
+        fn drop(&mut self) {
+            self.0.streams.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+        }
+    }
+    let rx = app.changes.subscribe();
+    let mut tick = tokio::time::interval(std::time::Duration::from_secs(25));
+    tick.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    let mut closing = app.closing.subscribe();
+    closing.mark_changed();
+    let state = (rx, tick, user, Open(app.clone()), closing);
+    let stream = futures_util::stream::unfold(state, |(mut rx, mut tick, user, open, mut closing)| async move {
+        loop {
+            tokio::select! {
+                _ = closing.changed() => {
+                    if *closing.borrow_and_update() {
+                        return None;
+                    }
+                    // The first wake-up: say hello, so the app knows the stream is open.
+                    return Some((Ok::<_, std::convert::Infallible>(Bytes::from_static(b": open\n\n")), (rx, tick, user, open, closing)));
+                }
+                msg = rx.recv() => match msg {
+                    Ok(c) if c.for_user(&user) => {
+                        let line = format!("event: change\ndata: {}\n\n", json!({ "owner": c.owner, "kind": c.kind }));
+                        return Some((Ok(Bytes::from(line)), (rx, tick, user, open, closing)));
+                    }
+                    Ok(_) => continue,
+                    Err(tokio::sync::broadcast::error::RecvError::Lagged(_)) => {
+                        return Some((Ok(Bytes::from_static(b"event: resync\ndata: {}\n\n")), (rx, tick, user, open, closing)));
+                    }
+                    Err(tokio::sync::broadcast::error::RecvError::Closed) => return None,
+                },
+                _ = tick.tick() => return Some((Ok(Bytes::from_static(b": ping\n\n")), (rx, tick, user, open, closing))),
+            }
+        }
+    });
+    Ok((
+        [
+            (axum::http::header::CONTENT_TYPE, "text/event-stream"),
+            (axum::http::header::CACHE_CONTROL, "no-cache"),
+            (axum::http::HeaderName::from_static("x-accel-buffering"), "no"),
+        ],
+        axum::body::Body::from_stream(stream),
+    )
+        .into_response())
 }
 
 // ---------- logger ----------

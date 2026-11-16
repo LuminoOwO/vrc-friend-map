@@ -182,6 +182,10 @@ minor releases can change behavior.
   friends who joined the server since get it; *Sync now* always uploads), and the server
   answers "nothing new" instead of sending everything that's shared with you again. Needs the
   new vfm-server for the second part; older servers keep working as before.
+- **Live changes instead of polling**: with the new vfm-server the app keeps one quiet
+  connection open, and the server says when a friend shared something new or your other device
+  changed something. The app then syncs that server within seconds, and polls only hourly as a
+  safety net. Reconnects by itself; older servers are polled as before.
 - Map: panning stops before everyone leaves the screen.
 - Phones: the filter menu stays inside the screen; the settings button sits in the top right
   and is a real cogwheel; checkboxes have room between them.

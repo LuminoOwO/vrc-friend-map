@@ -409,6 +409,8 @@ export interface ServerInfoLite {
   maxItemBytes: number;
   /** The server stores items that don't say who they're for. */
   hiddenRecipients?: boolean;
+  /** The server can tell the app about changes over one open connection. */
+  liveChanges?: boolean;
 }
 
 export interface ShareServer {

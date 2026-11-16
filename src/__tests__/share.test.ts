@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { encryptionSwitch, maxPairs, uploadFingerprint } from "../share";
+import { changeMatters, encryptionSwitch, maxPairs, uploadFingerprint } from "../share";
 import { normalizeSettings } from "../store";
 
 describe("encryption switch", () => {
@@ -115,5 +115,16 @@ describe("uploadFingerprint", () => {
     expect(uploadFingerprint(body("x", ["a", "b"]), ["usr_1"], true)).not.toBe(base);
     expect(uploadFingerprint(body("x", ["a"]), ["usr_1", "usr_3"], true)).not.toBe(base);
     expect(uploadFingerprint(body("x", ["a"]), ["usr_1"], false)).not.toBe(base);
+  });
+});
+
+describe("live changes", () => {
+  const friends = { usr_f: {} };
+  it("syncs for friends' items, your other devices and resyncs only", () => {
+    expect(changeMatters({ owner: "usr_f", kind: "friends" }, "usr_me", friends)).toBe(true);
+    expect(changeMatters({ owner: "usr_x", kind: "friends" }, "usr_me", friends)).toBe(false);
+    expect(changeMatters({ owner: "usr_me", kind: "friends" }, "usr_me", friends)).toBe(false);
+    expect(changeMatters({ owner: "usr_me", kind: "self" }, "usr_me", friends)).toBe(true);
+    expect(changeMatters({ owner: "", kind: "", resync: true }, "usr_me", friends)).toBe(true);
   });
 });

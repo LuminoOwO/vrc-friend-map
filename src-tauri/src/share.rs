@@ -140,6 +140,40 @@ pub struct InboxItem {
     pub error: Option<String>,
 }
 
+/// One message from a server's live change stream.
+#[derive(Debug, PartialEq)]
+pub enum WatchEvent {
+    /// The stream is open.
+    Open,
+    /// Something you can fetch changed (owner, kind).
+    Change(String, String),
+    /// This connection missed changes: sync everything.
+    Resync,
+}
+
+/// One server-sent-events block ("event: …" and "data: …" lines, or a ": comment").
+pub fn parse_event(block: &str) -> Option<WatchEvent> {
+    let (mut event, mut data) = ("", String::new());
+    for line in block.lines() {
+        if line == ": open" {
+            return Some(WatchEvent::Open);
+        }
+        if let Some(v) = line.strip_prefix("event:") {
+            event = v.trim();
+        } else if let Some(v) = line.strip_prefix("data:") {
+            data.push_str(v.trim());
+        }
+    }
+    match event {
+        "change" => {
+            let v: Value = serde_json::from_str(&data).ok()?;
+            Some(WatchEvent::Change(v["owner"].as_str()?.to_string(), v["kind"].as_str()?.to_string()))
+        }
+        "resync" => Some(WatchEvent::Resync),
+        _ => None,
+    }
+}
+
 /// What `send_tagged` learned besides the body.
 struct Tagged {
     tag: Option<String>,
@@ -806,6 +840,52 @@ impl ShareState {
         Ok(out)
     }
 
+    // ---------- live changes ----------
+
+    /// Keep `/v1/events` open and call `on` for each thing it says, until the
+    /// connection ends (Ok) or can't be made (Err). Quiet for 70 seconds
+    /// (the server pings every 25): treated as ended.
+    pub async fn watch(&self, url: &str, user: &str, mut on: impl FnMut(WatchEvent)) -> Result<(), String> {
+        let url = normalize_url(url)?;
+        let id = self.identity(user).await?;
+        let path = "/v1/events";
+        let res = self
+            .http
+            .get(format!("{url}{path}"))
+            .header("accept", "text/event-stream")
+            .header("authorization", auth::sign_request(&id, user, "GET", path, b"", now()))
+            // The client's 30 s limit is for single calls; this one stays open.
+            .timeout(Duration::from_secs(24 * 3600))
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+        if res.status() == reqwest::StatusCode::NOT_FOUND {
+            return Err("this server can't send live changes (older vfm-server)".into());
+        }
+        if !res.status().is_success() {
+            return Err(format!("server answered {}", res.status()));
+        }
+        let mut res = res;
+        let mut buf = String::new();
+        loop {
+            let chunk = match tokio::time::timeout(Duration::from_secs(70), res.chunk()).await {
+                Ok(Ok(Some(c))) => c,
+                Ok(Ok(None)) | Err(_) => return Ok(()),
+                Ok(Err(e)) => return Err(e.to_string()),
+            };
+            buf.push_str(&String::from_utf8_lossy(&chunk));
+            if buf.len() > 1 << 20 {
+                return Err("live changes: answer too long".into());
+            }
+            while let Some(end) = buf.find("\n\n") {
+                let block: String = buf.drain(..end + 2).collect();
+                if let Some(ev) = parse_event(&block) {
+                    on(ev);
+                }
+            }
+        }
+    }
+
     // ---------- logger ----------
 
     pub async fn logger_pair(
@@ -1144,6 +1224,22 @@ mod e2e {
         // Without asking by owner it isn't in Bob's inbox at all.
         assert!(rt(bob2.inbox(&url, b, vec![])).unwrap().iter().all(|i| !(i.owner == a && i.kind == "friends")));
 
+        // Live changes: Bob's app keeps the stream open and hears of Alice's upload.
+        let (tx, rx) = std::sync::mpsc::channel();
+        let url2 = url.clone();
+        std::thread::spawn(move || {
+            let _ = rt(bob2.watch(&url2, b, |ev| {
+                let _ = tx.send(ev);
+            }));
+        });
+        let wait = std::time::Duration::from_secs(10);
+        assert_eq!(rx.recv_timeout(wait).unwrap(), WatchEvent::Open);
+        rt(alice.publish(&url, a, "activity", r#"{"pairs":[]}"#, vec![b.into()], true, false, vec![])).unwrap();
+        assert_eq!(rx.recv_timeout(wait).unwrap(), WatchEvent::Change(a.into(), "activity".into()));
+        // Carol isn't a recipient of that one; a hidden upload reaches everyone's stream.
+        rt(alice.publish(&url, a, "friends", hidden, vec![b.into()], true, true, vec![b.into()])).unwrap();
+        assert_eq!(rx.recv_timeout(wait).unwrap(), WatchEvent::Change(a.into(), "friends".into()));
+
         // Leaving removes everything.
         rt(alice.unpublish(&url, a, "friends")).unwrap();
         assert!(rt(carol.inbox(&url, c, vec![]))
@@ -1152,5 +1248,22 @@ mod e2e {
             .all(|i| i.owner != a));
         rt(alice.leave(&url, a)).unwrap();
         assert!(rt(alice.me(&url, a)).is_err());
+    }
+}
+
+#[cfg(test)]
+mod watch_tests {
+    use super::{parse_event, WatchEvent};
+
+    #[test]
+    fn server_sent_events() {
+        assert_eq!(parse_event(": open\n\n"), Some(WatchEvent::Open));
+        assert_eq!(parse_event(": ping\n\n"), None);
+        assert_eq!(
+            parse_event("event: change\ndata: {\"owner\":\"usr_a\",\"kind\":\"friends\"}\n\n"),
+            Some(WatchEvent::Change("usr_a".into(), "friends".into()))
+        );
+        assert_eq!(parse_event("event: resync\ndata: {}\n\n"), Some(WatchEvent::Resync));
+        assert_eq!(parse_event("event: change\ndata: nope\n\n"), None);
     }
 }

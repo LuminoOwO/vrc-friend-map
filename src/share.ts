@@ -5,8 +5,9 @@
 import { describeError, isNetworkError, logSync, wasInterrupted } from "./synclog";
 import { REASON_IDS } from "./personal";
 import { mergeSharedCircles, outgoingSharedCircles, validSharedCircle } from "./sharedcircles";
-import { backend, type InfoResult, type PublishResult } from "./backend";
-import { getState, newServer, normalizeSettings, setState, showToast, updateLocal, updateServer, updateSettings, updateSharing } from "./store";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { backend, isTauri, type InfoResult, type PublishResult } from "./backend";
+import { getState, subscribeState, newServer, normalizeSettings, setState, showToast, updateLocal, updateServer, updateSettings, updateSharing } from "./store";
 import { combineStats } from "./together";
 import { mergeSelf, readSelf, sameSelf, SELF_FORMAT, syncedKeys, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
 import { selectedIds } from "./selection";
@@ -87,6 +88,7 @@ function lite(r: InfoResult): ServerInfoLite {
     loggerPaired: i.logger.paired,
     maxItemBytes: i.max_item_bytes,
     hiddenRecipients: (i.features ?? []).includes("hidden-recipients"),
+    liveChanges: (i.features ?? []).includes("live-changes"),
   };
 }
 
@@ -716,15 +718,85 @@ export async function confirmUnencrypted(id: string, dontAskAgain: boolean, go: 
 let timer: ReturnType<typeof setInterval> | null = null;
 let nextAt = 0;
 
+// ---------- live changes ----------
+// Servers that can keep one connection open and say when something changed;
+// the app then syncs that server right away and polls only hourly.
+
+/** Server URLs whose live connection is open right now. */
+const live = new Set<string>();
+let unlistens: UnlistenFn[] = [];
+let watchedKey = "";
+let unwatchSettings: (() => void) | null = null;
+const soon = new Map<string, ReturnType<typeof setTimeout>>();
+
+function watchable(): string[] {
+  const st = getState();
+  if (st.demo || st.mode !== "app" || !st.settings.sharing.autoSync) return [];
+  return st.settings.sharing.servers.filter((s) => s.registered && s.info?.liveChanges && !s.keyChanged && (s.download || s.syncMine)).map((s) => s.url);
+}
+
+function updateWatch() {
+  const urls = watchable();
+  const key = urls.join(" ");
+  if (key === watchedKey) return;
+  watchedKey = key;
+  for (const u of [...live]) if (!urls.includes(u)) live.delete(u);
+  void backend.share.watch(urls).catch(() => {});
+}
+
+/** Whether a change from the stream concerns you: a friend's item, or your own devices'. */
+export function changeMatters(c: { owner: string; kind: string; resync?: boolean }, me: string | undefined, friends: Record<string, unknown>): boolean {
+  if (c.resync) return true;
+  if (c.owner === me) return c.kind === "self";
+  return c.owner in friends;
+}
+
+async function startWatching() {
+  if (!isTauri || unlistens.length) return;
+  unlistens.push(
+    await listen<{ url: string; live: boolean }>("share-live", (e) => {
+      if (e.payload.live) live.add(e.payload.url);
+      else live.delete(e.payload.url);
+    }),
+    await listen<{ url: string; owner: string; kind: string; resync: boolean }>("share-changed", (e) => {
+      const st = getState();
+      if (!changeMatters(e.payload, st.cache.me?.id, st.cache.friends)) return;
+      const s = st.settings.sharing.servers.find((x) => x.url === e.payload.url);
+      if (!s) return;
+      // Several changes in a row: one sync.
+      clearTimeout(soon.get(s.id));
+      soon.set(
+        s.id,
+        setTimeout(() => {
+          soon.delete(s.id);
+          if (!syncing) void syncServer(s.id);
+        }, 3000),
+      );
+    }),
+  );
+  let last: unknown = null;
+  unwatchSettings = subscribeState(() => {
+    const st = getState();
+    const k = [st.settings.sharing, st.mode, st.demo];
+    if (last && (last as unknown[]).every((x, i) => x === k[i])) return;
+    last = k;
+    updateWatch();
+  });
+  updateWatch();
+}
+
 export function startSharing() {
   if (timer) return;
   nextAt = Date.now() + 20_000;
+  void startWatching();
   timer = setInterval(() => {
     const st = getState();
     const sh = st.settings.sharing;
     if (!sh.autoSync || !sh.servers.length || st.demo || st.mode !== "app" || st.sync.running) return;
     if (Date.now() < nextAt) return;
-    nextAt = Date.now() + sh.intervalMin * 60_000 + Math.random() * 60_000;
+    // Every server tells us about changes: polling is only a safety net then.
+    const allLive = sh.servers.every((s) => live.has(s.url));
+    nextAt = Date.now() + (allLive ? Math.max(60, sh.intervalMin) : sh.intervalMin) * 60_000 + Math.random() * 60_000;
     syncAllServers();
   }, 15_000);
 }
@@ -732,4 +804,13 @@ export function startSharing() {
 export function stopSharing() {
   if (timer) clearInterval(timer);
   timer = null;
+  unlistens.forEach((u) => u());
+  unlistens = [];
+  unwatchSettings?.();
+  unwatchSettings = null;
+  soon.forEach(clearTimeout);
+  soon.clear();
+  live.clear();
+  watchedKey = "";
+  if (isTauri) void backend.share.watch([]).catch(() => {});
 }
