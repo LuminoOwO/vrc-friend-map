@@ -22,6 +22,17 @@ can be designed around everything. Nothing here is started.
   can't work here; off shows them greyed out with why.
 - [ ] **Haptics on phones** (off by default): short taps on buttons, toggles, long-press.
 
+- [ ] **Read many more linked profiles for age hints** (with *read linked pages* on). Per site
+  the most direct public way, each tested before it's turned on:
+  - Bluesky (public API), X / Twitter through FxTwitter (its own opt-in switch: the handle goes
+    to fxtwitter.com), Mastodon / fediverse (public profile JSON), Misskey, Threads, Tumblr,
+    Reddit, Telegram (t.me pages show the bio), Steam, YouTube, Twitch, Kick, TikTok, Instagram
+    (often behind a login: try, give up quietly), GitHub, SoundCloud, Last.fm.
+  - Link pages: Linktree, Carrd, beacons.ai, bio.link, lnk.bio, solo.to, guns.lol, e-z.bio,
+    Throne, Ko-fi, Patreon, VGen, Gumroad, itch.io, Booth.
+  - Art sites: Fur Affinity, DeviantArt, ArtStation, Pixiv, Toyhouse, Weasyl.
+  - Shows per link whether it could be read ("read", "login needed", "unreachable").
+
 ## Round 2: friends and the map
 
 - [ ] **Last seen and online history.** Offline friends show "last seen 3 days ago"; each
@@ -73,6 +84,15 @@ can be designed around everything. Nothing here is started.
 - [ ] **Your friend list over time:** size, adds and removes per month as a small chart.
 - [ ] **Shared circles:** a circle you and trusted friends edit together, synced over the
   encrypted sharing.
+
+- [ ] **Block reasons** (part of the red flag system, built like the age hints): when you block
+  someone (in the app, in game: detected from VRChat's block list, or on the VR watch), pick
+  reasons. Shared with friends through the encrypted sharing (preset reasons only; your own
+  free text stays on this device), shown on their profile as a red flag ("Blocked by Luna:
+  crasher, trolling"). Never a reason about age.
+- [ ] **Red flags at the top of VRChat notes** (readable in game): a short line the app writes
+  first ("⚑ crasher, trolling · blocked by 2 friends"), your existing note moved below it;
+  updated when flags change, removed when they're gone, within VRChat's note length.
 
 ## Round 3: more from the game logs
 
@@ -208,6 +228,9 @@ can be designed around everything. Nothing here is started.
 
 - [ ] **In-VR overlay:** a small wrist panel in WayVR (Linux) and SteamVR (Windows): who's
   here, recent notifications, a mini map. Optional text-to-speech for joins.
+  - **Block dialog on the watch:** when you block someone, a small dialog on the WayVR watch
+    with their name, picture and age hint ("probably over 18"), the block reason chips and
+    Skip.
 - [ ] **Backup and export:** notes, circles, settings and sounds in one encrypted file, to move
   devices without a server.
 - [ ] **Multiple VRChat accounts:** switch between main and alt; each has its own map and data.
