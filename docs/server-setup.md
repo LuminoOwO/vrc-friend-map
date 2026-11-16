@@ -140,10 +140,29 @@ setting, commented. Download it, adjust it, then run `docker compose up -d` (or
 4. Turn off battery optimization for Termux. To start it after a reboot, use
    [Termux:Boot](https://f-droid.org/packages/com.termux.boot/).
 
+### Make your admin account
+
+The admin page (`http://<machine>:8787/admin`) is reachable from your home network by default.
+Give it an account of its own the first time:
+
+1. On the server, run `vfm-server admin-code` (in a container:
+   `docker exec vfm-server /vfm-server admin-code`). It prints a one-time setup code, valid for
+   30 minutes.
+2. Open the admin page, enter the code, a name and a password.
+3. Add the key it shows to an authenticator app (type it in, or tap *open in app* on a phone):
+   Ente Auth, Aegis, Google Authenticator or any other TOTP app. From then on you log in with name, password and the
+   6-digit code.
+
+Logged in, you can add more admins (each with their own password and authenticator) and remove
+them. To log in without authenticator codes, set `totp = false` under `[admin]` in
+`vfm-server.toml`; that's only sensible if the admin page is reachable from this machine alone.
+
+The admin token still works (*Use the admin token instead* on the login page), for example if
+you lost your password: `vfm-server token` shows it.
+
 ### Choose the server's rules (optional)
 
-Open the admin page (`http://<machine>:8787/admin`, with the token). It's reachable from your
-home network by default. There you can set:
+On the admin page you can set:
 
 - **Name and message** that people see in the app.
 - **New accounts:** `open` (anyone who knows the address), `invite` (default: invite code
@@ -158,6 +177,24 @@ home network by default. There you can set:
   | `force-off` | Never encrypted. The app warns everyone before each upload that the server can read it. |
 
 - **Invite codes:** make them here, or with `vfm-server invite --uses 5 --days 30`.
+- **Shared cache of public VRChat info** (`cache_worlds`, `cache_groups`, `cache_avatars`, all
+  on by default): apps that loaded a public world, group or avatar put it on the server, and the
+  others read it from there first, so VRChat gets fewer requests. Only public data, and every
+  entry expires within a week. Each person can still turn it off per server in the app.
+
+### Who uses it, and bans
+
+The admin page (*People*) lists every account: VRChat name and ID, when it last showed up, from which
+address, with which app version, and how much it stores (never what).
+
+- **Ban an account** (optionally deleting what it stored) or **an IP address**, with a reason.
+  Banned people see the reason in the app, plus `appeal_contact` (under `[server]`: an email
+  address, a Discord name…) so they can ask why. Lift a ban from the same list.
+- IP bans are blunt: home addresses change, and phones on mobile data share addresses with
+  many strangers.
+- Behind a reverse proxy, every visitor seems to come from the proxy. Set
+  `trusted_proxy = true` under `[server]` so the server reads the real address from
+  `X-Forwarded-For` (only from a proxy on the same machine or network). See step 7.
 
 ## 4. Connect the app
 
@@ -225,6 +262,18 @@ Only on a server **you** run (see the privacy note in step 1).
 
 To stop, use **Unpair (keep history)** or **Unpair and delete history**.
 
+**Or log in on the admin page.** Under *This server's own VRChat login*, enter your VRChat username, password
+and then the 2FA code. The server gets a VRChat session of its own and keeps the live
+connection open around the clock, so invites and friend events reach your phone as push even
+with the PC off. Only your own account belongs there; the app can't set it, and nobody else
+using the server gets near it. VRChat ends sessions now and then: then log in there again. A
+server's address can also trigger VRChat's security checks.
+
+**Hand-off** (`hand_off = true` under `[logger]`, the default): while your PC app runs, the
+server lets go of VRChat's live connection and the PC app takes over, so VRChat doesn't see you
+twice. A few minutes after the PC app stops, the server picks the connection up again. Set it
+to `false` to keep the connection on the server all the time.
+
 While a logger runs, don't also leave the app open on another always-on device just to log.
 That would ask VRChat for the same data twice.
 
@@ -246,8 +295,10 @@ At home, nothing else is needed. For friends elsewhere, use HTTPS:
   the app. Serve it at the root of a host name, not under a sub-path.
 
 Behind a proxy, set the admin page to `allow = "local"` (or block `/admin` in the proxy):
-every request then seems to come from the machine itself. For a server others can reach, the
-`force-on` encryption policy is a good idea.
+every request then seems to come from the machine itself. Also set `trusted_proxy = true`
+under `[server]`, so bans and the user list see each visitor's real address. (The admin page
+ignores it on purpose: it always goes by the proxy's own address.) For a server others can
+reach, the `force-on` encryption policy is a good idea.
 
 The app warns when a server outside your home network uses plain `http://`.
 
@@ -296,5 +347,8 @@ The app shows in the server's card when it's older than the app.
 | Friend's data doesn't show up | Both of you must have joined the same server. They must share with *All my friends* or a circle you're in, and you need **Get what friends share with me here** on. Then **Sync all now**. |
 | Logger says "Not connected" | Check `journalctl -u vfm-server` or `docker logs vfm-server`. If the VRChat login expired, pair again. |
 | Lost the admin token | `vfm-server token` shows it; `vfm-server token --new` replaces it. |
+| Lost an admin password or authenticator | Open the admin page with the admin token (*Use the admin token instead*) and remove and re-add that admin, or have another admin do it. |
+| "Setup code wrong or expired" | Codes last 30 minutes and work once. Run `vfm-server admin-code` again. |
+| Logger says the VRChat login expired | Log in again on the admin page under *This server's own VRChat login* (or pair again from the app). |
 
 Back up `vfm-server.toml` and the `vfm-data/` folder (the `vfm-data` volume in a container).

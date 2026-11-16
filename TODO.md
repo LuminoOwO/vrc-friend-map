@@ -175,7 +175,7 @@ can be designed around everything. Nothing here is started.
 
 ## Round 6: server
 
-- [ ] **Your VRChat login on your own server** (owner only). Set up only in the admin dashboard
+- [x] **Your VRChat login on your own server** (Done, with hand-off; *appear offline* still open: not researched.) (owner only). Set up only in the admin dashboard
   (username, password, 2FA code); the app can't, and other users never get near it. Stored
   encrypted. Keeps VRChat's live connection 24/7 for:
   - pushing invites and friend events to your phone (UnifiedPush / Sunup);
@@ -190,16 +190,16 @@ can be designed around everything. Nothing here is started.
     server lets go of the connection and the PC session takes over; when the PC app stops (no
     heartbeat for a few minutes), the server picks it up again. Alternative: "keep it on the
     server".
-- [ ] **Shared cache of public VRChat info** (separate server option, on by default; switches
+- [x] **Shared cache of public VRChat info** (separate server option, on by default; switches
   for worlds, groups, avatars, each on its own): clients put public info they fetched on the
   server, others read it from there first. Only public data; every entry shows its age and
   expires; "load fresh from VRChat" button.
-- [ ] **Web dashboard:** small, mobile-friendly. Multiple admin accounts (login, password,
+- [x] **Web dashboard:** small, mobile-friendly. Multiple admin accounts (login, password,
   authenticator codes: standard TOTP, so Ente Auth / Aegis / Google Authenticator work). 2FA on
   by default, first setup with a one-time code from the server console, can be turned off.
-- [ ] **Who uses the server:** VRChat name and ID, registered, last seen, app version, IP,
+- [x] **Who uses the server:** VRChat name and ID, registered, last seen, app version, IP,
   storage used (not contents).
-- [ ] **Bans:** by account and by IP (caveats: changing home IPs, mobile carriers share IPs,
+- [x] **Bans:** by account and by IP (caveats: changing home IPs, mobile carriers share IPs,
   reverse proxies need a trusted-proxy setting). Banned users get the reason (if given) and the
   owner's appeal / support email, shown in the app.
 - [ ] **Less load on the server:** "nothing changed" answers instead of resending, one open
@@ -210,18 +210,18 @@ can be designed around everything. Nothing here is started.
   else passed through the server live without storing (server option).
 - [ ] **Notification sounds synced between your devices** through the device-to-device sync
   (server setting whether it may pass them along; never stored there).
-- [ ] **Settings sync, finer:** exists since 0.11 (*Also sync settings*); add choosing which
+- [x] **Settings sync, finer:** exists since 0.11 (*Also sync settings*); add choosing which
   groups of settings sync, and per-device overrides.
-- [ ] **Harder for server owners to snoop:** a "never send anything unencrypted" switch in the
+- [x] **Harder for server owners to snoop:** (Switch and safety code done; hiding who shares with whom still open.) a "never send anything unencrypted" switch in the
   app; a short code per friend to compare once (key verification) and a loud warning when a
   friend's key changes; hide more of who shares with whom.
 
 ## Round 7: extras
 
-- [ ] **OSC** (VRChat's official interface, PC and Quest over the network; only your own data):
+- [x] **OSC** (Chatbox done; avatar history, avatar toggles and AFK / muted still open.) (VRChat's official interface, PC and Quest over the network; only your own data):
   chatbox messages ("Lumi just came online", now playing, play time), a history of your own
   avatars, avatar toggles from the app, AFK / muted shown in the app.
-- [ ] **Steam play time into your bio:** read VRChat's play time from Steam's files (or the web
+- [x] **Steam play time into your bio:** (Bio line done; play time per day in the timeline still open.) read VRChat's play time from Steam's files (or the web
   API with a key) and update a marked line in your VRChat bio once a day ("⏱ 2,431 h in
   VRChat"), leaving the rest alone, within 512 characters. Plus play time per day in the
   timeline.
@@ -231,19 +231,19 @@ can be designed around everything. Nothing here is started.
   - **Block dialog on the watch:** when you block someone, a small dialog on the WayVR watch
     with their name, picture and age hint ("probably over 18"), the block reason chips and
     Skip.
-- [ ] **Backup and export:** notes, circles, settings and sounds in one encrypted file, to move
+- [x] **Backup and export:** notes, circles, settings and sounds in one encrypted file, to move
   devices without a server.
 - [ ] **Multiple VRChat accounts:** switch between main and alt; each has its own map and data.
 
-- [ ] **Tray menu extras:** online count, starred friends online, quick status switch.
-- [ ] **Now playing in your status** (optional): the song from your music player (MPRIS on
+- [x] **Tray menu extras:** online count, starred friends online, quick status switch.
+- [x] **Now playing in your status** (optional): the song from your music player (MPRIS on
   Linux) in your status text, with a template and an off switch.
 - [ ] **Discord rich presence** (optional): "in VRChat", never showing private instances unless
   you allow it.
 
 ## Round 8: UI rework (last)
 
-- [ ] **New beta UI** behind a "New beta UI" setting (off by default); the current UI stays
+- [x] **New beta UI** behind a "New beta UI" setting (off by default); the current UI stays
   untouched and primary until we switch over. Own folder (`src/ui2/`), sharing the store, sync
   and graph; switches live; a "Back to classic UI" option and a `--classic-ui` start option.
   Designed around every feature from rounds 1–7.

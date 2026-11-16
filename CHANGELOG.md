@@ -120,6 +120,48 @@ minor releases can change behavior.
 - **Android: game logs with root** (rooted phones, or a rooted Quest such as with Singularity):
   VRChat's logs are copied every few minutes and read like on a PC.
 
+- **Server: admin accounts** instead of only the admin token: name, password and an
+  authenticator code (standard TOTP: Ente Auth, Aegis, Google Authenticator…; on by default,
+  `totp = false` turns it off). The first account is made on the admin page with a one-time
+  code from the console (`vfm-server admin-code`, 30 minutes). The token still works.
+- **Server: who uses it and bans**: the admin page lists accounts with last seen, last address,
+  app version and storage used (never contents). Ban by account (optionally deleting what they
+  stored) or by IP address, with a reason; banned people see the reason and your
+  `appeal_contact` in the app. `trusted_proxy` reads the visitor's address behind a reverse
+  proxy on the same machine or network.
+- **Server: your VRChat login on the admin page** (owner only; the app can't set it): username,
+  password and 2FA code, for the logger around the clock. **Hand-off** (on by default): while
+  your PC app runs, the server lets go of VRChat's live connection, and takes it back a few
+  minutes after the PC app is gone. Invites reach your phone as push while the server holds it.
+- **Server: shared cache of public VRChat info** (worlds, groups, avatars, each with its own
+  switch, on by default; per server in the app): apps read public info from your server first,
+  so VRChat gets fewer requests. Entries show their age and expire within a week.
+- **Settings sync, finer**: pick which groups of settings sync, and keep some on this device
+  only.
+- **Never send anything unencrypted** (per server), and a short **safety code** per friend to
+  compare once, with a warning when a friend's key changes.
+
+- **Chatbox over OSC** (Settings → Notifications): a line of your own every few minutes (template with
+  now playing, play time…) and "★ X came online" for starred friends, in VRChat's chatbox.
+  Only to this PC or your home network (a Quest too); only while VRChat runs.
+- **Now playing in your status** (Linux, through `playerctl`): the song in your VRChat status
+  text after it played for 20 seconds, at most every 90 seconds; your own status comes back
+  when the music stops.
+- **Steam hours in your bio**: once a day, one marked line ("⏱ 2,431 h in VRChat") from Steam's
+  own files; the rest of your bio stays as it is, within 512 characters.
+- **Encrypted backup** (Settings → Account & data): notes, circles, local data, settings and your own
+  sounds in one password-protected file (in Downloads; on phones to the clipboard), restored
+  from a file or the clipboard, with or without the settings. Age notes are never in it.
+- **Tray menu**: how many friends are in VRChat, starred friends online (opens their profile),
+  your status, *Sync now*.
+
+- **New beta UI** (Settings → Appearance → Interface, off by default; `--classic-ui` always
+  starts the classic one): on desktop an icon rail, a floating search bar with filter chips and
+  a person panel with section tabs; on phones bottom tabs (Map, Cards, Here, Insights, Me),
+  full-screen filters and a person sheet you drag up.
+- **Command palette** (Ctrl+K): jump to friends, views, settings sections and actions.
+- **Filter: only starred friends.**
+
 ### Changed
 - Map: panning stops before everyone leaves the screen.
 - Phones: the filter menu stays inside the screen; the settings button sits in the top right
@@ -129,6 +171,9 @@ minor releases can change behavior.
   profile says "probably over 18"; numbers under 18 count the same way). A link to an
   adults-only site (OnlyFans, Fansly and similar, which check ID) counts as an adult hint.
   Hints already worked out are worked out again with the new rules.
+
+### Fixed
+- Opening a profile could freeze the app (it kept redrawing itself).
 
 ## 0.11.0 (2026-11-15)
 
