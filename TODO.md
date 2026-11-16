@@ -3,7 +3,8 @@
 Features to consider, not planned for a specific version yet. Add new ones at the bottom of
 their round. The bigger, discussed list lives in GitHub issue #14.
 
-Rounds are in the suggested order (2026-11-16); nothing here is started.
+Rounds are in the suggested order (2026-11-16): all features first, the UI rework last so it
+can be designed around everything. Nothing here is started.
 
 ## Round 1: fixes and basics
 
@@ -21,13 +22,32 @@ Rounds are in the suggested order (2026-11-16); nothing here is started.
   can't work here; off shows them greyed out with why.
 - [ ] **Haptics on phones** (off by default): short taps on buttons, toggles, long-press.
 
-## Round 2: UI rework
+## Round 2: friends and the map
 
-- [ ] **Mockups first** (desktop and phone), then build. The app is getting cluttered and the
-  phone version feels like a ported desktop app.
-  - Phone: bottom tab bar, profiles and settings as full-screen pages you swipe away, bigger
-    touch targets, fewer controls at once.
-  - Desktop: calmer sidebar with collapsible sections, shorter top bar, consistent spacing.
+- [ ] **Last seen and online history.** Offline friends show "last seen 3 days ago"; each
+  friend gets a small heatmap of the hours they're usually online. Built only from this app's
+  own syncs, kept on the device.
+- [ ] **Best time to catch someone:** your usual online hours against a friend's, shown as the
+  overlap ("you're both usually on weekdays 20–23").
+- [ ] **Star friends:** starred people stay at the top of lists and stand out on the map.
+- [ ] **Quiet hours:** a do-not-disturb schedule for notifications, with exceptions (starred
+  friends, chosen circles).
+- [ ] **Notification rules per circle:** e.g. "Close friends: tell me when anyone comes
+  online", without a bell on each person.
+- [ ] **Friendiversaries:** "You've been friends with X for a year today" (from the friend
+  date the app already records).
+- [ ] **Clusters as circles:** find the friend groups in the graph (community detection) and
+  offer them as circles with one click.
+- [ ] **Bridges:** who connects two of your friend groups; which mutual friend could introduce
+  you to a friend of a friend.
+- [ ] **Drifting apart** (off by default, never shared): people you used to see a lot but
+  haven't in a while, as a gentle list to reconnect.
+- [ ] **Gathering alerts:** "3 of your close friends are in the same instance right now", with
+  a button to request an invite.
+- [ ] **Invite templates:** saved invite / request-invite messages, sent from the map in one
+  click.
+- [ ] **Map time travel:** a slider showing the map as it was a month or a year ago (who
+  joined, who drifted, how clusters changed). Needs keeping snapshots of the graph.
 
 ## Round 3: more from the game logs
 
@@ -42,6 +62,13 @@ Rounds are in the suggested order (2026-11-16); nothing here is started.
   own pictures (photo permission) and the PC's through device sync.
 - [ ] **Other people's avatars from the log:** the log records which avatar each person in your
   instance switches to; show their current avatar and a history on their profile.
+
+- [ ] **Diary:** an automatic journal per day (worlds, people met, screenshots, your own
+  short note), with "on this day a year ago".
+- [ ] **Year in review:** a Wrapped-style summary of your year; private unless you export it
+  as a picture.
+- [ ] **Popular among your friends:** the worlds your friends visit most this week (from what
+  friends share and your own logs).
 
 ## Round 4: VRChat content in the app
 
@@ -140,6 +167,28 @@ Rounds are in the suggested order (2026-11-16); nothing here is started.
   API with a key) and update a marked line in your VRChat bio once a day ("⏱ 2,431 h in
   VRChat"), leaving the rest alone, within 512 characters. Plus play time per day in the
   timeline.
+
+- [ ] **In-VR overlay:** a small wrist panel in WayVR (Linux) and SteamVR (Windows): who's
+  here, recent notifications, a mini map. Optional text-to-speech for joins.
+- [ ] **Backup and export:** notes, circles, settings and sounds in one encrypted file, to move
+  devices without a server.
+- [ ] **Multiple VRChat accounts:** switch between main and alt; each has its own map and data.
+
+## Round 8: UI rework (last)
+
+- [ ] **New beta UI** behind a "New beta UI" setting (off by default); the current UI stays
+  untouched and primary until we switch over. Own folder (`src/ui2/`), sharing the store, sync
+  and graph; switches live; a "Back to classic UI" option and a `--classic-ui` start option.
+  Designed around every feature from rounds 1–7.
+  - Desktop: icon rail (Map, People, Here now, Activity, Notifications, Settings), map nearly
+    full-window with a slim top bar (search, filter chips), person panel with tabs (Overview,
+    Notes, Age, History, Sharing), who's here as a floating card, Ctrl+K command palette,
+    calmer look.
+  - Phone: bottom tab bar (Map, People, Here, Me), a person as a bottom sheet (peek / half /
+    full), filters and settings as full-screen sheets, 44 px touch targets, haptics.
+- [ ] **Accessibility:** text size, reduced motion, colorblind-safe status colors, full
+  keyboard navigation.
+- [ ] **Translations:** move all text into one place so friends can add languages.
 
 ## Parked
 
