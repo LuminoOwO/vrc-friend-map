@@ -352,7 +352,7 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
   const [frames, setFrames] = useState<ImageBitmap[] | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pos, setPos] = useState({ x: 0.5, y: 0.5 });
-  const [style, setStyle] = useState(kind === "sticker" ? "stop" : "aura");
+  const [style, setStyle] = useState("aura");
   const [note, setNote] = useState("");
   const [fps, setFps] = useState(10);
   const [busy, setBusy] = useState(false);
@@ -464,7 +464,7 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
                 <input type="range" min={1} max={30} value={fps} onChange={(e) => setFps(Number(e.target.value))} />
               </label>
             )}
-            {(kind === "emoji" || kind === "sticker") && (
+            {kind === "emoji" && (
               <label className="field narrow">
                 <span>Effect in game</span>
                 <select value={style} onChange={(e) => setStyle(e.target.value)}>

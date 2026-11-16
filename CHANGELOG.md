@@ -227,6 +227,8 @@ servers keep working as before). The **new beta UI** is in this release as an op
 
 ### Fixed
 - Opening a profile could freeze the app (it kept redrawing itself).
+- Uploading a sticker failed with "Only emoji can have animation styles": the in-game effect is
+  now offered for emojis only.
 
 ## 0.11.0 (2026-11-15)
 

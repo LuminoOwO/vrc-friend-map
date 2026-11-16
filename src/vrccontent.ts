@@ -481,8 +481,9 @@ export async function uploadImage(kind: FileKind | "print", blob: Blob, opts: { 
     fields.frames = String(opts.frames);
     fields.framesOverTime = String(opts.fps ?? 10);
     fields.animationStyle = opts.animationStyle ?? "aura";
-  } else if (kind === "emoji" || kind === "sticker") {
-    fields.animationStyle = opts.animationStyle ?? (kind === "emoji" ? "aura" : "stop");
+  } else if (kind === "emoji") {
+    // Only emojis take an in-game effect; VRChat refuses it on stickers.
+    fields.animationStyle = opts.animationStyle ?? "aura";
   }
   if (kind === "print") {
     fields.timestamp = new Date().toISOString();
@@ -491,7 +492,12 @@ export async function uploadImage(kind: FileKind | "print", blob: Blob, opts: { 
   fields.tag = tag;
   fields.maskTag = "square";
   try {
-    const r = await backend.vrcUploadImage(kind === "print" ? "print" : tag, bytes, blob.type || "image/png", fields);
+    let r = await backend.vrcUploadImage(kind === "print" ? "print" : tag, bytes, blob.type || "image/png", fields);
+    // VRChat said the effect isn't allowed for this kind: upload once more without it.
+    if (r.status === 400 && fields.animationStyle && /animation style/i.test(errorText(r))) {
+      delete fields.animationStyle;
+      r = await backend.vrcUploadImage(kind === "print" ? "print" : tag, bytes, blob.type || "image/png", fields);
+    }
     return ok(r);
   } catch (e) {
     return String(e instanceof Error ? e.message : e);
