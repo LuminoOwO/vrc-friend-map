@@ -306,8 +306,32 @@ async fn session_info(state: AppStateRef<'_>) -> Result<api::SessionInfo, String
 }
 
 #[tauri::command]
-async fn login_start(app: AppHandle, state: AppStateRef<'_>) -> Result<(), String> {
-    auth::start(app, state.inner().clone()).await
+async fn login_start(app: AppHandle, state: AppStateRef<'_>, extra: Option<bool>) -> Result<(), String> {
+    auth::start(app, state.inner().clone(), extra.unwrap_or(false)).await
+}
+
+/// Turn one extra account's own live connection on or off.
+#[tauri::command]
+async fn account_live(app: AppHandle, state: AppStateRef<'_>, id: String, on: bool) -> Result<(), String> {
+    if on {
+        pipeline::start_account(app, state.inner().clone(), id);
+    } else {
+        pipeline::stop_account(&app, &id);
+    }
+    Ok(())
+}
+
+/// Your other VRChat accounts on this device.
+#[tauri::command]
+async fn accounts_list(state: AppStateRef<'_>) -> Result<Vec<api::AccountInfo>, String> {
+    Ok(state.api.accounts().await)
+}
+
+/// Forget one of your other accounts on this device (and stop its live connection).
+#[tauri::command]
+async fn account_remove(app: AppHandle, state: AppStateRef<'_>, id: String) -> Result<(), String> {
+    pipeline::stop_account(&app, &id);
+    state.api.remove_account(&id).await
 }
 
 #[tauri::command]
@@ -372,8 +396,9 @@ async fn vrc_get(
     state: AppStateRef<'_>,
     path: String,
     query: Option<Vec<(String, String)>>,
+    account: Option<String>,
 ) -> Result<api::ApiResponse, String> {
-    state.api.get(&path, &query.unwrap_or_default()).await
+    api::as_account(account, state.api.get(&path, &query.unwrap_or_default())).await
 }
 
 #[tauri::command]
@@ -559,22 +584,24 @@ async fn friend_request(
     state: AppStateRef<'_>,
     user_id: String,
     cancel: bool,
+    account: Option<String>,
 ) -> Result<api::ApiResponse, String> {
-    state.api.friend_request(&user_id, cancel).await
+    api::as_account(account, state.api.friend_request(&user_id, cancel)).await
 }
 
 #[tauri::command]
 async fn friend_status(
     state: AppStateRef<'_>,
     user_id: String,
+    account: Option<String>,
 ) -> Result<api::ApiResponse, String> {
-    state.api.friend_status(&user_id).await
+    api::as_account(account, state.api.friend_status(&user_id)).await
 }
 
 /// Remove a friend (only from a button click, after confirming).
 #[tauri::command]
-async fn unfriend(state: AppStateRef<'_>, user_id: String) -> Result<api::ApiResponse, String> {
-    state.api.unfriend(&user_id).await
+async fn unfriend(state: AppStateRef<'_>, user_id: String, account: Option<String>) -> Result<api::ApiResponse, String> {
+    api::as_account(account, state.api.unfriend(&user_id)).await
 }
 
 /// One allow-listed write to VRChat (api::WRITES).
@@ -584,8 +611,9 @@ async fn vrc_write(
     method: String,
     path: String,
     body: Option<serde_json::Value>,
+    account: Option<String>,
 ) -> Result<api::ApiResponse, String> {
-    state.api.write(&method, &path, body).await
+    api::as_account(account, state.api.write(&method, &path, body)).await
 }
 
 #[tauri::command]
@@ -617,8 +645,9 @@ async fn moderate_user(
     user_id: String,
     kind: String,
     undo: bool,
+    account: Option<String>,
 ) -> Result<api::ApiResponse, String> {
-    state.api.moderate(&user_id, &kind, undo).await
+    api::as_account(account, state.api.moderate(&user_id, &kind, undo)).await
 }
 
 #[tauri::command]
@@ -911,6 +940,9 @@ pub fn run() {
             share_unpublish,
             share_inbox,
             share_watch,
+            accounts_list,
+            account_remove,
+            account_live,
             share_device_seal,
             share_device_open,
             share_device_relay,

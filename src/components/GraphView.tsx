@@ -33,6 +33,7 @@ import { FilterChip, statusToggle, trustToggle } from "./FilterChip";
 import { Icon } from "./Icon";
 import { MapOptions } from "./MapOptions";
 import { friendsAt } from "../insights";
+import { accountColor, MAIN } from "../accountmerge";
 
 interface GNode extends d3.SimulationNodeDatum {
   id: string;
@@ -1149,6 +1150,39 @@ export function GraphView() {
         ctx.lineWidth = 2.2 / t.k;
         ctx.strokeStyle = PAL.gold;
         ctx.stroke();
+      }
+      // Your other accounts: a dot per account that knows them, a dashed ring when two or more of yours do.
+      const knownBy = cache.friendOf?.[n.id];
+      if (knownBy && isMatch && !n.kind) {
+        const accs = settings.accounts.list;
+        const alts = knownBy.filter((a) => a !== MAIN);
+        if (knownBy.length >= 2) {
+          ctx.save();
+          ctx.beginPath();
+          if (card) {
+            const pad = 7 / t.k;
+            ctx.roundRect?.(n.x - n.hw - pad, n.y - n.hh - pad, (n.hw + pad) * 2, (n.hh + pad) * 2, 12 / t.k);
+          } else ctx.arc(n.x, n.y, n.r + 7 / t.k, 0, Math.PI * 2);
+          ctx.setLineDash([4 / t.k, 3 / t.k]);
+          ctx.lineWidth = 1.6 / t.k;
+          ctx.strokeStyle = accountColor(accs, alts[0]);
+          ctx.stroke();
+          ctx.restore();
+        }
+        const nx = n.x;
+        const ny = n.y;
+        alts.slice(0, 4).forEach((a, i) => {
+          const dr = 3.4 / t.k;
+          const cx = card ? nx + n.hw - dr - i * dr * 2.6 : nx + Math.cos(Math.PI * 0.25 + i * 0.5) * n.r;
+          const cy = card ? ny + n.hh - dr : ny + Math.sin(Math.PI * 0.25 + i * 0.5) * n.r;
+          ctx.beginPath();
+          ctx.arc(cx, cy, dr, 0, Math.PI * 2);
+          ctx.fillStyle = accountColor(accs, a);
+          ctx.fill();
+          ctx.lineWidth = 1.2 / t.k;
+          ctx.strokeStyle = PAL.nodeBg;
+          ctx.stroke();
+        });
       }
       const labelled = n.kind === "me" || (!card && (showLabelsAuto || (focusSet?.has(n.id) && settings.showLabels !== "never") || selected));
       if (labelled && isMatch && !(card && n.kind !== "me")) {

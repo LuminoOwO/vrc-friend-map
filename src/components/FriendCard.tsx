@@ -2,6 +2,8 @@ import { memo } from "react";
 import { imgSrc } from "../backend";
 import { captureCard } from "../flip";
 import { Icon } from "./Icon";
+import { useApp } from "../store";
+import { accountColor, MAIN } from "../accountmerge";
 import {
   PLATFORM_LABEL,
   bannerUrl,
@@ -97,6 +99,7 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
               </span>
             )}
             <span data-flip="name">{f.displayName}</span>
+            <AccountDots id={f.id} />
           </div>
           <div className="fcard-status" data-flip="status" title={f.statusDescription}>
             {f.statusDescription || presenceLabel(f, p.presence)}
@@ -122,3 +125,19 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
     </div>
   );
 });
+
+/** Which of your other accounts are friends with them (a dot each). */
+function AccountDots({ id }: { id: string }) {
+  const of = useApp((s) => s.cache.friendOf?.[id]);
+  const list = useApp((s) => s.settings.accounts.list);
+  if (!of) return null;
+  const alts = of.filter((a) => a !== MAIN);
+  const names = alts.map((a) => list.find((l) => l.id === a)?.name ?? "another account");
+  return (
+    <span className="account-dots" title={`Friends with ${of.includes(MAIN) ? "your main account and " : ""}${names.join(" and ")}`}>
+      {alts.map((a) => (
+        <span key={a} className="account-dot" style={{ background: accountColor(list, a) }} />
+      ))}
+    </span>
+  );
+}

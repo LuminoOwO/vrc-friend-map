@@ -1,10 +1,12 @@
+import { mainFriendIds } from "./accountmerge";
 import { getState, updateSharing } from "./store";
 import type { PeopleSelection } from "./types";
 
 /** The friend IDs a selection stands for right now. */
 export function selectedIds(sel: PeopleSelection): string[] {
   const st = getState();
-  const friends = st.cache.friends;
+  // Only the main account's friends: what you share is about that account.
+  const friends = Object.fromEntries(mainFriendIds(st.cache).map((id) => [id, true]));
   if (sel.who === "all") return Object.keys(friends);
   if (sel.who === "circles") {
     const ids = new Set<string>();

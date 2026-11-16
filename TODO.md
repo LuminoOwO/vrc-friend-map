@@ -233,7 +233,7 @@ can be designed around everything. Nothing here is started.
     Skip.
 - [x] **Backup and export:** notes, circles, settings and sounds in one encrypted file, to move
   devices without a server.
-- [ ] **Multiple VRChat accounts:** switch between main and alt; each has its own map and data.
+- [x] **Multiple VRChat accounts:** (Done as mixed friend lists on one map, with per-account live updates and notifications and an optional act-as; adding accounts on phones still open.) switch between main and alt; each has its own map and data.
 
 - [x] **Tray menu extras:** online count, starred friends online, quick status switch.
 - [x] **Now playing in your status** (optional): the song from your music player (MPRIS on

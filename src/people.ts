@@ -283,10 +283,11 @@ export async function refreshMet(force = false) {
 }
 
 /** Your friend status with someone: friends, request sent, they asked you. */
-export async function friendStatus(id: string): Promise<{ isFriend: boolean; outgoing: boolean; incoming: boolean } | null> {
+/** `account` (here and below): one of your extra accounts to act as; left out: the main one. */
+export async function friendStatus(id: string, account?: string): Promise<{ isFriend: boolean; outgoing: boolean; incoming: boolean } | null> {
   if (!isTauri || getState().demo) return null;
   try {
-    const r = await backend.friendStatus(id);
+    const r = await backend.friendStatus(id, account);
     if (r.status !== 200 || typeof r.data !== "object" || !r.data) return null;
     return { isFriend: !!r.data.isFriend, outgoing: !!r.data.outgoingRequest, incoming: !!r.data.incomingRequest };
   } catch {
@@ -295,10 +296,10 @@ export async function friendStatus(id: string): Promise<{ isFriend: boolean; out
 }
 
 /** Send or cancel one friend request. Returns an error message, or null. */
-export async function setFriendRequest(id: string, send: boolean): Promise<string | null> {
+export async function setFriendRequest(id: string, send: boolean, account?: string): Promise<string | null> {
   if (getState().demo) return "Not in demo mode.";
   try {
-    const r = await backend.friendRequest(id, !send);
+    const r = await backend.friendRequest(id, !send, account);
     if (r.status >= 200 && r.status < 300) return null;
     if (r.status === 429) return "VRChat says: too many requests. Try again in a while.";
     const msg = typeof r.data === "object" && r.data ? (r.data.error?.message ?? r.data.message) : undefined;
@@ -361,11 +362,13 @@ function vrcError(r: { status: number; data: unknown }): string {
 }
 
 /** Block, mute, hide their avatar, or undo it. Returns an error message, or null. */
-export async function setModeration(id: string, kind: "block" | "mute" | "hideAvatar", on: boolean): Promise<string | null> {
+export async function setModeration(id: string, kind: "block" | "mute" | "hideAvatar", on: boolean, account?: string): Promise<string | null> {
   if (getState().demo) return "Not in demo mode.";
   try {
-    const r = await backend.moderateUser(id, kind, !on);
+    const r = await backend.moderateUser(id, kind, !on, account);
     if (r.status < 200 || r.status >= 300) return vrcError(r);
+    // The cached blocks and mutes are the main account's.
+    if (account) return null;
     updateCache((c) => {
       const byUser = { ...(c.moderations?.byUser ?? {}) };
       const cur = new Set(byUser[id] ?? []);
@@ -382,13 +385,22 @@ export async function setModeration(id: string, kind: "block" | "mute" | "hideAv
 }
 
 /** Remove a friend. Returns an error message, or null. */
-export async function unfriend(id: string): Promise<string | null> {
+export async function unfriend(id: string, account?: string): Promise<string | null> {
   if (getState().demo) return "Not in demo mode.";
   try {
-    const r = await backend.unfriend(id);
+    const r = await backend.unfriend(id, account);
     if (r.status < 200 || r.status >= 300) return vrcError(r);
     return null;
   } catch (e) {
     return e instanceof Error ? e.message : String(e);
   }
+}
+
+/** One of your extra accounts' blocks, mutes and hidden avatars, by user (one request). */
+export async function accountModerations(account: string): Promise<Record<string, string[]>> {
+  const r = await backend.vrcGet("/auth/user/playermoderations", undefined, account);
+  const byUser: Record<string, string[]> = {};
+  if (r.status === 200 && Array.isArray(r.data))
+    for (const m of r.data as { type?: string; targetUserId?: string }[]) if (m?.targetUserId && m.type) (byUser[m.targetUserId] ??= []).push(m.type);
+  return byUser;
 }

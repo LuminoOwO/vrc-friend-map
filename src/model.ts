@@ -1,3 +1,4 @@
+import { matchesAccount } from "./accountmerge";
 import type { Filters, Friend, MutualInfo, Presence, UserDetail, UserStatus } from "./types";
 
 export interface TrustRank {
@@ -166,6 +167,8 @@ export interface MatchContext {
   /** Your nicknames for people (search finds them too). */
   nicknames?: Record<string, string>;
   starred?: Set<string>;
+  /** Which of your accounts know whom (src/accountmerge.ts). */
+  friendOf?: Record<string, string[]>;
 }
 
 /** "join me" | "active" | "ask me" | "busy" | "web" | "offline" */
@@ -200,6 +203,7 @@ export function matchesFilters(f: Friend, filters: Filters, ctx: MatchContext): 
   if (filters.favoritesOnly && !ctx.favorites[f.id]?.length) return false;
   if (filters.favoriteGroup && !ctx.favorites[f.id]?.includes(filters.favoriteGroup)) return false;
   if (filters.starredOnly && !ctx.starred?.has(f.id)) return false;
+  if (filters.account && !matchesAccount(ctx.friendOf, f.id, filters.account)) return false;
   if (ctx.circleMembers && !ctx.circleMembers.has(f.id)) return false;
   if (ctx.listMembers && !ctx.listMembers.has(f.id)) return false;
   return true;

@@ -7,6 +7,7 @@
 // - when you last had the app open ("since you were last here").
 import { useSyncExternalStore } from "react";
 import { backend } from "./backend";
+import { mainFriendIds } from "./accountmerge";
 import { getState, subscribeState } from "./store";
 import type { NotifyEvent } from "./types";
 
@@ -271,7 +272,7 @@ export function sinceLastHere(): SinceLast | null {
   const s = getState();
   if (!lo || Date.now() - lo.t < 36e5) return null;
   const before = new Set(lo.friends);
-  const now = Object.keys(s.cache.friends);
+  const now = mainFriendIds(s.cache);
   const nowSet = new Set(now);
   const added = now.filter((id) => !before.has(id));
   const removed = lo.friends.filter((id) => !nowSet.has(id)).map((id) => ({ id, name: lo.names[id] ?? id }));
@@ -292,7 +293,7 @@ export function noteOpen(now = Date.now()) {
   if (s.demo || s.mode !== "app" || !Object.keys(s.cache.friends).length) return;
   data.lastOpen = {
     t: now,
-    friends: Object.keys(s.cache.friends),
+    friends: mainFriendIds(s.cache),
     names: Object.fromEntries(Object.entries(s.cache.friends).map(([id, f]) => [id, f.displayName])),
   };
   changed();

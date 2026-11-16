@@ -191,6 +191,13 @@ export interface Cache {
   worlds?: Record<string, WorldInfo>;
   /** Profiles of people who aren't friends (instance mates, potential friends). */
   others?: Record<string, Friend & { fetchedAt: number }>;
+  /** Your extra accounts' friend lists (user ID of the account -> its friends). */
+  alts?: Record<string, { friends: Record<string, Friend>; presence: Record<string, Presence>; fetchedAt: number }>;
+  /**
+   * Who is whose friend, for people your extra accounts know: "main" and/or
+   * account IDs. Missing: only the main account's friend.
+   */
+  friendOf?: Record<string, string[]>;
   /** Your blocks, mutes, hidden avatars (VRChat "player moderations"), by user. */
   moderations?: { byUser: Record<string, string[]>; fetchedAt: number };
   lastFriendsSync: number;
@@ -553,6 +560,26 @@ export interface Settings {
   phone: PhoneSettings;
   /** Chatbox over OSC, now playing in your status, Steam play time in your bio (src/extras.ts). */
   extras: ExtrasSettings;
+  /** Your other VRChat accounts on this device (src/accounts.ts). */
+  accounts: AccountsSettings;
+}
+
+export interface AccountEntry {
+  /** The account's VRChat user ID. */
+  id: string;
+  name: string;
+  /** Its friends on the map, cards and search. */
+  show: boolean;
+  /** Its own live connection (instant online / world changes). */
+  live: boolean;
+  /** Notifications for its friends (same rules as the main account's). */
+  notify: boolean;
+}
+
+export interface AccountsSettings {
+  /** On profiles, pick which of your accounts sends friend requests, unfriends, blocks… */
+  actAs: boolean;
+  list: AccountEntry[];
 }
 
 export interface PhoneSettings {
@@ -691,6 +718,8 @@ export interface Filters {
   favoriteGroup?: string | null;
   /** Only your starred friends. */
   starredOnly?: boolean;
+  /** Only friends of one of your accounts ("main" or its ID), or "crossover". */
+  account?: string | null;
   listId: string | null;
 }
 

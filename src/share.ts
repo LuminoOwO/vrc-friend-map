@@ -9,6 +9,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { backend, isTauri, type InfoResult, type PublishResult } from "./backend";
 import { getState, subscribeState, newServer, normalizeSettings, setState, showToast, updateLocal, updateServer, updateSettings, updateSharing } from "./store";
 import { combineStats } from "./together";
+import { mainFriendIds } from "./accountmerge";
 import { mergeSelf, readSelf, sameSelf, SELF_FORMAT, syncedKeys, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
 import { selectedIds } from "./selection";
 import type { Settings, EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareNote, ShareServer, SharedData, SharedRemoval, SharedCircle } from "./types";
@@ -100,7 +101,7 @@ export function hidesAudience(s: ShareServer, encrypted: boolean): boolean {
 
 /** Your friends, to ask a server for their hidden-recipient items (only servers that can). */
 function friendIds(s: ShareServer): string[] | undefined {
-  return s.info?.hiddenRecipients ? Object.keys(getState().cache.friends) : undefined;
+  return s.info?.hiddenRecipients ? mainFriendIds(getState().cache) : undefined;
 }
 
 export function serverName(s: ShareServer): string {
@@ -517,7 +518,7 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
           last = prev.result;
         } else {
           // Hidden: the server looks up all your friends' keys, not just the audience's.
-          last = await backend.share.publish(s.url, kind, payload, to, sw.on, hide, hide ? Object.keys(getState().cache.friends) : []);
+          last = await backend.share.publish(s.url, kind, payload, to, sw.on, hide, hide ? mainFriendIds(getState().cache) : []);
           lastUpload.set(key, { fp, at: Date.now(), result: last });
         }
         waiting = Math.max(waiting, last.notOnServer.length);

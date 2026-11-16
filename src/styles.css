@@ -1063,3 +1063,10 @@ textarea { width: 100%; box-sizing: border-box; font: inherit; color: var(--text
 .osc-toggles { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 4px 12px; margin: 8px 0; }
 .osc-history { list-style: none; padding: 0; margin: 4px 0; }
 .osc-history li { padding: 2px 0; }
+
+/* Settings → Your other accounts */
+.account-row { display: grid; gap: 2px; padding: 8px 0; border-bottom: 1px solid var(--border, rgba(127, 127, 127, 0.2)); }
+.chip.ok { color: var(--ok, #2e9e5b); }
+.account-dots { display: inline-flex; gap: 3px; margin-left: 6px; vertical-align: middle; }
+.account-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.known-by { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }

@@ -176,16 +176,24 @@ export const backend = {
   async setApiSettings(contact: string, intervalMs: number): Promise<void> {
     if (isTauri) await invoke("set_api_settings", { settings: { contact, interval_ms: intervalMs } });
   },
-  async vrcGet(path: string, query?: Record<string, string | number | boolean>): Promise<ApiResponse> {
+  /** `account`: one of your extra accounts (its user ID); left out: the main one. */
+  async vrcGet(path: string, query?: Record<string, string | number | boolean>, account?: string): Promise<ApiResponse> {
     if (!isTauri) throw new Error(NO_BACKEND);
     const q = query ? Object.entries(query).map(([k, v]) => [k, String(v)] as [string, string]) : undefined;
-    return invoke<ApiResponse>("vrc_get", { path, query: q });
+    return invoke<ApiResponse>("vrc_get", { path, query: q, account: account ?? null });
   },
   /** One allow-listed write to VRChat (src-tauri/src/api.rs WRITES). */
-  async vrcWrite(method: "POST" | "PUT" | "DELETE", path: string, body?: Record<string, unknown>): Promise<ApiResponse> {
+  async vrcWrite(method: "POST" | "PUT" | "DELETE", path: string, body?: Record<string, unknown>, account?: string): Promise<ApiResponse> {
     if (!isTauri) throw new Error(NO_BACKEND);
-    return invoke<ApiResponse>("vrc_write", { method, path, body: body ?? null });
+    return invoke<ApiResponse>("vrc_write", { method, path, body: body ?? null, account: account ?? null });
   },
+  /** Your other VRChat accounts on this device. */
+  accountsList: () => (isTauri ? invoke<{ id: string; name: string }[]>("accounts_list") : Promise.resolve([])),
+  accountRemove: (id: string) => invoke<void>("account_remove", { id }),
+  /** An extra account's own live connection on or off. */
+  accountLive: (id: string, on: boolean) => invoke<void>("account_live", { id, on }),
+  /** Log in with another account in a private window (desktop). */
+  addAccount: () => invoke<void>("login_start", { extra: true }),
   /** Upload an image (prints, stickers, emojis, gallery, icons). */
   async vrcUploadImage(kind: string, bytes: Uint8Array, mime: string, fields: Record<string, string>): Promise<ApiResponse> {
     if (!isTauri) throw new Error(NO_BACKEND);
@@ -356,16 +364,16 @@ export const backend = {
   },
   logsMet: (query: { exclude: string[]; min_secs: number; limit: number }) => need<MetPerson[]>("logs_met", { query }),
   /** One friend request (or its cancel), only ever from a button click. */
-  friendRequest: (userId: string, cancel: boolean) => need<ApiResponse>("friend_request", { userId, cancel }),
+  friendRequest: (userId: string, cancel: boolean, account?: string) => need<ApiResponse>("friend_request", { userId, cancel, account: account ?? null }),
   /** Save your own profile; only status, status text, pronouns, bio, links, languages and the look. */
   updateProfile: (userId: string, user: Record<string, unknown>, profile: Record<string, unknown>) =>
     need<ApiResponse[]>("update_profile", { userId, user, profile }),
   /** One read of a page someone linked in their bio (public addresses only; see linkfetch.rs). */
   fetchLinkText: (url: string) => need<string>("fetch_link_text", { url }),
-  friendStatus: (userId: string) => need<ApiResponse>("friend_status", { userId }),
+  friendStatus: (userId: string, account?: string) => need<ApiResponse>("friend_status", { userId, account: account ?? null }),
   /** Only ever from a button click, after the user confirmed. */
-  unfriend: (userId: string) => need<ApiResponse>("unfriend", { userId }),
-  moderateUser: (userId: string, kind: string, undo: boolean) => need<ApiResponse>("moderate_user", { userId, kind, undo }),
+  unfriend: (userId: string, account?: string) => need<ApiResponse>("unfriend", { userId, account: account ?? null }),
+  moderateUser: (userId: string, kind: string, undo: boolean, account?: string) => need<ApiResponse>("moderate_user", { userId, kind, undo, account: account ?? null }),
   // ---- vfm-servers (src-tauri/src/share.rs) ----
   share: {
     identity: () => need<MyIdentity>("share_identity"),

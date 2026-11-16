@@ -307,6 +307,7 @@ export const defaultSettings = (): Settings => ({
   notesLine: { mode: "off", compact: true },
   insights: { drifting: false },
   phone: { background: "off", refreshRate: 0, widget: true, rootLogs: false },
+  accounts: { actAs: false, list: [] },
   extras: {
     osc: { enabled: false, host: "127.0.0.1", port: 9000, template: "", everySecs: 30, starredOnline: true, onlyInGame: true, listen: false, listenPort: 9001 },
     nowPlaying: { status: false, template: "🎵 {title}" },
@@ -757,6 +758,14 @@ export function normalizeSettings(raw: Raw | null): Settings {
     sharing: normalizeSharing(raw.sharing),
     lastVersion: typeof raw.lastVersion === "string" ? raw.lastVersion : "",
     insights: shaped(raw.insights, d.insights),
+    accounts: {
+      actAs: typeof raw.accounts?.actAs === "boolean" ? raw.accounts.actAs : false,
+      list: Array.isArray(raw.accounts?.list)
+        ? raw.accounts.list
+            .filter((a: any) => a && typeof a.id === "string" && a.id.startsWith("usr_"))
+            .map((a: any) => ({ id: a.id, name: String(a.name ?? ""), show: a.show !== false, live: a.live === true, notify: a.notify === true }))
+        : [],
+    },
     extras: shaped(raw.extras, d.extras, (x) => ({
       ...x,
       osc: {

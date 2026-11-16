@@ -30,6 +30,7 @@ function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {
   if (f.favoritesOnly) n++;
   if (f.favoriteGroup) n++;
   if (f.starredOnly) n++;
+  if (f.account) n++;
   if (f.listId) n++;
   if (f.who !== "all") n++;
   return n;
@@ -344,6 +345,7 @@ export function FilterPopover({ onClose }: { onClose: () => void }) {
         <input type="checkbox" checked={!!f.starredOnly} onChange={(e) => updateFilters({ starredOnly: e.target.checked })} />
         <span>Only starred friends</span>
       </label>
+      <AccountFilter />
       <label className="frow check">
         <input type="checkbox" checked={f.favoritesOnly} onChange={(e) => updateFilters({ favoritesOnly: e.target.checked })} />
         <span>Only VRChat favorites</span>
@@ -376,5 +378,30 @@ function MeButton() {
       {pic ? <img src={pic} alt="" /> : <span>{me.displayName.slice(0, 1).toUpperCase()}</span>}
       {status && <i className="me-dot" style={{ background: STATUS_COLORS[status as keyof typeof STATUS_COLORS] ?? "#8b949e" }} />}
     </button>
+  );
+}
+
+/** Filter by which of your accounts someone is friends with (only with more than one account). */
+function AccountFilter() {
+  const list = useApp((s) => s.settings.accounts.list);
+  const value = useApp((s) => s.filters.account ?? "");
+  const me = useApp((s) => s.cache.me?.displayName ?? "Main account");
+  if (!list.some((a) => a.show)) return null;
+  return (
+    <div className="frow">
+      <label htmlFor="filter-account">Account</label>
+      <select id="filter-account" value={value} onChange={(e) => updateFilters({ account: e.target.value || null })}>
+        <option value="">All my accounts</option>
+        <option value="main">{me} (main)</option>
+        {list
+          .filter((a) => a.show)
+          .map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        <option value="crossover">Friends of two or more of my accounts</option>
+      </select>
+    </div>
   );
 }

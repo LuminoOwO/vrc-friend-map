@@ -33,6 +33,7 @@ import { haptic } from "../haptics";
 import { bioProgress } from "../biocache";
 import { PhoneSection } from "./PhoneSection";
 import { BackupSection, NowPlayingSection, OscSection, PlaytimeSection } from "./ExtrasSection";
+import { AccountsSection } from "./AccountsSection";
 import { flagLine } from "../notesline";
 import { loadSlots, saveSlot, type MessageSlot } from "../invites";
 import type { UiSettings } from "../types";
@@ -616,6 +617,9 @@ export function SettingsModal() {
         </Sec>
         <Sec id="playtime" cat="account" title="Steam play time in your bio" keys="steam hours play time bio" unavailable={unavailable("steam")}>
           <PlaytimeSection />
+        </Sec>
+        <Sec id="accounts" cat="account" title="Your other accounts" keys="multiple accounts alt second account main switch act as crossover">
+          <AccountsSection />
         </Sec>
         <Sec id="backup" cat="account" title="Backup to another device" keys="backup export import restore move device encrypted password file">
           <BackupSection />

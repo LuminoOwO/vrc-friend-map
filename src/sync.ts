@@ -11,23 +11,42 @@ import { cacheGet, cachePut } from "./serverlink";
 import { describeError, httpLine, isNetworkError, logSync, wasInterrupted, whenVisible } from "./synclog";
 import { getState, resetSync, setState, setSync, showToast, updateCache, updateLocal } from "./store";
 import type { Friend, Me, MutualInfo, Presence, UserDetail } from "./types";
+import { accountFor, applyAlts, isMainFriend, MAIN } from "./accountmerge";
 
 class SessionExpired extends Error {}
+/** One of your extra accounts' sessions ended (the main one is fine). */
+export class AccountExpired extends Error {}
+
+/** Extra accounts whose friends are on the map. */
+export function shownAccounts(): string[] {
+  return getState().settings.accounts.list.filter((a) => a.show).map((a) => a.id);
+}
+const yourAccounts = () => getState().settings.accounts.list.map((a) => a.id);
+
+/** Mix the shown extra accounts' friends into the map again (after a change to either side). */
+export function remergeAlts() {
+  updateCache((c) => applyAlts(c, shownAccounts(), yourAccounts()));
+}
 
 let generation = 0; // bumps on logout/stop so running loops bail out
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function api(path: string, query?: Record<string, string | number | boolean>): Promise<ApiResponse> {
+async function api(path: string, query?: Record<string, string | number | boolean>, account?: string): Promise<ApiResponse> {
   const gen = generation;
   for (let attempt = 0; attempt < 6; attempt++) {
     if (gen !== generation) throw new Error("stopped");
-    const r = await backend.vrcGet(path, query);
+    const r = await backend.vrcGet(path, query, account);
     if (r.status === 429) {
       const wait = (r.retry_after ?? 30) * 1000;
       logSync({ area: "VRChat", step: path, result: "info", detail: `${httpLine(path, 429)}, waiting ${Math.round(wait / 1000)} s`, status: 429 });
       setSync({ backoffUntil: Date.now() + wait, message: "VRChat asked us to slow down, waiting…" });
       continue; // the Rust side holds the next request until the backoff ends
+    }
+    if (r.status === 401 && account) {
+      const name = getState().settings.accounts.list.find((a) => a.id === account)?.name ?? "another account";
+      logSync({ area: "VRChat", step: path, result: "failed", detail: `${httpLine(path, 401)}: ${name}'s session expired`, status: 401 });
+      throw new AccountExpired(`${name}: the VRChat session expired. Remove the account and add it again.`);
     }
     if (r.status === 401) {
       logSync({ area: "VRChat", step: path, result: "failed", detail: httpLine(path, 401) + ": session expired", status: 401 });
@@ -107,11 +126,11 @@ async function fetchMe(): Promise<Me> {
   return me;
 }
 
-async function fetchFriendPages(offline: boolean, gen: number): Promise<Friend[]> {
+async function fetchFriendPages(offline: boolean, gen: number, account?: string): Promise<Friend[]> {
   const out: Friend[] = [];
   for (let offset = 0; offset < 5000; offset += 100) {
     if (gen !== generation) throw new Error("stopped");
-    const r = await api("/auth/user/friends", { offline, n: 100, offset });
+    const r = await api("/auth/user/friends", { offline, n: 100, offset }, account);
     const page: Friend[] = Array.isArray(r.data) ? r.data : [];
     out.push(...page);
     setSync({ message: `Loading ${offline ? "offline" : "online"} friends… ${out.length}` });
@@ -128,6 +147,7 @@ async function fetchFriends(me: Me, gen: number) {
   const activeSet = new Set(me.activeFriends);
   const now = Date.now();
   const prevFriends = getState().cache.friends;
+  let mainIds: string[] = [];
 
   updateCache((c) => {
     const friends: Record<string, Friend> = {};
@@ -146,10 +166,45 @@ async function fetchFriends(me: Me, gen: number) {
       else if (hit) presence[id] = hit[1] ? "offline" : f.location === "offline" || f.platform === "web" ? "web" : "online";
       else presence[id] = "offline";
     }
-    return { ...c, friends, presence, lastFriendsSync: now };
+    mainIds = Object.keys(friends);
+    // Then your other accounts' friends on top (src/accountmerge.ts).
+    return applyAlts({ ...c, friends, presence, lastFriendsSync: now, friendOf: undefined }, shownAccounts(), yourAccounts());
   });
 
-  recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
+  // The friend log, "new friend" and the rest are about the main account only.
+  recordFriendChanges(mainIds, prevFriends);
+}
+
+/** One of your extra accounts' friend list (online and offline), mixed into the map. */
+export async function fetchAccountFriends(account: string, gen = generation) {
+  const name = getState().settings.accounts.list.find((a) => a.id === account)?.name ?? "Other account";
+  setSync({ phase: `${name}'s friends`, message: "Loading friends…" });
+  const online = await fetchFriendPages(false, gen, account);
+  const offline = await fetchFriendPages(true, gen, account);
+  const friends: Record<string, Friend> = {};
+  const presence: Record<string, Presence> = {};
+  for (const f of online) {
+    friends[f.id] = f;
+    presence[f.id] = f.location === "offline" || f.platform === "web" ? "web" : "online";
+  }
+  for (const f of offline) {
+    friends[f.id] = f;
+    presence[f.id] = "offline";
+  }
+  updateCache((c) => applyAlts({ ...c, alts: { ...c.alts, [account]: { friends, presence, fetchedAt: Date.now() } } }, shownAccounts(), yourAccounts()));
+  logSync({ area: "VRChat", step: `${name}'s friends`, result: "ok", detail: `${Object.keys(friends).length} friends` });
+}
+
+async function fetchShownAccounts(gen: number) {
+  for (const acc of shownAccounts()) {
+    try {
+      await fetchAccountFriends(acc, gen);
+    } catch (e) {
+      if (e instanceof AccountExpired) showToast(e.message);
+      else if (e instanceof Error && e.message === "stopped") throw e;
+      else logSync({ area: "VRChat", step: "Other account", result: "failed", detail: String(e) });
+    }
+  }
 }
 
 /** Keep a small log of friends added and removed since the first sync. */
@@ -296,7 +351,8 @@ async function fetchMutuals(id: string, gen: number) {
   let hidden = false;
   for (let offset = 0; offset < 1000; offset += 100) {
     if (gen !== generation) throw new Error("stopped");
-    const r = await api(`/users/${encodeURIComponent(id)}/mutuals/friends`, { n: 100, offset });
+    // Asked as an account that is their friend (VRChat only tells friends).
+    const r = await api(`/users/${encodeURIComponent(id)}/mutuals/friends`, { n: 100, offset }, accountFor(getState().cache, id));
     if (r.status === 403 || r.status === 400 || r.status === 404) {
       hidden = true;
       break;
@@ -350,6 +406,7 @@ export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
   try {
     const me = await fetchMe();
     await fetchFriends(me, gen);
+    await fetchShownAccounts(gen);
     noteNames();
     if (!opts.friendsOnly) {
       await fetchFavorites();
@@ -583,7 +640,7 @@ function presenceFromUser(u: any): Presence | null {
 
 /** Apply one event from the live connection to the local cache. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function applyPipelineEvent(type: string, content: any) {
+export function applyPipelineEvent(type: string, content: any, opts: { quiet?: boolean } = {}) {
   const s = getState();
   if (s.demo || !content) return;
   if (type === "notification") {
@@ -625,8 +682,9 @@ export function applyPipelineEvent(type: string, content: any) {
             }
           : c.details,
         me: c.me && !c.me.friends.includes(id) ? { ...c.me, friends: [...c.me.friends, id] } : c.me,
+        friendOf: c.friendOf?.[id] && !c.friendOf[id].includes(MAIN) ? { ...c.friendOf, [id]: [MAIN, ...c.friendOf[id]] } : c.friendOf,
       }));
-      const notified = recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
+      const notified = recordFriendChanges(Object.keys(getState().cache.friends).filter((x) => isMainFriend(getState().cache, x)), prevFriends);
       noteFriend("friend-add", id, friend.displayName);
       if (!notified.has(id)) showToast(`${friend.displayName} is now your friend`);
       refreshPerson(id); // load their mutual friends so lines appear
@@ -642,10 +700,12 @@ export function applyPipelineEvent(type: string, content: any) {
         delete friends[id];
         delete presence[id];
         const me = c.me ? { ...c.me, friends: c.me.friends.filter((x) => x !== id) } : c.me;
-        return { ...c, friends, presence, me };
+        const friendOf = c.friendOf?.[id] ? { ...c.friendOf, [id]: c.friendOf[id].filter((a) => a !== MAIN) } : c.friendOf;
+        // Still a friend of one of your other accounts: they stay on the map through it.
+        return applyAlts({ ...c, friends, presence, me, friendOf }, shownAccounts(), yourAccounts());
       });
-      recordFriendChanges(Object.keys(getState().cache.friends), prevFriends);
-      if (getState().selectedId === id) setState({ selectedId: null });
+      recordFriendChanges(Object.keys(getState().cache.friends).filter((x) => isMainFriend(getState().cache, x)), prevFriends);
+      if (getState().selectedId === id && !getState().cache.friends[id]) setState({ selectedId: null });
       noteFriend("friend-remove", id, name);
       if (!notifyEvent("removed", id, name)) showToast(`${name} is no longer on your friends list`);
       return;
@@ -661,10 +721,10 @@ export function applyPipelineEvent(type: string, content: any) {
         const wasOnline = (s.cache.presence[id] ?? "offline") === "online";
         if (type === "friend-online" && !wasOnline) {
           noteFriend("online", id, name);
-          notifyEvent("online", id, name);
+          if (!opts.quiet) notifyEvent("online", id, name);
         } else if (type === "friend-offline" && (s.cache.presence[id] ?? "offline") !== "offline") {
           noteFriend("offline", id, name);
-          notifyEvent("offline", id, name);
+          if (!opts.quiet) notifyEvent("offline", id, name);
         }
         else if (type === "friend-location" && typeof content.location === "string" && content.location !== s.cache.friends[id]?.location && content.location.startsWith("wrld_")) {
           noteFriend("location", id, name, { location: content.location, worldId: content.location.split(":")[0], worldName: content.world?.name });
@@ -695,4 +755,36 @@ export function applyPipelineEvent(type: string, content: any) {
       return;
     }
   }
+}
+
+const refetchSoon = new Map<string, ReturnType<typeof setTimeout>>();
+
+/**
+ * A live event from one of your extra accounts' connections. Friend list
+ * changes reload that account's list; presence changes update people only
+ * that account knows (the main connection covers the rest), with
+ * notifications only if you turned them on for that account.
+ */
+export function applyAccountEvent(account: string, type: string, content: any, notify: boolean) {
+  const s = getState();
+  if (s.demo || !content) return;
+  if (type === "friend-add" || type === "friend-delete") {
+    clearTimeout(refetchSoon.get(account));
+    refetchSoon.set(account, setTimeout(() => void fetchAccountFriends(account).catch(() => {}), 5000));
+    return;
+  }
+  if (!type.startsWith("friend-") || typeof content.userId !== "string") return;
+  const id: string = content.userId;
+  const alt = s.cache.alts?.[account];
+  if (!alt?.friends[id]) return;
+  // Keep that account's own view current.
+  const p: Presence | undefined = type === "friend-online" || type === "friend-location" ? "online" : type === "friend-active" ? "web" : type === "friend-offline" ? "offline" : undefined;
+  updateCache((c) => {
+    const a = c.alts?.[account];
+    if (!a) return c;
+    const f = content.user ? { ...a.friends[id], ...content.user, id } : a.friends[id];
+    const loc = typeof content.location === "string" ? { location: content.location } : {};
+    return { ...c, alts: { ...c.alts, [account]: { ...a, friends: { ...a.friends, [id]: { ...f, ...loc } }, presence: p ? { ...a.presence, [id]: p } : a.presence } } };
+  });
+  if (!isMainFriend(getState().cache, id) && shownAccounts().includes(account)) applyPipelineEvent(type, content, { quiet: !notify });
 }

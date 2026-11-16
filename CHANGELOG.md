@@ -150,6 +150,17 @@ minor releases can change behavior.
   sealed and signed with your own key; the server passes it along without storing it (the
   server owner can turn off passing along bigger messages such as sounds; at home they still
   go directly).
+- **Several VRChat accounts on one map** (Settings → Account & data → *Your other accounts*,
+  on a computer): log in with your other accounts too, in a private window so your main
+  account stays logged in. Their friends join the map, cards and search, mixed with your main
+  account's: each gets a small colored dot per account that knows them, and friends of two or
+  more of your accounts get a dashed ring (*crossover*). The filter menu has *Account* (main,
+  one account, or only crossover), and profiles say "Friends with … and …". Lines between
+  friends are loaded through the account that's their friend. Per account: show its friends,
+  its own live connection (instant online / world changes), and notifications for its friends.
+  *Act as any of my accounts* (off by default) adds an *Act as* picker to profiles for friend
+  requests, unfriending, blocking and muting. Sharing, the friend log and "since you were last
+  here" stay about your main account.
 - **Settings sync, finer**: pick which groups of settings sync, and keep some on this device
   only.
 - **Never send anything unencrypted** (per server), and a short **safety code** per friend to

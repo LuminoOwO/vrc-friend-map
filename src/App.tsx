@@ -25,6 +25,7 @@ import { UpdateDialog } from "./components/UpdateDialog";
 import { catppuccinVars, isCatFlavor } from "./catppuccin";
 import { ConfirmUnencrypted, ServersModal } from "./components/ServersModal";
 import { loadShared, startSharing, stopSharing } from "./share";
+import { startAccounts, stopAccounts } from "./accounts";
 import { syncLive } from "./live";
 import { HereNow } from "./components/HereNow";
 import { SharedLists } from "./components/SharedLists";
@@ -270,9 +271,11 @@ function LogsAndGroups() {
       startNotesLine();
       startServerLink();
       startExtras();
+      void startAccounts();
     } else {
       stopObserving();
       stopSharing();
+      stopAccounts();
       stopBioCache();
       stopHistory();
       stopWatchers();

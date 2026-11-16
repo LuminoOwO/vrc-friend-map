@@ -143,6 +143,26 @@ async fn connect_and_listen<R: Runtime>(
     gen: u64,
     token: &str,
 ) -> Result<Outcome, String> {
+    listen_ws(
+        state,
+        token,
+        || state.pipeline.generation.load(Ordering::SeqCst) != gen,
+        || emit_status(app, state, true, "Live updates on", false),
+        |kind, content| {
+            let _ = app.emit("vrc-pipeline", PipelineEvent { kind, content });
+        },
+    )
+    .await
+}
+
+/// One live connection: until `stopped()` says so, the server closes it, or it fails.
+async fn listen_ws(
+    state: &AppState,
+    token: &str,
+    stopped: impl Fn() -> bool,
+    opened: impl Fn(),
+    on_event: impl Fn(String, Value),
+) -> Result<Outcome, String> {
     let mut url = url::Url::parse(PIPELINE_URL).map_err(|e| e.to_string())?;
     url.query_pairs_mut().append_pair("authToken", token);
     let mut req = url
@@ -159,10 +179,10 @@ async fn connect_and_listen<R: Runtime>(
     .await
     .map_err(|_| "connection timed out".to_string())?
     .map_err(|e| e.to_string())?;
-    emit_status(app, state, true, "Live updates on", false);
+    opened();
 
     loop {
-        if state.pipeline.generation.load(Ordering::SeqCst) != gen {
+        if stopped() {
             let _ = ws.close(None).await;
             return Ok(Outcome::Stopped);
         }
@@ -179,13 +199,99 @@ async fn connect_and_listen<R: Runtime>(
             _ => continue, // pings are answered automatically
         };
         match parse_message(&text) {
-            Parsed::Event(kind, content) => {
-                let _ = app.emit("vrc-pipeline", PipelineEvent { kind, content });
-            }
+            Parsed::Event(kind, content) => on_event(kind, content),
             Parsed::AuthError(msg) => return Ok(Outcome::AuthRejected(msg)),
             Parsed::Ignore => {}
         }
     }
+}
+
+// ---------------------------------------------------------------- extra accounts
+
+/// Stop flags of the extra accounts' live connections, by account ID.
+static ACCOUNTS: std::sync::Mutex<Option<std::collections::HashMap<String, Arc<AtomicBool>>>> = std::sync::Mutex::new(None);
+
+#[derive(serde::Serialize, Clone)]
+struct AccountEvent {
+    account: String,
+    #[serde(rename = "type")]
+    kind: String,
+    content: Value,
+}
+
+#[derive(serde::Serialize, Clone)]
+struct AccountStatus {
+    account: String,
+    connected: bool,
+    message: String,
+}
+
+pub fn stop_account<R: Runtime>(app: &AppHandle<R>, id: &str) {
+    if let Some(flag) = ACCOUNTS.lock().unwrap().get_or_insert_with(Default::default).remove(id) {
+        flag.store(true, Ordering::SeqCst);
+        let _ = app.emit("vrc-pipeline-account-status", AccountStatus { account: id.into(), connected: false, message: "Live updates off".into() });
+    }
+}
+
+/// A live connection for one of your extra accounts: events come as
+/// `vrc-pipeline-account` with the account's ID.
+pub fn start_account<R: Runtime>(app: AppHandle<R>, state: Arc<AppState>, id: String) {
+    let stop = Arc::new(AtomicBool::new(false));
+    {
+        let mut guard = ACCOUNTS.lock().unwrap();
+        let map = guard.get_or_insert_with(Default::default);
+        if map.contains_key(&id) {
+            return;
+        }
+        map.insert(id.clone(), stop.clone());
+    }
+    tauri::async_runtime::spawn(async move {
+        let status = |connected: bool, message: &str| {
+            let _ = app.emit("vrc-pipeline-account-status", AccountStatus { account: id.clone(), connected, message: message.into() });
+        };
+        let mut backoff_secs = 5u64;
+        while !stop.load(Ordering::SeqCst) {
+            let Some(token) = state.api.account_token(&id).await else {
+                status(false, "Not logged in");
+                break;
+            };
+            let r = listen_ws(
+                &state,
+                &token,
+                || stop.load(Ordering::SeqCst),
+                || status(true, "Live updates on"),
+                |kind, content| {
+                    let _ = app.emit("vrc-pipeline-account", AccountEvent { account: id.clone(), kind, content });
+                },
+            )
+            .await;
+            match r {
+                Ok(Outcome::Stopped) => break,
+                Ok(Outcome::AuthRejected(msg)) => {
+                    status(false, &msg);
+                    break;
+                }
+                Ok(Outcome::Closed) => {
+                    backoff_secs = 5;
+                    status(false, "Live connection closed, reconnecting…");
+                }
+                Err(e) => status(false, &format!("Live updates unavailable: {e}")),
+            }
+            let wait = backoff_secs + rand::random::<u64>() % 5;
+            for _ in 0..wait {
+                if stop.load(Ordering::SeqCst) {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+            backoff_secs = (backoff_secs * 2).min(300);
+        }
+        if let Some(map) = ACCOUNTS.lock().unwrap().as_mut() {
+            if map.get(&id).map(|f| Arc::ptr_eq(f, &stop)).unwrap_or(false) {
+                map.remove(&id);
+            }
+        }
+    });
 }
 
 #[derive(Debug, PartialEq)]

@@ -34,9 +34,10 @@ import {
 } from "../model";
 import { addToCircle, createCircle, getState, removeFromCircle, setState, showToast, useApp } from "../store";
 import { bioKeyState } from "../share";
-import { friendStatus, isBlocked, personOf, refreshModerations, relationOf, setFriendRequest, setModeration, unfriend } from "../people";
+import { accountModerations, friendStatus, isBlocked, personOf, refreshModerations, relationOf, setFriendRequest, setModeration, unfriend } from "../people";
+import { MAIN } from "../accountmerge";
 import { othersHere } from "../live";
-import { applyPipelineEvent, freshenProfile, loadGroups, loadInstance, loadWorld, refreshPerson } from "../sync";
+import { applyPipelineEvent, fetchAccountFriends, freshenProfile, loadGroups, loadInstance, loadWorld, refreshPerson } from "../sync";
 import type { Friend, Presence } from "../types";
 import { GroupsModal } from "./GroupsModal";
 import { Icon } from "./Icon";
@@ -121,6 +122,16 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   // Friends, people who aren't friends yet (instance mates, potential friends), or you.
   const f = personOf(cache, id);
   const relation = relationOf(cache, id);
+  // Your accounts: which know them, and which one profile actions run as.
+  const accounts = useApp((s) => s.settings.accounts);
+  const knownBy = relation === "friend" ? (cache.friendOf?.[id] ?? [MAIN]) : [];
+  const [acting, setActing] = useState<string | undefined>(undefined);
+  useEffect(() => {
+    const of = getState().cache.friendOf?.[id];
+    setActing(of && !of.includes(MAIN) ? of[0] : undefined);
+  }, [id]);
+  const actingAs = accounts.actAs ? acting : undefined;
+  const friendForActing = knownBy.includes(actingAs ?? MAIN);
   const rootRef = useRef<HTMLElement>(null);
   const location = f?.location ?? "";
   const inWorld = location.startsWith("wrld_");
@@ -307,8 +318,10 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   )}
                 </div>
               )}
-              {relation !== "friend" && (
-                <RelationBox id={id} relation={relation} here={isHere} via={viaLists.map((l) => l.owner.displayName)} />
+              {knownBy.some((a) => a !== MAIN) && <KnownBy ids={knownBy} />}
+              {accounts.actAs && accounts.list.length > 0 && relation !== "me" && <ActAs value={actingAs} onChange={setActing} />}
+              {(relation !== "friend" || !friendForActing) && (
+                <RelationBox id={id} relation={relation === "me" ? "me" : "other"} here={isHere} via={viaLists.map((l) => l.owner.displayName)} account={actingAs} />
               )}
               {relation === "friend" && isHere && (
                 <p className="relation-here" data-flip-fade>
@@ -336,7 +349,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 )}
               </div>
               {editing && <ProfileEditor id={id} onClose={() => setEditing(false)} />}
-              {relation !== "me" && <ModerationRow id={id} name={f.displayName} friend={relation === "friend"} />}
+              {relation !== "me" && <ModerationRow id={id} name={f.displayName} friend={relation === "friend" && friendForActing} account={actingAs} />}
               {relation === "friend" && <NicknameAndSnooze id={id} name={f.displayName} />}
               {relation !== "me" && <RedFlags id={id} />}
               {relation !== "me" && <BlockFlags id={id} blocked={isBlocked(cache, id)} />}
@@ -698,7 +711,39 @@ function BioKey({ bio, userId }: { bio?: string; userId: string }) {
 
 /** For someone who isn't a friend (or you): how you're connected, and the
  *  friend-request button. One request per click, never automatic. */
-function RelationBox({ id, relation, here, via }: { id: string; relation: "me" | "other"; here: boolean; via: string[] }) {
+/** Which of your accounts are friends with them (shown when it's more than just the main one). */
+function KnownBy({ ids }: { ids: string[] }) {
+  const list = useApp((s) => s.settings.accounts.list);
+  const me = useApp((s) => s.cache.me?.displayName ?? "Main account");
+  const names = ids.map((a) => (a === MAIN ? me : (list.find((l) => l.id === a)?.name ?? "Other account")));
+  return (
+    <p className="small known-by" data-flip-fade>
+      <Icon name="users" size={14} /> Friends with {names.join(" and ")}
+      {ids.length >= 2 && <span className="chip">crossover</span>}
+    </p>
+  );
+}
+
+/** Pick which of your accounts profile actions run as. */
+function ActAs({ value, onChange }: { value: string | undefined; onChange: (v: string | undefined) => void }) {
+  const list = useApp((s) => s.settings.accounts.list);
+  const me = useApp((s) => s.cache.me?.displayName ?? "Main account");
+  return (
+    <label className="field narrow act-as" data-flip-fade>
+      <span>Act as</span>
+      <select id="act-as" value={value ?? MAIN} onChange={(e) => onChange(e.target.value === MAIN ? undefined : e.target.value)}>
+        <option value={MAIN}>{me} (main)</option>
+        {list.map((a) => (
+          <option key={a.id} value={a.id}>
+            {a.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function RelationBox({ id, relation, here, via, account }: { id: string; relation: "me" | "other"; here: boolean; via: string[]; account?: string }) {
   const demo = useApp((s) => s.demo);
   const [status, setStatus] = useState<{ isFriend: boolean; outgoing: boolean; incoming: boolean } | null>(null);
   const [busy, setBusy] = useState(false);
@@ -709,8 +754,8 @@ function RelationBox({ id, relation, here, via }: { id: string; relation: "me" |
     setStatus(null);
     setError("");
     setConcern(null);
-    if (relation === "other") friendStatus(id).then(setStatus);
-  }, [id, relation]);
+    if (relation === "other") friendStatus(id, account).then(setStatus);
+  }, [id, relation, account]);
 
   if (relation === "me") {
     return (
@@ -731,7 +776,7 @@ function RelationBox({ id, relation, here, via }: { id: string; relation: "me" |
     setConcern(null);
     setBusy(true);
     setError("");
-    const err = await setFriendRequest(id, send);
+    const err = await setFriendRequest(id, send, account);
     setBusy(false);
     if (err) setError(err);
     else {
@@ -793,10 +838,16 @@ const NO_MODS: string[] = [];
 
 /** Unfriend, block, mute, hide avatar (and undo). Each is one click plus a
  *  confirmation for the ones that are hard to take back. */
-function ModerationRow({ id, name, friend }: { id: string; name: string; friend: boolean }) {
+function ModerationRow({ id, name, friend, account }: { id: string; name: string; friend: boolean; account?: string }) {
   const demo = useApp((s) => s.demo);
   const byUser = useApp((s) => s.cache.moderations?.byUser);
-  const mods = byUser?.[id] ?? NO_MODS;
+  // Acting as another account: its own blocks and mutes (loaded when picked).
+  const [altMods, setAltMods] = useState<Record<string, string[]> | null>(null);
+  useEffect(() => {
+    setAltMods(null);
+    if (account) void accountModerations(account).then(setAltMods, () => setAltMods({}));
+  }, [account]);
+  const mods = (account ? altMods?.[id] : byUser?.[id]) ?? NO_MODS;
   const [confirming, setConfirming] = useState<"unfriend" | "block" | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -816,7 +867,18 @@ function ModerationRow({ id, name, friend }: { id: string; name: string; friend:
     if (err) setError(err);
     else showToast(done);
   };
-  const toggle = (kind: Mod, on: boolean, done: string) => run(() => setModeration(id, kind, on), done);
+  const toggle = (kind: Mod, on: boolean, done: string) =>
+    run(async () => {
+      const err = await setModeration(id, kind, on, account);
+      if (!err && account)
+        setAltMods((m) => {
+          const cur = new Set(m?.[id] ?? []);
+          if (on) cur.add(kind);
+          else cur.delete(kind);
+          return { ...(m ?? {}), [id]: [...cur] };
+        });
+      return err;
+    }, done);
   const has = (k: Mod) => mods.includes(k);
   const off = busy || demo;
 
@@ -835,6 +897,11 @@ function ModerationRow({ id, name, friend }: { id: string; name: string; friend:
             onClick={() =>
               confirming === "unfriend"
                 ? run(async () => {
+                    if (account) {
+                      const err = await unfriend(id, account);
+                      if (!err) void fetchAccountFriends(account).catch(() => {});
+                      return err;
+                    }
                     removedByMe.add(id);
                     const err = await unfriend(id);
                     if (err) removedByMe.delete(id);

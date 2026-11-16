@@ -98,6 +98,26 @@ pub struct ApiClient {
     last_write: Mutex<Option<Instant>>,
     pub image_slots: Semaphore,
     session_path: PathBuf,
+    /// Your other VRChat accounts (user ID -> session), kept on this device.
+    extra: RwLock<std::collections::BTreeMap<String, Session>>,
+    extra_path: PathBuf,
+}
+
+tokio::task_local! {
+    /// Which of your accounts a call runs as (None: the main one). Set with `as_account`.
+    static ACT_AS: Option<String>;
+}
+
+/// Run `f` as one of your extra accounts (or the main one for None / its own ID).
+pub async fn as_account<F: std::future::Future>(account: Option<String>, f: F) -> F::Output {
+    ACT_AS.scope(account, f).await
+}
+
+/// One of your accounts, for the app.
+#[derive(Serialize, Clone)]
+pub struct AccountInfo {
+    pub id: String,
+    pub name: String,
 }
 
 impl ApiClient {
@@ -124,6 +144,13 @@ impl ApiClient {
             image_limiter: Mutex::new(Instant::now()),
             last_write: Mutex::new(None),
             image_slots: Semaphore::new(4),
+            extra: RwLock::new(
+                std::fs::read_to_string(data_dir.join("accounts.json"))
+                    .ok()
+                    .and_then(|s| serde_json::from_str(&s).ok())
+                    .unwrap_or_default(),
+            ),
+            extra_path: data_dir.join("accounts.json"),
             session_path,
         })
     }
@@ -163,6 +190,50 @@ impl ApiClient {
                 display_name: None,
             },
         }
+    }
+
+    /// The session calls run with right now: the main one, or an extra account
+    /// inside `as_account`.
+    async fn current_session(&self) -> Option<Session> {
+        let who = ACT_AS.try_with(|a| a.clone()).ok().flatten();
+        let main = self.session.read().await.clone();
+        match who {
+            Some(id) if main.as_ref().map(|m| m.user_id != id).unwrap_or(true) => self.extra.read().await.get(&id).cloned(),
+            _ => main,
+        }
+    }
+
+    /// Your extra accounts.
+    pub async fn accounts(&self) -> Vec<AccountInfo> {
+        self.extra.read().await.values().map(|s| AccountInfo { id: s.user_id.clone(), name: s.display_name.clone() }).collect()
+    }
+
+    /// The session token of an extra account, for its own live connection.
+    pub async fn account_token(&self, id: &str) -> Option<String> {
+        self.extra.read().await.get(id).map(|s| s.auth.clone())
+    }
+
+    async fn save_extra(&self) -> Result<(), String> {
+        let json = serde_json::to_string(&*self.extra.read().await).map_err(|e| e.to_string())?;
+        crate::storage::write_private(&self.extra_path, json.as_bytes())
+    }
+
+    pub async fn remove_account(&self, id: &str) -> Result<(), String> {
+        self.extra.write().await.remove(id);
+        self.save_extra().await
+    }
+
+    /// Check a login from the extra-account window and keep it. Not your main
+    /// account, and not one you already added (that one is refreshed).
+    pub async fn validate_extra(&self, auth: &str, two_factor: Option<&str>) -> Result<Option<AccountInfo>, String> {
+        let Some(session) = self.check_login(auth, two_factor).await? else { return Ok(None) };
+        if self.session.read().await.as_ref().map(|m| m.user_id == session.user_id).unwrap_or(false) {
+            return Err("That's your main account. On the VRChat page, log out first, then log in with the other account.".into());
+        }
+        let info = AccountInfo { id: session.user_id.clone(), name: session.display_name.clone() };
+        self.extra.write().await.insert(session.user_id.clone(), session);
+        self.save_extra().await?;
+        Ok(Some(info))
     }
 
     /// The whole session (cookies), for pairing a vfm-server logger.
@@ -240,6 +311,14 @@ impl ApiClient {
         auth: &str,
         two_factor: Option<&str>,
     ) -> Result<Option<SessionInfo>, String> {
+        let Some(session) = self.check_login(auth, two_factor).await? else { return Ok(None) };
+        self.save_session(&session).await?;
+        *self.session.write().await = Some(session);
+        Ok(Some(self.session_info().await))
+    }
+
+    /// Ask VRChat who these cookies belong to (None: not logged in yet / 2FA pending).
+    async fn check_login(&self, auth: &str, two_factor: Option<&str>) -> Result<Option<Session>, String> {
         let ua = self.user_agent().await;
         for base in API_BASES {
             self.acquire_slot().await;
@@ -277,10 +356,8 @@ impl ApiClient {
                     display_name: name.to_string(),
                     base: base.to_string(),
                 };
-                self.save_session(&session).await?;
-                *self.session.write().await = Some(session);
                 self.note_success().await;
-                return Ok(Some(self.session_info().await));
+                return Ok(Some(session));
             }
         }
         Ok(None)
@@ -294,7 +371,7 @@ impl ApiClient {
         if !ALLOWED_GET_PREFIXES.iter().any(|p| path.starts_with(p)) {
             return Err(format!("endpoint not allowed: {path}"));
         }
-        let session = self.session.read().await.clone().ok_or("not logged in")?;
+        let session = self.current_session().await.ok_or("not logged in")?;
         self.acquire_slot().await;
         let ua = self.user_agent().await;
         let res = self
@@ -531,7 +608,7 @@ impl ApiClient {
         ) {
             return Err("only PNG, JPEG, GIF or WebP".into());
         }
-        let session = self.session.read().await.clone().ok_or("not logged in")?;
+        let session = self.current_session().await.ok_or("not logged in")?;
         self.write_cooldown().await?;
         self.acquire_slot().await;
         let ua = self.user_agent().await;
@@ -597,7 +674,7 @@ impl ApiClient {
         path: &str,
         body: Option<Value>,
     ) -> Result<ApiResponse, String> {
-        let session = self.session.read().await.clone().ok_or("not logged in")?;
+        let session = self.current_session().await.ok_or("not logged in")?;
         self.acquire_slot().await;
         let ua = self.user_agent().await;
         let mut req = self

@@ -24,6 +24,8 @@ const LOGIN_TIMEOUT: Duration = Duration::from_secs(20 * 60);
 pub struct LoginState {
     running: AtomicBool,
     cancel: AtomicBool,
+    /// This login adds another of your accounts (a private window, kept apart from the main one).
+    extra: AtomicBool,
     /// Where the main webview should return to on mobile.
     #[cfg_attr(desktop, allow(dead_code))]
     app_url: Mutex<Option<Url>>,
@@ -50,10 +52,17 @@ fn is_vrchat_page(url: &Url) -> bool {
     matches!(url.host_str(), Some("vrchat.com") | Some("www.vrchat.com"))
 }
 
-pub async fn start<R: Runtime>(app: AppHandle<R>, state: Arc<AppState>) -> Result<(), String> {
+pub async fn start<R: Runtime>(app: AppHandle<R>, state: Arc<AppState>, extra: bool) -> Result<(), String> {
     let login_url: Url = LOGIN_URL
         .parse()
         .map_err(|e: url::ParseError| e.to_string())?;
+    if extra && cfg!(mobile) {
+        return Err("Adding another account works in the app on a computer for now.".into());
+    }
+    if state.login.running.load(Ordering::SeqCst) && state.login.extra.load(Ordering::SeqCst) != extra {
+        return Err("Another login is still open; finish or close it first.".into());
+    }
+    state.login.extra.store(extra, Ordering::SeqCst);
 
     #[cfg(desktop)]
     {
@@ -61,7 +70,9 @@ pub async fn start<R: Runtime>(app: AppHandle<R>, state: Arc<AppState>) -> Resul
             let _ = w.set_focus();
         } else {
             tauri::WebviewWindowBuilder::new(&app, "login", tauri::WebviewUrl::External(login_url))
-                .title("Log in to VRChat")
+                .title(if extra { "Log in with another VRChat account" } else { "Log in to VRChat" })
+                // Another account: a private window, so the main account's cookies don't log it in.
+                .incognito(extra)
                 .inner_size(520.0, 780.0)
                 .min_inner_size(380.0, 520.0)
                 // Let sign-in popups (e.g. a third-party login button) open as
@@ -101,7 +112,7 @@ pub async fn start<R: Runtime>(app: AppHandle<R>, state: Arc<AppState>) -> Resul
                     message: msg,
                 },
             };
-            let _ = app2.emit("login-finished", event);
+            let _ = app2.emit(if extra { "account-login-finished" } else { "login-finished" }, event);
         });
     }
     Ok(())
@@ -286,12 +297,13 @@ async fn poll<R: Runtime>(app: &AppHandle<R>, state: &Arc<AppState>) -> Result<S
         }
         last_checked = Some(pair);
         last_check_at = Instant::now();
-        match state
-            .api
-            .validate_and_store(&auth, two_factor.as_deref())
-            .await
-        {
-            Ok(Some(info)) => return Ok(info.display_name.unwrap_or_default()),
+        let checked = if state.login.extra.load(Ordering::SeqCst) {
+            state.api.validate_extra(&auth, two_factor.as_deref()).await.map(|o| o.map(|a| a.name))
+        } else {
+            state.api.validate_and_store(&auth, two_factor.as_deref()).await.map(|o| o.map(|i| i.display_name.unwrap_or_default()))
+        };
+        match checked {
+            Ok(Some(name)) => return Ok(name),
             Ok(None) => continue,
             Err(e) => {
                 let _ = app.emit(
