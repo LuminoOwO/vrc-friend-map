@@ -96,6 +96,8 @@ export interface RawServerInfo {
   kinds: string[];
   logger: { enabled: boolean; paired: boolean };
   motd: string;
+  /** e.g. "hidden-recipients"; missing on older servers. */
+  features?: string[];
 }
 
 export interface InfoResult {
@@ -374,10 +376,11 @@ export const backend = {
     register: (url: string, invite?: string) => need<{ ok: boolean; existing: boolean }>("share_register", { url, invite: invite || null }),
     me: (url: string) => need<{ user: unknown; items: { kind: string; sealed: boolean; recipients: string[]; created: number }[]; loggerOwner: boolean }>("share_me", { url }),
     leave: (url: string) => need<unknown>("share_leave", { url }),
-    publish: (url: string, kind: string, payload: string, recipients: string[], encrypt: boolean) =>
-      need<PublishResult>("share_publish", { url, kind, payload, recipients, encrypt }),
+    publish: (url: string, kind: string, payload: string, recipients: string[], encrypt: boolean, hidden = false, lookup: string[] = []) =>
+      need<PublishResult>("share_publish", { url, kind, payload, recipients, encrypt, hidden, lookup }),
     unpublish: (url: string, kind: string) => need<unknown>("share_unpublish", { url, kind }),
-    inbox: (url: string) => need<InboxItem[]>("share_inbox", { url }),
+    /** `owners`: your friends, to also get their hidden-recipient items (servers that can). */
+    inbox: (url: string, owners?: string[]) => need<InboxItem[]>("share_inbox", { url, owners: owners ?? null }),
     pins: () => need<Record<string, KeyPin>>("share_pins"),
     trustKey: (user: string) => need<void>("share_trust_key", { user }),
     loggerPair: (url: string, code: string) => need<unknown>("logger_pair", { url, code }),

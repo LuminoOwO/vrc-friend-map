@@ -86,7 +86,18 @@ function lite(r: InfoResult): ServerInfoLite {
     loggerEnabled: i.logger.enabled,
     loggerPaired: i.logger.paired,
     maxItemBytes: i.max_item_bytes,
+    hiddenRecipients: (i.features ?? []).includes("hidden-recipients"),
   };
+}
+
+/** Hide who you share with on this server: you want it, it's encrypted, and the server can. */
+export function hidesAudience(s: ShareServer, encrypted: boolean): boolean {
+  return !!s.hideAudience && encrypted && !!s.info?.hiddenRecipients;
+}
+
+/** Your friends, to ask a server for their hidden-recipient items (only servers that can). */
+function friendIds(s: ShareServer): string[] | undefined {
+  return s.info?.hiddenRecipients ? Object.keys(getState().cache.friends) : undefined;
 }
 
 export function serverName(s: ShareServer): string {
@@ -496,12 +507,14 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
           continue;
         }
         const key = `${id}|${kind}`;
-        const fp = uploadFingerprint(payload, to, sw.on);
+        const hide = hidesAudience(s, sw.on);
+        const fp = uploadFingerprint(payload, to, sw.on) + (hide ? "|hidden" : "");
         const prev = lastUpload.get(key);
         if (!opts.manual && prev && prev.fp === fp && Date.now() - prev.at < REUPLOAD_MS) {
           last = prev.result;
         } else {
-          last = await backend.share.publish(s.url, kind, payload, to, sw.on);
+          // Hidden: the server looks up all your friends' keys, not just the audience's.
+          last = await backend.share.publish(s.url, kind, payload, to, sw.on, hide, hide ? Object.keys(getState().cache.friends) : []);
           lastUpload.set(key, { fp, at: Date.now(), result: last });
         }
         waiting = Math.max(waiting, last.notOnServer.length);
@@ -518,7 +531,7 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
 
     // ---- download ----
     if (s.download) {
-      const inbox = await backend.share.inbox(s.url);
+      const inbox = await backend.share.inbox(s.url, friendIds(s));
       const me = getState().cache.me?.id;
       const data = getShared();
       const seen = new Set<string>();

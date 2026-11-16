@@ -136,6 +136,12 @@ minor releases can change behavior.
 - **Server: shared cache of public VRChat info** (worlds, groups, avatars, each with its own
   switch, on by default; per server in the app): apps read public info from your server first,
   so VRChat gets fewer requests. Entries show their age and expire within a week.
+- **Hide who you share with** (Servers → a server → *Hide who I share with from this server*,
+  off by default, needs encryption and the new vfm-server): your uploads there no longer list
+  who may read them, not even as key labels. Your friends' apps find out themselves whether an
+  item is for them, and look up only the friends who use this, not your whole friend list. The
+  server can still see whose items each app downloads. Friends on an app older than this one
+  don't get those items until they update.
 - **Settings sync, finer**: pick which groups of settings sync, and keep some on this device
   only.
 - **Never send anything unencrypted** (per server), and a short **safety code** per friend to

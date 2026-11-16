@@ -126,6 +126,7 @@ async fn share_leave(state: AppStateRef<'_>, url: String) -> Result<serde_json::
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 async fn share_publish(
     state: AppStateRef<'_>,
     url: String,
@@ -133,11 +134,13 @@ async fn share_publish(
     payload: String,
     recipients: Vec<String>,
     encrypt: bool,
+    hidden: Option<bool>,
+    lookup: Option<Vec<String>>,
 ) -> Result<share::PublishResult, String> {
     let me = me_id(&state).await?;
     state
         .share
-        .publish(&url, &me, &kind, &payload, recipients, encrypt)
+        .publish(&url, &me, &kind, &payload, recipients, encrypt, hidden.unwrap_or(false), lookup.unwrap_or_default())
         .await
 }
 
@@ -152,9 +155,9 @@ async fn share_unpublish(
 }
 
 #[tauri::command]
-async fn share_inbox(state: AppStateRef<'_>, url: String) -> Result<Vec<share::InboxItem>, String> {
+async fn share_inbox(state: AppStateRef<'_>, url: String, owners: Option<Vec<String>>) -> Result<Vec<share::InboxItem>, String> {
     let me = me_id(&state).await?;
-    state.share.inbox(&url, &me).await
+    state.share.inbox(&url, &me, owners.unwrap_or_default()).await
 }
 
 #[tauri::command]

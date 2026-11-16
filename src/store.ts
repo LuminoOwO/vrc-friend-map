@@ -821,6 +821,7 @@ function normalizeSharing(raw: unknown): SharingSettings {
             ackUnencrypted: bool(x.ackUnencrypted, false),
             keyChanged: bool(x.keyChanged, false),
             useCache: bool(x.useCache, true),
+            hideAudience: bool(x.hideAudience, false),
           };
         })
     : [];

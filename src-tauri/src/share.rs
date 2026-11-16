@@ -26,6 +26,10 @@ pub struct ShareState {
     /// Last inbox per server and account, with the server's tag for it: the next
     /// fetch asks "changed since?" and gets a tiny "no" (304) most of the time.
     inbox_cache: std::sync::Mutex<std::collections::HashMap<String, (String, Value)>>,
+    /// Friends' hidden-recipient items per server and account ("owner|kind" -> item)
+    /// and their senders' cards, so only new versions are fetched.
+    #[allow(clippy::type_complexity)]
+    hidden_cache: std::sync::Mutex<std::collections::HashMap<String, (BTreeMap<String, Envelope>, BTreeMap<String, PublicIdentity>)>>,
 }
 
 #[derive(Default, Serialize, Deserialize)]
@@ -160,6 +164,7 @@ impl ShareState {
             lock: Mutex::new(()),
             name: std::sync::Mutex::new(String::new()),
             inbox_cache: Default::default(),
+            hidden_cache: Default::default(),
         }
     }
 
@@ -546,6 +551,7 @@ impl ShareState {
         self.write("pins.json", &pins)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub async fn publish(
         &self,
         url: &str,
@@ -554,6 +560,8 @@ impl ShareState {
         payload: &str,
         recipients: Vec<String>,
         encrypt: bool,
+        hidden: bool,
+        lookup: Vec<String>,
     ) -> Result<PublishResult, String> {
         let url = normalize_url(url)?;
         if !vfm_share::KINDS.contains(&kind) {
@@ -572,9 +580,18 @@ impl ShareState {
             .collect();
         wanted.sort();
         wanted.dedup();
+        // Hidden recipients: look up a wider set (`lookup`, e.g. all friends) so
+        // the lookup doesn't give away who it's for either.
+        let hidden = hidden && encrypt && !self_item;
+        let mut ask = wanted.clone();
+        if hidden {
+            ask.extend(lookup.into_iter().filter(|r| vfm_share::valid_user_id(r) && r != user));
+            ask.sort();
+            ask.dedup();
+        }
         // Who is on this server, with which key.
         let mut cards = Vec::new();
-        for chunk in wanted.chunks(150) {
+        for chunk in ask.chunks(150) {
             let path = format!("/v1/users?ids={}", chunk.join(","));
             let v = self
                 .send(&url, reqwest::Method::GET, &path, None, Some((&id, user)))
@@ -585,7 +602,9 @@ impl ShareState {
                 );
             }
         }
-        let (ok, key_changed) = self.check_pins(&url, cards).await?;
+        let (mut ok, mut key_changed) = self.check_pins(&url, cards).await?;
+        ok.retain(|k, _| wanted.binary_search(k).is_ok());
+        key_changed.retain(|k| wanted.binary_search(k).is_ok());
         let not_on_server: Vec<String> = wanted
             .iter()
             .filter(|w| !ok.contains_key(*w) && !key_changed.contains(w))
@@ -607,7 +626,11 @@ impl ShareState {
                 user_id: user.to_string(),
                 box_pk: id.box_pk(),
             });
-            Envelope::sealed(&id, user, kind, created, payload.as_bytes(), &rs)
+            if hidden {
+                Envelope::sealed_hidden(&id, user, kind, created, payload.as_bytes(), &rs)
+            } else {
+                Envelope::sealed(&id, user, kind, created, payload.as_bytes(), &rs)
+            }
         } else {
             // Readable anyway, so address everyone asked for: people who join
             // later can fetch it right away. Changed keys are still left out.
@@ -619,7 +642,12 @@ impl ShareState {
             rs.push(user.to_string());
             Envelope::plain(&id, user, kind, created, payload.as_bytes(), &rs)
         };
-        let recipients = env.recipients.len().saturating_sub(1);
+        // A hidden item lists only you; count whom it was sealed for instead.
+        let recipients = if hidden {
+            ok.values().filter(|c| c.box_key().is_some()).count()
+        } else {
+            env.recipients.len().saturating_sub(1)
+        };
         let body = serde_json::to_vec(&env).unwrap();
         self.send(
             &url,
@@ -650,7 +678,58 @@ impl ShareState {
         .await
     }
 
-    pub async fn inbox(&self, url: &str, user: &str) -> Result<Vec<InboxItem>, String> {
+    /// Friends' hidden-recipient items, merged into the cache. First asks which
+    /// hidden items exist, then fetches only your friends' (`friends`) new ones,
+    /// so the server isn't told your whole friend list. Errors (an older
+    /// server) leave what's cached.
+    async fn hidden_items(&self, url: &str, user: &str, id: &Identity, friends: Vec<String>) -> (Vec<Envelope>, Vec<PublicIdentity>) {
+        let key = format!("{url}|{user}");
+        let (mut items, mut cards) = self.hidden_cache.lock().ok().and_then(|c| c.get(&key).cloned()).unwrap_or_default();
+        let done = |items: BTreeMap<String, Envelope>, cards: BTreeMap<String, PublicIdentity>| {
+            if let Ok(mut c) = self.hidden_cache.lock() {
+                c.insert(key.clone(), (items.clone(), cards.clone()));
+            }
+            (items.into_values().collect(), cards.into_values().collect())
+        };
+        let friends: std::collections::HashSet<String> = friends.into_iter().filter(|o| o != user).collect();
+        let Ok(list) = self.send(url, reqwest::Method::POST, "/v1/hidden", Some(b"{}".to_vec()), Some((id, user))).await else {
+            return done(items, cards);
+        };
+        // Which of your friends' hidden items exist now, and which are new to you.
+        let mut exists = std::collections::HashSet::new();
+        let mut fetch = std::collections::BTreeSet::new();
+        for c in list.get("current").and_then(Value::as_array).into_iter().flatten() {
+            let (Some(o), Some(k), Some(t)) = (c["owner"].as_str(), c["kind"].as_str(), c["created"].as_i64()) else { continue };
+            if !friends.contains(o) {
+                continue;
+            }
+            let ok = format!("{o}|{k}");
+            if items.get(&ok).map(|e| e.created) != Some(t) {
+                fetch.insert(o.to_string());
+            }
+            exists.insert(ok);
+        }
+        items.retain(|k, _| exists.contains(k));
+        cards.retain(|o, _| items.values().any(|e| &e.owner == o));
+        if fetch.is_empty() {
+            return done(items, cards);
+        }
+        let have: BTreeMap<&String, i64> = items.iter().map(|(k, e)| (k, e.created)).collect();
+        let owners: Vec<String> = fetch.into_iter().collect();
+        let body = serde_json::to_vec(&json!({ "owners": owners, "have": have })).unwrap_or_default();
+        if let Ok(v) = self.send(url, reqwest::Method::POST, "/v1/hidden", Some(body), Some((id, user))).await {
+            let got: Vec<Envelope> = serde_json::from_value(v.get("items").cloned().unwrap_or(Value::Null)).unwrap_or_default();
+            for env in got.into_iter().filter(|e| e.hidden() && owners.contains(&e.owner)) {
+                items.insert(format!("{}|{}", env.owner, env.kind), env);
+            }
+            let ids: BTreeMap<String, PublicIdentity> =
+                serde_json::from_value(v.get("identities").cloned().unwrap_or(Value::Null)).unwrap_or_default();
+            cards.extend(ids.into_iter().filter(|(o, _)| owners.contains(o)));
+        }
+        done(items, cards)
+    }
+
+    pub async fn inbox(&self, url: &str, user: &str, owners: Vec<String>) -> Result<Vec<InboxItem>, String> {
         let url = normalize_url(url)?;
         let id = self.identity(user).await?;
         let key = format!("{url}|{user}");
@@ -674,13 +753,19 @@ impl ShareState {
                 fresh
             }
         };
-        let items: Vec<Envelope> =
+        let mut items: Vec<Envelope> =
             serde_json::from_value(v.get("items").cloned().unwrap_or(Value::Null))
                 .unwrap_or_default();
         let cards: BTreeMap<String, PublicIdentity> =
             serde_json::from_value(v.get("identities").cloned().unwrap_or(Value::Null))
                 .unwrap_or_default();
-        let (ok, _changed) = self.check_pins(&url, cards.into_values().collect()).await?;
+        let mut cards: Vec<PublicIdentity> = cards.into_values().collect();
+        if !owners.is_empty() {
+            let (hidden, more) = self.hidden_items(&url, user, &id, owners).await;
+            items.extend(hidden);
+            cards.extend(more);
+        }
+        let (ok, _changed) = self.check_pins(&url, cards).await?;
         let mut out = Vec::new();
         for env in items {
             let sealed = env.enc == vfm_share::Enc::Sealed;
@@ -709,6 +794,8 @@ impl ShareState {
                 continue;
             };
             match env.open(user, &id, &pk) {
+                // A friend's hidden item sealed for others, not you: not yours to see.
+                Err(vfm_share::OpenError::NotForYou) if env.hidden() && env.owner != user => {}
                 Ok(bytes) => match serde_json::from_slice::<Value>(&bytes) {
                     Ok(p) => out.push(base(Some(p), None, fp)),
                     Err(_) => out.push(base(None, Some("not valid data".into()), fp)),
@@ -925,11 +1012,11 @@ mod e2e {
         // Sealed: only Bob (on the server) gets a key; Carol isn't there yet.
         let secret = r#"{"marker":"SECRET-FRIEND-LIST-4711"}"#;
         let r =
-            rt(alice.publish(&url, a, "friends", secret, vec![b.into(), c.into()], true)).unwrap();
+            rt(alice.publish(&url, a, "friends", secret, vec![b.into(), c.into()], true, false, vec![])).unwrap();
         assert!(r.sealed);
         assert_eq!(r.recipients, 1);
         assert_eq!(r.not_on_server, vec![c.to_string()]);
-        let inbox = rt(bob.inbox(&url, b)).unwrap();
+        let inbox = rt(bob.inbox(&url, b, vec![])).unwrap();
         let item = inbox
             .iter()
             .find(|i| i.owner == a)
@@ -947,14 +1034,14 @@ mod e2e {
 
         // Carol joins: nothing for her until Alice shares again.
         rt(carol.register(&url, c, None)).unwrap();
-        assert!(rt(carol.inbox(&url, c))
+        assert!(rt(carol.inbox(&url, c, vec![]))
             .unwrap()
             .iter()
             .all(|i| i.owner != a));
         let r =
-            rt(alice.publish(&url, a, "friends", secret, vec![b.into(), c.into()], true)).unwrap();
+            rt(alice.publish(&url, a, "friends", secret, vec![b.into(), c.into()], true, false, vec![])).unwrap();
         assert_eq!(r.recipients, 2);
-        assert!(rt(carol.inbox(&url, c))
+        assert!(rt(carol.inbox(&url, c, vec![]))
             .unwrap()
             .iter()
             .any(|i| i.owner == a && i.payload.is_some()));
@@ -967,17 +1054,19 @@ mod e2e {
             r#"{"pairs":[]}"#,
             vec![a.into()],
             false,
+            false,
+            vec![],
         ))
         .unwrap();
         assert!(!r.sealed);
         let stored = std::fs::read_to_string(format!("{data}/items/{b}/activity.json")).unwrap();
         assert!(stored.contains(&vfm_share::b64_encode(br#"{"pairs":[]}"#)));
-        assert!(rt(alice.inbox(&url, a))
+        assert!(rt(alice.inbox(&url, a, vec![]))
             .unwrap()
             .iter()
             .any(|i| i.owner == b && !i.sealed && i.payload.is_some()));
         assert!(
-            rt(carol.inbox(&url, c))
+            rt(carol.inbox(&url, c, vec![]))
                 .unwrap()
                 .iter()
                 .all(|i| i.owner != b),
@@ -986,10 +1075,10 @@ mod e2e {
 
         // Server policies are enforced.
         admin(&url, &token, json!({ "encryption": "force-on" }));
-        let e = rt(alice.publish(&url, a, "activity", "{}", vec![b.into()], false)).unwrap_err();
+        let e = rt(alice.publish(&url, a, "activity", "{}", vec![b.into()], false, false, vec![])).unwrap_err();
         assert!(e.contains("force-on"), "{e}");
         admin(&url, &token, json!({ "encryption": "force-off" }));
-        let e = rt(alice.publish(&url, a, "activity", "{}", vec![b.into()], true)).unwrap_err();
+        let e = rt(alice.publish(&url, a, "activity", "{}", vec![b.into()], true, false, vec![])).unwrap_err();
         assert!(e.contains("force-off"), "{e}");
         admin(&url, &token, json!({ "encryption": "recommended" }));
 
@@ -1002,18 +1091,18 @@ mod e2e {
         assert!(adminapi::remove_user(&url, &token, b));
         rt(bob2.register(&url, b, None)).unwrap();
         let r =
-            rt(alice.publish(&url, a, "friends", secret, vec![b.into(), c.into()], true)).unwrap();
+            rt(alice.publish(&url, a, "friends", secret, vec![b.into(), c.into()], true, false, vec![])).unwrap();
         assert_eq!(r.key_changed, vec![b.to_string()]);
         assert_eq!(r.recipients, 1);
-        assert!(rt(bob2.inbox(&url, b))
+        assert!(rt(bob2.inbox(&url, b, vec![]))
             .unwrap()
             .iter()
             .all(|i| i.owner != a || i.payload.is_none()));
         rt(alice.trust_key(b)).unwrap();
         let r =
-            rt(alice.publish(&url, a, "friends", secret, vec![b.into(), c.into()], true)).unwrap();
+            rt(alice.publish(&url, a, "friends", secret, vec![b.into(), c.into()], true, false, vec![])).unwrap();
         assert_eq!(r.recipients, 2);
-        assert!(rt(bob2.inbox(&url, b))
+        assert!(rt(bob2.inbox(&url, b, vec![]))
             .unwrap()
             .iter()
             .any(|i| i.owner == a && i.payload.is_some()));
@@ -1021,7 +1110,7 @@ mod e2e {
         // Copying the key to a second device works for reading.
         let alice_phone = device("alice-phone");
         rt(alice_phone.import_key(a, &rt(alice.export_key(a)).unwrap())).unwrap();
-        assert!(rt(alice_phone.inbox(&url, a))
+        assert!(rt(alice_phone.inbox(&url, a, vec![]))
             .unwrap()
             .iter()
             .any(|i| i.owner == a && i.payload.is_some()));
@@ -1034,9 +1123,30 @@ mod e2e {
         let e = rt(alice.logger_pair(&url, a, "000000", "authcookie_fake", None)).unwrap_err();
         assert!(e.contains("pairing code"), "{e}");
 
+        // Nothing changed: the inbox comes back from the cache (304), same as before.
+        let before = rt(bob2.inbox(&url, b, vec![])).unwrap().len();
+        assert_eq!(rt(bob2.inbox(&url, b, vec![])).unwrap().len(), before);
+
+        // Hidden recipients: the stored item names nobody but the owner, the
+        // lookup is wider than the audience, and only Bob can read it.
+        let hidden = r#"{"marker":"HIDDEN-FRIEND-LIST-0815"}"#;
+        let r = rt(alice.publish(&url, a, "friends", hidden, vec![b.into()], true, true, vec![b.into(), c.into()])).unwrap();
+        assert!(r.sealed);
+        assert_eq!(r.recipients, 1);
+        let stored = std::fs::read_to_string(format!("{data}/items/{a}/friends.json")).unwrap();
+        assert!(!stored.contains(b) && !stored.contains(c) && !stored.contains("HIDDEN-FRIEND"));
+        let got = rt(bob2.inbox(&url, b, vec![a.into()])).unwrap();
+        assert!(got.iter().any(|i| i.owner == a && i.kind == "friends" && i.payload.as_ref().map(|p| p["marker"] == "HIDDEN-FRIEND-LIST-0815").unwrap_or(false)));
+        // Fetched again: served from the cache, still there.
+        assert!(rt(bob2.inbox(&url, b, vec![a.into()])).unwrap().iter().any(|i| i.owner == a && i.kind == "friends"));
+        // Carol asks for it too: she gets nothing (and no error) for it.
+        assert!(rt(carol.inbox(&url, c, vec![a.into()])).unwrap().iter().all(|i| !(i.owner == a && i.kind == "friends")));
+        // Without asking by owner it isn't in Bob's inbox at all.
+        assert!(rt(bob2.inbox(&url, b, vec![])).unwrap().iter().all(|i| !(i.owner == a && i.kind == "friends")));
+
         // Leaving removes everything.
         rt(alice.unpublish(&url, a, "friends")).unwrap();
-        assert!(rt(carol.inbox(&url, c))
+        assert!(rt(carol.inbox(&url, c, vec![]))
             .unwrap()
             .iter()
             .all(|i| i.owner != a));

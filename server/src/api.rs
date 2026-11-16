@@ -111,6 +111,7 @@ impl App {
             kinds: KINDS.iter().map(|k| k.to_string()).collect(),
             logger: LoggerInfo { enabled: cfg.logger.enabled, paired: self.logger.owner().is_some(), owner: None },
             motd: cfg.server.motd.clone(),
+            features: vec!["hidden-recipients".into()],
         }
     }
 }
@@ -214,6 +215,7 @@ pub fn router(app: Arc<App>) -> Router {
         .route("/v1/users", get(users))
         .route("/v1/items/{kind}", put(put_item).delete(delete_item))
         .route("/v1/inbox", get(inbox))
+        .route("/v1/hidden", post(hidden))
         .route("/v1/logger/pair", post(logger_pair).delete(logger_unpair))
         .route("/v1/logger/status", get(logger_status))
         .route("/v1/logger/stats", get(logger_stats))
@@ -436,7 +438,7 @@ async fn put_item(
     }
     let sealed = env.enc == Enc::Sealed;
     // Your own devices' data: only ever encrypted, and only for you.
-    if kind == vfm_share::KIND_SELF && (!sealed || env.recipients.iter().any(|r| r != &user)) {
+    if kind == vfm_share::KIND_SELF && (!sealed || env.hidden() || env.recipients.iter().any(|r| r != &user)) {
         return Err(err(StatusCode::BAD_REQUEST, "your devices' data must be encrypted and only for you"));
     }
     if !cfg.access.encryption.allows(sealed) {
@@ -525,6 +527,50 @@ async fn inbox(State(app): State<Arc<App>>, headers: HeaderMap, method: Method, 
     Ok((etag, Json(json!({ "items": items, "identities": identities, "now": now() }))).into_response())
 }
 
+#[derive(Deserialize)]
+struct HiddenBody {
+    /// Whose hidden items you want (your friends). Left out: only which hidden
+    /// items exist, so the app can pick its friends without naming all of them.
+    #[serde(default)]
+    owners: Option<Vec<String>>,
+    /// What you have already: "owner|kind" -> created. Those aren't sent again.
+    #[serde(default)]
+    have: HashMap<String, i64>,
+}
+
+/// Hidden-recipient items (version 2) of the owners you name. They say nobody's
+/// name, so the server hands them to anyone registered who asks; only the
+/// people they were sealed for can open them. Only version 2 items come out
+/// here: items addressed by name stay with their recipients.
+async fn hidden(State(app): State<Arc<App>>, headers: HeaderMap, method: Method, uri: Uri, body: Bytes) -> ApiResult {
+    authed(&app, &headers, &method, &uri, &body)?;
+    let b: HiddenBody = serde_json::from_slice(&body).map_err(|e| err(StatusCode::BAD_REQUEST, e.to_string()))?;
+    let store = app.store.lock().unwrap();
+    let mut current = Vec::new();
+    let mut items = Vec::new();
+    let mut identities = BTreeMap::new();
+    let Some(owners) = b.owners else {
+        for m in store.hidden_all() {
+            current.push(json!({ "owner": m.owner, "kind": m.kind, "created": m.created }));
+        }
+        return Ok(Json(json!({ "items": items, "current": current, "identities": identities })).into_response());
+    };
+    let owners: Vec<String> = owners.into_iter().filter(|s| valid_user_id(s)).take(MAX_RECIPIENTS).collect();
+    for m in store.hidden_of(&owners) {
+        current.push(json!({ "owner": m.owner, "kind": m.kind, "created": m.created }));
+        if let Some(u) = store.users.users.get(&m.owner) {
+            identities.insert(m.owner.clone(), u.identity.clone());
+        }
+        if b.have.get(&format!("{}|{}", m.owner, m.kind)) == Some(&m.created) {
+            continue;
+        }
+        if let Some(env) = store.read_item(&m.owner, &m.kind).filter(|e| e.hidden()) {
+            items.push(env);
+        }
+    }
+    Ok(Json(json!({ "items": items, "current": current, "identities": identities })).into_response())
+}
+
 // ---------- logger ----------
 
 #[derive(Deserialize)]
@@ -598,7 +644,7 @@ mod tests {
     use crate::store::ItemMeta;
 
     fn meta(owner: &str, created: i64) -> ItemMeta {
-        ItemMeta { owner: owner.into(), kind: "friends".into(), created, sealed: true, recipients: vec![], bytes: 10 }
+        ItemMeta { owner: owner.into(), kind: "friends".into(), created, sealed: true, recipients: vec![], bytes: 10, hidden: false }
     }
 
     #[test]

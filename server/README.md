@@ -25,6 +25,13 @@ stores only ciphertext. Even its owner, with the files on disk, can't read it.**
 see who uploads, the list of people allowed to fetch each item (it needs that to enforce
 access), sizes and times.
 
+With **Hide who I share with** (per server in the app, needs encryption), an upload doesn't
+list its readers either: it's a version 2 item with anonymous key slots, padded with random
+ones to a multiple of 8, and addressed only to its owner. Friends' apps ask which hidden items
+exist (`POST /v1/hidden` with `{}`), pick their friends' ones themselves, fetch those
+(`{"owners": [...], "have": {...}}`) and find out by trying the slots whether one is for them.
+The server then still sees whose items each app downloads, but not whom each person chose.
+
 Everything is signed. A server can't change what someone shared or make up uploads in
 their name, and requests can't be replayed. The app pins every friend's key the first time
 it sees it. If a server later hands out a different key (a reinstall, or a server trying
@@ -264,5 +271,6 @@ For other clients:
 | `GET /v1/users?ids=` | public keys of registered people |
 | `PUT/DELETE /v1/items/{friends\|activity}` | your uploads |
 | `GET /v1/inbox` | items addressed to you, with their owners' keys. Has an `ETag`; send it back as `If-None-Match` and an unchanged inbox answers `304 Not Modified` with no body |
+| `POST /v1/hidden` | hidden-recipient items: `{}` lists which exist (owner, kind, created); `{"owners": [...], "have": {"owner\|kind": created}}` returns those owners' items you don't have yet, with their keys. Servers that have it list `"hidden-recipients"` in `features` of `/v1/info` |
 | `GET/DELETE /v1/me` | your account |
 | `POST/DELETE /v1/logger/pair`, `GET /v1/logger/status`, `GET /v1/logger/stats` | logger (owner only; stats come sealed and signed by the server) |

@@ -122,3 +122,33 @@ fn user_ids() {
     assert!(!valid_user_id("usr_"));
     assert!(!valid_user_id("grp_c1644b5b"));
 }
+
+#[test]
+fn hidden_recipients_name_nobody() {
+    let alice = Identity::generate();
+    let bob = Identity::generate();
+    let carol = Identity::generate();
+    let dave = Identity::generate();
+    let env = Envelope::sealed_hidden(&alice, "usr_a", "friends", 10, b"secret", &[rec(&bob, "usr_b"), rec(&carol, "usr_c"), rec(&alice, "usr_a")]);
+    assert!(env.hidden() && env.well_formed());
+    assert_eq!(env.recipients, vec!["usr_a".to_string()]);
+    assert_eq!(env.keys.len(), 8, "padded to a multiple of 8");
+    let text = serde_json::to_string(&env).unwrap();
+    assert!(!text.contains("usr_b") && !text.contains("usr_c"));
+    for (who, id) in [("usr_b", &bob), ("usr_c", &carol), ("usr_a", &alice)] {
+        assert_eq!(env.open(who, id, &alice.sign_pk()).unwrap(), b"secret");
+    }
+    assert_eq!(env.open("usr_d", &dave, &alice.sign_pk()), Err(OpenError::NotForYou));
+    // Changing a slot or the recipients breaks the signature / shape.
+    let mut bad = env.clone();
+    bad.recipients = vec!["usr_b".into()];
+    assert!(!bad.well_formed());
+    let mut bad = env.clone();
+    let k = bad.keys.keys().next().unwrap().clone();
+    bad.keys.insert(k, vfm_share::b64_encode(&[0u8; 104]));
+    assert!(bad.well_formed());
+    assert_eq!(bad.open("usr_b", &bob, &alice.sign_pk()), Err(OpenError::BadSignature));
+    // Nine recipients: sixteen slots.
+    let many: Vec<_> = (0..9).map(|i| rec(&Identity::generate(), &format!("usr_{i}"))).collect();
+    assert_eq!(Envelope::sealed_hidden(&alice, "usr_a", "friends", 10, b"x", &many).keys.len(), 16);
+}

@@ -100,6 +100,8 @@ pub struct ItemMeta {
     pub sealed: bool,
     pub recipients: Vec<String>,
     pub bytes: usize,
+    /// Version 2: names no recipients; friends ask for it by owner.
+    pub hidden: bool,
 }
 
 pub struct Store {
@@ -253,6 +255,17 @@ impl Store {
         (self.users.users.len(), self.items.len(), sealed)
     }
 
+    /// All hidden (version 2) items (to say which exist, not to send them).
+    pub fn hidden_all(&self) -> Vec<&ItemMeta> {
+        self.items.values().filter(|m| m.hidden && m.kind != vfm_share::KIND_SELF).collect()
+    }
+
+    /// Hidden (version 2) items of these owners, newest version of each.
+    pub fn hidden_of(&self, owners: &[String]) -> Vec<&ItemMeta> {
+        let want: HashSet<&String> = owners.iter().collect();
+        self.items.values().filter(|m| m.hidden && m.kind != vfm_share::KIND_SELF && want.contains(&m.owner)).collect()
+    }
+
     pub fn known_users(&self, ids: &[String]) -> Vec<PublicIdentity> {
         let want: HashSet<&String> = ids.iter().collect();
         self.users.users.iter().filter(|(k, _)| want.contains(k)).map(|(_, u)| u.identity.clone()).collect()
@@ -289,6 +302,7 @@ fn meta(env: &Envelope) -> ItemMeta {
         sealed: env.enc == vfm_share::Enc::Sealed,
         recipients: env.recipients.clone(),
         bytes: env.payload.len(),
+        hidden: env.hidden(),
     }
 }
 
@@ -312,6 +326,28 @@ mod tests {
         assert!(store.take_invite(&format!(" {code} ")));
         assert!(!store.take_invite(&code));
         assert!(!store.take_invite("NOPE"));
+        let _ = std::fs::remove_dir_all(d);
+    }
+
+    #[test]
+    fn only_hidden_items_go_out_by_owner() {
+        let d = tmp();
+        let mut s = Store::open(&d).unwrap();
+        let alice = vfm_share::Identity::generate();
+        let bob = vfm_share::Identity::generate();
+        let r = vfm_share::Recipient { user_id: "usr_b".into(), box_pk: bob.box_pk() };
+        let named = Envelope::sealed(&alice, "usr_a", "activity", 1, b"x", std::slice::from_ref(&r));
+        let hidden = Envelope::sealed_hidden(&alice, "usr_a", "friends", 2, b"y", &[r]);
+        s.put_item(&named).unwrap();
+        s.put_item(&hidden).unwrap();
+        let out = s.hidden_of(&["usr_a".into()]);
+        assert_eq!(out.len(), 1);
+        assert_eq!(out[0].kind, "friends");
+        assert!(s.hidden_of(&["usr_x".into()]).is_empty());
+        assert_eq!(s.hidden_all().len(), 1);
+        // The hidden one names nobody, so it's in nobody's inbox but the owner's.
+        assert_eq!(s.inbox("usr_b", 0).len(), 1);
+        assert_eq!(s.inbox("usr_a", 0).len(), 2);
         let _ = std::fs::remove_dir_all(d);
     }
 

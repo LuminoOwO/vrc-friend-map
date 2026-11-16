@@ -552,6 +552,13 @@ function ServerCard({ server: s }: { server: ShareServer }) {
                 onChange={(v) => set({ audience: v.who, circleIds: v.circleIds, audiencePicked: v.picked, audienceAutoAdd: v.autoAdd })}
               />
               <EncryptionSwitch server={s} />
+              {s.info?.hiddenRecipients && (
+                <label className="check">
+                  <input type="checkbox" checked={!!s.hideAudience} disabled={!serverSwitch(s).on} onChange={(e) => set({ hideAudience: e.target.checked })} />
+                  Hide who I share with from this server
+                  <Why text="What you upload then doesn't say who it's for: the server only sees that you shared something, not with whom, and your friends' apps find out themselves whether it's for them. The server can still see whose items each app downloads. Needs encryption. Friends need a new enough app (a version from after 0.11.0) to get it; on older ones it disappears until they update." />
+                </label>
+              )}
               {serverSwitch(s).warn && s.ackUnencrypted && (
                 <p className="small muted">
                   You chose not to be asked again.{" "}

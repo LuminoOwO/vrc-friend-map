@@ -77,4 +77,7 @@ pub struct ServerInfo {
     /// Free text from the owner ("Lumi's Pi – friends only").
     #[serde(default)]
     pub motd: String,
+    /// What this server can do beyond protocol 1: "hidden-recipients" (version 2 items).
+    #[serde(default)]
+    pub features: Vec<String>,
 }

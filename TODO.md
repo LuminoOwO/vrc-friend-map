@@ -212,7 +212,7 @@ can be designed around everything. Nothing here is started.
   (server setting whether it may pass them along; never stored there).
 - [x] **Settings sync, finer:** exists since 0.11 (*Also sync settings*); add choosing which
   groups of settings sync, and per-device overrides.
-- [x] **Harder for server owners to snoop:** (Switch and safety code done; hiding who shares with whom still open.) a "never send anything unencrypted" switch in the
+- [x] **Harder for server owners to snoop:** a "never send anything unencrypted" switch in the
   app; a short code per friend to compare once (key verification) and a loud warning when a
   friend's key changes; hide more of who shares with whom.
 

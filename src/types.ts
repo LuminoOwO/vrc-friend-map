@@ -407,6 +407,8 @@ export interface ServerInfoLite {
   loggerEnabled: boolean;
   loggerPaired: boolean;
   maxItemBytes: number;
+  /** The server stores items that don't say who they're for. */
+  hiddenRecipients?: boolean;
 }
 
 export interface ShareServer {
@@ -441,6 +443,8 @@ export interface ShareServer {
   shareTimezone: boolean;
   /** Use this server's shared cache of public VRChat info (worlds, groups, avatars). */
   useCache?: boolean;
+  /** Encrypted uploads don't say who they're for (servers that can; friends need a new app). */
+  hideAudience?: boolean;
   /** Sync your circles and notes with your other devices through this server (encrypted). */
   syncMine: boolean;
   /** Share your notes about people (adult vouches, "keep your distance"). */

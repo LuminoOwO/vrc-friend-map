@@ -31,8 +31,10 @@ pub struct Envelope {
     pub created: i64,
     pub enc: Enc,
     /// Who may fetch it. Servers only hand an item to these users.
+    /// Version 2 (hidden recipients): only the owner; friends fetch it by owner.
     pub recipients: Vec<String>,
-    /// Sealed only: recipient -> wrapped content key.
+    /// Sealed only: recipient -> wrapped content key. Version 2: anonymous
+    /// slots ("00", "01"…) in random order, padded to a multiple of 8.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub keys: BTreeMap<String, String>,
     /// Sealed only: payload nonce.
@@ -83,6 +85,20 @@ fn kek(shared: &[u8; 32], epk: &[u8; 32], rpk: &[u8; 32], label: &[u8]) -> [u8; 
     hk.expand(label, &mut out).expect("32 bytes is a valid HKDF length");
     out
 }
+
+fn wrap_ad(owner: &str, kind: &str, created: i64, me: &str) -> Vec<u8> {
+    transcript("vfm1-wrap", &[owner.as_bytes(), kind.as_bytes(), created.to_string().as_bytes(), me.as_bytes()])
+}
+
+/// Version 2 slots name nobody, so the recipient isn't part of what's bound.
+fn hidden_wrap_ad(owner: &str, kind: &str, created: i64) -> Vec<u8> {
+    transcript("vfm2-wrap", &[owner.as_bytes(), kind.as_bytes(), created.to_string().as_bytes()])
+}
+
+/// Slots in a version 2 item come in multiples of this, so the count says little about the audience.
+pub const HIDDEN_SLOT_STEP: usize = 8;
+/// Length of one wrapped content key: epk(32) + nonce(24) + key(32) + tag(16).
+const SLOT_LEN: usize = 104;
 
 /// Anonymous sealed box: ephemeral X25519 -> HKDF -> XChaCha20-Poly1305.
 /// Output: epk(32) | nonce(24) | ciphertext.
@@ -179,6 +195,17 @@ impl Envelope {
 
     /// End-to-end sealed: only the listed recipients can read it.
     pub fn sealed(id: &Identity, owner: &str, kind: &str, created: i64, payload: &[u8], recipients: &[Recipient]) -> Self {
+        Self::seal(id, owner, kind, created, payload, recipients, false)
+    }
+
+    /// Sealed like `sealed`, but the item doesn't say who it's for (version 2):
+    /// anonymous key slots, padded with random ones, and only the owner as
+    /// recipient. Each reader tries the slots with its own key.
+    pub fn sealed_hidden(id: &Identity, owner: &str, kind: &str, created: i64, payload: &[u8], recipients: &[Recipient]) -> Self {
+        Self::seal(id, owner, kind, created, payload, recipients, true)
+    }
+
+    fn seal(id: &Identity, owner: &str, kind: &str, created: i64, payload: &[u8], recipients: &[Recipient], hidden: bool) -> Self {
         let mut ck = [0u8; 32];
         OsRng.fill_bytes(&mut ck);
         let mut nonce = [0u8; 24];
@@ -187,17 +214,36 @@ impl Envelope {
             .encrypt(XNonce::from_slice(&nonce), Payload { msg: payload, aad: &payload_ad(owner, kind, created) })
             .expect("encryption can't fail");
         let mut keys = BTreeMap::new();
-        for r in recipients {
-            let ad = transcript("vfm1-wrap", &[owner.as_bytes(), kind.as_bytes(), created.to_string().as_bytes(), r.user_id.as_bytes()]);
-            keys.insert(r.user_id.clone(), b64::enc(&seal_to(&r.box_pk, &ck, &ad, b"vfm1-wrap")));
-        }
+        let recipients_list = if hidden {
+            let ad = hidden_wrap_ad(owner, kind, created);
+            let mut slots: Vec<Vec<u8>> = recipients.iter().map(|r| seal_to(&r.box_pk, &ck, &ad, b"vfm2-wrap")).collect();
+            while slots.is_empty() || slots.len() % HIDDEN_SLOT_STEP != 0 {
+                let mut junk = vec![0u8; SLOT_LEN];
+                OsRng.fill_bytes(&mut junk);
+                slots.push(junk);
+            }
+            // Fisher-Yates, so a slot's place says nothing either.
+            for i in (1..slots.len()).rev() {
+                let j = (OsRng.next_u32() as usize) % (i + 1);
+                slots.swap(i, j);
+            }
+            for (i, slot) in slots.iter().enumerate() {
+                keys.insert(format!("{i:03}"), b64::enc(slot));
+            }
+            vec![owner.to_string()]
+        } else {
+            for r in recipients {
+                keys.insert(r.user_id.clone(), b64::enc(&seal_to(&r.box_pk, &ck, &wrap_ad(owner, kind, created, &r.user_id), b"vfm1-wrap")));
+            }
+            keys.keys().cloned().collect()
+        };
         Envelope {
-            v: 1,
+            v: if hidden { 2 } else { 1 },
             owner: owner.into(),
             kind: kind.into(),
             created,
             enc: Enc::Sealed,
-            recipients: keys.keys().cloned().collect(),
+            recipients: recipients_list,
             keys,
             nonce: b64::enc(&nonce),
             payload: b64::enc(&ct),
@@ -212,8 +258,23 @@ impl Envelope {
         verify_sig(owner_sign_pk, &self.signed_bytes(), &sig)
     }
 
+    /// Version 2: sealed for anonymous slots, addressed only to the owner.
+    pub fn hidden(&self) -> bool {
+        self.v == 2
+    }
+
     /// Shape checks a server can do without keys.
     pub fn well_formed(&self) -> bool {
+        if self.v == 2 {
+            return self.enc == Enc::Sealed
+                && self.recipients.len() == 1
+                && self.recipients[0] == self.owner
+                && !self.keys.is_empty()
+                && self.keys.len() % HIDDEN_SLOT_STEP == 0
+                && self.keys.values().all(|k| b64::dec(k).map(|b| b.len() == SLOT_LEN).unwrap_or(false))
+                && b64::dec(&self.nonce).map(|n| n.len() == 24).unwrap_or(false)
+                && b64::dec(&self.payload).is_some();
+        }
         let sealed_ok = match self.enc {
             Enc::None => self.keys.is_empty() && self.nonce.is_empty(),
             Enc::Sealed => {
@@ -234,9 +295,18 @@ impl Envelope {
         match self.enc {
             Enc::None => b64::dec(&self.payload).ok_or(OpenError::Corrupt),
             Enc::Sealed => {
-                let wrapped = self.keys.get(me).ok_or(OpenError::NotForYou)?;
-                let ad = transcript("vfm1-wrap", &[self.owner.as_bytes(), self.kind.as_bytes(), self.created.to_string().as_bytes(), me.as_bytes()]);
-                let ck = open_from(&id.boxk, &b64::dec(wrapped).ok_or(OpenError::Corrupt)?, &ad, b"vfm1-wrap").ok_or(OpenError::Corrupt)?;
+                let ck = if self.hidden() {
+                    let ad = hidden_wrap_ad(&self.owner, &self.kind, self.created);
+                    self.keys
+                        .values()
+                        .filter_map(|k| b64::dec(k))
+                        .find_map(|blob| open_from(&id.boxk, &blob, &ad, b"vfm2-wrap"))
+                        .ok_or(OpenError::NotForYou)?
+                } else {
+                    let wrapped = self.keys.get(me).ok_or(OpenError::NotForYou)?;
+                    open_from(&id.boxk, &b64::dec(wrapped).ok_or(OpenError::Corrupt)?, &wrap_ad(&self.owner, &self.kind, self.created, me), b"vfm1-wrap")
+                        .ok_or(OpenError::Corrupt)?
+                };
                 let ck: [u8; 32] = ck.try_into().map_err(|_| OpenError::Corrupt)?;
                 let nonce = b64::dec(&self.nonce).ok_or(OpenError::Corrupt)?;
                 if nonce.len() != 24 {
