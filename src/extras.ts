@@ -10,6 +10,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { backend, isMobile, isTauri } from "./backend";
 import { presenceOf } from "./model";
+import { recordSteamTotal } from "./steamdays";
 import { getState, subscribeState } from "./store";
 import { fetchProfile } from "./sync";
 
@@ -186,6 +187,7 @@ async function bioTick() {
   if (mem().bioDay === day) return;
   playtime = await steamPlaytime().catch(() => null);
   if (!playtime) return;
+  recordSteamTotal(playtime.minutes);
   await fetchProfile(me.id).catch(() => {});
   const bio = getState().cache.details[me.id]?.bio ?? "";
   const next = bioWithLine(bio, x.template, Math.round(playtime.minutes / 60));
@@ -201,9 +203,15 @@ export function startExtras() {
   timers.push(setInterval(() => void oscTick(), 5_000));
   timers.push(setInterval(() => void bioTick(), 30 * 60_000));
   setTimeout(() => void bioTick(), 60_000);
-  void steamPlaytime()
-    .then((p) => (playtime = p))
-    .catch(() => {});
+  const steamTick = () =>
+    void steamPlaytime()
+      .then((p) => {
+        playtime = p;
+        if (p) recordSteamTotal(p.minutes);
+      })
+      .catch(() => {});
+  timers.push(setInterval(steamTick, 30 * 60_000));
+  steamTick();
   let lastFriends: unknown = null;
   let lastPresence: unknown = null;
   let t: ReturnType<typeof setTimeout> | undefined;

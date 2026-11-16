@@ -221,7 +221,7 @@ can be designed around everything. Nothing here is started.
 - [x] **OSC** (Chatbox done; avatar history, avatar toggles and AFK / muted still open.) (VRChat's official interface, PC and Quest over the network; only your own data):
   chatbox messages ("Lumi just came online", now playing, play time), a history of your own
   avatars, avatar toggles from the app, AFK / muted shown in the app.
-- [x] **Steam play time into your bio:** (Bio line done; play time per day in the timeline still open.) read VRChat's play time from Steam's files (or the web
+- [x] **Steam play time into your bio:** read VRChat's play time from Steam's files (or the web
   API with a key) and update a marked line in your VRChat bio once a day ("⏱ 2,431 h in
   VRChat"), leaving the rest alone, within 512 characters. Plus play time per day in the
   timeline.

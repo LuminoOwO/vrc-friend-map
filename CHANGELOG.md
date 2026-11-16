@@ -149,6 +149,9 @@ minor releases can change behavior.
   when the music stops.
 - **Steam hours in your bio**: once a day, one marked line ("⏱ 2,431 h in VRChat") from Steam's
   own files; the rest of your bio stays as it is, within 512 characters.
+- **Steam play time per day** in the Logbook's day view ("Steam counted 2 h 10 min this day"),
+  from the total the app notes once a day on this device. Days the app didn't run are counted
+  together ("since Nov 12").
 - **Encrypted backup** (Settings → Account & data): notes, circles, local data, settings and your own
   sounds in one password-protected file (in Downloads; on phones to the clipboard), restored
   from a file or the clipboard, with or without the settings. Age notes are never in it.

@@ -27,6 +27,7 @@ import {
 } from "../logbook";
 import { naiveToDate } from "../logs";
 import { shownName } from "../personal";
+import { loadSteamDays, steamDay } from "../steamdays";
 import { setState, showToast, useApp } from "../store";
 import { Icon } from "./Icon";
 
@@ -103,6 +104,7 @@ function DayView({ visits }: { visits: TimelineVisit[] }) {
   const people = new Map<string, string>();
   list.forEach((v) => v.players.forEach((p) => people.set(p.id, p.name)));
   const daysWithPlay = useMemo(() => new Set(visits.map((v) => dayKey(v.start))), [visits]);
+  const steam = useMemo(() => steamDay(loadSteamDays(), day), [day]);
   return (
     <>
       <div className="row day-nav">
@@ -135,6 +137,12 @@ function DayView({ visits }: { visits: TimelineVisit[] }) {
           </p>
         ) : (
           <p className="small muted">You didn't play this day.</p>
+        )}
+        {steam && steam.minutes > 0 && (
+          <p className="small muted" title="From Steam's own play time for VRChat (desktop and PC VR on this PC)">
+            Steam counted {fmtDuration(steam.minutes * 60)}
+            {steam.spans ? ` since ${naiveToDate(dayStart(steam.since)).toLocaleDateString([], { month: "short", day: "numeric" })}` : " this day"}.
+          </p>
         )}
         <label className="field">
           <span>Diary (only on this device)</span>
