@@ -8,6 +8,8 @@ import { setState, useApp } from "../store";
 import type { AgeRating, ShareNote } from "../types";
 import { Icon } from "./Icon";
 
+const READ_LABEL: Record<string, string> = { read: "read", login: "login needed", unreachable: "unreachable", skipped: "skipped" };
+
 const VERDICT: Record<string, string> = {
   adult: "Hints point to over 18",
   minor: "Hints point to under 18",
@@ -18,6 +20,8 @@ const VERDICT: Record<string, string> = {
 export function AgePanel({ id }: { id: string }) {
   const enabled = useApp((s) => s.settings.age.enabled);
   const readLinks = useApp((s) => s.settings.age.readLinks);
+  const linkKey = useApp((s) => `${s.settings.age.linkDepth}/${s.settings.age.maxPages}/${s.settings.age.socials}/${s.settings.age.fxTwitter}`);
+  const reads = useApp((s) => s.cache.linkReads?.[id]?.reads);
   const hintsEntry = useApp((s) => s.cache.ageHints?.[id]);
   const profileAt = useApp((s) => s.cache.details[id]?.profileFetchedAt);
   const bio = useApp((s) => s.cache.details[id]?.bio);
@@ -28,7 +32,7 @@ export function AgePanel({ id }: { id: string }) {
 
   useEffect(() => {
     if (enabled) void refreshHints(id);
-  }, [id, enabled, profileAt, bio, readLinks]);
+  }, [id, enabled, profileAt, bio, readLinks, linkKey]);
 
   if (!enabled) return null;
   const note = noteOf(id);
@@ -67,6 +71,26 @@ export function AgePanel({ id }: { id: string }) {
                 </ul>
               ) : (
                 <p className="small muted">Nothing in their bio, pronouns, status{readLinks ? ", links or linked pages" : " or links"} hints at their age.</p>
+              )}
+              {readLinks && reads && reads.length > 0 && (
+                <details className="link-reads">
+                  <summary className="small">
+                    Linked pages: {reads.filter((r) => r.status === "read").length} read
+                    {reads.some((r) => r.status === "login") && `, ${reads.filter((r) => r.status === "login").length} need a login`}
+                    {reads.some((r) => r.status === "unreachable") && `, ${reads.filter((r) => r.status === "unreachable").length} unreachable`}
+                    {reads.some((r) => r.status === "skipped") && `, ${reads.filter((r) => r.status === "skipped").length} skipped`}
+                  </summary>
+                  <ul>
+                    {reads.map((r) => (
+                      <li key={r.url} className={r.status}>
+                        <span className={`link-status ${r.status}`}>{READ_LABEL[r.status]}</span> <b>{r.site}</b>{" "}
+                        <span className="muted small selectable">{r.url.replace(/^https?:\/\/(www\.)?/, "")}</span>
+                        {r.depth > 0 && <span className="muted small"> (found on a linked page)</span>}
+                        {r.note && <span className="muted small"> – {r.note}</span>}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
               )}
               <p className="small muted">
                 Hints are guesses from what they wrote; VRChat's 18+ badge isn't counted (verified accounts get sold). Only you see them.

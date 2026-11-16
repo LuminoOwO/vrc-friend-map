@@ -273,7 +273,7 @@ export const defaultSettings = (): Settings => ({
   notify: defaultNotify(),
   closeAction: "ask",
   wheelFix: false,
-  age: { enabled: true, readLinks: false, warnRequests: true },
+  age: { enabled: true, readLinks: false, warnRequests: true, linkDepth: 1, maxPages: 10, socials: true, fxTwitter: false },
   updates: { check: true, skipped: "" },
   theme: "dark",
   catAccent: "mauve",
@@ -283,6 +283,7 @@ export const defaultSettings = (): Settings => ({
   perf: { fps: 60, unfocusedFps: 30, idleAfter: 0, idleFps: 30, screenHz: 0, vsync: true },
   lastVersion: "",
   ui: defaultUi(),
+  bios: { background: true, everySecs: 45 },
 });
 
 export const defaultFilters = (): Filters => ({
@@ -655,6 +656,10 @@ export function normalizeSettings(raw: Raw | null): Settings {
       enabled: typeof raw.age?.enabled === "boolean" ? raw.age.enabled : d.age.enabled,
       readLinks: typeof raw.age?.readLinks === "boolean" ? raw.age.readLinks : d.age.readLinks,
       warnRequests: typeof raw.age?.warnRequests === "boolean" ? raw.age.warnRequests : d.age.warnRequests,
+      linkDepth: Math.round(num(raw.age?.linkDepth, d.age.linkDepth, 0, 3)),
+      maxPages: Math.round(num(raw.age?.maxPages, d.age.maxPages, 1, 30)),
+      socials: typeof raw.age?.socials === "boolean" ? raw.age.socials : d.age.socials,
+      fxTwitter: typeof raw.age?.fxTwitter === "boolean" ? raw.age.fxTwitter : d.age.fxTwitter,
     },
     sounds: {
       ...snd,
@@ -704,6 +709,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
     },
     sharing: normalizeSharing(raw.sharing),
     lastVersion: typeof raw.lastVersion === "string" ? raw.lastVersion : "",
+    bios: shaped(raw.bios, d.bios, (b) => ({ ...b, everySecs: num(b.everySecs, 45, 10, 3600) })),
     ui: shaped(raw.ui, d.ui, (u) => ({
       ...u,
       textScale: num(u.textScale, 1, 0.8, 1.6),

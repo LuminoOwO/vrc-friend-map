@@ -157,6 +157,8 @@ export interface Cache {
   friends: Record<string, Friend>;
   presence: Record<string, Presence>;
   details: Record<string, UserDetail>;
+  /** Linked pages read for age hints and time zones (this device only). */
+  linkReads?: Record<string, LinkReadsEntry>;
   /** Age hints worked out on this device (never shared). */
   ageHints?: Record<string, { t: number; profileAt: number; hints: AgeHint[]; /** Rules version (src/age.ts RULES_VERSION). */ v?: number }>;
   mutuals: Record<string, MutualInfo>;
@@ -198,6 +200,20 @@ export interface AgeSettings {
   readLinks: boolean;
   /** Ask before sending or accepting a friend request when there are concerns. */
   warnRequests: boolean;
+  /** How far to follow links from link pages (0: only the bio's own links). */
+  linkDepth: number;
+  /** Most pages read per person. */
+  maxPages: number;
+  /** Read social network profiles (X, Bluesky, Instagram…) at all. */
+  socials: boolean;
+  /** X / Twitter through fxtwitter.com (the handle goes to them). */
+  fxTwitter: boolean;
+}
+
+/** What reading someone's linked pages gave (cache; texts are short). */
+export interface LinkReadsEntry {
+  t: number;
+  reads: import("./linkreaders").LinkRead[];
 }
 
 export interface LocalData {
@@ -446,6 +462,14 @@ export interface Settings {
   /** App version that last ran with this data (for upgrade/downgrade notes). */
   lastVersion: string;
   ui: UiSettings;
+  bios: BioSettings;
+}
+
+/** Reading everyone's profile slowly in the background (src/biocache.ts). */
+export interface BioSettings {
+  background: boolean;
+  /** Seconds between two people (10 or more). */
+  everySecs: number;
 }
 
 export interface UiSettings {

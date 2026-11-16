@@ -30,7 +30,35 @@ import { openServers } from "./ServersModal";
 import { serverName } from "../share";
 import { unavailable } from "../platform";
 import { haptic } from "../haptics";
+import { bioProgress } from "../biocache";
 import type { UiSettings } from "../types";
+
+function BioSection() {
+  const b = useApp((s) => s.settings.bios);
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tick((n) => n + 1), 5000);
+    return () => clearInterval(t);
+  }, []);
+  const p = bioProgress();
+  return (
+    <>
+      <h3>Reading bios in the background</h3>
+      <label className="check">
+        <input type="checkbox" checked={b.background} onChange={(e) => updateSettings({ bios: { ...b, background: e.target.checked } })} />
+        Slowly read everyone's profile (bio, links, languages) in the background
+      </label>
+      <label className="field narrow">
+        <span>One person every {b.everySecs} s</span>
+        <input type="range" min={10} max={300} step={5} value={b.everySecs} disabled={!b.background} onChange={(e) => updateSettings({ bios: { ...b, everySecs: Number(e.target.value) } })} />
+      </label>
+      <p className="small muted">
+        So profiles open with their bio right away, and age hints and time zone guesses are ready. Friends first (online ones before offline),
+        then people you've met. Waits while a sync runs. {p.total > 0 && <b>{p.done} of {p.total} up to date.</b>}
+      </p>
+    </>
+  );
+}
 
 function InterfaceSection() {
   const ui = useApp((s) => s.settings.ui);
@@ -421,6 +449,9 @@ export function SettingsModal() {
 
         <Sec id="age" cat="people" title="Age hints" keys="age minor adult 18 underage kids safety notes vouch distance friend request warning">
           <AgeSection />
+        </Sec>
+        <Sec id="bios" cat="people" title="Reading bios in the background" keys="bio profile background cache preload slow">
+          <BioSection />
         </Sec>
         <Sec id="people" cat="people" title="People who aren't friends" keys="strangers blocked profiles cache">
           <PeopleSection />

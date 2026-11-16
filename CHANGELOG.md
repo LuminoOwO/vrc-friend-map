@@ -5,7 +5,31 @@ minor releases can change behavior.
 
 ## Unreleased
 
+### Added
+- **Sync log** (click the sync status, or the ⓘ next to it): every sync step with time, result and
+  the exact error, like "server.example: 404 Not Found" or "VRChat: 429 Too Many Requests";
+  copyable. A sync cut off because the app went to the background (phones) shows as
+  *interrupted*, not failed, and runs again once the app is back.
+- **Linked pages, many more sites** (Settings → People → Age hints → *Also read the pages they
+  link to*): each of about 50 sites is read the most direct public way: Bluesky, Mastodon and
+  other fediverse servers, GitHub, Reddit, Steam, Pixiv and ArtStation through their public
+  APIs; Threads, Tumblr, Telegram, YouTube, Twitch, TikTok, link pages (Linktree, Carrd, Beacons,
+  bio.link, guns.lol, Ko-fi, Throne, VGen…) and art sites (Fur Affinity, DeviantArt, Toyhouse…)
+  from their pages. X / Twitter through FxTwitter, behind its own switch (the handle goes to
+  fxtwitter.com). *Read deeper* follows profile links found on link pages (none, 1–3 steps), with
+  a page limit per person, and social networks can be left out entirely. The profile shows each
+  link as read / login needed / unreachable / skipped.
+- **Bios in the background** (Settings → People, on): reads everyone's profile slowly (one
+  person every 45 s, adjustable), friends first, so bios, age hints and time zone guesses are
+  there when you open a profile.
+- **Settings → Appearance → Interface**: *Hide features not available on this platform* (on;
+  off shows them greyed out with the reason), *haptics* on phones (off), text size, fewer
+  animations, color-blind friendly status colors.
+
 ### Changed
+- Map: panning stops before everyone leaves the screen.
+- Phones: the filter menu stays inside the screen; the settings button sits in the top right
+  and is a real cogwheel; checkboxes have room between them.
 - **Age hints read a number alone at the start of a line** as a likely age: a bio of just "18",
   or "19" / "21 | he/him" as its first line, now counts (as a weaker hint than "I'm 19", so the
   profile says "probably over 18"; numbers under 18 count the same way). A link to an

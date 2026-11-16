@@ -12,7 +12,8 @@
 //   A missing vouch means nothing.
 import { backend, isTauri } from "./backend";
 import { getState, updateCache, updateLocal } from "./store";
-import type { AgeHint, AgeNote, AgeRating, ShareNote } from "./types";
+import type { AgeHint, AgeNote, AgeRating, LinkReadsEntry, ShareNote } from "./types";
+import { readLinks, siteName, type LinkRead, type ReadOptions } from "./linkreaders";
 
 export const RATINGS: { value: AgeRating; label: string }[] = [
   { value: "sure-adult", label: "I'm sure they're an adult" },
@@ -154,24 +155,6 @@ export function summarize(hints: AgeHint[]): { adult: number; minor: number; ver
   return { adult, minor, verdict, strong };
 }
 
-/** Visible text of a fetched page (no scripts run: DOMParser only builds the tree). */
-function pageText(html: string): string {
-  try {
-    const doc = new DOMParser().parseFromString(html, "text/html");
-    doc.querySelectorAll("script:not([type='application/json']):not(#__NEXT_DATA__), style, noscript, svg").forEach((n) => n.remove());
-    const meta = [...doc.querySelectorAll("meta[name='description'], meta[property='og:description'], meta[property='og:title']")]
-      .map((m) => m.getAttribute("content") ?? "")
-      .join(" \n ");
-    // Link pages (Linktree and the like) keep their text in JSON.
-    const json = [...doc.querySelectorAll("script[type='application/json'], #__NEXT_DATA__")]
-      .map((s) => (s.textContent ?? "").match(/"(?:description|bio|title|name)"\s*:\s*"([^"]{1,300})"/g)?.join(" \n ") ?? "")
-      .join(" \n ");
-    return `${doc.title}\n${meta}\n${json}\n${doc.body?.innerText || doc.body?.textContent || ""}`.slice(0, 60_000);
-  } catch {
-    return html.slice(0, 60_000);
-  }
-}
-
 function safeDecode(s: string): string {
   try {
     return decodeURIComponent(s);
@@ -181,7 +164,30 @@ function safeDecode(s: string): string {
 }
 
 /** Bump when the rules change, so cached hints are worked out again. */
-const RULES_VERSION = 2;
+const RULES_VERSION = 3;
+
+const linkReading = new Map<string, Promise<LinkRead[]>>();
+
+/** Read someone's linked pages (cached for a week, or until their links or
+ *  the reading settings change). Also used by the time zone guesses. */
+export async function readPersonLinks(id: string, links: string[], force = false): Promise<LinkRead[]> {
+  const s = getState();
+  const a = s.settings.age;
+  const opts: ReadOptions = { depth: a.linkDepth, maxPages: a.maxPages, socials: a.socials, fxTwitter: a.fxTwitter };
+  const key = JSON.stringify([links, opts]);
+  const have = s.cache.linkReads?.[id] as (LinkReadsEntry & { key?: string }) | undefined;
+  if (!force && have && have.key === key && Date.now() - have.t < 7 * DAY) return have.reads;
+  const running = linkReading.get(id);
+  if (running) return running;
+  const p = readLinks(links, (u) => backend.fetchLinkText(u), opts)
+    .then((reads) => {
+      updateCache((c) => ({ ...c, linkReads: { ...(c.linkReads ?? {}), [id]: { t: Date.now(), reads, key } as LinkReadsEntry } }));
+      return reads;
+    })
+    .finally(() => linkReading.delete(id));
+  linkReading.set(id, p);
+  return p;
+}
 
 const reading = new Set<string>();
 
@@ -201,20 +207,20 @@ export async function refreshHints(id: string, force = false) {
     hints.push(...hintsIn(d?.bio ?? "", "bio"));
     hints.push(...hintsIn(d?.pronouns ?? "", "pronouns"));
     hints.push(...hintsIn(f?.statusDescription ?? "", "status"));
-    const links = (d?.bioLinks ?? []).slice(0, 5);
+    const links = (d?.bioLinks ?? []).slice(0, 10);
     for (const l of links) {
       hints.push(...hintsIn(safeDecode(l), "link"));
       const site = linkHint(l);
       if (site) hints.push(site);
     }
-    if (settings.readLinks && isTauri && !s.demo) {
-      for (const l of links) {
-        try {
-          const html = await backend.fetchLinkText(l);
-          hints.push(...hintsIn(pageText(html), `linked page ${new URL(l).hostname}`));
-        } catch {
-          // unreachable or refused (private address, not text): no hints from it
+    if (settings.readLinks && isTauri && !s.demo && links.length) {
+      const reads = await readPersonLinks(id, links);
+      for (const r of reads) {
+        if (r.from !== "bio") {
+          const site = linkHint(r.url);
+          if (site) hints.push({ ...site, source: `link on ${siteName(r.from)}` });
         }
+        if (r.status === "read") hints.push(...hintsIn(r.text, r.site));
       }
     }
     updateCache((c) => ({ ...c, ageHints: { ...(c.ageHints ?? {}), [id]: { t: Date.now(), profileAt: d?.profileFetchedAt ?? 0, hints, v: RULES_VERSION } } }));

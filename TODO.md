@@ -8,21 +8,21 @@ can be designed around everything. Nothing here is started.
 
 ## Round 1: fixes and basics
 
-- [ ] **Why a sync failed.** Tapping the sync status opens a sync log: every step (VRChat,
+- [x] **Why a sync failed.** Tapping the sync status opens a sync log: every step (VRChat,
   each server, device sync) with time, result and the exact error ("server.example: 404 Not
   Found", "VRChat: 429"), copyable. A sync cut off by switching apps counts as "interrupted",
   retries quietly and isn't shown as failed.
-- [ ] **Filter menu goes off-screen on phones.** Keep the popover inside the screen.
-- [ ] **Don't get lost in the void.** The map only scrolls as far as the people on it, plus a
+- [x] **Filter menu goes off-screen on phones.** Keep the popover inside the screen.
+- [x] **Don't get lost in the void.** The map only scrolls as far as the people on it, plus a
   margin.
-- [ ] **Checkboxes stuck together on Android** (seen in Settings → People). Spacing.
-- [ ] **Settings icon** looks like a sun: make it a real cogwheel, and put it back in the top
+- [x] **Checkboxes stuck together on Android** (seen in Settings → People). Spacing.
+- [x] **Settings icon** looks like a sun: make it a real cogwheel, and put it back in the top
   right on Android.
-- [ ] **Hide features not available on this platform** (on by default): Settings hides what
+- [x] **Hide features not available on this platform** (on by default): Settings hides what
   can't work here; off shows them greyed out with why.
-- [ ] **Haptics on phones** (off by default): short taps on buttons, toggles, long-press.
+- [x] **Haptics on phones** (off by default): short taps on buttons, toggles, long-press.
 
-- [ ] **Read many more linked profiles for age hints** (with *read linked pages* on). Per site
+- [x] **Read many more linked profiles for age hints** (with *read linked pages* on). Per site
   the most direct public way, each tested before it's turned on:
   - Bluesky (public API), X / Twitter through FxTwitter (its own opt-in switch: the handle goes
     to fxtwitter.com), Mastodon / fediverse (public profile JSON), Misskey, Threads, Tumblr,
