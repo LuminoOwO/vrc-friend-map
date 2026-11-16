@@ -23,6 +23,9 @@ pub struct ShareState {
     lock: Mutex<()>,
     /// Your VRChat display name, sent along so the server owner's user list shows it.
     pub name: std::sync::Mutex<String>,
+    /// Last inbox per server and account, with the server's tag for it: the next
+    /// fetch asks "changed since?" and gets a tiny "no" (304) most of the time.
+    inbox_cache: std::sync::Mutex<std::collections::HashMap<String, (String, Value)>>,
 }
 
 #[derive(Default, Serialize, Deserialize)]
@@ -133,6 +136,12 @@ pub struct InboxItem {
     pub error: Option<String>,
 }
 
+/// What `send_tagged` learned besides the body.
+struct Tagged {
+    tag: Option<String>,
+    not_modified: bool,
+}
+
 pub fn proof_for(fingerprint: &str) -> String {
     format!("vfm-key:{}", fingerprint.replace(' ', ""))
 }
@@ -150,6 +159,7 @@ impl ShareState {
             http,
             lock: Mutex::new(()),
             name: std::sync::Mutex::new(String::new()),
+            inbox_cache: Default::default(),
         }
     }
 
@@ -228,11 +238,31 @@ impl ShareState {
         body: Option<Vec<u8>>,
         signer: Option<(&Identity, &str)>,
     ) -> Result<Value, String> {
+        self.send_tagged(url, method, path, body, signer, None)
+            .await
+            .map(|(v, _)| v)
+    }
+
+    /// `send` with an ETag: given `if_none_match`, a "not modified" answer comes
+    /// back as `Ok((Value::Null, tag))` with `not_modified` meaning the caller
+    /// keeps what it has. Returns the server's ETag, if any.
+    async fn send_tagged(
+        &self,
+        url: &str,
+        method: reqwest::Method,
+        path: &str,
+        body: Option<Vec<u8>>,
+        signer: Option<(&Identity, &str)>,
+        if_none_match: Option<&str>,
+    ) -> Result<(Value, Tagged), String> {
         let full = format!("{url}{path}");
         let mut req = self
             .http
             .request(method.clone(), &full)
             .header("accept", "application/json");
+        if let Some(tag) = if_none_match {
+            req = req.header("if-none-match", tag);
+        }
         let body = body.unwrap_or_default();
         if let Some((id, user)) = signer {
             req = req.header(
@@ -264,6 +294,14 @@ impl ShareState {
             }
         })?;
         let status = res.status();
+        let tag = res
+            .headers()
+            .get("etag")
+            .and_then(|v| v.to_str().ok())
+            .map(str::to_string);
+        if status == reqwest::StatusCode::NOT_MODIFIED && if_none_match.is_some() {
+            return Ok((Value::Null, Tagged { tag, not_modified: true }));
+        }
         let v: Value = res.json().await.unwrap_or(Value::Null);
         if !status.is_success() {
             if v.get("banned").and_then(Value::as_bool) == Some(true) {
@@ -288,7 +326,7 @@ impl ShareState {
                 .unwrap_or_else(|| format!("server answered {status}"));
             return Err(msg);
         }
-        Ok(v)
+        Ok((v, Tagged { tag, not_modified: false }))
     }
 
     /// Small signed calls the UI makes directly: the shared cache, the logger's
@@ -615,15 +653,27 @@ impl ShareState {
     pub async fn inbox(&self, url: &str, user: &str) -> Result<Vec<InboxItem>, String> {
         let url = normalize_url(url)?;
         let id = self.identity(user).await?;
-        let v = self
-            .send(
+        let key = format!("{url}|{user}");
+        let cached = self.inbox_cache.lock().ok().and_then(|c| c.get(&key).cloned());
+        let (fresh, tagged) = self
+            .send_tagged(
                 &url,
                 reqwest::Method::GET,
                 "/v1/inbox",
                 None,
                 Some((&id, user)),
+                cached.as_ref().map(|(t, _)| t.as_str()),
             )
             .await?;
+        let v = match (tagged.not_modified, cached) {
+            (true, Some((_, v))) => v,
+            _ => {
+                if let (Some(tag), Ok(mut c)) = (tagged.tag, self.inbox_cache.lock()) {
+                    c.insert(key, (tag, fresh.clone()));
+                }
+                fresh
+            }
+        };
         let items: Vec<Envelope> =
             serde_json::from_value(v.get("items").cloned().unwrap_or(Value::Null))
                 .unwrap_or_default();

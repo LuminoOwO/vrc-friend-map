@@ -481,12 +481,40 @@ struct InboxQuery {
     since: i64,
 }
 
+/// ETag for an inbox: which items there are (with their versions) and the keys of
+/// who sent them. Same tag, nothing to send again.
+fn inbox_tag<'a>(parts: impl Iterator<Item = (&'a crate::store::ItemMeta, Vec<u8>)>) -> String {
+    use sha2::{Digest, Sha256};
+    let mut h = Sha256::new();
+    for (m, key) in parts {
+        h.update(format!("{}\0{}\0{}\0{}\n", m.owner, m.kind, m.created, m.bytes));
+        h.update(key);
+        h.update(b"\n");
+    }
+    format!("\"{}\"", &hex::encode(h.finalize())[..32])
+}
+
 async fn inbox(State(app): State<Arc<App>>, headers: HeaderMap, method: Method, uri: Uri, q: Query<InboxQuery>) -> ApiResult {
     let user = authed(&app, &headers, &method, &uri, b"")?;
     let store = app.store.lock().unwrap();
+    let metas = store.inbox(&user, q.since);
+    // "Nothing changed" without reading or sending the items again: the tag covers
+    // which items there are (and their versions) and the keys of who sent them.
+    let tag = inbox_tag(metas.iter().map(|m| {
+        let key = store.users.users.get(&m.owner).map(|u| serde_json::to_vec(&u.identity).unwrap_or_default());
+        (*m, key.unwrap_or_default())
+    }));
+    let etag = [(axum::http::header::ETAG, tag.clone())];
+    let matches = headers
+        .get(axum::http::header::IF_NONE_MATCH)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| v.split(',').any(|t| t.trim() == tag));
+    if matches {
+        return Ok((StatusCode::NOT_MODIFIED, etag).into_response());
+    }
     let mut items = Vec::new();
     let mut identities = BTreeMap::new();
-    for m in store.inbox(&user, q.since) {
+    for m in metas {
         if let Some(env) = store.read_item(&m.owner, &m.kind) {
             if let Some(u) = store.users.users.get(&m.owner) {
                 identities.insert(m.owner.clone(), u.identity.clone());
@@ -494,7 +522,7 @@ async fn inbox(State(app): State<Arc<App>>, headers: HeaderMap, method: Method, 
             items.push(env);
         }
     }
-    Ok(Json(json!({ "items": items, "identities": identities, "now": now() })).into_response())
+    Ok((etag, Json(json!({ "items": items, "identities": identities, "now": now() }))).into_response())
 }
 
 // ---------- logger ----------
@@ -562,4 +590,29 @@ async fn logger_stats(State(app): State<Arc<App>>, headers: HeaderMap, method: M
     let rec = store.users.users.get(&user).and_then(|u| u.identity.box_key()).ok_or_else(|| err(StatusCode::INTERNAL_SERVER_ERROR, "key missing"))?;
     let env = Envelope::sealed(&store.identity, "server", "logger", now(), &payload, &[vfm_share::Recipient { user_id: user.clone(), box_pk: rec }]);
     Ok(Json(env).into_response())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::inbox_tag;
+    use crate::store::ItemMeta;
+
+    fn meta(owner: &str, created: i64) -> ItemMeta {
+        ItemMeta { owner: owner.into(), kind: "friends".into(), created, sealed: true, recipients: vec![], bytes: 10 }
+    }
+
+    #[test]
+    fn inbox_tag_changes_only_with_the_inbox() {
+        let a = meta("usr_a", 1);
+        let b = meta("usr_b", 2);
+        let tag = |ms: &[(&ItemMeta, &[u8])]| inbox_tag(ms.iter().map(|(m, k)| (*m, k.to_vec())));
+        let base = tag(&[(&a, b"ka"), (&b, b"kb")]);
+        assert_eq!(base, tag(&[(&a, b"ka"), (&b, b"kb")]));
+        assert!(base.starts_with('"') && base.ends_with('"'));
+        // A newer version of an item, an item gone, or a sender's new key: new tag.
+        assert_ne!(base, tag(&[(&meta("usr_a", 3), b"ka"), (&b, b"kb")]));
+        assert_ne!(base, tag(&[(&a, b"ka")]));
+        assert_ne!(base, tag(&[(&a, b"ka2"), (&b, b"kb")]));
+        assert_ne!(tag(&[]), tag(&[(&a, b"")]));
+    }
 }

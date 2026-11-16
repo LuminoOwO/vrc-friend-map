@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { encryptionSwitch, maxPairs } from "../share";
+import { encryptionSwitch, maxPairs, uploadFingerprint } from "../share";
 import { normalizeSettings } from "../store";
 
 describe("encryption switch", () => {
@@ -100,5 +100,20 @@ describe("people", () => {
     expect(relationOf(cache, "usr_me")).toBe("me");
     expect(personOf(cache, "usr_me")?.displayName).toBe("Me");
     expect(personOf(cache, "usr_nobody")).toBeUndefined();
+  });
+});
+
+describe("uploadFingerprint", () => {
+  const body = (t: string, friends: string[]) => JSON.stringify({ format: 1, exportedAt: t, friends });
+  it("ignores the export time and the order of recipients", () => {
+    expect(uploadFingerprint(body("2026-01-01T00:00:00Z", ["a"]), ["usr_1", "usr_2"], true)).toBe(
+      uploadFingerprint(body("2026-11-16T09:00:00Z", ["a"]), ["usr_2", "usr_1"], true),
+    );
+  });
+  it("changes with the content, the recipients or encryption", () => {
+    const base = uploadFingerprint(body("x", ["a"]), ["usr_1"], true);
+    expect(uploadFingerprint(body("x", ["a", "b"]), ["usr_1"], true)).not.toBe(base);
+    expect(uploadFingerprint(body("x", ["a"]), ["usr_1", "usr_3"], true)).not.toBe(base);
+    expect(uploadFingerprint(body("x", ["a"]), ["usr_1"], false)).not.toBe(base);
   });
 });

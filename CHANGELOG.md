@@ -163,6 +163,11 @@ minor releases can change behavior.
 - **Filter: only starred friends.**
 
 ### Changed
+- **Less load on your servers**: a sync where nothing changed is now a few tiny requests. The
+  app only uploads your friend list or activity again when it changed (or every 6 hours, so
+  friends who joined the server since get it; *Sync now* always uploads), and the server
+  answers "nothing new" instead of sending everything that's shared with you again. Needs the
+  new vfm-server for the second part; older servers keep working as before.
 - Map: panning stops before everyone leaves the screen.
 - Phones: the filter menu stays inside the screen; the settings button sits in the top right
   and is a real cogwheel; checkboxes have room between them.

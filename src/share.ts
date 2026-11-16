@@ -344,6 +344,23 @@ export function loggerPairs(d: SharedData | null): PairTime[][] {
 
 // ---------- uploading ----------
 
+/** What was last uploaded per server and kind, so an unchanged item isn't sent again. */
+const lastUpload = new Map<string, { fp: string; at: number; result: PublishResult }>();
+/** Upload unchanged items again after this anyway: friends who joined the server since get them. */
+const REUPLOAD_MS = 6 * 3600_000;
+
+/** The upload without its timestamps, plus who gets it and how. */
+export function uploadFingerprint(payload: string, to: string[], sealed: boolean): string {
+  let body: unknown = payload;
+  try {
+    const { exportedAt: _e, createdAt: _c, ...rest } = JSON.parse(payload) as Record<string, unknown>;
+    body = rest;
+  } catch {
+    /* not JSON: compare as is */
+  }
+  return JSON.stringify([body, [...to].sort(), sealed]);
+}
+
 function recipients(s: ShareServer): string[] {
   return selectedIds({ who: s.audience, circleIds: s.circleIds, picked: s.audiencePicked, autoAdd: s.audienceAutoAdd });
 }
@@ -478,13 +495,22 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
           notes.push(`Your ${kind === "friends" ? "friend list" : "activity"} is bigger than this server takes (${Math.round(max / 1024)} KB).`);
           continue;
         }
-        last = await backend.share.publish(s.url, kind, payload, to, sw.on);
+        const key = `${id}|${kind}`;
+        const fp = uploadFingerprint(payload, to, sw.on);
+        const prev = lastUpload.get(key);
+        if (!opts.manual && prev && prev.fp === fp && Date.now() - prev.at < REUPLOAD_MS) {
+          last = prev.result;
+        } else {
+          last = await backend.share.publish(s.url, kind, payload, to, sw.on);
+          lastUpload.set(key, { fp, at: Date.now(), result: last });
+        }
         waiting = Math.max(waiting, last.notOnServer.length);
         last.keyChanged.forEach((k) => changed.add(k));
       }
       // Stop sharing kinds you turned off.
       for (const kind of s.published.filter((k) => !(wanted as readonly string[]).includes(k))) {
         await backend.share.unpublish(s.url, kind).catch(() => {});
+        lastUpload.delete(`${id}|${kind}`);
       }
       updateServer(id, { published: [...wanted] });
       if (wanted.length) notes.push(describe([...wanted], last, waiting, [...changed]));

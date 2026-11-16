@@ -263,6 +263,6 @@ For other clients:
 | `POST /v1/register` | `{identity, invite?}`, signed with that identity |
 | `GET /v1/users?ids=` | public keys of registered people |
 | `PUT/DELETE /v1/items/{friends\|activity}` | your uploads |
-| `GET /v1/inbox` | items addressed to you, with their owners' keys |
+| `GET /v1/inbox` | items addressed to you, with their owners' keys. Has an `ETag`; send it back as `If-None-Match` and an unchanged inbox answers `304 Not Modified` with no body |
 | `GET/DELETE /v1/me` | your account |
 | `POST/DELETE /v1/logger/pair`, `GET /v1/logger/status`, `GET /v1/logger/stats` | logger (owner only; stats come sealed and signed by the server) |
