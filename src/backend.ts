@@ -179,6 +179,16 @@ export const backend = {
     const q = query ? Object.entries(query).map(([k, v]) => [k, String(v)] as [string, string]) : undefined;
     return invoke<ApiResponse>("vrc_get", { path, query: q });
   },
+  /** One allow-listed write to VRChat (src-tauri/src/api.rs WRITES). */
+  async vrcWrite(method: "POST" | "PUT" | "DELETE", path: string, body?: Record<string, unknown>): Promise<ApiResponse> {
+    if (!isTauri) throw new Error(NO_BACKEND);
+    return invoke<ApiResponse>("vrc_write", { method, path, body: body ?? null });
+  },
+  /** Upload an image (prints, stickers, emojis, gallery, icons). */
+  async vrcUploadImage(kind: string, bytes: Uint8Array, mime: string, fields: Record<string, string>): Promise<ApiResponse> {
+    if (!isTauri) throw new Error(NO_BACKEND);
+    return invoke<ApiResponse>("vrc_upload_image", { kind, bytes: Array.from(bytes), mime, fields: Object.entries(fields) });
+  },
   async storeRead(name: string): Promise<string | null> {
     if (!isTauri) return localStorage.getItem(lsKey(name));
     return invoke<string | null>("store_read", { name });

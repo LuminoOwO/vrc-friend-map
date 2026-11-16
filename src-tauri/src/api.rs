@@ -15,9 +15,22 @@ pub const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const API_BASES: [&str; 2] = ["https://api.vrchat.cloud/api/1", "https://vrchat.com/api/1"];
 
 /// Only read-only endpoints the app actually needs are reachable from the UI.
-const ALLOWED_GET_PREFIXES: [&str; 8] = [
+const ALLOWED_GET_PREFIXES: [&str; 16] = [
     "/auth/user",
     "/users/",
+    // friend status, sent friend requests
+    "/user/",
+    // invite message slots (templates)
+    "/message/",
+    // VRChat's own notes on people
+    "/userNotes",
+    // group events
+    "/calendar",
+    // prints, stickers, emojis, avatar files
+    "/prints",
+    "/files",
+    "/file/",
+    "/avatars",
     // Bio, links, badges and languages (VRChat moved them here in 2026), and your own profile for editing.
     "/profile/",
     "/favorites",
@@ -377,6 +390,63 @@ impl ApiClient {
         Ok(out)
     }
 
+    /// One allow-listed write (see WRITES): only the listed body fields pass.
+    /// Spaced like every request (acquire_slot); the UI queues writes and
+    /// only makes them for something you did or switched on.
+    pub async fn write(&self, method: &str, path: &str, body: Option<Value>) -> Result<ApiResponse, String> {
+        let fields = write_rule(method, path).ok_or_else(|| format!("write not allowed: {method} {path}"))?;
+        let body = match body {
+            Some(Value::Object(m)) if !fields.is_empty() => {
+                Some(Value::Object(m.into_iter().filter(|(k, _)| fields.contains(&k.as_str())).collect()))
+            }
+            _ if fields.is_empty() => None,
+            other => other.filter(|v| v.is_object()),
+        };
+        let method = reqwest::Method::from_bytes(method.to_ascii_uppercase().as_bytes()).map_err(|e| e.to_string())?;
+        self.send_json(method, path, body).await
+    }
+
+    /// Upload an image file (prints, stickers, emojis, group icons/banners).
+    /// `kind`: "print" goes to /prints, everything else to /file/image with
+    /// the given tag. Only images up to 10 MB.
+    pub async fn upload_image(&self, kind: &str, bytes: Vec<u8>, mime: &str, fields: Vec<(String, String)>) -> Result<ApiResponse, String> {
+        const TAGS: &[&str] = &["gallery", "icon", "emoji", "sticker", "print", "emojianimated"];
+        const FIELDS: &[&str] = &["tag", "animationStyle", "maskTag", "frames", "framesOverTime", "timestamp", "note", "worldId", "worldName"];
+        if !TAGS.contains(&kind) {
+            return Err("unknown upload kind".into());
+        }
+        if bytes.len() > 10 * 1024 * 1024 {
+            return Err("image too big (max 10 MB)".into());
+        }
+        if !matches!(mime, "image/png" | "image/jpeg" | "image/gif" | "image/webp") {
+            return Err("only PNG, JPEG, GIF or WebP".into());
+        }
+        let session = self.session.read().await.clone().ok_or("not logged in")?;
+        self.write_cooldown().await?;
+        self.acquire_slot().await;
+        let ua = self.user_agent().await;
+        let ext = mime.trim_start_matches("image/");
+        let part = reqwest::multipart::Part::bytes(bytes).file_name(format!("image.{ext}")).mime_str(mime).map_err(|e| e.to_string())?;
+        let mut form = reqwest::multipart::Form::new().part(if kind == "print" { "image" } else { "file" }, part);
+        for (k, v) in fields.into_iter().filter(|(k, _)| FIELDS.contains(&k.as_str())) {
+            form = form.text(k, v);
+        }
+        let path = if kind == "print" { "/prints" } else { "/file/image" };
+        let res = self
+            .http
+            .post(format!("{}{}", session.base, path))
+            .header(reqwest::header::USER_AGENT, ua)
+            .header(reqwest::header::COOKIE, Self::cookie_header(&session.auth, session.two_factor.as_deref()))
+            .multipart(form)
+            .send()
+            .await
+            .map_err(|e| e.to_string())?;
+        let status = res.status().as_u16();
+        let text = res.text().await.unwrap_or_default();
+        let data = serde_json::from_str(&text).unwrap_or(Value::String(text));
+        Ok(ApiResponse { status, data, retry_after: None })
+    }
+
     /// Friend status: isFriend, outgoingRequest, incomingRequest.
     pub async fn friend_status(&self, user_id: &str) -> Result<ApiResponse, String> {
         if !valid_user_id(user_id) {
@@ -485,6 +555,89 @@ impl ApiClient {
 
 /// `usr_` + UUID-ish, or an old 10-character ID. Nothing that could change the path.
 /// Player moderations the UI may set or remove (VRChat's names).
+/// Writes the UI may make besides the dedicated commands above: method, path
+/// pattern and the body fields that pass (everything else is dropped).
+/// Placeholders: {usr} {grp} {not} {fvrt} {avtr} {wrld} {grol} {file} {prnt}
+/// are VRChat IDs with that prefix, {n} a small number, {msg} an invite
+/// message type, {word} a plain name, {id} any VRChat-style ID.
+pub const WRITES: &[(&str, &str, &[&str])] = &[
+    // notes on people (VRChat's own, shown in game)
+    ("POST", "/userNotes", &["targetUserId", "note"]),
+    // invites and invite requests, invite message templates
+    ("POST", "/requestInvite/{usr}", &["messageSlot", "requestSlot"]),
+    ("POST", "/invite/{usr}", &["instanceId", "messageSlot"]),
+    ("POST", "/invite/myself/to/{id}", &[]),
+    ("PUT", "/message/{usr}/{msg}/{n}", &["message"]),
+    // notifications (accept an invite or friend request, dismiss)
+    ("PUT", "/auth/user/notifications/{not}/accept", &[]),
+    ("PUT", "/auth/user/notifications/{not}/hide", &[]),
+    ("PUT", "/auth/user/notifications/{not}/see", &[]),
+    // favorites
+    ("POST", "/favorites", &["type", "favoriteId", "tags"]),
+    ("DELETE", "/favorites/{fvrt}", &[]),
+    ("PUT", "/favorite/group/{word}/{word}/{usr}", &["displayName", "visibility", "tags"]),
+    // avatars
+    ("PUT", "/avatars/{avtr}/select", &[]),
+    // groups (as far as your roles allow; VRChat checks the rest)
+    ("POST", "/groups/{grp}/join", &["confirmOverrideBlock"]),
+    ("POST", "/groups/{grp}/leave", &[]),
+    ("PUT", "/groups/{grp}", &["name", "shortCode", "description", "joinState", "iconId", "bannerId", "languages", "links", "rules", "tags"]),
+    ("PUT", "/groups/{grp}/members/{usr}", &["visibility", "isSubscribedToAnnouncements", "managerNotes"]),
+    ("DELETE", "/groups/{grp}/members/{usr}", &[]),
+    ("PUT", "/groups/{grp}/members/{usr}/roles/{grol}", &[]),
+    ("DELETE", "/groups/{grp}/members/{usr}/roles/{grol}", &[]),
+    ("PUT", "/groups/{grp}/requests/{usr}", &["action", "block"]),
+    ("POST", "/groups/{grp}/invites", &["userId", "confirmOverrideBlock"]),
+    ("DELETE", "/groups/{grp}/invites/{usr}", &[]),
+    ("POST", "/groups/{grp}/bans", &["userId"]),
+    ("DELETE", "/groups/{grp}/bans/{usr}", &[]),
+    ("POST", "/groups/{grp}/posts", &["title", "text", "imageId", "sendNotification", "roleIds", "visibility"]),
+    ("DELETE", "/groups/{grp}/posts/{id}", &[]),
+    ("DELETE", "/groups/{grp}/galleries/{id}/images/{id}", &[]),
+    ("POST", "/instances", &["worldId", "type", "region", "ownerId", "roleIds", "groupAccessType", "queueEnabled", "canRequestInvite", "hardClose", "inviteOnly", "ageGate", "displayName"]),
+    // prints, stickers, emojis
+    ("DELETE", "/prints/{prnt}", &[]),
+    ("DELETE", "/file/{file}", &[]),
+];
+
+fn id_with(seg: &str, prefix: &str) -> bool {
+    seg.len() > prefix.len() && seg.len() <= 64 && seg.starts_with(prefix) && seg.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+}
+
+fn seg_ok(pat: &str, seg: &str) -> bool {
+    match pat {
+        "{usr}" => valid_user_id(seg),
+        "{grp}" => id_with(seg, "grp_"),
+        "{not}" => id_with(seg, "not_") || id_with(seg, "frq_"),
+        "{fvrt}" => id_with(seg, "fvrt_"),
+        "{avtr}" => id_with(seg, "avtr_"),
+        "{wrld}" => id_with(seg, "wrld_"),
+        "{grol}" => id_with(seg, "grol_"),
+        "{file}" => id_with(seg, "file_"),
+        "{prnt}" => id_with(seg, "prnt_"),
+        "{n}" => !seg.is_empty() && seg.len() <= 3 && seg.chars().all(|c| c.is_ascii_digit()),
+        "{msg}" => matches!(seg, "message" | "response" | "request" | "requestResponse"),
+        "{word}" => !seg.is_empty() && seg.len() <= 64 && seg.chars().all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-'),
+        "{id}" => !seg.is_empty() && seg.len() <= 200 && seg.chars().all(|c| c.is_ascii_alphanumeric() || "_-:~().".contains(c)),
+        lit => lit == seg,
+    }
+}
+
+/// The body fields allowed for this write, or None if the write isn't allowed.
+pub fn write_rule(method: &str, path: &str) -> Option<&'static [&'static str]> {
+    if path.contains("..") || path.contains("://") || path.contains('?') {
+        return None;
+    }
+    let segs: Vec<&str> = path.split('/').collect();
+    WRITES.iter().find_map(|(m, pat, fields)| {
+        if !m.eq_ignore_ascii_case(method) {
+            return None;
+        }
+        let ps: Vec<&str> = pat.split('/').collect();
+        (ps.len() == segs.len() && ps.iter().zip(&segs).all(|(p, s)| seg_ok(p, s))).then_some(*fields)
+    })
+}
+
 pub const MODERATIONS: [&str; 5] = ["block", "mute", "muteChat", "hideAvatar", "showAvatar"];
 
 pub fn valid_user_id(id: &str) -> bool {
@@ -507,6 +660,21 @@ mod write_tests {
     #[test]
     fn profile_endpoint_is_readable() {
         assert!(super::ALLOWED_GET_PREFIXES.iter().any(|p| "/profile/usr_x".starts_with(p)));
+    }
+
+    #[test]
+    fn writes_are_allow_listed() {
+        let u = "usr_c1644b5b-3ca4-45b4-97c6-a2a0de70d469";
+        assert_eq!(super::write_rule("POST", "/userNotes"), Some(&["targetUserId", "note"][..]));
+        assert!(super::write_rule("POST", &format!("/requestInvite/{u}")).is_some());
+        assert!(super::write_rule("PUT", &format!("/message/{u}/message/3")).is_some());
+        assert!(super::write_rule("PUT", &format!("/message/{u}/evil/3")).is_none());
+        assert!(super::write_rule("DELETE", &format!("/groups/grp_abc/members/{u}")).is_some());
+        assert!(super::write_rule("DELETE", "/groups/grp_abc/members/usr_../x").is_none());
+        assert!(super::write_rule("DELETE", &format!("/auth/user/friends/{u}")).is_none());
+        assert!(super::write_rule("PUT", "/users/usr_x").is_none());
+        assert!(super::write_rule("GET", "/userNotes").is_none());
+        assert!(super::write_rule("POST", "/favorites?x=1").is_none());
     }
 
     #[test]

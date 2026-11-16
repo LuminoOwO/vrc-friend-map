@@ -297,6 +297,17 @@ async fn unfriend(state: AppStateRef<'_>, user_id: String) -> Result<api::ApiRes
     state.api.unfriend(&user_id).await
 }
 
+/// One allow-listed write to VRChat (api::WRITES).
+#[tauri::command]
+async fn vrc_write(state: AppStateRef<'_>, method: String, path: String, body: Option<serde_json::Value>) -> Result<api::ApiResponse, String> {
+    state.api.write(&method, &path, body).await
+}
+
+#[tauri::command]
+async fn vrc_upload_image(state: AppStateRef<'_>, kind: String, bytes: Vec<u8>, mime: String, fields: Vec<(String, String)>) -> Result<api::ApiResponse, String> {
+    state.api.upload_image(&kind, bytes, &mime, fields).await
+}
+
 /// Save your own profile (only from the Save button in Profile → Edit).
 #[tauri::command]
 async fn update_profile(state: AppStateRef<'_>, user_id: String, user: serde_json::Value, profile: serde_json::Value) -> Result<Vec<api::ApiResponse>, String> {
@@ -533,6 +544,8 @@ pub fn run() {
             unfriend,
             moderate_user,
             update_profile,
+            vrc_write,
+            vrc_upload_image,
             storage_info,
             live_start,
             live_stop,
