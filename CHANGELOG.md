@@ -26,6 +26,44 @@ minor releases can change behavior.
   off shows them greyed out with the reason), *haptics* on phones (off), text size, fewer
   animations, color-blind friendly status colors.
 
+- **Insights** (new tab): what changed since you were last here (who came online, renames, new
+  and removed friends); missed notifications, with read / unread; friend requests you sent and
+  still wait on (cancel old ones); friend groups found on your map (from mutual friends) with
+  *Make a circle*; bridges (who connects your groups); a path between any two people and their
+  shared and separate friends; drifting apart (off by default: people you used to spend time
+  with, from the game logs); your friend list size and adds / removes per month.
+- **On profiles**: star a friend (top of lists, a gold star on the map); your own nickname for
+  them (shown on the map, found by search); snooze their notifications (an hour … a week);
+  their **local time**, either set by you, shared by them, or a *probably* suggestion from their
+  bio, status, linked pages (X, Instagram, Bluesky… bios and "Location" fields), languages,
+  groups and usual online hours, with ranked candidates and reasons when hints disagree;
+  last seen, usual online hours as a week heatmap, the best time to catch them, friends since,
+  earlier display names; VRChat's own note on them, editable (shown in game).
+- **Block reasons** (part of the red flags): after you block someone (here or in game: the app
+  notices new blocks in VRChat's block list), pick reasons (soundboard spam, music too loud,
+  mic spam, annoying avatar, trolling, anti-queer, racism, harassment, unwanted sexual advances,
+  following, crasher, seizure / flashing avatar, malicious links, ripped avatar, ban evasion and
+  more) and optionally your own words. Shared with friends like friend removals (per server, off
+  by default; your own words never). Friends' block reasons show on that person's profile.
+- **Red flags in VRChat notes** (Settings → People, off by default): a short line at the top of
+  your VRChat note on flagged people, readable in game: only your reasons, or also how many
+  friends blocked / removed them, or each friend by name; compact or long. Your own note text
+  stays below it, untouched. Nothing about age goes there.
+- **Invites**: *Request invite* (also with one of your saved messages), *Invite me* (VRChat sends
+  you an invite you accept in game), and *Tell me when a slot opens* for a full instance.
+  Settings → People → Invite messages shows and edits VRChat's 12 saved messages per kind.
+- **Notifications**: quiet hours (a schedule; starred friends and chosen circles still get
+  through; everything is kept as missed), rules per circle (e.g. Close friends: came online),
+  friendiversaries (a year, 6 months, 100 days), close friends gathering (several starred or
+  circle friends in one instance), a slot opened, invites and invite requests.
+- **Map time travel** (Map options): the map as it was at an earlier date (who was a friend
+  then).
+- **Shared circles**: share a circle with friends (sidebar → share icon) to edit it together;
+  it travels in the friend list you share through your servers, the newest change wins.
+- **Sharing your time zone** (per server, off) so friends see your local time.
+- Stars, nicknames, time zones, block reasons, invite messages and shared circles sync between
+  your devices.
+
 ### Changed
 - Map: panning stops before everyone leaves the screen.
 - Phones: the filter menu stays inside the screen; the settings button sits in the top right

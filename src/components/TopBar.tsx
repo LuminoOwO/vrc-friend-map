@@ -7,12 +7,14 @@ import { defaultFilters, setState, updateFilters, useApp, type View } from "../s
 import { syncAll, togglePause } from "../sync";
 import { Icon } from "./Icon";
 import { SyncLogDialog } from "./SyncLogDialog";
+import { useUnreadMissed } from "./InsightsView";
 
 const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: "graph", label: "Map", icon: "graph" },
   { key: "cards", label: "Cards", icon: "cards" },
   { key: "lists", label: "Shared lists", icon: "share" },
   { key: "activity", label: "Activity", icon: "clock" },
+  { key: "insights", label: "Insights", icon: "bulb" },
 ];
 
 function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {
@@ -36,6 +38,7 @@ export function TopBar() {
   const sidebarOpen = useApp((s) => s.sidebarOpen);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const { matched, friends } = useDerived();
+  const unread = useUnreadMissed();
   const count = activeFilterCount(filters);
 
   return (
@@ -63,6 +66,7 @@ export function TopBar() {
           >
             <Icon name={v.icon} />
             <span className="tab-label">{v.label}</span>
+            {v.key === "insights" && unread > 0 && <span className="badge tab-badge">{unread}</span>}
           </button>
         ))}
       </nav>

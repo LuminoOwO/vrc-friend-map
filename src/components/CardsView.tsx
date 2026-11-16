@@ -44,9 +44,12 @@ export function CardsView() {
       accountAge: (a, b) => (toTime(cache.details[a.id]?.date_joined) || Infinity) - (toTime(cache.details[b.id]?.date_joined) || Infinity),
     };
     const byMatch = (a: Friend, b: Friend) => Number(matched.has(b.id)) - Number(matched.has(a.id));
-    return [...list].sort((a, b) => byMatch(a, b) || cmp[sort](a, b));
+    // Starred friends first.
+    const star = new Set(local.starred ?? []);
+    const byStar = (a: Friend, b: Friend) => Number(star.has(b.id)) - Number(star.has(a.id));
+    return [...list].sort((a, b) => byMatch(a, b) || byStar(a, b) || cmp[sort](a, b));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [friends, matched, sort, cache.presence, cache.mutuals, cache.details, dimMode]);
+  }, [friends, matched, sort, cache.presence, cache.mutuals, cache.details, dimMode, local.starred]);
 
   const groups = useMemo(() => {
     if (!grouped) return [{ key: "all", label: "Everyone", items: sorted }];

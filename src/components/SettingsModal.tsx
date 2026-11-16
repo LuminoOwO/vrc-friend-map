@@ -31,7 +31,124 @@ import { serverName } from "../share";
 import { unavailable } from "../platform";
 import { haptic } from "../haptics";
 import { bioProgress } from "../biocache";
+import { flagLine } from "../notesline";
+import { loadSlots, saveSlot, type MessageSlot } from "../invites";
 import type { UiSettings } from "../types";
+
+function NotesLineSection() {
+  const n = useApp((s) => s.settings.notesLine);
+  const set = (patch: Partial<typeof n>) => updateSettings({ notesLine: { ...n, ...patch } });
+  const example = flagLine(
+    { mine: ["crasher", "trolling"], blocks: [{ by: "Luna", reasons: ["loud-music"] }, { by: "Kai", reasons: [] }], removedBy: ["Mo"], distance: 0 },
+    n.mode === "off" ? { ...n, mode: "friends" } : n,
+  );
+  return (
+    <>
+      <h3>Red flags in VRChat notes</h3>
+      <p className="small muted">
+        Writes a short line at the top of your VRChat note on people with red flags (why you blocked them, friends' shared blocks and removals),
+        so you see it in game on their profile. Your own note text moves below it and is never changed. Nothing about age goes there.
+      </p>
+      <label className="field narrow">
+        <span>Line in the note</span>
+        <select value={n.mode} onChange={(e) => set({ mode: e.target.value as typeof n.mode })}>
+          <option value="off">Off</option>
+          <option value="mine">Only my block reasons</option>
+          <option value="friends">Mine, and how many friends blocked or removed them</option>
+          <option value="full">Mine and each friend's, with names</option>
+        </select>
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={n.compact} onChange={(e) => set({ compact: e.target.checked })} />
+        Compact (short words, fits better)
+      </label>
+      <p className="small">
+        Example: <code>{example}</code>
+      </p>
+      <p className="small muted">
+        Updated every 20 minutes, a few notes at a time. Turning it off removes the lines again. Block reasons: asked after you block someone
+        (here or in game); shared with friends only per server (Servers → <i>Why I blocked people</i>).
+      </p>
+    </>
+  );
+}
+
+function InviteMessagesSection() {
+  const demo = useApp((s) => s.demo);
+  const [kind, setKind] = useState<"request" | "message">("request");
+  const [slots, setSlots] = useState<MessageSlot[] | null>(null);
+  const [err, setErr] = useState("");
+  const [edit, setEdit] = useState<{ slot: number; text: string } | null>(null);
+  const load = (k = kind) => {
+    setErr("");
+    setSlots(null);
+    loadSlots(k).then(setSlots, (e) => setErr(String(e instanceof Error ? e.message : e)));
+  };
+  return (
+    <>
+      <h3>Invite messages</h3>
+      <p className="small muted">
+        VRChat keeps 12 saved messages for asking for an invite and 12 for invites you send; each can be changed once an hour. Saved ones show up
+        on profiles under <i>Request invite → With message</i>.
+      </p>
+      <div className="row">
+        <div className="seg">
+          <button className={kind === "request" ? "on" : ""} onClick={() => { setKind("request"); if (slots) load("request"); }}>
+            Asking for an invite
+          </button>
+          <button className={kind === "message" ? "on" : ""} onClick={() => { setKind("message"); if (slots) load("message"); }}>
+            Invites I send
+          </button>
+        </div>
+        <button className="btn small" disabled={demo} onClick={() => load()}>
+          {slots ? "Reload" : "Load from VRChat"}
+        </button>
+      </div>
+      {err && <p className="small warn">{err}</p>}
+      {slots && (
+        <ul className="slot-list">
+          {slots.map((sl) => (
+            <li key={sl.slot}>
+              <span className="muted small">{sl.slot + 1}.</span>
+              {edit?.slot === sl.slot ? (
+                <>
+                  <input value={edit.text} maxLength={64} autoFocus onChange={(e) => setEdit({ slot: sl.slot, text: e.target.value })} />
+                  <button
+                    className="btn small primary"
+                    onClick={async () => {
+                      const e2 = await saveSlot(kind, sl.slot, edit.text);
+                      if (e2) showToast(`Couldn't save: ${e2}`);
+                      else {
+                        setEdit(null);
+                        load();
+                      }
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button className="btn small" onClick={() => setEdit(null)}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="grow">{sl.message || <i className="muted">empty</i>}</span>
+                  {sl.cooldown > 0 ? (
+                    <span className="small muted">can change in {sl.cooldown} min</span>
+                  ) : (
+                    <button className="btn small ghost" onClick={() => setEdit({ slot: sl.slot, text: sl.message })}>
+                      Change
+                    </button>
+                  )}
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
 
 function BioSection() {
   const b = useApp((s) => s.settings.bios);
@@ -449,6 +566,12 @@ export function SettingsModal() {
 
         <Sec id="age" cat="people" title="Age hints" keys="age minor adult 18 underage kids safety notes vouch distance friend request warning">
           <AgeSection />
+        </Sec>
+        <Sec id="redflags" cat="people" title="Red flags in VRChat notes" keys="block reasons red flag note in game vrchat notes removed blocked">
+          <NotesLineSection />
+        </Sec>
+        <Sec id="invites" cat="people" title="Invite messages" keys="invite request message template slot">
+          <InviteMessagesSection />
         </Sec>
         <Sec id="bios" cat="people" title="Reading bios in the background" keys="bio profile background cache preload slow">
           <BioSection />

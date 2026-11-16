@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { shareCircle } from "../sharedcircles";
 import { duplicateColorIds, pickCircleColor } from "../colors";
 import { useDerived } from "../derived";
 import { relTime } from "../model";
@@ -20,6 +21,8 @@ export function Sidebar() {
   const [name, setName] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
   const [picking, setPicking] = useState<string | null>(null);
+  const [sharing, setSharing] = useState<string | null>(null);
+  const sharedCircles = useApp((s) => s.local.sharedCircles);
   const dupes = useMemo(() => duplicateColorIds(circles), [circles]);
 
   const fixDuplicates = () => {
@@ -176,12 +179,20 @@ export function Sidebar() {
               <button className="icon-btn tiny" title="Rename" onClick={() => setEditing(c.id)}>
                 <Icon name="tag" size={14} />
               </button>
+              <button
+                className={`icon-btn tiny ${sharedCircles?.[c.id] ? "on" : ""}`}
+                title={sharedCircles?.[c.id] ? `Shared with ${sharedCircles[c.id].with.length} friend(s): edit together` : "Share with friends to edit together"}
+                onClick={() => setSharing(c.id)}
+              >
+                <Icon name="share" size={14} />
+              </button>
               <button className="icon-btn tiny danger" title="Delete circle" onClick={() => deleteCircle(c.id)}>
                 <Icon name="trash" size={14} />
               </button>
             </li>
           ))}
         </ul>
+        {sharing && <ShareCircleDialog circleId={sharing} onClose={() => setSharing(null)} />}
         <form
           className="inline-form"
           onSubmit={(e) => {
@@ -241,5 +252,59 @@ function RecentActivity() {
         </ul>
       )}
     </section>
+  );
+}
+
+/** Pick friends to edit a circle together with. */
+function ShareCircleDialog({ circleId, onClose }: { circleId: string; onClose: () => void }) {
+  const circle = useApp((s) => s.local.circles.find((c) => c.id === circleId));
+  const info = useApp((s) => s.local.sharedCircles?.[circleId]);
+  const friends = useApp((s) => s.cache.friends);
+  const me = useApp((s) => s.cache.me?.id);
+  const [picked, setPicked] = useState<string[]>(info?.with ?? []);
+  const [q, setQ] = useState("");
+  if (!circle) return null;
+  const owner = !info || info.owner === me;
+  const list = Object.values(friends)
+    .filter((f) => !q || f.displayName.toLowerCase().includes(q.toLowerCase()))
+    .sort((a, b) => Number(picked.includes(b.id)) - Number(picked.includes(a.id)) || a.displayName.localeCompare(b.displayName))
+    .slice(0, 200);
+  return (
+    <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal" role="dialog" aria-labelledby="share-circle-title">
+        <h2 id="share-circle-title">Edit “{circle.name}” together</h2>
+        <p className="small muted">
+          The circle goes along with the friend list you share through your servers, so the people you pick need the app and a server you both use. Any of
+          you can add or remove members and rename it; the newest change wins. Anyone you share your friend list with on that server could read its
+          name and members.
+        </p>
+        {!owner && <p className="small">Shared with you by {friends[info!.owner]?.displayName ?? "a friend"}.</p>}
+        <input placeholder="Find a friend" value={q} onChange={(e) => setQ(e.target.value)} />
+        <div className="picker-list">
+          {list.map((f) => (
+            <label key={f.id} className="check">
+              <input type="checkbox" checked={picked.includes(f.id)} disabled={!owner} onChange={(e) => setPicked((p) => (e.target.checked ? [...p, f.id] : p.filter((x) => x !== f.id)))} />
+              {f.displayName}
+            </label>
+          ))}
+        </div>
+        <div className="row end">
+          <button className="btn" onClick={onClose}>
+            Cancel
+          </button>
+          {owner && (
+            <button
+              className="btn primary"
+              onClick={() => {
+                shareCircle(circleId, picked);
+                onClose();
+              }}
+            >
+              {picked.length ? `Share with ${picked.length}` : "Stop sharing"}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

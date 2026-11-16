@@ -177,6 +177,8 @@ export function NotificationsSection() {
         </div>
       )}
 
+      <QuietAndCircles />
+
       <h4 className="sub-h">People</h4>
       <p className="small muted">
         <b>Always</b>: when they come online or join your world, even if those are off above (other events follow the switches).{" "}
@@ -348,6 +350,131 @@ export function CloseSection() {
         In the tray the app keeps notifying and collecting (live updates, game logs, servers) without drawing anything. Click the tray icon to
         open it again; its menu can also mute notifications or quit.
       </p>
+    </>
+  );
+}
+
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const RULE_EVENTS: NotifyEvent[] = ["online", "offline", "joined", "left"];
+
+/** Quiet hours, rules per circle, gathering alerts. */
+function QuietAndCircles() {
+  const n = useApp((s) => s.settings.notify);
+  const circles = useApp((s) => s.local.circles);
+  const q = n.quiet;
+  const setQ = (patch: Partial<typeof q>) => updateNotify({ quiet: { ...q, ...patch } });
+  const g = n.gathering;
+  const setG = (patch: Partial<typeof g>) => updateNotify({ gathering: { ...g, ...patch } });
+  return (
+    <>
+      <h4 className="sub-h">Quiet hours</h4>
+      <label className="check">
+        <input type="checkbox" checked={q.enabled} disabled={!n.enabled} onChange={(e) => setQ({ enabled: e.target.checked })} />
+        Do not disturb on a schedule
+      </label>
+      {q.enabled && (
+        <div className="indent">
+          <div className="row">
+            <label className="field narrow">
+              <span>From</span>
+              <input type="time" value={q.from} onChange={(e) => setQ({ from: e.target.value || q.from })} />
+            </label>
+            <label className="field narrow">
+              <span>To</span>
+              <input type="time" value={q.to} onChange={(e) => setQ({ to: e.target.value || q.to })} />
+            </label>
+          </div>
+          <div className="chips">
+            {DAY_NAMES.map((d, i) => (
+              <button key={d} className={`chip ${q.days.includes(i) ? "on" : ""}`} onClick={() => setQ({ days: q.days.includes(i) ? q.days.filter((x) => x !== i) : [...q.days, i] })}>
+                {d}
+              </button>
+            ))}
+          </div>
+          <label className="check">
+            <input type="checkbox" checked={q.allowStarred} onChange={(e) => setQ({ allowStarred: e.target.checked })} />
+            Starred friends still get through
+          </label>
+          {circles.length > 0 && (
+            <div className="row">
+              <span className="small">Also get through:</span>
+              <div className="chips">
+                {circles.map((c) => {
+                  const on = q.allowCircleIds.includes(c.id);
+                  return (
+                    <button key={c.id} className={`chip ${on ? "on" : ""}`} style={{ "--chip": c.color } as React.CSSProperties} onClick={() => setQ({ allowCircleIds: on ? q.allowCircleIds.filter((x) => x !== c.id) : [...q.allowCircleIds, c.id] })}>
+                      {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <p className="small muted">During quiet hours nothing plays or pops up; everything is kept under Insights → Notifications.</p>
+        </div>
+      )}
+
+      {circles.length > 0 && (
+        <>
+          <h4 className="sub-h">Rules per circle</h4>
+          <p className="small muted">For everyone in a circle, without a bell on each person. These always notify, even when the event is off above.</p>
+          <div className="circle-rules">
+            {circles.map((c) => {
+              const evs = n.circleRules[c.id] ?? [];
+              return (
+                <div key={c.id} className="circle-rule">
+                  <span className="circle-name" style={{ color: c.color }}>
+                    {c.name}
+                  </span>
+                  <div className="chips">
+                    {RULE_EVENTS.map((e) => {
+                      const on = evs.includes(e);
+                      return (
+                        <button
+                          key={e}
+                          className={`chip ${on ? "on" : ""}`}
+                          onClick={() => updateNotify({ circleRules: { ...n.circleRules, [c.id]: on ? evs.filter((x) => x !== e) : [...evs, e] } })}
+                        >
+                          {EVENT_LABEL[e]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      <h4 className="sub-h">Gathering alerts</h4>
+      <p className="small muted">“Close friends gathering” above: when several of these people are in the same instance (and you're not there).</p>
+      <div className="row">
+        <label className="field narrow">
+          <span>At least</span>
+          <input type="number" min={2} max={20} value={g.min} onChange={(e) => setG({ min: Math.max(2, Math.min(20, Number(e.target.value) || 3)) })} />
+        </label>
+        <label className="field narrow">
+          <span>Of</span>
+          <select value={g.who} onChange={(e) => setG({ who: e.target.value as typeof g.who })}>
+            <option value="starred">Starred friends</option>
+            <option value="circles">People in chosen circles</option>
+            <option value="both">Both</option>
+          </select>
+        </label>
+      </div>
+      {g.who !== "starred" && circles.length > 0 && (
+        <div className="chips">
+          {circles.map((c) => {
+            const on = g.circleIds.includes(c.id);
+            return (
+              <button key={c.id} className={`chip ${on ? "on" : ""}`} style={{ "--chip": c.color } as React.CSSProperties} onClick={() => setG({ circleIds: on ? g.circleIds.filter((x) => x !== c.id) : [...g.circleIds, c.id] })}>
+                {c.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }

@@ -34,12 +34,14 @@ import {
 } from "../model";
 import { addToCircle, createCircle, getState, removeFromCircle, setState, showToast, useApp } from "../store";
 import { bioKeyState } from "../share";
-import { friendStatus, personOf, refreshModerations, relationOf, setFriendRequest, setModeration, unfriend } from "../people";
+import { friendStatus, isBlocked, personOf, refreshModerations, relationOf, setFriendRequest, setModeration, unfriend } from "../people";
 import { othersHere } from "../live";
 import { applyPipelineEvent, freshenProfile, loadGroups, loadInstance, loadWorld, refreshPerson } from "../sync";
 import type { Friend, Presence } from "../types";
 import { GroupsModal } from "./GroupsModal";
 import { Icon } from "./Icon";
+import { BlockFlags, InviteActions, LocalTime, NicknameAndSnooze, OnlineHistory, StarButton, VrcNote } from "./PersonExtras";
+import { inviteMyself } from "../invites";
 
 const REGION_FLAG: Record<string, string> = { us: "🇺🇸", use: "🇺🇸", usw: "🇺🇸", eu: "🇪🇺", jp: "🇯🇵" };
 
@@ -323,6 +325,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   <Icon name="link" size={16} />
                 </button>
                 {relation === "friend" && <NotifyBell id={id} />}
+                {relation === "friend" && <StarButton id={id} />}
                 {relation === "me" && (
                   <button className="btn" onClick={() => setEditing(true)} title="Change your status, bio, links, languages and look">
                     <Icon name="settings" size={16} /> Edit profile
@@ -331,7 +334,9 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               </div>
               {editing && <ProfileEditor id={id} onClose={() => setEditing(false)} />}
               {relation !== "me" && <ModerationRow id={id} name={f.displayName} friend={relation === "friend"} />}
+              {relation === "friend" && <NicknameAndSnooze id={id} name={f.displayName} />}
               {relation !== "me" && <RedFlags id={id} />}
+              {relation !== "me" && <BlockFlags id={id} blocked={isBlocked(cache, id)} />}
 
               <div className="profile-block" data-flip-fade>
                 <h3>About me</h3>
@@ -372,12 +377,9 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 </div>
               )}
               {relation !== "me" && <AgePanel id={id} />}
-              {detail?.note && (
-                <div className="profile-block" data-flip-fade>
-                  <h3>Your note</h3>
-                  <p className="note-text">{detail.note}</p>
-                </div>
-              )}
+              {relation === "friend" && <LocalTime id={id} name={f.displayName} />}
+              {relation === "friend" && <OnlineHistory id={id} name={f.displayName} online={p === "online"} />}
+              {relation !== "me" && <VrcNote id={id} />}
               <div className="profile-block">
                 <h3 data-flip-fade>Profile</h3>
                 <dl className="facts with-icons">
@@ -479,7 +481,24 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                     ))}
                   </div>
                 )}
+                {relation === "friend" && (
+                  <InviteActions
+                    id={id}
+                    name={f.displayName}
+                    location={location}
+                    worldName={world?.name ?? ""}
+                    full={!!instance && !!(instance.capacity ?? world?.capacity) && instance.users >= (instance.capacity ?? world?.capacity ?? Infinity)}
+                  />
+                )}
                 <div className="world-actions">
+                  <button
+                    className="btn"
+                    disabled={demo}
+                    title="VRChat sends you an invite to this instance (works where you're allowed in); accept it in game"
+                    onClick={() => inviteMyself(location).then((err) => showToast(err ? `Couldn't invite you: ${err}` : "Invite sent to you: accept it in VRChat"))}
+                  >
+                    <Icon name="user-check" size={16} /> Invite me
+                  </button>
                   <button className="btn launch" onClick={() => open(`vrchat://launch?ref=vrchat.com&id=${location}`)} title="Opens VRChat on this device and goes to this instance (you may need an invite)">
                     <Icon name="rocket" size={16} /> Launch in VRChat
                   </button>

@@ -32,6 +32,7 @@ import { FriendCard } from "./FriendCard";
 import { FilterChip, statusToggle, trustToggle } from "./FilterChip";
 import { Icon } from "./Icon";
 import { MapOptions } from "./MapOptions";
+import { friendsAt } from "../insights";
 
 interface GNode extends d3.SimulationNodeDatum {
   id: string;
@@ -451,8 +452,21 @@ export function GraphView() {
   const secsById = useMemo(() => new Map((stats?.people ?? []).map((p) => [p.id, p.secs])), [stats]);
 
   // Everything the draw function needs, refreshed every render.
-  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById });
-  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById };
+  // 0.12: your nicknames on the map, starred friends, and the map at an earlier date.
+  const nicknames = useApp((s) => s.local.nicknames);
+  const starredList = useApp((s) => s.local.starred);
+  const travelAt = useApp((s) => s.timeTravel);
+  const friendLog = useApp((s) => s.local.friendLog);
+  const named = useMemo(() => {
+    const m = new Map<string, Friend>();
+    for (const [id, nick] of Object.entries(nicknames ?? {})) if (cache.friends[id]) m.set(id, { ...cache.friends[id], displayName: nick });
+    return m;
+  }, [nicknames, cache.friends]);
+  const starred = useMemo(() => new Set(starredList ?? []), [starredList]);
+  const travel = useMemo(() => (travelAt ? friendsAt(Object.keys(cache.friends), friendLog, travelAt) : null), [travelAt, cache.friends, friendLog]);
+
+  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById, named, starred, travel });
+  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById, named, starred, travel };
 
   // Frame-rate limit (Settings → Frame rate): the limit itself, and lower ones
   // while the window isn't focused or nobody has touched anything for a while.
@@ -1070,11 +1084,13 @@ export function GraphView() {
     const showLabelsAuto = settings.showLabels === "always" || (settings.showLabels === "auto" && t.k >= 1.15);
     const margin = 30 / t.k;
     const nowMs = Date.now();
-    const { fresh } = viewRef.current;
+    const { fresh, named, starred, travel } = viewRef.current;
     let animating = false;
     for (const n of order) {
-      const f = cache.friends[n.id] ?? (n.kind === "other" ? othersById.get(n.id) : n.kind === "me" ? (extra.me ?? undefined) : undefined);
+      const f = named.get(n.id) ?? cache.friends[n.id] ?? (n.kind === "other" ? othersById.get(n.id) : n.kind === "me" ? (extra.me ?? undefined) : undefined);
       if (!f || n.x == null || n.y == null) continue;
+      // Map time travel: only who was a friend then.
+      if (travel && !n.kind && !travel.has(n.id)) continue;
       if (n.x + n.hw < vx0 - margin || n.x - n.hw > vx1 + margin || n.y + n.hh < vy0 - margin || n.y - n.hh > vy1 + margin + 20 / t.k) continue;
       // Filters are about friends; you and non-friends are always shown.
       const isMatch = n.kind ? true : matched.has(n.id);
@@ -1123,6 +1139,24 @@ export function GraphView() {
       ctx.globalAlpha = alpha;
       const here = extra.here.has(n.id);
       if (n.kind || here) decorate(ctx, n, card, here);
+      if (starred.has(n.id) && isMatch) {
+        // A small gold star at the top right of starred friends.
+        const sx = n.x + n.hw * 0.78;
+        const sy = n.y - n.hh * 0.78;
+        const sr = Math.max(4.5 / t.k, Math.min(n.hw, n.hh) * 0.28);
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const a = -Math.PI / 2 + (i * Math.PI) / 5;
+          const rr = i % 2 ? sr * 0.45 : sr;
+          ctx.lineTo(sx + Math.cos(a) * rr, sy + Math.sin(a) * rr);
+        }
+        ctx.closePath();
+        ctx.fillStyle = PAL.gold;
+        ctx.fill();
+        ctx.lineWidth = 1.2 / t.k;
+        ctx.strokeStyle = PAL.outline;
+        ctx.stroke();
+      }
       const labelled = n.kind === "me" || (!card && (showLabelsAuto || (focusSet?.has(n.id) && settings.showLabels !== "never") || selected));
       if (labelled && isMatch && !(card && n.kind !== "me")) {
         const fs = (n.kind === "me" ? 13 : 12) / t.k;
@@ -1155,6 +1189,9 @@ export function GraphView() {
     }
     ctx.restore();
   }
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => requestDraw(), [named, starred, travel]);
 
   function fit(animate = true) {
     const canvas = canvasRef.current;
@@ -1842,6 +1879,14 @@ export function GraphView() {
               {fmtHours(tipTime.secs)} together · {tipTime.days} day{tipTime.days === 1 ? "" : "s"}
             </div>
           )}
+        </div>
+      )}
+      {travelAt && (
+        <div className="time-travel-banner">
+          <Icon name="clock" size={14} /> The map as of {new Date(travelAt).toLocaleDateString()} ({travel?.size ?? 0} friends then)
+          <button className="btn small" onClick={() => setState({ timeTravel: null })}>
+            Back to now
+          </button>
         </div>
       )}
       <div className="graph-controls">

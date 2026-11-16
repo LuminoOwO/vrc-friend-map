@@ -30,7 +30,7 @@ import type {
   UiSettings,
 } from "./types";
 
-export type View = "graph" | "cards" | "lists" | "activity";
+export type View = "graph" | "cards" | "lists" | "activity" | "insights";
 
 export interface Toast {
   id: number;
@@ -103,6 +103,8 @@ export interface AppState {
   blockAsk: string[];
   /** Insights view: two people picked for "path" / "compare". */
   pickPair: [string | null, string | null];
+  /** Map time travel: show the map as it was at this time (ms), or null for now. */
+  timeTravel: number | null;
 }
 
 // ---------- data format versions ----------
@@ -294,6 +296,7 @@ export const defaultSettings = (): Settings => ({
   ui: defaultUi(),
   bios: { background: true, everySecs: 45 },
   notesLine: { mode: "off", compact: true },
+  insights: { drifting: false },
 });
 
 export const defaultFilters = (): Filters => ({
@@ -367,6 +370,7 @@ let state: AppState = {
   met: [],
   blockAsk: [],
   pickPair: [null, null],
+  timeTravel: null,
 };
 
 const listeners = new Set<() => void>();
@@ -731,6 +735,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
     },
     sharing: normalizeSharing(raw.sharing),
     lastVersion: typeof raw.lastVersion === "string" ? raw.lastVersion : "",
+    insights: shaped(raw.insights, d.insights),
     notesLine: shaped(raw.notesLine, d.notesLine, (n) => ({ ...n, mode: oneOf(n.mode, ["off", "mine", "friends", "full"] as const, "off") })),
     bios: shaped(raw.bios, d.bios, (b) => ({ ...b, everySecs: num(b.everySecs, 45, 10, 3600) })),
     ui: shaped(raw.ui, d.ui, (u) => ({

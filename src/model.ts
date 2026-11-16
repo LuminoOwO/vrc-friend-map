@@ -163,6 +163,8 @@ export interface MatchContext {
   circleMembers: Set<string> | null;
   listMembers: Set<string> | null;
   now: number;
+  /** Your nicknames for people (search finds them too). */
+  nicknames?: Record<string, string>;
 }
 
 /** "join me" | "active" | "ask me" | "busy" | "web" | "offline" */
@@ -178,7 +180,7 @@ export function matchesFilters(f: Friend, filters: Filters, ctx: MatchContext): 
   const p = presenceOf(f, ctx.presence);
   if (filters.search) {
     const q = filters.search.toLowerCase();
-    if (!f.displayName.toLowerCase().includes(q) && !(f.statusDescription || "").toLowerCase().includes(q)) return false;
+    if (!f.displayName.toLowerCase().includes(q) && !(f.statusDescription || "").toLowerCase().includes(q) && !(ctx.nicknames?.[f.id] ?? "").toLowerCase().includes(q)) return false;
   }
   if (filters.presence === "online" && p === "offline") return false;
   if (filters.presence === "offline" && p !== "offline") return false;

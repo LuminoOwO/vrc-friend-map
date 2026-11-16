@@ -522,6 +522,7 @@ export interface Settings {
   bios: BioSettings;
   /** The red-flag line at the top of VRChat notes (src/notesline.ts). */
   notesLine: import("./notesline").NotesLineSettings;
+  insights: { drifting: boolean };
 }
 
 /** Reading everyone's profile slowly in the background (src/biocache.ts). */

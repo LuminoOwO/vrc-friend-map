@@ -35,32 +35,32 @@ can be designed around everything. Nothing here is started.
 
 ## Round 2: friends and the map
 
-- [ ] **Last seen and online history.** Offline friends show "last seen 3 days ago"; each
+- [x] **Last seen and online history.** Offline friends show "last seen 3 days ago"; each
   friend gets a small heatmap of the hours they're usually online. Built only from this app's
   own syncs, kept on the device.
-- [ ] **Best time to catch someone:** your usual online hours against a friend's, shown as the
+- [x] **Best time to catch someone:** your usual online hours against a friend's, shown as the
   overlap ("you're both usually on weekdays 20–23").
-- [ ] **Star friends:** starred people stay at the top of lists and stand out on the map.
-- [ ] **Quiet hours:** a do-not-disturb schedule for notifications, with exceptions (starred
+- [x] **Star friends:** starred people stay at the top of lists and stand out on the map.
+- [x] **Quiet hours:** a do-not-disturb schedule for notifications, with exceptions (starred
   friends, chosen circles).
-- [ ] **Notification rules per circle:** e.g. "Close friends: tell me when anyone comes
+- [x] **Notification rules per circle:** e.g. "Close friends: tell me when anyone comes
   online", without a bell on each person.
-- [ ] **Friendiversaries:** "You've been friends with X for a year today" (from the friend
+- [x] **Friendiversaries:** "You've been friends with X for a year today" (from the friend
   date the app already records).
-- [ ] **Clusters as circles:** find the friend groups in the graph (community detection) and
+- [x] **Clusters as circles:** find the friend groups in the graph (community detection) and
   offer them as circles with one click.
-- [ ] **Bridges:** who connects two of your friend groups; which mutual friend could introduce
+- [x] **Bridges:** who connects two of your friend groups; which mutual friend could introduce
   you to a friend of a friend.
-- [ ] **Drifting apart** (off by default, never shared): people you used to see a lot but
+- [x] **Drifting apart** (off by default, never shared): people you used to see a lot but
   haven't in a while, as a gentle list to reconnect.
-- [ ] **Gathering alerts:** "3 of your close friends are in the same instance right now", with
+- [x] **Gathering alerts:** "3 of your close friends are in the same instance right now", with
   a button to request an invite.
-- [ ] **Invite templates:** saved invite / request-invite messages, sent from the map in one
+- [x] **Invite templates:** saved invite / request-invite messages, sent from the map in one
   click.
-- [ ] **Map time travel:** a slider showing the map as it was a month or a year ago (who
+- [x] **Map time travel:** a slider showing the map as it was a month or a year ago (who
   joined, who drifted, how clusters changed). Needs keeping snapshots of the graph.
 
-- [ ] **Friends' local time** ("it's 3 am for them"), with where it comes from:
+- [x] **Friends' local time** ("it's 3 am for them"), with where it comes from:
   - **Verified:** you set their time zone yourself, or they share it through the app (their
     choice). Your own settings sync only between your devices (device sync), never to anyone.
   - **Suggested** until you confirm it, shown as "probably" with the reasons: hints in bio,
@@ -68,29 +68,29 @@ can be designed around everything. Nothing here is started.
     VRChat's languages field, the groups they're in (a group "Germany VRC" points to Germany),
     and their usual online hours (weak). When hints disagree (groups "America" and "Japan"),
     offer the candidates ranked, each with its reasons, and let you pick. Overridable anytime.
-- [ ] **Snooze a friend:** mute one person's notifications for an hour or until tomorrow,
+- [x] **Snooze a friend:** mute one person's notifications for an hour or until tomorrow,
   without removing their bell.
-- [ ] **Missed notifications:** a list with read / unread, so a dismissed one isn't gone.
-- [ ] **Pending friend requests:** the ones you sent and still wait on; cancel old ones.
-- [ ] **Display name history:** names you've seen someone use (kept on this device), so you
+- [x] **Missed notifications:** a list with read / unread, so a dismissed one isn't gone.
+- [x] **Pending friend requests:** the ones you sent and still wait on; cancel old ones.
+- [x] **Display name history:** names you've seen someone use (kept on this device), so you
   know who "xX_Neo_Xx" used to be.
-- [ ] **Your own nicknames:** a private alias per friend, shown on the map instead of or next
+- [x] **Your own nicknames:** a private alias per friend, shown on the map instead of or next
   to their name.
-- [ ] **"Since you were last here":** short summary on opening: who came online, renames, new
+- [x] **"Since you were last here":** short summary on opening: who came online, renames, new
   and removed friends.
-- [ ] **Slot watcher:** a friend's instance is full; notify when a slot opens.
-- [ ] **Path between two people:** the shortest chain of mutual friends connecting them.
-- [ ] **Compare two friends:** shared and non-shared mutuals side by side.
-- [ ] **Your friend list over time:** size, adds and removes per month as a small chart.
-- [ ] **Shared circles:** a circle you and trusted friends edit together, synced over the
+- [x] **Slot watcher:** a friend's instance is full; notify when a slot opens.
+- [x] **Path between two people:** the shortest chain of mutual friends connecting them.
+- [x] **Compare two friends:** shared and non-shared mutuals side by side.
+- [x] **Your friend list over time:** size, adds and removes per month as a small chart.
+- [x] **Shared circles:** a circle you and trusted friends edit together, synced over the
   encrypted sharing.
 
-- [ ] **Block reasons** (part of the red flag system, built like the age hints): when you block
+- [x] **Block reasons** (part of the red flag system, built like the age hints): when you block
   someone (in the app, in game: detected from VRChat's block list, or on the VR watch), pick
   reasons. Shared with friends through the encrypted sharing (preset reasons only; your own
   free text stays on this device), shown on their profile as a red flag ("Blocked by Luna:
   crasher, trolling"). Never a reason about age.
-- [ ] **Red flags at the top of VRChat notes** (readable in game): a short line the app writes
+- [x] **Red flags at the top of VRChat notes** (readable in game): a short line the app writes
   first ("⚑ crasher, trolling · blocked by 2 friends"), your existing note moved below it;
   updated when flags change, removed when they're gone, within VRChat's note length.
 

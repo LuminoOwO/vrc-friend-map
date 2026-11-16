@@ -1,4 +1,4 @@
-import { defaultMap, updateMap, updateSettings, useApp } from "../store";
+import { defaultMap, setState, updateMap, updateSettings, useApp } from "../store";
 import type { Gravity, MapSettings, NodeStyle } from "../types";
 import { Icon } from "./Icon";
 
@@ -193,6 +193,8 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
         {map.hulls && <Slider label="Outline strength" value={map.hullOpacity} min={0.2} max={3} step={0.05} onChange={(v) => set({ hullOpacity: v })} />}
       </div>
 
+      <TimeTravel />
+
       <div className="row">
         <button className="btn small" onClick={onFit}>
           <Icon name="fit" size={14} /> Fit to screen
@@ -201,6 +203,43 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
           Reset map options
         </button>
       </div>
+    </div>
+  );
+}
+
+/** The map as it was at an earlier date (from the friend change log). */
+function TimeTravel() {
+  const since = useApp((s) => s.local.logSince);
+  const at = useApp((s) => s.timeTravel);
+  if (!since || Date.now() - since < 2 * 864e5) return null;
+  const days = Math.ceil((Date.now() - since) / 864e5);
+  const value = at ? Math.round((Date.now() - at) / 864e5) : 0;
+  return (
+    <div className="opt-group">
+      <span className="opt-title">Time travel</span>
+      <label className="opt-slider">
+        <span>
+          Show the map as of <b>{at ? new Date(at).toLocaleDateString() : "now"}</b>
+        </span>
+        <input
+          type="range"
+          min={0}
+          max={days}
+          step={1}
+          value={value}
+          style={{ direction: "rtl" }}
+          onChange={(e) => {
+            const d = Number(e.target.value);
+            setState({ timeTravel: d === 0 ? null : Date.now() - d * 864e5 });
+          }}
+        />
+      </label>
+      {at && (
+        <button className="btn small" onClick={() => setState({ timeTravel: null })}>
+          Back to now
+        </button>
+      )}
+      <span className="small muted">Who was your friend then (since {new Date(since).toLocaleDateString()}). People you're no longer friends with aren't on the map.</span>
     </div>
   );
 }

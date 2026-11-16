@@ -72,12 +72,13 @@ export function useDerived(): Derived {
       circleMembers: circle ? new Set(circle.members) : null,
       listMembers: list ? new Set(listMemberIds(list, cache)) : null,
       now: Date.now(),
+      nicknames: local.nicknames,
     };
     // "Only friends of friends": friends stay on the map as context, dimmed (or hidden).
     const matched = new Set(filters.who === "potential" ? [] : friends.filter((f) => matchesFilters(f, filters, ctx)).map((f) => f.id));
     return { matched, ctx };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [friends, cache.presence, cache.details, cache.favorites, local.circles, local.imports, filters]);
+  }, [friends, cache.presence, cache.details, cache.favorites, local.circles, local.imports, local.nicknames, filters]);
 
   return { friends, idsKey, matched, edges, degree, ctx, circleCount };
 }

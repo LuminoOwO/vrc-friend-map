@@ -1,3 +1,5 @@
+import { InsightsView } from "./components/InsightsView";
+import { BlockReasonDialog } from "./components/PersonExtras";
 import { startBioCache, stopBioCache } from "./biocache";
 import { startHistory, stopHistory } from "./history";
 import { startWatchers, stopWatchers } from "./watchers";
@@ -131,6 +133,7 @@ export default function App() {
           {view === "cards" && <CardsView />}
           {view === "lists" && <SharedLists />}
           {view === "activity" && <ActivityView />}
+          {view === "insights" && <InsightsView />}
         </div>
         {selectedId && profileAs === "sidebar" && <DetailPanel id={selectedId} />}
       </div>
@@ -148,6 +151,7 @@ export default function App() {
       {serversOpen && <ServersModal />}
       <ConfirmUnencrypted />
       <ImageViewer />
+      <BlockReasonDialog />
       <CloseDialog />
       <UpdateDialog />
       <ToastView />

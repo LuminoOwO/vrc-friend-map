@@ -489,6 +489,14 @@ function ServerCard({ server: s }: { server: ShareServer }) {
                   <input type="checkbox" checked={s.shareRemovals} disabled={!s.shareFriends} onChange={(e) => set({ shareRemovals: e.target.checked })} />
                   My friend removals
                 </label>
+                <label className="check">
+                  <input type="checkbox" checked={s.shareBlocks} disabled={!s.shareFriends} onChange={(e) => set({ shareBlocks: e.target.checked })} />
+                  Why I blocked people (the reasons I picked, not my own words)
+                </label>
+                <label className="check">
+                  <input type="checkbox" checked={s.shareTimezone} disabled={!s.shareFriends} onChange={(e) => set({ shareTimezone: e.target.checked })} />
+                  My time zone (so friends see my local time)
+                </label>
                 <Why text="Friend list: your friends' names and IDs, so friends see your connections even when VRChat hides mutuals. Activity: how much time pairs of your friends spent in the same instance (from your game logs, live locations and loggers), which makes their group suggestions better. Friend removals: whom you stopped being friends with in the last year, and whether they were in your instance then; your friends see it as a note on that person's profile, so they can ask you about it. Notes about people: only what you chose to tell friends on someone's profile (over 18, probably over 18, or keep your distance); notes saying someone is under 18 never leave your device. Nothing else is sent." />
               </div>
               <div className="row">
