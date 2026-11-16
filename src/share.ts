@@ -606,6 +606,7 @@ function currentSelf(): SelfData {
     inviteTemplates: Object.fromEntries((st.local.inviteTemplates ?? []).map((t) => [t.id, t])),
     sharedCircles: st.local.sharedCircles ?? {},
     worldNotes: st.local.worldNotes ?? {},
+    pushTargets: st.local.pushTargets ?? {},
   };
 }
 
@@ -623,6 +624,7 @@ function applySelf(d: SelfData) {
     inviteTemplates: d.inviteTemplates ? Object.values(d.inviteTemplates) : l.inviteTemplates,
     sharedCircles: d.sharedCircles ?? l.sharedCircles,
     worldNotes: d.worldNotes ?? l.worldNotes,
+    pushTargets: d.pushTargets ?? l.pushTargets,
   }));
   const st = getState();
   const merged = normalizeSettings({

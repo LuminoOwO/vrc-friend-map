@@ -12,6 +12,7 @@ import { startKeys } from "./keys";
 import { startUpdateChecks } from "./updates";
 import { installHaptics } from "./haptics";
 import { installLinkPaste } from "./vrclinks";
+import { startPhone } from "./phone";
 
 applySafeArea();
 unlockAudioOnInput();
@@ -22,6 +23,7 @@ startKeys();
 startUpdateChecks();
 installHaptics();
 installLinkPaste();
+startPhone();
 
 // Dev server only: lets UI test scripts set up state (stripped from builds).
 if (import.meta.env.DEV) {

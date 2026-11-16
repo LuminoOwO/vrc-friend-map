@@ -297,6 +297,8 @@ export function notifyEvent(event: NotifyEvent, userId: string, name: string, ex
     return true;
   }
   recordMissed({ t: now, event, userId, name, text });
+  // Your phones in push mode get it too (from the PC app).
+  void import("./phone").then((m) => m.pushToPhones(event, "VRC Friend Map", text));
 
   if (n.sound && queue.length < 4) {
     queue.push({ parts: soundFor(event, name, n, userId), volume: n.volume });

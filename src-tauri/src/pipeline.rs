@@ -16,7 +16,9 @@ use tokio_tungstenite::tungstenite::http::HeaderValue;
 use tokio_tungstenite::tungstenite::Message;
 
 const PIPELINE_URL: &str = "wss://pipeline.vrchat.cloud/";
-const FORWARDED: [&str; 7] = [
+const FORWARDED: [&str; 8] = [
+    // invites and invite requests (only these notification types are used, in the UI)
+    "notification",
     "friend-add",
     "friend-delete",
     "friend-online",
@@ -204,7 +206,7 @@ mod tests {
 
     #[test]
     fn ignores_other_events_and_garbage() {
-        assert_eq!(parse_message(r#"{"type":"notification","content":"{}"}"#), Parsed::Ignore);
+        assert_eq!(parse_message(r#"{"type":"user-update","content":"{}"}"#), Parsed::Ignore);
         assert_eq!(parse_message("not json"), Parsed::Ignore);
     }
 

@@ -28,7 +28,8 @@ export function naiveToDate(n: number): Date {
 export const DESKTOP = ["linux", "windows", "macos"];
 
 export function logsSupported(platform: string): boolean {
-  return DESKTOP.includes(platform);
+  // Android: with root (rooted phones, Quest), the logs are copied into the app first.
+  return DESKTOP.includes(platform) || (platform === "android" && getState().settings.phone?.rootLogs === true);
 }
 
 export function logDirs(): string[] {

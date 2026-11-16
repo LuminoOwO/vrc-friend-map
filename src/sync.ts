@@ -568,7 +568,17 @@ function presenceFromUser(u: any): Presence | null {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function applyPipelineEvent(type: string, content: any) {
   const s = getState();
-  if (s.demo || !content || typeof content.userId !== "string") return;
+  if (s.demo || !content) return;
+  if (type === "notification") {
+    // Invites and invite requests.
+    const kind = content.type;
+    const from = typeof content.senderUserId === "string" ? content.senderUserId : "";
+    const name = s.cache.friends[from]?.displayName ?? content.senderUsername ?? "Someone";
+    if (kind === "invite") notifyEvent("invite", from, name, { world: content.details?.worldName });
+    else if (kind === "requestInvite") notifyEvent("requestInvite", from, name);
+    return;
+  }
+  if (typeof content.userId !== "string") return;
   const id: string = content.userId;
   const now = new Date().toISOString();
   const known = !!s.cache.friends[id];

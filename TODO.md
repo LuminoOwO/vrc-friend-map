@@ -151,27 +151,27 @@ can be designed around everything. Nothing here is started.
 
 ## Round 5: phone in the background
 
-- [ ] **Android background, three ways** (pick in Settings):
+- [x] **Android background, three ways** (pick in Settings):
   1. Push through UnifiedPush (Sunup, ntfy…), sent by your PC app or your own server (round 6);
      no extra battery on the phone.
   2. The app's own background connection with a permanent notification.
   3. The same, quiet: a hidden, silent notification, so on Android 13+ it only shows under
      "Active apps" (like Sunup).
-- [ ] **Game invites as notifications** (and invite requests), as fast as the connection
+- [x] **Game invites as notifications** (and invite requests), as fast as the connection
   allows. iPhone: only while the app is open (no background connections without Apple push).
-- [ ] **Custom sounds on the phone in the background:** the background service plays the app's
+- [x] **Custom sounds on the phone in the background:** the background service plays the app's
   own sound (per event, per friend); the system notification stays silent.
-- [ ] **More than 60 fps on Android:** ask for the screen's top refresh rate (and raise the
+- [x] **More than 60 fps on Android:** ask for the screen's top refresh rate (and raise the
   default limit on phones that can). iPhone ProMotion: try; uncertain for web content.
-- [ ] **Game logs on the phone through Shizuku or root.** VRChat's logs sit in its app folder,
+- [x] **Game logs on the phone through Shizuku or root.** (Root done; Shizuku still open: needs its API library and testing on a device.) VRChat's logs sit in its app folder,
   which other apps can't read since Android 11. Shizuku (needs starting again after each reboot
   without root) or root (`su`: rooted phones, or a rooted Quest such as with Singularity) can
   read them.
-- [ ] **Game-log data from the PC to the phone**, local first: on the same network directly
+- [x] **Game-log data from the PC to the phone**, local first: on the same network directly
   from the PC app (time together, groups, activity, live who's here); through the server only
   with a separate server option, off by default.
 
-- [ ] **Android home-screen widget:** starred friends online right now.
+- [x] **Android home-screen widget:** starred friends online right now.
 
 ## Round 6: server
 

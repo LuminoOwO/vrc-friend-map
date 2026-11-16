@@ -31,6 +31,7 @@ import { serverName } from "../share";
 import { unavailable } from "../platform";
 import { haptic } from "../haptics";
 import { bioProgress } from "../biocache";
+import { PhoneSection } from "./PhoneSection";
 import { flagLine } from "../notesline";
 import { loadSlots, saveSlot, type MessageSlot } from "../invites";
 import type { UiSettings } from "../types";
@@ -589,6 +590,9 @@ export function SettingsModal() {
 
         <Sec id="notify" cat="sounds" title="Notifications" keys="sound notification volume chime online offline alert mute ping tune friend added removed joined left world once date waiting">
           <NotificationsSection />
+        </Sec>
+        <Sec id="phone" cat="sounds" title="Phone in the background" keys="android background service push unifiedpush sunup ntfy battery refresh rate 120hz widget root quest singularity logs" unavailable={unavailable("backgroundService")}>
+          <PhoneSection />
         </Sec>
         <Sec id="close" cat="sounds" title="Closing the window" keys="tray minimize background close quit exit" unavailable={unavailable("closeWindow")}>
           <CloseSection />

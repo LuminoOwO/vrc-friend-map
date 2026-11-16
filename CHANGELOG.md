@@ -107,6 +107,19 @@ minor releases can change behavior.
 - **Your own sound per friend** (next to the bell on their profile): plays instead of their
   generated tune.
 
+- **Android: phone in the background** (Settings → Notifications): stay connected with a
+  permanent notification, stay connected quietly (a silent, minimised notification; on Android
+  13+ mostly under "Active apps"), or **push through UnifiedPush** (Sunup, ntfy…): your PC app
+  sends your notifications to the phone, encrypted with a key only your devices know, so the
+  phone needs no connection of its own. Asking to be left out of battery optimisation.
+- **Invites and invite requests** as notifications (from the live connection), with their own
+  sounds.
+- **Android: above 60 Hz**: asks for the screen's highest refresh rate (or one you pick).
+- **Android: home-screen widget** with your starred friends who are online.
+- **Android: open VRChat links shared to the app** (share menu → VRC Friend Map).
+- **Android: game logs with root** (rooted phones, or a rooted Quest such as with Singularity):
+  VRChat's logs are copied every few minutes and read like on a PC.
+
 ### Changed
 - Map: panning stops before everyone leaves the screen.
 - Phones: the filter menu stays inside the screen; the settings button sits in the top right

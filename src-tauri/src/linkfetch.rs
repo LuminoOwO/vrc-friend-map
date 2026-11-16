@@ -115,3 +115,36 @@ mod tests {
         }
     }
 }
+
+/// Send a push message to one of your phones' UnifiedPush endpoints (ntfy,
+/// Sunup's server, your own…). The body is already encrypted with a key only
+/// your devices know. https only, public addresses, 4 KB at most.
+#[tauri::command]
+pub async fn push_send(endpoint: String, body: String) -> Result<u16, String> {
+    let url = url::Url::parse(&endpoint).map_err(|e| e.to_string())?;
+    if url.scheme() != "https" {
+        return Err("push endpoints must be https".into());
+    }
+    if body.len() > 4096 {
+        return Err("message too big".into());
+    }
+    let u = url.clone();
+    let addr = tauri::async_runtime::spawn_blocking(move || resolve_public(&u)).await.map_err(|e| e.to_string())??;
+    let host = url.host_str().unwrap_or_default().to_string();
+    let client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .timeout(Duration::from_secs(10))
+        .resolve(&host, addr)
+        .build()
+        .map_err(|e| e.to_string())?;
+    let resp = client
+        .post(url)
+        .header(reqwest::header::CONTENT_TYPE, "application/octet-stream")
+        .header("TTL", "86400")
+        .header("Urgency", "high")
+        .body(body)
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    Ok(resp.status().as_u16())
+}

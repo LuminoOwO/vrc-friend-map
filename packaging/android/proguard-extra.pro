@@ -10,3 +10,6 @@
 -keep class app.vrcfriendmap.WryActivity { *; }
 -keep class app.vrcfriendmap.Ipc { *; }
 -keep class app.vrcfriendmap.MainActivity { *; }
+
+# VRC Friend Map: the app's own native code (called by name from Rust/JS)
+-keep class app.vrcfriendmap.** { *; }

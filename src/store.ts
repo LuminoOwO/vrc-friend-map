@@ -303,6 +303,7 @@ export const defaultSettings = (): Settings => ({
   bios: { background: true, everySecs: 45 },
   notesLine: { mode: "off", compact: true },
   insights: { drifting: false },
+  phone: { background: "off", refreshRate: 0, widget: true, rootLogs: false },
 });
 
 export const defaultFilters = (): Filters => ({
@@ -748,6 +749,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
     sharing: normalizeSharing(raw.sharing),
     lastVersion: typeof raw.lastVersion === "string" ? raw.lastVersion : "",
     insights: shaped(raw.insights, d.insights),
+    phone: shaped(raw.phone, d.phone, (p) => ({ ...p, background: oneOf(p.background, ["off", "visible", "quiet", "push"] as const, "off") })),
     notesLine: shaped(raw.notesLine, d.notesLine, (n) => ({ ...n, mode: oneOf(n.mode, ["off", "mine", "friends", "full"] as const, "off") })),
     bios: shaped(raw.bios, d.bios, (b) => ({ ...b, everySecs: num(b.everySecs, 45, 10, 3600) })),
     ui: shaped(raw.ui, d.ui, (u) => ({
@@ -850,6 +852,9 @@ export function normalizeLocal(raw: Raw | null): LocalData {
     slotWatch: (isObj(raw.slotWatch) ? raw.slotWatch : {}) as LocalData["slotWatch"],
     sharedCircles: (isObj(raw.sharedCircles) ? raw.sharedCircles : {}) as LocalData["sharedCircles"],
     worldNotes: (isObj(raw.worldNotes) ? raw.worldNotes : {}) as LocalData["worldNotes"],
+    deviceId: typeof raw.deviceId === "string" && raw.deviceId ? raw.deviceId : Math.random().toString(36).slice(2, 12),
+    push: isObj(raw.push) && typeof raw.push.key === "string" ? (raw.push as LocalData["push"]) : undefined,
+    pushTargets: (isObj(raw.pushTargets) ? raw.pushTargets : {}) as LocalData["pushTargets"],
   };
   // 0.1.x kept per-friend "first seen" dates; only the change log needs them.
   const legacy = raw as { firstSeen?: Record<string, number>; trackingSince?: number };

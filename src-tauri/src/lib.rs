@@ -6,6 +6,7 @@ mod gdk_stubs;
 mod gdk4_stubs;
 mod gamelogs;
 pub mod graphics;
+mod android;
 mod images;
 mod pictures;
 mod linkfetch;
@@ -273,6 +274,26 @@ async fn logs_stats(state: AppStateRef<'_>, query: gamelogs::StatsQuery) -> Resu
     tauri::async_runtime::spawn_blocking(move || st.logs.stats(&query)).await.map_err(|e| e.to_string())?
 }
 
+/// Android native parts (src/android.rs, packaging/android/kotlin/VfmPlugin.kt).
+#[tauri::command]
+async fn android_call(app: AppHandle, command: String, args: serde_json::Value) -> Result<serde_json::Value, String> {
+    const ALLOWED: &[&str] = &["setBackground", "batteryExempt", "refreshRates", "setRefreshRate", "setWidget", "setForeground", "pushDistributors", "pushRegister", "pushUnregister", "poll"];
+    if !ALLOWED.contains(&command.as_str()) {
+        return Err("unknown command".into());
+    }
+    tauri::async_runtime::spawn_blocking(move || android::call(&app, &command, args)).await.map_err(|e| e.to_string())?
+}
+
+/// Copy VRChat's log files on this phone / Quest with root, for the game log scan.
+/// Returns the folder they went to and how many files.
+#[tauri::command]
+async fn android_root_logs(state: AppStateRef<'_>) -> Result<(String, usize), String> {
+    let dest = state.data_dir.join("rootlogs");
+    let d = dest.clone();
+    let n = tauri::async_runtime::spawn_blocking(move || android::root_copy_logs(&d)).await.map_err(|e| e.to_string())??;
+    Ok((dest.display().to_string(), n))
+}
+
 /// VRChat's picture folders found on this machine.
 #[tauri::command]
 fn pictures_detect() -> Vec<String> {
@@ -509,6 +530,7 @@ pub fn run() {
     builder
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(android::plugin())
         .register_asynchronous_uri_scheme_protocol("vrcimg", images::handle)
         .register_asynchronous_uri_scheme_protocol("vrcpic", pictures::handle)
         .setup(|app| {
@@ -573,6 +595,8 @@ pub fn run() {
             vrc_write,
             logs_timeline,
             pictures_detect,
+            android_call,
+            android_root_logs,
             pictures_list,
             vrc_upload_image,
             storage_info,
@@ -614,6 +638,7 @@ pub fn run() {
             wheelfix::wheel_fix_set,
             silent_notify::notify_silent,
             linkfetch::fetch_link_text,
+            linkfetch::push_send,
             updater::update_check,
             updater::update_install,
             wheelfix::wheel_fix_state,

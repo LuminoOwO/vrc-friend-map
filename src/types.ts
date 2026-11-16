@@ -267,6 +267,12 @@ export interface LocalData {
   blockReasons?: Record<string, BlockReason>;
   /** Instances you watch for a free slot (location → when you started watching). */
   slotWatch?: Record<string, { t: number; name: string }>;
+  /** This install's random ID (for your devices' push targets). */
+  deviceId?: string;
+  /** This phone's UnifiedPush registration (push mode). */
+  push?: { endpoint: string; key: string; distributor?: string; t?: number };
+  /** Your phones that take pushes (synced between your devices). */
+  pushTargets?: Record<string, { endpoint: string; key: string; t: number; name: string }>;
   /** Your notes and tags on worlds. */
   worldNotes?: Record<string, { text: string; tags: string[]; t: number }>;
   /** Circles you share with friends (circle id → who may edit it with you). */
@@ -527,6 +533,17 @@ export interface Settings {
   /** The red-flag line at the top of VRChat notes (src/notesline.ts). */
   notesLine: import("./notesline").NotesLineSettings;
   insights: { drifting: boolean };
+  /** Android: background mode, refresh rate, widget, root log reading (src/phone.ts). */
+  phone: PhoneSettings;
+}
+
+export interface PhoneSettings {
+  background: "off" | "visible" | "quiet" | "push";
+  /** Screen refresh rate to ask for: 0 = the highest the screen can do, -1 = leave it to the system. */
+  refreshRate: number;
+  widget: boolean;
+  /** Read VRChat's logs with root (rooted phones, rooted Quest). */
+  rootLogs: boolean;
 }
 
 /** Reading everyone's profile slowly in the background (src/biocache.ts). */
