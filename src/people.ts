@@ -335,6 +335,14 @@ export function refreshModerations(force = false): Promise<void> {
         if (!m?.targetUserId || !m.type) continue;
         (byUser[m.targetUserId] ??= []).push(m.type);
       }
+      // Blocks made in game since last time: ask why (only after the first load).
+      const before = getState().cache.moderations;
+      if (before) {
+        const fresh = Object.entries(byUser)
+          .filter(([id, kinds]) => kinds.includes("block") && !(before.byUser[id] ?? []).includes("block") && !getState().local.blockReasons?.[id])
+          .map(([id]) => id);
+        if (fresh.length) setState((st) => ({ blockAsk: [...new Set([...st.blockAsk, ...fresh])] }));
+      }
       updateCache((c) => ({ ...c, moderations: { byUser, fetchedAt: Date.now() } }));
     } catch {
       /* try again later */
@@ -366,6 +374,7 @@ export async function setModeration(id: string, kind: "block" | "mute" | "hideAv
       byUser[id] = [...cur];
       return { ...c, moderations: { byUser, fetchedAt: c.moderations?.fetchedAt ?? 0 } };
     });
+    if (kind === "block" && on) setState((st) => ({ blockAsk: [...new Set([...st.blockAsk, id])] }));
     return null;
   } catch (e) {
     return e instanceof Error ? e.message : String(e);

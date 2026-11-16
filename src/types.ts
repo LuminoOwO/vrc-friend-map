@@ -176,6 +176,8 @@ export interface Cache {
   friends: Record<string, Friend>;
   presence: Record<string, Presence>;
   details: Record<string, UserDetail>;
+  /** Your VRChat notes on people (GET /userNotes). */
+  userNotes?: { byUser: Record<string, string>; fetchedAt: number };
   /** Linked pages read for age hints and time zones (this device only). */
   linkReads?: Record<string, LinkReadsEntry>;
   /** Age hints worked out on this device (never shared). */
@@ -518,6 +520,8 @@ export interface Settings {
   lastVersion: string;
   ui: UiSettings;
   bios: BioSettings;
+  /** The red-flag line at the top of VRChat notes (src/notesline.ts). */
+  notesLine: import("./notesline").NotesLineSettings;
 }
 
 /** Reading everyone's profile slowly in the background (src/biocache.ts). */

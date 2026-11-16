@@ -99,6 +99,10 @@ export interface AppState {
   here: LiveSnapshot | null;
   /** Non-friends from the game logs (for the potential-friends layer). */
   met: MetPerson[];
+  /** People you just blocked, waiting for you to pick reasons (block reasons dialog). */
+  blockAsk: string[];
+  /** Insights view: two people picked for "path" / "compare". */
+  pickPair: [string | null, string | null];
 }
 
 // ---------- data format versions ----------
@@ -289,6 +293,7 @@ export const defaultSettings = (): Settings => ({
   lastVersion: "",
   ui: defaultUi(),
   bios: { background: true, everySecs: 45 },
+  notesLine: { mode: "off", compact: true },
 });
 
 export const defaultFilters = (): Filters => ({
@@ -360,6 +365,8 @@ let state: AppState = {
   keyPins: null,
   here: null,
   met: [],
+  blockAsk: [],
+  pickPair: [null, null],
 };
 
 const listeners = new Set<() => void>();
@@ -724,6 +731,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
     },
     sharing: normalizeSharing(raw.sharing),
     lastVersion: typeof raw.lastVersion === "string" ? raw.lastVersion : "",
+    notesLine: shaped(raw.notesLine, d.notesLine, (n) => ({ ...n, mode: oneOf(n.mode, ["off", "mine", "friends", "full"] as const, "off") })),
     bios: shaped(raw.bios, d.bios, (b) => ({ ...b, everySecs: num(b.everySecs, 45, 10, 3600) })),
     ui: shaped(raw.ui, d.ui, (u) => ({
       ...u,
