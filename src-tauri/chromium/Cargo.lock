@@ -5496,7 +5496,7 @@ dependencies = [
 
 [[package]]
 name = "vrc-friend-map"
-version = "0.12.0"
+version = "0.12.1"
 dependencies = [
  "futures-util",
  "hex",

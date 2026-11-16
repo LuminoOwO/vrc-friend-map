@@ -3,7 +3,7 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
-## Unreleased
+## 0.12.1 (2026-11-16)
 
 ### Fixed
 - Uploading a sticker failed with "Only emoji can have animation styles": the in-game effect is
