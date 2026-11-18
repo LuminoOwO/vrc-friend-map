@@ -3,6 +3,18 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## Unreleased
+
+### Changed
+- **Picking someone's time zone** (profile → Local time): a short list of the world's 38 time
+  zones by UTC offset ("UTC+1 · Central Europe: Germany, France, Spain…", with the time there
+  now) and a filter, in the app's own look, instead of a browser list of hundreds of cities.
+- **Local time says which part of the day it is** there: night, early morning, morning,
+  afternoon, evening or late evening (only night is highlighted).
+
+### Fixed
+- "It's night for …" showed in the afternoon with a 12-hour clock (3 PM was read as 3 am).
+
 ## 0.12.1 (2026-11-16)
 
 ### Fixed

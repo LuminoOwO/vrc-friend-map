@@ -22,7 +22,7 @@ import {
 } from "../personal";
 import { fmtDate } from "../model";
 import { setState, showToast, useApp } from "../store";
-import { ALL_ZONES, differenceFromMe, isNightThere, timeIn, zoneLabel } from "../tz";
+import { dayPart, differenceFromMe, hourIn, timeIn, zoneEntry, zoneLabel, ZONE_LIST } from "../tz";
 import { requestInvite } from "../invites";
 import { Icon } from "./Icon";
 import { usePersonLog } from "./LogbookView";
@@ -99,7 +99,6 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
   useApp((s) => s.cache.groups?.[id]);
   const [, tick] = useState(0);
   const [open, setOpen] = useState(false);
-  const [pick, setPick] = useState("");
   useEffect(() => {
     const t = setInterval(() => tick((n) => n + 1), 30e3);
     return () => clearInterval(t);
@@ -127,7 +126,12 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
       {tz.tz && (
         <p className="local-time-now">
           <b>{timeIn(tz.tz)}</b> {!verified && <span className="tag-suggested">probably</span>} <span className="muted small">{zoneLabel(tz.tz)} · {diffText}</span>
-          {isNightThere(tz.tz) && <span className="small warn"> · it's night for {name}</span>}
+          {(() => {
+            const h = hourIn(tz.tz);
+            if (h === null) return null;
+            const part = dayPart(h);
+            return <span className={`small ${part === "night" ? "warn" : "muted"}`}> · it's {part} for {name}</span>;
+          })()}
         </p>
       )}
       <p className="small muted">
@@ -156,16 +160,8 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
               ))}
             </ul>
           )}
+          <TzPicker value={tz.tz} onPick={(z) => setTimezone(id, z, "set")} />
           <div className="row">
-            <input list="tz-all" placeholder="Pick a time zone, e.g. Europe/Berlin" value={pick} onChange={(e) => setPick(e.target.value)} />
-            <datalist id="tz-all">
-              {ALL_ZONES.map((z) => (
-                <option key={z} value={z} />
-              ))}
-            </datalist>
-            <button className="btn small" disabled={!pick || (ALL_ZONES.length > 0 && !ALL_ZONES.includes(pick))} onClick={() => setTimezone(id, pick, "set")}>
-              Set
-            </button>
             {(tz.how === "set" || tz.how === "confirmed") && (
               <button className="btn small ghost" onClick={() => setTimezone(id, null)}>
                 Forget
@@ -175,6 +171,31 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
           <p className="small muted">Synced between your devices only. Suggestions come from their bio, status, linked pages, languages, groups and usual online hours.</p>
         </div>
       )}
+    </div>
+  );
+}
+
+/** The 38 time zones by UTC offset, in the app's own look, with a filter. */
+function TzPicker({ value, onPick }: { value: string | null | undefined; onPick: (tz: string) => void }) {
+  const [q, setQ] = useState("");
+  const current = value ? zoneEntry(value) : undefined;
+  const words = q.toLowerCase().trim();
+  const shown = words ? ZONE_LIST.filter((z) => `${z.offset} ${z.places}`.toLowerCase().includes(words) || z.offset.replace("−", "-").toLowerCase().includes(words)) : ZONE_LIST;
+  return (
+    <div className="tz-picker">
+      <input id="tz-filter" type="search" placeholder="Filter: a country, a city or +2" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Filter time zones" />
+      <ul className="tz-list" role="listbox" aria-label="Time zones">
+        {shown.map((z) => (
+          <li key={z.tz}>
+            <button type="button" role="option" aria-selected={current?.tz === z.tz} className={current?.tz === z.tz ? "on" : ""} onClick={() => onPick(z.tz)}>
+              <b>{z.offset}</b>
+              <span className="tz-places">{z.places}</span>
+              <span className="tz-now">{timeIn(z.tz)}</span>
+            </button>
+          </li>
+        ))}
+        {!shown.length && <li className="small muted tz-none">No time zone matches “{q}”.</li>}
+      </ul>
     </div>
   );
 }

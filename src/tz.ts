@@ -302,17 +302,81 @@ export function differenceFromMe(tz: string, at = new Date()): number | null {
   return off === null ? null : off + at.getTimezoneOffset() / 60;
 }
 
-/** Is it night there (00–07)? For "it's 3 am for them". */
-export function isNightThere(tz: string, at = new Date()): boolean {
-  const t = timeIn(tz, at);
-  const h = Number(t.split(":")[0]);
-  return Number.isFinite(h) && h < 7;
+/** The hour there, 0–23 (whatever the 12- or 24-hour clock the app shows). */
+export function hourIn(tz: string, at = new Date()): number | null {
+  const off = offsetHours(tz, at);
+  if (off === null) return null;
+  const h = Math.floor((((at.getUTCHours() + at.getUTCMinutes() / 60 + off) % 24) + 24) % 24);
+  return Number.isFinite(h) ? h : null;
 }
 
-export const ALL_ZONES: string[] = (() => {
-  try {
-    return (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf?.("timeZone") ?? [];
-  } catch {
-    return [];
-  }
-})();
+export type DayPart = "night" | "early morning" | "morning" | "afternoon" | "evening" | "late evening";
+
+/** Which part of the day an hour (0–23) is. */
+export function dayPart(h: number): DayPart {
+  if (h < 5) return "night";
+  if (h < 8) return "early morning";
+  if (h < 12) return "morning";
+  if (h < 18) return "afternoon";
+  if (h < 22) return "evening";
+  return "late evening";
+}
+
+/** Is it night there (00–05)? For "it's 3 am for them". */
+export function isNightThere(tz: string, at = new Date()): boolean {
+  const h = hourIn(tz, at);
+  return h !== null && dayPart(h) === "night";
+}
+
+/**
+ * The world's time zones by UTC offset (standard time), one representative
+ * zone each so summer time still works, with places people know. 38 of them.
+ */
+export const ZONE_LIST: { tz: string; offset: string; places: string }[] = [
+  { tz: "Etc/GMT+12", offset: "UTC−12", places: "Baker Island" },
+  { tz: "Pacific/Pago_Pago", offset: "UTC−11", places: "American Samoa, Niue" },
+  { tz: "Pacific/Honolulu", offset: "UTC−10", places: "Hawaii, Tahiti" },
+  { tz: "Pacific/Marquesas", offset: "UTC−9:30", places: "Marquesas Islands" },
+  { tz: "America/Anchorage", offset: "UTC−9", places: "Alaska" },
+  { tz: "America/Los_Angeles", offset: "UTC−8", places: "US & Canada Pacific: Los Angeles, Seattle, Vancouver" },
+  { tz: "America/Denver", offset: "UTC−7", places: "US & Canada Mountain: Denver, Calgary" },
+  { tz: "America/Chicago", offset: "UTC−6", places: "US & Canada Central: Chicago, Dallas, Winnipeg" },
+  { tz: "America/New_York", offset: "UTC−5", places: "US & Canada Eastern: New York, Toronto, Miami" },
+  { tz: "America/Halifax", offset: "UTC−4", places: "Atlantic Canada, Puerto Rico, Bolivia" },
+  { tz: "America/St_Johns", offset: "UTC−3:30", places: "Newfoundland" },
+  { tz: "America/Sao_Paulo", offset: "UTC−3", places: "Brazil, Argentina, Chile" },
+  { tz: "Atlantic/South_Georgia", offset: "UTC−2", places: "South Georgia, Fernando de Noronha" },
+  { tz: "Atlantic/Azores", offset: "UTC−1", places: "Azores, Cape Verde" },
+  { tz: "Europe/London", offset: "UTC±0", places: "UK, Ireland, Portugal, Iceland" },
+  { tz: "Europe/Berlin", offset: "UTC+1", places: "Central Europe: Germany, France, Spain, Italy, Poland" },
+  { tz: "Europe/Athens", offset: "UTC+2", places: "Eastern Europe: Finland, Greece, Ukraine, Romania; Egypt" },
+  { tz: "Europe/Moscow", offset: "UTC+3", places: "Moscow, Turkey, Saudi Arabia, Kenya" },
+  { tz: "Asia/Tehran", offset: "UTC+3:30", places: "Iran" },
+  { tz: "Asia/Dubai", offset: "UTC+4", places: "UAE, Georgia, Armenia" },
+  { tz: "Asia/Kabul", offset: "UTC+4:30", places: "Afghanistan" },
+  { tz: "Asia/Karachi", offset: "UTC+5", places: "Pakistan, Uzbekistan" },
+  { tz: "Asia/Kolkata", offset: "UTC+5:30", places: "India, Sri Lanka" },
+  { tz: "Asia/Kathmandu", offset: "UTC+5:45", places: "Nepal" },
+  { tz: "Asia/Dhaka", offset: "UTC+6", places: "Bangladesh, Kazakhstan" },
+  { tz: "Asia/Yangon", offset: "UTC+6:30", places: "Myanmar" },
+  { tz: "Asia/Bangkok", offset: "UTC+7", places: "Thailand, Vietnam, Jakarta" },
+  { tz: "Asia/Shanghai", offset: "UTC+8", places: "China, Singapore, Philippines, Perth" },
+  { tz: "Australia/Eucla", offset: "UTC+8:45", places: "Eucla" },
+  { tz: "Asia/Tokyo", offset: "UTC+9", places: "Japan, Korea" },
+  { tz: "Australia/Adelaide", offset: "UTC+9:30", places: "Adelaide, Darwin" },
+  { tz: "Australia/Sydney", offset: "UTC+10", places: "Sydney, Melbourne, Brisbane, Guam" },
+  { tz: "Australia/Lord_Howe", offset: "UTC+10:30", places: "Lord Howe Island" },
+  { tz: "Pacific/Noumea", offset: "UTC+11", places: "New Caledonia, Solomon Islands" },
+  { tz: "Pacific/Auckland", offset: "UTC+12", places: "New Zealand, Fiji" },
+  { tz: "Pacific/Chatham", offset: "UTC+12:45", places: "Chatham Islands" },
+  { tz: "Pacific/Tongatapu", offset: "UTC+13", places: "Tonga, Samoa" },
+  { tz: "Pacific/Kiritimati", offset: "UTC+14", places: "Line Islands (Kiribati)" },
+];
+
+/** The list entry a zone belongs to: the same one, or the one with the same offset right now. */
+export function zoneEntry(tz: string, at = new Date()): (typeof ZONE_LIST)[number] | undefined {
+  const exact = ZONE_LIST.find((z) => z.tz === tz);
+  if (exact) return exact;
+  const off = offsetHours(tz, at);
+  return off === null ? undefined : ZONE_LIST.find((z) => offsetHours(z.tz, at) === off);
+}

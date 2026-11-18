@@ -255,6 +255,11 @@ can be designed around everything. Nothing here is started.
     full), filters and settings as full-screen sheets, 44 px touch targets, haptics.
 - [ ] **Accessibility:** text size, reduced motion, colorblind-safe status colors, full
   keyboard navigation.
+- [ ] **Easier server connections.** (Owner, 2026-11-18: setting one up is confusing.) Joining
+  should be one step: the admin page makes an invite link that holds the address and the invite
+  code, and the app opens it (paste or share) and joins. In the app, the server settings start
+  from what you want (share with friends, sync my devices, log around the clock) and keep the
+  rest under "More options"; plain words for status ("Connected, live", "Needs an update").
 - [ ] **Translations:** move all text into one place so friends can add languages.
 
 ## Parked
