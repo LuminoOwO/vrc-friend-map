@@ -686,6 +686,7 @@ function currentSelf(): SelfData {
     sharedCircles: st.local.sharedCircles ?? {},
     worldNotes: st.local.worldNotes ?? {},
     pushTargets: st.local.pushTargets ?? {},
+    settingsAt: st.local.settingsAt ?? {},
   };
 }
 
@@ -715,7 +716,8 @@ function applySelf(d: SelfData) {
   const patch: Partial<Settings> = { notify: { ...st.settings.notify, people: merged.notify.people } };
   if (st.settings.sharing.syncSettings && d.settings)
     for (const k of syncedKeys(st.settings.sharing.syncGroups, st.settings.sharing.localOnly)) if (k in d.settings) (patch as Record<string, unknown>)[k] = merged[k];
-  updateSettings(patch);
+  // Keep the other device's change times, so the two don't keep swapping values.
+  updateSettings(patch, d.settingsAt ?? {});
 }
 
 let syncing = false;

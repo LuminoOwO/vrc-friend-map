@@ -70,3 +70,21 @@ describe("0.12 personal data", () => {
     expect(mergeSelf(base, mine, old).starred).toEqual(["a", "b"]);
   });
 });
+
+describe("settings: the newer change wins", () => {
+  const self = (ui: unknown, at?: number) => ({ circles: [], dismissedGroups: [], shareNotes: {}, notifyPeople: {}, settings: { ui } as never, settingsAt: at === undefined ? undefined : { ui: at } });
+  it("a device that just joined doesn't lose its own newer change", () => {
+    // No base yet: the phone unticked something after the PC's last change.
+    const merged = mergeSelf(null, self({ beta: false }, 2000), self({ beta: true }, 1000));
+    expect((merged.settings as { ui: unknown }).ui).toEqual({ beta: false });
+    expect(merged.settingsAt).toEqual({ ui: 2000 });
+  });
+  it("takes the other device's newer change, and keeps the old rule without times", () => {
+    expect((mergeSelf(null, self({ beta: false }, 1000), self({ beta: true }, 3000)).settings as { ui: unknown }).ui).toEqual({ beta: true });
+    expect((mergeSelf(null, self({ beta: false }), self({ beta: true })).settings as { ui: unknown }).ui).toEqual({ beta: true });
+  });
+  it("only one side changed since the base: that side, whatever the times", () => {
+    const base = self({ beta: true }, 5000);
+    expect((mergeSelf(base, self({ beta: false }, 1), self({ beta: true }, 9999)).settings as { ui: unknown }).ui).toEqual({ beta: false });
+  });
+});

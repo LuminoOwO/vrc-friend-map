@@ -277,6 +277,15 @@ can be designed around everything. Nothing here is started.
   account, not just this device's. To research first: whether VRChat's API offers this at all
   (changing the password may be the only way); if not, say so and link to VRChat's own page.
 
+## Notifications and sharing (owner, 2026-11-18)
+
+- [ ] **Door and Knock sounds:** hard to hear; make them clearer (louder attack, more distinct).
+- [ ] **Pause between the event sound and the person's own tune:** a little longer by default,
+  and a setting to choose it freely.
+- [ ] **Sharing choices per account, not per device:** which friends go into what you share,
+  and who may get it, are set per device today, which can conflict between devices. Keep them
+  with the account (synced), per server.
+
 ## Parked
 
 - [ ] **No scrolling / zooming on a friend's Gentoo + Xfce + XLibre (X11) system.** Workaround

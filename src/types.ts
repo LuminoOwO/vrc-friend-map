@@ -260,6 +260,8 @@ export interface LocalData {
   shareNotes: Record<string, ShareNote>;
   /** Device sync: the state this device and your others last agreed on. */
   selfBase?: import("./devicesync").SelfData | null;
+  /** When each settings group was last changed (ms), so device sync knows which change is newer. */
+  settingsAt?: Record<string, number>;
   /** Starred friends (top of lists, stand out on the map). Synced between your devices. */
   starred?: string[];
   /** Your own names for people, shown on the map. Synced between your devices. */

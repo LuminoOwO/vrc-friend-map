@@ -490,8 +490,20 @@ export function updateUi(patch: Partial<UiSettings>) {
   updateSettings({ ui: { ...getState().settings.ui, ...patch } });
 }
 
-export function updateSettings(patch: Partial<Settings>) {
+/**
+ * `times`: when these settings were changed (device sync passes the other
+ * device's times); left out, now. Device sync uses them so the newer change wins.
+ */
+export function updateSettings(patch: Partial<Settings>, times?: Record<string, number>) {
+  const before = state.settings;
   setState((s) => ({ settings: { ...s.settings, ...patch } }));
+  const now = Date.now();
+  const stamps: Record<string, number> = {};
+  for (const k of Object.keys(patch) as (keyof Settings)[]) {
+    if (times?.[k] !== undefined) stamps[k] = times[k];
+    else if (!times && JSON.stringify(patch[k]) !== JSON.stringify(before[k])) stamps[k] = now;
+  }
+  if (Object.keys(stamps).length) updateLocal((l) => ({ ...l, settingsAt: { ...(l.settingsAt ?? {}), ...stamps } }));
   scheduleSave("settings");
   const st = state.settings;
   if ("contact" in patch || "intervalMs" in patch) backend.setApiSettings(st.contact, st.intervalMs).catch(() => {});
@@ -874,6 +886,7 @@ export function normalizeLocal(raw: Raw | null): LocalData {
     shareNotes: (isObj(raw.shareNotes) ? raw.shareNotes : {}) as LocalData["shareNotes"],
     dismissedGroups: Array.isArray(raw.dismissedGroups) ? raw.dismissedGroups.filter(Array.isArray) : [],
     selfBase: isObj(raw.selfBase) ? (raw.selfBase as LocalData["selfBase"]) : null,
+    settingsAt: isObj(raw.settingsAt) ? Object.fromEntries(Object.entries(raw.settingsAt as Record<string, unknown>).filter(([, t]) => typeof t === "number")) as Record<string, number> : {},
     starred: Array.isArray(raw.starred) ? raw.starred.filter((x: unknown) => typeof x === "string") : [],
     nicknames: isObj(raw.nicknames) ? Object.fromEntries(Object.entries(raw.nicknames).filter(([, v]) => typeof v === "string" && v)) as Record<string, string> : {},
     snoozed: isObj(raw.snoozed) ? Object.fromEntries(Object.entries(raw.snoozed).filter(([, v]) => typeof v === "number" && v > Date.now())) as Record<string, number> : {},

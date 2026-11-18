@@ -53,6 +53,8 @@ export interface SelfData {
   sharedCircles?: NonNullable<LocalData["sharedCircles"]>;
   worldNotes?: NonNullable<LocalData["worldNotes"]>;
   pushTargets?: NonNullable<LocalData["pushTargets"]>;
+  /** Since 0.12.2: when each settings group was last changed, so the newer change wins. */
+  settingsAt?: Record<string, number>;
 }
 
 export interface SelfPayload extends SelfData {
@@ -135,14 +137,40 @@ function mergeGroups(base: string[][], mine: string[][], theirs: string[][]): st
   return keys.map((k) => all.get(k)!).filter(Boolean);
 }
 
-function mergeSettings(base: SyncedSettings | undefined, mine: SyncedSettings | undefined, theirs: SyncedSettings | undefined): SyncedSettings | undefined {
+/**
+ * Settings: whoever changed a group since the base wins; if both did, or there's
+ * no base yet (a device that just joined), the newer change (by `settingsAt`).
+ * Without times (older apps) the other side wins, as before.
+ */
+function mergeSettings(
+  base: SyncedSettings | undefined,
+  mine: SyncedSettings | undefined,
+  theirs: SyncedSettings | undefined,
+  mineAt: Record<string, number> = {},
+  theirsAt: Record<string, number> = {},
+): SyncedSettings | undefined {
   if (!mine && !theirs) return undefined;
   const out: Record<string, unknown> = {};
   for (const k of SYNCED_SETTINGS) {
-    const v = pick(base?.[k], mine?.[k], theirs?.[k]);
+    const b = base?.[k];
+    const m = mine?.[k];
+    const t = theirs?.[k];
+    let v: unknown;
+    if (same(m, t)) v = m;
+    else if (b !== undefined && same(m, b)) v = t;
+    else if (b !== undefined && same(t, b)) v = m;
+    else v = (mineAt[k] ?? 0) > (theirsAt[k] ?? 0) ? m : t;
     if (v !== undefined) out[k] = v;
   }
   return out as SyncedSettings;
+}
+
+/** The newer time per key. */
+function mergeTimes(a: Record<string, number> | undefined, b: Record<string, number> | undefined): Record<string, number> | undefined {
+  if (!a && !b) return undefined;
+  const out: Record<string, number> = { ...(a ?? {}) };
+  for (const [k, t] of Object.entries(b ?? {})) if (typeof t === "number" && t > (out[k] ?? 0)) out[k] = t;
+  return out;
 }
 
 /** The three-way merge of everything. With no base (first sync on this device), both sides count as new. */
@@ -153,7 +181,8 @@ export function mergeSelf(base: SelfData | null, mine: SelfData, theirs: SelfDat
     dismissedGroups: mergeGroups(b.dismissedGroups, mine.dismissedGroups, theirs.dismissedGroups),
     shareNotes: mergeRecord(b.shareNotes, mine.shareNotes, theirs.shareNotes),
     notifyPeople: mergeRecord(b.notifyPeople, mine.notifyPeople, theirs.notifyPeople),
-    settings: mergeSettings(b.settings, mine.settings, theirs.settings),
+    settings: mergeSettings(b.settings, mine.settings, theirs.settings, mine.settingsAt, theirs.settingsAt),
+    settingsAt: mergeTimes(mine.settingsAt, theirs.settingsAt),
     // A device with an older app doesn't send these: then nothing changed there.
     starred: theirs.starred === undefined ? mine.starred : mergeSet(b.starred ?? [], mine.starred ?? [], theirs.starred),
     nicknames: theirs.nicknames === undefined ? mine.nicknames : mergeRecord(b.nicknames ?? {}, mine.nicknames ?? {}, theirs.nicknames),
@@ -197,6 +226,8 @@ export function readSelf(raw: unknown): SelfData | null {
     shareNotes: notes,
     notifyPeople: rec<NotifyPerson>(p.notifyPeople),
     settings: p.settings && typeof p.settings === "object" ? p.settings : undefined,
+    settingsAt:
+      p.settingsAt && typeof p.settingsAt === "object" ? Object.fromEntries(Object.entries(p.settingsAt).filter(([, t]) => typeof t === "number")) : undefined,
     starred: Array.isArray(p.starred) ? p.starred.filter((x) => typeof x === "string") : undefined,
     nicknames: p.nicknames ? rec<string>(p.nicknames) : undefined,
     timezones: p.timezones ? rec(p.timezones) : undefined,

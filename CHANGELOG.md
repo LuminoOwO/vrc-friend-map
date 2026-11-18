@@ -13,6 +13,9 @@ minor releases can change behavior.
   afternoon, evening or late evening (only night is highlighted).
 
 ### Fixed
+- **Settings that synced between your devices could snap back** when changed on a device that
+  had just joined (switches you unticked turned themselves on again). Now the newer change
+  wins; both devices need this version for it.
 - **Android 17: a vfm-server on your home network couldn't be reached** ("can't reach the
   server", while the phone's browser could). Android 17 makes home-network access a permission
   (*Nearby devices*); the app now asks for it when you add or use a server at home.
