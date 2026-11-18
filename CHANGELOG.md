@@ -13,6 +13,9 @@ minor releases can change behavior.
   afternoon, evening or late evening (only night is highlighted).
 
 ### Fixed
+- **Android 17: a vfm-server on your home network couldn't be reached** ("can't reach the
+  server", while the phone's browser could). Android 17 makes home-network access a permission
+  (*Nearby devices*); the app now asks for it when you add or use a server at home.
 - "It's night for …" showed in the afternoon with a 12-hour clock (3 PM was read as 3 am).
 
 ## 0.12.1 (2026-11-16)

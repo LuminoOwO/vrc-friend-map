@@ -31,6 +31,8 @@ const PERMISSIONS = [
   "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
   "android.permission.POST_NOTIFICATIONS",
   "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+  // Android 17+: reaching a vfm-server on your home network (asked for when you use one)
+  "android.permission.ACCESS_LOCAL_NETWORK",
 ];
 
 let xml = readFileSync(MANIFEST, "utf8");

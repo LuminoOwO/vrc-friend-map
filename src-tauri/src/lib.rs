@@ -486,6 +486,8 @@ async fn android_call(
     const ALLOWED: &[&str] = &[
         "setBackground",
         "batteryExempt",
+        "localNetwork",
+        "localNetworkState",
         "refreshRates",
         "setRefreshRate",
         "setWidget",

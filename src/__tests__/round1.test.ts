@@ -29,3 +29,11 @@ describe("sync log", () => {
     expect(isNetworkError(new Error("not registered"))).toBe(false);
   });
 });
+
+import { onHomeNetwork } from "../phone";
+describe("home network addresses (Android 17 asks first)", () => {
+  it("knows local addresses from internet ones", () => {
+    for (const u of ["http://192.168.178.70:8787", "10.0.0.5:8787", "http://172.20.1.1", "http://pi.local:8787", "http://localhost:8787"]) expect(onHomeNetwork(u), u).toBe(true);
+    for (const u of ["https://vfm.example.com", "http://172.32.0.1", "http://8.8.8.8"]) expect(onHomeNetwork(u), u).toBe(false);
+  });
+});

@@ -9,6 +9,7 @@ import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { backend, isTauri, type InfoResult, type PublishResult } from "./backend";
 import { getState, subscribeState, newServer, normalizeSettings, setState, showToast, updateLocal, updateServer, updateSettings, updateSharing } from "./store";
 import { combineStats } from "./together";
+import { allowHomeNetwork } from "./phone";
 import { mainFriendIds } from "./accountmerge";
 import { mergeSelf, readSelf, sameSelf, SELF_FORMAT, syncedKeys, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
 import { selectedIds } from "./selection";
@@ -112,6 +113,8 @@ const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /** Look a server up and add it (not signed up yet). */
 export async function addServer(url: string): Promise<ShareServer> {
+  if (!(await allowHomeNetwork(url, true, true)))
+    throw new Error("Android needs the Nearby devices permission to reach a server on your home network. Allow it in the app's settings (Permissions → Nearby devices), then try again.");
   const r = await backend.share.info(url);
   const existing = getState().settings.sharing.servers.find((s) => s.url === r.url);
   if (existing) throw new Error(`${serverName(existing)} is already in your list.`);
@@ -126,6 +129,7 @@ export async function addServer(url: string): Promise<ShareServer> {
 export async function refreshServer(id: string): Promise<ShareServer | null> {
   const s = getState().settings.sharing.servers.find((x) => x.id === id);
   if (!s) return null;
+  await allowHomeNetwork(s.url);
   try {
     const r = await backend.share.info(s.url);
     const info = lite(r);

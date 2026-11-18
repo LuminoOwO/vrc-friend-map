@@ -23,6 +23,7 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
@@ -114,6 +115,28 @@ class VfmPlugin(private val activity: Activity) : Plugin(activity) {
             if (Build.VERSION.SDK_INT >= 26) activity.startForegroundService(intent) else activity.startService(intent)
         }
         invoke.resolve()
+    }
+
+    /** Android 17+: home-network access is a permission ("Nearby devices"). Asks for it if missing. */
+    @Command
+    fun localNetwork(invoke: Invoke) {
+        val ret = JSObject()
+        val perm = "android.permission.ACCESS_LOCAL_NETWORK"
+        val granted = Build.VERSION.SDK_INT < 37 || activity.checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED
+        if (!granted) activity.requestPermissions(arrayOf(perm), 4711)
+        ret.put("granted", granted)
+        ret.put("asked", !granted)
+        invoke.resolve(ret)
+    }
+
+    /** The same, without asking (to wait for your answer). */
+    @Command
+    fun localNetworkState(invoke: Invoke) {
+        val ret = JSObject()
+        val granted = Build.VERSION.SDK_INT < 37 || activity.checkSelfPermission("android.permission.ACCESS_LOCAL_NETWORK") == PackageManager.PERMISSION_GRANTED
+        ret.put("granted", granted)
+        ret.put("asked", false)
+        invoke.resolve(ret)
     }
 
     @Command

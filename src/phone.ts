@@ -220,3 +220,42 @@ export function startPhone() {
     }
   });
 }
+
+// ---------- home network (Android 17+) ----------
+
+/** A server address on your home network (where Android 17 asks first). */
+export function onHomeNetwork(url: string): boolean {
+  let host = "";
+  try {
+    host = new URL(/^https?:\/\//.test(url) ? url : `http://${url}`).hostname;
+  } catch {
+    return false;
+  }
+  return /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|127\.)/.test(host) || host.endsWith(".local") || host === "localhost";
+}
+
+/**
+ * Android 17+ only lets apps reach devices at home with the "Nearby devices"
+ * permission. Asks for it when a server is on your home network (once per start), and
+ * waits up to 30 seconds for your answer. True when the app may connect.
+ */
+let askedHomeNetwork = false;
+export async function allowHomeNetwork(url: string, ask = true, again = false): Promise<boolean> {
+  if (!ANDROID || !onHomeNetwork(url)) return true;
+  try {
+    // Ask at most once per app start (and when you add a server); otherwise only check.
+    const asking = ask && (again || !askedHomeNetwork);
+    let r = await call<{ granted: boolean; asked: boolean }>(asking ? "localNetwork" : "localNetworkState");
+    if (r.granted) return true;
+    if (!asking) return false;
+    askedHomeNetwork = true;
+    for (let i = 0; i < 30; i++) {
+      await new Promise((res) => setTimeout(res, 1000));
+      r = await call<{ granted: boolean; asked: boolean }>("localNetworkState").catch(() => r);
+      if (r.granted) return true;
+    }
+  } catch {
+    return true; // older app shell without the command: just try
+  }
+  return false;
+}
