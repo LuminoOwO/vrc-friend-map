@@ -762,6 +762,15 @@ let nextAt = 0;
 
 /** Server URLs whose live connection is open right now. */
 const live = new Set<string>();
+const liveSubs = new Set<() => void>();
+/** Whether this server's live connection is open (for status labels). */
+export function isLive(url: string): boolean {
+  return live.has(url);
+}
+export function onLiveChange(cb: () => void): () => void {
+  liveSubs.add(cb);
+  return () => liveSubs.delete(cb);
+}
 let unlistens: UnlistenFn[] = [];
 let watchedKey = "";
 let unwatchSettings: (() => void) | null = null;
@@ -795,6 +804,7 @@ async function startWatching() {
     await listen<{ url: string; live: boolean }>("share-live", (e) => {
       if (e.payload.live) live.add(e.payload.url);
       else live.delete(e.payload.url);
+      liveSubs.forEach((f) => f());
     }),
     await listen<{ url: string; owner: string; kind: string; resync: boolean }>("share-changed", (e) => {
       const st = getState();

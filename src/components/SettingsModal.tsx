@@ -34,6 +34,8 @@ import { bioProgress } from "../biocache";
 import { PhoneSection } from "./PhoneSection";
 import { BackupSection, NowPlayingSection, OscSection, PlaytimeSection } from "./ExtrasSection";
 import { AccountsSection } from "./AccountsSection";
+import { ServersPage } from "../ui2/ServersPage";
+import { betaActive } from "../ui2/active";
 import { flagLine } from "../notesline";
 import { loadSlots, saveSlot, type MessageSlot } from "../invites";
 import type { UiSettings } from "../types";
@@ -397,7 +399,7 @@ export function SettingsModal() {
           <h3>
             <Icon name="server" size={16} /> Servers and sharing
           </h3>
-          <ServersSummary />
+          {betaActive() ? <ServersPage /> : <ServersSummary />}
         </Sec>
 
         <Sec id="requests" cat="account" title="Requests to VRChat" keys="api rate limit contact user agent interval refresh">

@@ -6,6 +6,12 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Changed
+- **Beta UI: Sharing & servers on one page** (Settings → Sharing & servers): your servers are
+  listed right away, each with a plain status ("Connected · live", "Not joined yet", "Last sync
+  failed") and what it does for you; tap one for its settings. *Add a server* is its own step
+  with what happens next. The general options are grouped (Syncing, Between my own devices,
+  Privacy, Group suggestions), each with a line saying what it does; keys sit under Advanced.
+  The classic UI keeps its Servers dialog.
 - **Picking someone's time zone** (profile → Local time): a short list of the world's 38 time
   zones by UTC offset ("UTC+1 · Central Europe: Germany, France, Spain…", with the time there
   now) and a filter, in the app's own look, instead of a browser list of hundreds of cities.

@@ -38,6 +38,7 @@ import { applyAutoGroups, initLogs, refreshStats, scheduleLogScans, useGroupSugg
 import { startObserving, stopObserving } from "./together";
 import { flushSaves, getState, loadPersisted, setState, useApp } from "./store";
 import { applyPipelineEvent, startAutoRefresh, syncAll } from "./sync";
+import { setBetaActive } from "./ui2/active";
 
 const BetaApp = lazy(() => import("./ui2/BetaApp").then((m) => ({ default: m.BetaApp })));
 
@@ -161,6 +162,7 @@ export default function App() {
     );
   }
 
+  setBetaActive(beta && !classicFlag);
   if (beta && !classicFlag) {
     return (
       <Suspense fallback={<div className="splash">Loading…</div>}>

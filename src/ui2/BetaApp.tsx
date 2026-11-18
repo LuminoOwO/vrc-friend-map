@@ -15,6 +15,7 @@ import { useDerived } from "../derived";
 import { iconUrl } from "../model";
 import { shownName } from "../personal";
 import { setState, updateFilters, updateUi, useApp, type View } from "../store";
+import { openServers } from "../components/ServersModal";
 import { syncAll } from "../sync";
 import { ActivityView } from "../components/ActivityView";
 import { CardsView } from "../components/CardsView";
@@ -312,7 +313,7 @@ function MePage({ onOpen }: { onOpen: (v: View) => void }) {
     ["Logbook", "calendar", () => onOpen("logbook")],
     ["VRChat", "world", () => onOpen("vrchat")],
     ["Shared lists", "share", () => onOpen("lists")],
-    ["Servers and sharing", "server", () => setState({ serversOpen: true })],
+    ["Servers and sharing", "server", openServers],
     ["Sync log", "info", () => setLogOpen(true)],
     ["Settings", "settings", () => setState({ settingsOpen: true })],
   ];

@@ -24,6 +24,7 @@ import type { EncDefault, EncPolicy, ShareServer } from "../types";
 import { Icon } from "./Icon";
 import { PeopleChooser } from "./PeopleChooser";
 import { newerVersion } from "../updates";
+import { betaActive } from "../ui2/active";
 import { knownPeers, onPeers, type Peer } from "../peers";
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -103,7 +104,7 @@ export function EncryptionSwitch({ server }: { server: ShareServer }) {
   );
 }
 
-const DEFAULTS: { value: EncDefault; label: string; why: string }[] = [
+export const DEFAULTS: { value: EncDefault; label: string; why: string }[] = [
   { value: "server", label: "Server-based", why: "Each server's suggestion: on where it recommends encryption, off where it's optional." },
   { value: "on", label: "Always on", why: "Encrypt wherever the server lets you. Servers that never encrypt start with uploading turned off." },
   { value: "off", label: "Always off", why: "Don't encrypt where the server lets you choose (it can then read what you share). Servers that always encrypt still do." },
@@ -284,7 +285,7 @@ export function ServersModal() {
 }
 
 /** Friends whose key a server reported differently than first seen. */
-function ChangedKeys() {
+export function ChangedKeys() {
   const pins = useApp((s) => s.keyPins);
   const friends = useApp((s) => s.cache.friends);
   const changed = Object.entries(pins ?? {}).filter(([, p]) => p.offered);
@@ -316,7 +317,7 @@ function ChangedKeys() {
   );
 }
 
-function KeySection({ me, setMe }: { me: MyIdentity | null; setMe: (m: MyIdentity) => void }) {
+export function KeySection({ me, setMe }: { me: MyIdentity | null; setMe: (m: MyIdentity) => void }) {
   const [secret, setSecret] = useState("");
   const [paste, setPaste] = useState("");
   const [showImport, setShowImport] = useState(false);
@@ -390,7 +391,7 @@ function KeySection({ me, setMe }: { me: MyIdentity | null; setMe: (m: MyIdentit
   );
 }
 
-function ServerCard({ server: s }: { server: ShareServer }) {
+export function ServerCard({ server: s }: { server: ShareServer }) {
   const busy = useApp((st) => st.shareBusy);
   const [invite, setInvite] = useState("");
   const [code, setCode] = useState("");
@@ -693,8 +694,10 @@ export function ConfirmUnencrypted() {
   );
 }
 
+/** The servers screen: in the beta UI the Sharing & servers tab of Settings, else the Servers dialog. */
 export function openServers() {
-  setState({ serversOpen: true, settingsOpen: false });
+  if (betaActive()) setState({ settingsOpen: true, settingsTab: "servers", serversOpen: false });
+  else setState({ serversOpen: true, settingsOpen: false });
 }
 
 /** Your other devices seen through this server, and how they're reached. */

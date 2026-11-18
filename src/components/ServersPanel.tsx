@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { backend } from "../backend";
 import { addServer, serverName, serverSwitch, syncAllServers } from "../share";
-import { setState, useApp } from "../store";
+import { useApp } from "../store";
 import { Icon } from "./Icon";
 import { ago, openServers, POLICY_LABEL } from "./ServersModal";
 
@@ -26,7 +26,7 @@ export function ServersPanel() {
     try {
       await addServer(url);
       setUrl("");
-      setState({ serversOpen: true }); // joining (invite code, sharing choices) happens there
+      openServers(); // joining (invite code, sharing choices) happens there
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
