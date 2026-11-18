@@ -262,6 +262,21 @@ can be designed around everything. Nothing here is started.
   rest under "More options"; plain words for status ("Connected, live", "Needs an update").
 - [ ] **Translations:** move all text into one place so friends can add languages.
 
+## Round 9: the server's VRChat login (owner, 2026-11-18)
+
+- [ ] **Use the app without logging in to VRChat in it:** the server owner's app does everything
+  through their own server's VRChat login (friends, live updates, profiles, writes), so the app
+  itself never holds a VRChat session. Only for the owner of that server (the account paired as
+  its logger); everyone else logs in as before.
+- [ ] **Tell the owner when the server's VRChat login expires:** push to their devices and a
+  notice in the app and on the admin page ("Your server's VRChat login expired: log in again").
+  - [ ] **Renew it from the app** (a server setting, off by default for the security-conscious):
+    the owner enters username, password and 2FA code in their own app, sent sealed to the
+    server. Off: renewing stays on the admin page only.
+- [ ] **Log out everywhere** (in case an account was hacked): end every VRChat session of your
+  account, not just this device's. To research first: whether VRChat's API offers this at all
+  (changing the password may be the only way); if not, say so and link to VRChat's own page.
+
 ## Parked
 
 - [ ] **No scrolling / zooming on a friend's Gentoo + Xfce + XLibre (X11) system.** Workaround
