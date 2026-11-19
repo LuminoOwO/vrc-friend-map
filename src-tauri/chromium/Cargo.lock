@@ -4658,7 +4658,6 @@ dependencies = [
 [[package]]
 name = "tauri"
 version = "2.11.5"
-source = "git+https://github.com/tauri-apps/tauri?rev=9d1a5b176e337c8395362a4e7c99bac99b36a1d1#9d1a5b176e337c8395362a4e7c99bac99b36a1d1"
 dependencies = [
  "anyhow",
  "bytes",
@@ -4705,7 +4704,6 @@ dependencies = [
 [[package]]
 name = "tauri-build"
 version = "2.6.3"
-source = "git+https://github.com/tauri-apps/tauri?rev=9d1a5b176e337c8395362a4e7c99bac99b36a1d1#9d1a5b176e337c8395362a4e7c99bac99b36a1d1"
 dependencies = [
  "anyhow",
  "cargo_toml",
@@ -4725,7 +4723,6 @@ dependencies = [
 [[package]]
 name = "tauri-codegen"
 version = "2.6.3"
-source = "git+https://github.com/tauri-apps/tauri?rev=9d1a5b176e337c8395362a4e7c99bac99b36a1d1#9d1a5b176e337c8395362a4e7c99bac99b36a1d1"
 dependencies = [
  "base64 0.22.1",
  "brotli",
@@ -4751,7 +4748,6 @@ dependencies = [
 [[package]]
 name = "tauri-macros"
 version = "2.6.3"
-source = "git+https://github.com/tauri-apps/tauri?rev=9d1a5b176e337c8395362a4e7c99bac99b36a1d1#9d1a5b176e337c8395362a4e7c99bac99b36a1d1"
 dependencies = [
  "heck",
  "proc-macro2",
@@ -4764,7 +4760,6 @@ dependencies = [
 [[package]]
 name = "tauri-plugin"
 version = "2.6.3"
-source = "git+https://github.com/tauri-apps/tauri?rev=9d1a5b176e337c8395362a4e7c99bac99b36a1d1#9d1a5b176e337c8395362a4e7c99bac99b36a1d1"
 dependencies = [
  "anyhow",
  "glob",
@@ -4818,7 +4813,6 @@ dependencies = [
 [[package]]
 name = "tauri-runtime"
 version = "2.11.3"
-source = "git+https://github.com/tauri-apps/tauri?rev=9d1a5b176e337c8395362a4e7c99bac99b36a1d1#9d1a5b176e337c8395362a4e7c99bac99b36a1d1"
 dependencies = [
  "cookie",
  "dpi",
@@ -4838,7 +4832,6 @@ dependencies = [
 [[package]]
 name = "tauri-runtime-cef"
 version = "0.1.0"
-source = "git+https://github.com/tauri-apps/tauri?rev=9d1a5b176e337c8395362a4e7c99bac99b36a1d1#9d1a5b176e337c8395362a4e7c99bac99b36a1d1"
 dependencies = [
  "base64 0.22.1",
  "cef",
@@ -4875,7 +4868,6 @@ dependencies = [
 [[package]]
 name = "tauri-utils"
 version = "2.9.3"
-source = "git+https://github.com/tauri-apps/tauri?rev=9d1a5b176e337c8395362a4e7c99bac99b36a1d1#9d1a5b176e337c8395362a4e7c99bac99b36a1d1"
 dependencies = [
  "anyhow",
  "brotli",
