@@ -3,6 +3,18 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## Unreleased
+
+### Changed
+- **Beta UI: see your servers at a glance**: a chip in the top bar (green when every server is
+  connected live, grey when connected, amber when one isn't joined, red when one has a problem;
+  click it for Sharing & servers), and the same status on the phone's Me page.
+- **Beta UI on phones: a slightly taller bottom bar** with bigger icons.
+
+### Fixed
+- **Beta UI: the sync status was cut off** in the top bar on narrower windows. It shortens with
+  "…" now, and on narrow windows shows just its buttons (the text is in the tooltip and the log).
+
 ## 0.12.4 (2026-11-20)
 
 Fixes switching between the classic and the beta UI, which flipped back and forth with

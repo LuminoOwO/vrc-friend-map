@@ -16,6 +16,7 @@ import { iconUrl } from "../model";
 import { shownName } from "../personal";
 import { setState, updateFilters, updateUi, useApp, type View } from "../store";
 import { openServers } from "../components/ServersModal";
+import { ServerStatusChip, useServersSummary } from "./ServerStatus";
 import { syncAll } from "../sync";
 import { ActivityView } from "../components/ActivityView";
 import { CardsView } from "../components/CardsView";
@@ -175,6 +176,7 @@ function FloatingBar({ onPalette }: { onPalette: () => void }) {
       <span className="ui2-count" title="Friends matching the filters">
         {matched.size}/{friends.length}
       </span>
+      <ServerStatusChip />
       <SyncPill />
     </div>
   );
@@ -256,7 +258,7 @@ function PhoneShell() {
           ] as [PhoneTab, string, string][]
         ).map(([k, l, i]) => (
           <button key={k} className={`ui2-tab ${tab === k ? "on" : ""}`} aria-current={tab === k} onClick={() => go(k)}>
-            <Icon name={i} size={22} />
+            <Icon name={i} size={24} />
             <span>{l}</span>
             {k === "insights" && unread > 0 && <span className="ui2-dot">{unread}</span>}
           </button>
@@ -308,6 +310,7 @@ function HerePage() {
 function MePage({ onOpen }: { onOpen: (v: View) => void }) {
   const me = useApp((s) => s.cache.me);
   const [logOpen, setLogOpen] = useState(false);
+  const servers = useServersSummary();
   const links: [string, string, () => void][] = [
     ["Activity", "clock", () => onOpen("activity")],
     ["Logbook", "calendar", () => onOpen("logbook")],
@@ -334,6 +337,11 @@ function MePage({ onOpen }: { onOpen: (v: View) => void }) {
           <li key={l}>
             <button onClick={f}>
               <Icon name={i} /> <span className="ui2-grow">{l}</span>
+              {l === "Servers and sharing" && servers && (
+                <span className="small muted ui2-me-status">
+                  <span className={`ui2-srv-dot ${servers.tone}`} /> {servers.text}
+                </span>
+              )}
               <Icon name="chevron-right" size={16} />
             </button>
           </li>
