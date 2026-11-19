@@ -4,6 +4,7 @@ import App from "./App";
 import * as store from "./store";
 import "./styles.css";
 import { applySafeArea } from "./safearea";
+import { startAppVisibility } from "./appvisible";
 import { unlockAudioOnInput } from "./notify";
 import { loadCustomSounds } from "./notifications";
 import { startTray } from "./tray";
@@ -15,6 +16,7 @@ import { installLinkPaste } from "./vrclinks";
 import { startPhone } from "./phone";
 
 applySafeArea();
+startAppVisibility();
 unlockAudioOnInput();
 void loadCustomSounds();
 startTray();

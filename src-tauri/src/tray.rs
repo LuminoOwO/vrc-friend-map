@@ -143,6 +143,8 @@ pub fn show_main<R: Runtime>(app: &AppHandle<R>) {
         let _ = w.unminimize();
         let _ = w.show();
         let _ = w.set_focus();
+        // The page pauses drawing while hidden (src/appvisible.ts).
+        let _ = w.emit("window-shown", ());
     }
 }
 

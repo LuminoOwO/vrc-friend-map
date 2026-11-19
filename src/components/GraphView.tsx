@@ -34,6 +34,7 @@ import { Icon } from "./Icon";
 import { MapOptions } from "./MapOptions";
 import { friendsAt } from "../insights";
 import { accountColor, MAIN } from "../accountmerge";
+import { appHidden, onAppVisibility } from "../appvisible";
 
 interface GNode extends d3.SimulationNodeDatum {
   id: string;
@@ -473,8 +474,11 @@ export function GraphView() {
   // while the window isn't focused or nobody has touched anything for a while.
   // Something you just did (drag, zoom, hover) always gets the full limit.
   const lastDrawRef = useRef(0);
+  const missedDrawRef = useRef(false);
   const waitRef = useRef<ReturnType<typeof setTimeout> | 0>(0);
   function frameCap(): number {
+    // In the tray: nothing to look at, nothing to draw.
+    if (appHidden()) return 0;
     const p = viewRef.current.settings.perf;
     // "Match the screen" also holds when the app runs without vsync (after an unlimited limit).
     let cap = p.fps > 0 ? p.fps : p.fps === 0 && p.screenHz > 0 ? p.screenHz : Infinity;
@@ -489,6 +493,11 @@ export function GraphView() {
 
   const requestDraw = () => {
     if (rafRef.current || waitRef.current) return;
+    // Hidden in the tray: draw once it's back (see the effect below).
+    if (appHidden()) {
+      missedDrawRef.current = true;
+      return;
+    }
     const tick = (now: number) => {
       rafRef.current = 0;
       const cap = Math.max(1, frameCap());
@@ -1565,13 +1574,18 @@ export function GraphView() {
     if (!map.orbit) return;
     const speed = ([0, 0.012, 0.03, 0.07][Math.round(map.orbit)] ?? 0.012) * (map.orbitDir === -1 ? -1 : 1); // radians per second
     let raf = 0;
+    let nap: ReturnType<typeof setTimeout> | undefined;
     orbitRef.current.last = performance.now();
     const step = (now: number) => {
       const dt = Math.min(0.1, (now - orbitRef.current.last) / 1000);
       orbitRef.current.last = now;
-      // A limit of 0 (unfocused / idle) stops the orbit until something changes.
+      // A limit of 0 (unfocused / idle / in the tray) stops the orbit until something
+      // changes. Check back twice a second instead of every frame, so the page sleeps.
       if (frameCapRef.current() <= 0) {
-        raf = requestAnimationFrame(step);
+        nap = setTimeout(() => {
+          orbitRef.current.last = performance.now();
+          raf = requestAnimationFrame(step);
+        }, 500);
         return;
       }
       const a = speed * dt;
@@ -1592,9 +1606,25 @@ export function GraphView() {
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(nap);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map.orbit, map.orbitDir]);
+
+  // Back from the tray: draw what was held back.
+  useEffect(
+    () =>
+      onAppVisibility((hidden) => {
+        if (!hidden && missedDrawRef.current) {
+          missedDrawRef.current = false;
+          requestDraw();
+        }
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   // Keep the selected person in view (the detail panel narrows the canvas).
   useEffect(() => {

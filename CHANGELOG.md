@@ -19,6 +19,9 @@ minor releases can change behavior.
   afternoon, evening or late evening (only night is highlighted).
 
 ### Fixed
+- **Less CPU in the tray:** a window hidden to the tray kept drawing the map (30 frames a second
+  with the orbit on) and running animations, since hiding doesn't tell the page it's hidden.
+  Now the app tells it, and the map and animations pause until the window is back.
 - **Settings that synced between your devices could snap back** when changed on a device that
   had just joined (switches you unticked turned themselves on again). Now the newer change
   wins; both devices need this version for it.
