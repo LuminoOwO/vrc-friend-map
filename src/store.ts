@@ -886,6 +886,7 @@ export function normalizeLocal(raw: Raw | null): LocalData {
     shareNotes: (isObj(raw.shareNotes) ? raw.shareNotes : {}) as LocalData["shareNotes"],
     dismissedGroups: Array.isArray(raw.dismissedGroups) ? raw.dismissedGroups.filter(Array.isArray) : [],
     selfBase: isObj(raw.selfBase) ? (raw.selfBase as LocalData["selfBase"]) : null,
+    betaHintSeen: raw.betaHintSeen === true,
     settingsAt: isObj(raw.settingsAt) ? Object.fromEntries(Object.entries(raw.settingsAt as Record<string, unknown>).filter(([, t]) => typeof t === "number")) as Record<string, number> : {},
     starred: Array.isArray(raw.starred) ? raw.starred.filter((x: unknown) => typeof x === "string") : [],
     nicknames: isObj(raw.nicknames) ? Object.fromEntries(Object.entries(raw.nicknames).filter(([, v]) => typeof v === "string" && v)) as Record<string, string> : {},
@@ -979,6 +980,8 @@ export async function loadPersisted() {
   const cache = normalizeCache(rawCache);
   const local = normalizeLocal(rawLocal);
   const settings = normalizeSettings(rawSettings);
+  // A new install (nothing saved yet) starts in the new UI; updates keep whatever was in use.
+  if (!rawSettings) settings.ui = { ...settings.ui, beta: true };
 
   const current = __APP_VERSION__;
   let notice: string | null = null;

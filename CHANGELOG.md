@@ -6,6 +6,9 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Changed
+- **The new interface is the start for new installs.** Updating keeps the interface you use; on
+  the classic one, a one-time hint offers to try the new one (*Try it* / *Not now*). Settings →
+  Appearance → Interface switches either way, any time.
 - **Beta UI: see your servers at a glance**: a chip in the top bar (green when every server is
   connected live, grey when connected, amber when one isn't joined, red when one has a problem;
   click it for Sharing & servers), and the same status on the phone's Me page.

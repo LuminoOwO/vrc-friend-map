@@ -36,7 +36,7 @@ import { Icon } from "./components/Icon";
 import { applyThemeColors } from "./model";
 import { applyAutoGroups, initLogs, refreshStats, scheduleLogScans, useGroupSuggestions } from "./logs";
 import { startObserving, stopObserving } from "./together";
-import { flushSaves, getState, loadPersisted, setState, useApp } from "./store";
+import { flushSaves, getState, loadPersisted, setState, updateLocal, updateUi, useApp } from "./store";
 import { applyPipelineEvent, startAutoRefresh, syncAll } from "./sync";
 import { setBetaActive } from "./ui2/active";
 
@@ -182,6 +182,7 @@ export default function App() {
       <ThemeSync />
       <TopBar />
       <Notice />
+      <BetaHint />
       <div className="main" key={theme}>
         {sidebarOpen && <Sidebar />}
         <div className="content">
@@ -308,6 +309,33 @@ function LogsAndGroups() {
   }, [auto, suggestions]);
 
   return null;
+}
+
+/** Classic UI, once: an invitation to try the new interface (new installs start in it). */
+function BetaHint() {
+  const show = useApp((s) => !s.demo && s.mode === "app" && !s.settings.ui.beta && !s.local.betaHintSeen);
+  if (!show) return null;
+  const done = () => updateLocal((l) => ({ ...l, betaHintSeen: true }));
+  return (
+    <div className="notice" role="status">
+      <span>
+        <b>Try the new interface:</b> clearer settings with icons, everything about a server on one page, and invite links. You can switch back any time in
+        Settings → Appearance → Interface.
+      </span>
+      <button
+        className="btn small primary"
+        onClick={() => {
+          done();
+          updateUi({ beta: true });
+        }}
+      >
+        Try it
+      </button>
+      <button className="btn small ghost" onClick={done}>
+        Not now
+      </button>
+    </div>
+  );
 }
 
 function Notice() {
