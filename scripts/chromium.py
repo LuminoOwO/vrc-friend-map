@@ -14,11 +14,15 @@ build takes Tauri from its `feat/cef` branch, pinned to one commit below.
   - [patch.crates-io] points every Tauri crate at that commit, and the
     plugins at the matching branch of tauri-apps/plugins-workspace
   - adds the `tauri-runtime-cef` dependency behind the `chromium` feature
+Tauri comes from a local checkout of that commit in .tools/tauri-src, with the
+fixes in src-tauri/chromium/patches/*.patch applied (fetched and patched by
+`apply`; every Tauri crate points at it, so there is only one copy of each).
 `revert` puts the copies back. scripts/build-linux.sh does both for you.
 Windows, macOS, Android and iOS never use this.
 """
 import pathlib
 import shutil
+import subprocess
 import sys
 
 GIT = "https://github.com/tauri-apps/tauri"
@@ -36,6 +40,36 @@ LOCK = ROOT / "Cargo.lock"
 #   && cp src-tauri/Cargo.lock src-tauri/chromium/Cargo.lock && scripts/chromium.py revert
 CHROMIUM_LOCK = ROOT / "chromium" / "Cargo.lock"
 MARK = "# --- chromium build (scripts/chromium.py) ---"
+TAURI_SRC = ROOT.parent / ".tools" / "tauri-src"
+PATCHES = ROOT / "chromium" / "patches"
+
+
+def git(*args: str, check: bool = True) -> subprocess.CompletedProcess:
+    return subprocess.run(["git", "-C", str(TAURI_SRC), *args], check=check, capture_output=True, text=True)
+
+
+def tauri_source() -> pathlib.Path:
+    """.tools/tauri-src: Tauri at REV with src-tauri/chromium/patches/*.patch applied."""
+    patches = sorted(PATCHES.glob("*.patch"))
+    if not (TAURI_SRC / ".git").exists():
+        TAURI_SRC.mkdir(parents=True, exist_ok=True)
+        git("init", "-q")
+        git("remote", "add", "origin", GIT)
+    if git("rev-parse", "HEAD", check=False).stdout.strip() != REV:
+        print(f"Fetching Tauri {REV[:9]} into {TAURI_SRC} ...")
+        git("fetch", "-q", "--depth", "1", "origin", REV)
+        git("checkout", "-q", "--force", REV)
+    # Already patched exactly like this? Then leave the files (and Cargo's cache) alone.
+    if patches and all(git("apply", "--check", "-R", str(p), check=False).returncode == 0 for p in patches):
+        return TAURI_SRC
+    git("reset", "-q", "--hard", REV)
+    git("clean", "-q", "-fd")
+    for p in patches:
+        r = git("apply", str(p), check=False)
+        if r.returncode != 0:
+            sys.exit(f"Patch {p.name} doesn't apply to Tauri {REV[:9]}:\n{r.stderr}")
+        print(f"Applied {p.name}")
+    return TAURI_SRC
 
 
 def backup(p: pathlib.Path) -> pathlib.Path:
@@ -58,10 +92,12 @@ def apply() -> None:
     if feature not in text:
         sys.exit("Cargo.toml has no `chromium = []` feature to switch on")
     text = text.replace(feature, 'chromium = ["dep:tauri-runtime-cef"]', 1)
-    dep = f'tauri-runtime-cef = {{ git = "{GIT}", rev = "{REV}", optional = true }}\n'
+    src = tauri_source()
+    rel = lambda crate: (src / "crates" / crate).relative_to(ROOT.parent).as_posix()
+    dep = f'tauri-runtime-cef = {{ path = "../{rel("tauri-runtime-cef")}", optional = true }}\n'
     text = text.replace("[dependencies]\n", "[dependencies]\n" + dep, 1)
     patch = [MARK, "[patch.crates-io]"]
-    patch += [f'{c} = {{ git = "{GIT}", rev = "{REV}" }}' for c in CRATES]
+    patch += [f'{c} = {{ path = "../{rel(c)}" }}' for c in CRATES]
     # As Tauri's own workspace on that branch: one `dpi` for winit-gtk4 and Tauri.
     patch.append('dpi = { git = "https://github.com/tauri-apps/winit-gtk4", branch = "master" }')
     # Released plugins ask for tauri's `wry` feature, which that branch removed.

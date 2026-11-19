@@ -8,7 +8,7 @@ import { startAppVisibility } from "./appvisible";
 import { unlockAudioOnInput } from "./notify";
 import { loadCustomSounds } from "./notifications";
 import { startTray } from "./tray";
-import { startWheelFix } from "./wheelfix";
+import { startWheelFix, wheelFixHere } from "./wheelfix";
 import { startKeys } from "./keys";
 import { startUpdateChecks } from "./updates";
 import { installHaptics } from "./haptics";
@@ -17,6 +17,8 @@ import { startPhone } from "./phone";
 
 applySafeArea();
 startAppVisibility();
+// Linux desktop app: dropdown lists inside the page, not in X11 popup windows (styles.css).
+if (wheelFixHere) document.documentElement.classList.add("in-page-select");
 unlockAudioOnInput();
 void loadCustomSounds();
 startTray();

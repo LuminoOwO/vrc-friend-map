@@ -874,7 +874,7 @@ pub fn run() {
             // Chromium build on Linux: stop the main loop from spinning on nothing (glibpoll.rs).
             #[cfg(all(target_os = "linux", feature = "chromium"))]
             glibpoll::install();
-            if wheelfix::forced_on() {
+            if wheelfix::forced_on() || wheelfix::auto_on() {
                 wheelfix::set_enabled(app.handle(), true);
             }
             Ok(())

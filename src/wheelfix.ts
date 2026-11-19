@@ -11,6 +11,8 @@ import { getState, subscribeState } from "./store";
 const STEP = 100;
 let lastReal = 0;
 let real = 0;
+/** Real wheel events that moved nothing (deltas of 0). */
+let empty = 0;
 let used = 0;
 let skipped = 0;
 
@@ -18,13 +20,15 @@ export interface WheelFixState {
   enabled: boolean;
   running: boolean;
   forced: boolean;
+  /** On by default (Chromium build on Linux). */
+  auto: boolean;
 }
 
 export const wheelFixHere = isTauri && !isMobile && /Linux/.test(navigator.userAgent) && !/Android/.test(navigator.userAgent);
 
 /** How many wheel steps the fallback handled / left to the normal path. */
 export function wheelFixCounts() {
-  return { real, used, skipped };
+  return { real, empty, used, skipped };
 }
 
 function scrollable(el: Element | null, dx: number, dy: number): Element | null {
@@ -71,10 +75,21 @@ export function startWheelFix() {
   window.addEventListener(
     "wheel",
     (e) => {
-      if (e.isTrusted) {
-        lastReal = performance.now();
-        real++;
+      if (!e.isTrusted) return;
+      // A wheel event whose deltas are all 0 moves nothing, so it must not count as "a real
+      // event came" and hold back the fallback (otherwise nothing would scroll at all).
+      if (Math.abs(e.deltaX) + Math.abs(e.deltaY) + Math.abs(e.deltaZ) < 0.01) {
+        empty++;
+        // That's the broken case: switch the fallback on for this run even if the setting is
+        // off. Where the wheel works, events always move something, so this never happens.
+        if (!asked) {
+          asked = true;
+          void wheelFixSet(true).catch(() => {});
+        }
+        return;
       }
+      lastReal = performance.now();
+      real++;
     },
     { capture: true, passive: true },
   );
@@ -87,7 +102,9 @@ export function startWheelFix() {
         return;
       }
       used++;
-      applyWheelStep(e.payload.x, e.payload.y, e.payload.dx, e.payload.dy);
+      // The payload is in device pixels; clientX/Y are CSS pixels.
+      const dpr = window.devicePixelRatio || 1;
+      applyWheelStep(e.payload.x / dpr, e.payload.y / dpr, e.payload.dx, e.payload.dy);
     }, 60);
   });
 }

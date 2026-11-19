@@ -1,0 +1,152 @@
+diff --git a/crates/tauri-runtime-cef/src/cef_impl/client/focus.rs b/crates/tauri-runtime-cef/src/cef_impl/client/focus.rs
+new file mode 100644
+index 0000000..319d040
+--- /dev/null
++++ b/crates/tauri-runtime-cef/src/cef_impl/client/focus.rs
+@@ -0,0 +1,59 @@
++// Copyright 2019-2024 Tauri Programme within The Commons Conservancy
++// SPDX-License-Identifier: Apache-2.0
++// SPDX-License-Identifier: MIT
++
++use cef::*;
++
++// Keeps CEF from pulling the keyboard focus back while another window has it.
++//
++// On X11 the browser's window is not managed by the window manager, so when CEF
++// focuses the browser (after a navigation, or 100 ms after any `FocusIn` on its
++// host window) Chromium calls `XSetInputFocus` directly with a fresh server
++// timestamp. That bypasses the window manager's focus-stealing prevention: a
++// password manager prompt, or any other window the user just switched to, loses
++// the focus again. Cancel those requests while the input focus belongs to another
++// top-level window; once the user comes back to ours, focusing works as before.
++wrap_focus_handler! {
++  pub struct TauriCefFocusHandler;
++
++  impl FocusHandler {
++    fn on_set_focus(
++      &self,
++      browser: Option<&mut Browser>,
++      _source: FocusSource,
++    ) -> ::std::os::raw::c_int {
++      #[cfg(any(
++        target_os = "linux",
++        target_os = "dragonfly",
++        target_os = "freebsd",
++        target_os = "netbsd",
++        target_os = "openbsd"
++      ))]
++      if std::env::var("VRC_FRIEND_MAP_FOCUS_GUARD").as_deref() == Ok("0") {
++        return 0;
++      }
++      #[cfg(any(
++        target_os = "linux",
++        target_os = "dragonfly",
++        target_os = "freebsd",
++        target_os = "netbsd",
++        target_os = "openbsd"
++      ))]
++      if let Some(host) = browser.and_then(|b| b.host()) {
++        let xid = host.window_handle() as ::std::os::raw::c_ulong;
++        if crate::platform::linux::input_focus_elsewhere(xid) {
++          return 1;
++        }
++      }
++      #[cfg(not(any(
++        target_os = "linux",
++        target_os = "dragonfly",
++        target_os = "freebsd",
++        target_os = "netbsd",
++        target_os = "openbsd"
++      )))]
++      let _ = browser;
++      0
++    }
++  }
++}
+diff --git a/crates/tauri-runtime-cef/src/cef_impl/client/mod.rs b/crates/tauri-runtime-cef/src/cef_impl/client/mod.rs
+index 1b91d36..9bfab34 100644
+--- a/crates/tauri-runtime-cef/src/cef_impl/client/mod.rs
++++ b/crates/tauri-runtime-cef/src/cef_impl/client/mod.rs
+@@ -19,6 +19,7 @@ mod context_menu;
+ mod display;
+ mod download;
+ mod drag;
++mod focus;
+ mod frame;
+ mod keyboard;
+ mod life_span;
+@@ -247,6 +248,10 @@ wrap_with_args! {
+       Some(TauriCefContextMenuHandler::new(self.devtools_enabled))
+     }
+ 
++    fn focus_handler(&self) -> Option<FocusHandler> {
++      Some(focus::TauriCefFocusHandler::new())
++    }
++
+     fn keyboard_handler(&self) -> Option<KeyboardHandler> {
+       Some(TauriCefKeyboardHandler::new(self.devtools_enabled))
+     }
+diff --git a/crates/tauri-runtime-cef/src/platform/linux/mod.rs b/crates/tauri-runtime-cef/src/platform/linux/mod.rs
+index ea63f77..20341e6 100644
+--- a/crates/tauri-runtime-cef/src/platform/linux/mod.rs
++++ b/crates/tauri-runtime-cef/src/platform/linux/mod.rs
+@@ -9,4 +9,5 @@ mod utils;
+ mod webview;
+ mod window;
+ 
++pub(crate) use utils::input_focus_elsewhere;
+ pub(crate) use window::CefX11Host;
+diff --git a/crates/tauri-runtime-cef/src/platform/linux/utils.rs b/crates/tauri-runtime-cef/src/platform/linux/utils.rs
+index 36e04d6..ccd02b2 100644
+--- a/crates/tauri-runtime-cef/src/platform/linux/utils.rs
++++ b/crates/tauri-runtime-cef/src/platform/linux/utils.rs
+@@ -69,6 +69,49 @@ pub(super) fn with_x11<R>(default: R, f: impl FnOnce(&xlib::Xlib, *mut xlib::Dis
+   })
+ }
+ 
++/// Whether the X input focus currently sits in a top-level window other than the one
++/// that contains `xid` (another application, or another of our own windows).
++///
++/// `None` / `PointerRoot` focus, or anything that cannot be read, counts as "not
++/// elsewhere", so callers only hold back when another window really has the focus.
++pub(crate) fn input_focus_elsewhere(xid: c_ulong) -> bool {
++  if xid == 0 {
++    return false;
++  }
++  with_x11(false, |xlib, display| unsafe {
++    // The direct child of the root window that holds `w`: the window manager's
++    // frame (or the toplevel itself when it is unframed).
++    let top_of = |mut w: c_ulong| -> Option<c_ulong> {
++      for _ in 0..64 {
++        let (mut root, mut parent, mut kids, mut n) =
++          (0, 0, std::ptr::null_mut::<c_ulong>(), 0u32);
++        if (xlib.XQueryTree)(display, w, &mut root, &mut parent, &mut kids, &mut n) == 0 {
++          return None;
++        }
++        if !kids.is_null() {
++          (xlib.XFree)(kids.cast());
++        }
++        if parent == 0 || parent == root {
++          return Some(w);
++        }
++        w = parent;
++      }
++      None
++    };
++
++    let (mut focus, mut revert) = (0, 0);
++    (xlib.XGetInputFocus)(display, &mut focus, &mut revert);
++    // 0 = None, 1 = PointerRoot.
++    if focus <= 1 || focus == (xlib.XDefaultRootWindow)(display) {
++      return false;
++    }
++    match (top_of(focus), top_of(xid)) {
++      (Some(focused), Some(ours)) => focused != ours,
++      _ => false,
++    }
++  })
++}
++
+ pub(super) fn atom(xlib: &xlib::Xlib, display: *mut xlib::Display, name: &str) -> c_ulong {
+   let cname = CString::new(name).unwrap();
+   unsafe { (xlib.XInternAtom)(display, cname.as_ptr(), 0) }

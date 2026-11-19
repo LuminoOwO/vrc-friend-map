@@ -288,12 +288,9 @@ can be designed around everything. Nothing here is started.
 
 ## Parked
 
-- [ ] **No scrolling / zooming on a friend's Gentoo + Xfce + XLibre (X11) system.** Workaround
-  shipped (*Fix the mouse wheel* / `--wheel-fix`), but it didn't help on his system yet; parked
-  since WayVR works for him. Still open: why Chromium in the app gets no wheel there (not keyd:
-  same with keyd stopped). The same AppImage scrolls fine on Mint (X.Org), and Chromium 146
-  scrolls fine on his system, so it's our app (CEF / Chromium 151, or the way its window sits
-  inside the GTK 4 window) with his X server. `xinput test-xi2` shows only *emulated* wheel
-  buttons (4/5); Chromium ignores those when it expects smooth-scroll values instead. Needs: the
-  full xinput output (are there Motion events with scroll values?) and `xinput list --long` for
-  his mouse.
+- [ ] **Why Chromium in the app gets no XInput2 wheel / popup input on XLibre** (Gentoo + Xfce +
+  XLibre; Chromium 146 on the same system is fine, and so is the app on Mint/X.Org). His mouse
+  has smooth-scroll valuators (increment 120) with emulated buttons 4/5, and the raw events
+  reach the root window, so the wheel fallback works there; it's now on by default, and dropdown
+  lists are drawn in the page. Root cause in CEF / Chromium 151 (or the way its window sits
+  inside the GTK 4 window) still unknown.

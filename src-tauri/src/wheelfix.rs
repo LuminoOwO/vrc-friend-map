@@ -8,8 +8,12 @@
 //! passes them to the page as "native-wheel" events. The page uses them only
 //! when no normal wheel event came at the same time, so nothing scrolls twice.
 //!
-//! Off unless the app is started with `--wheel-fix` (or
-//! VRC_FRIEND_MAP_WHEEL_FIX=1), or Settings → Diagnostics turns it on.
+//! On by default in the Chromium build on Linux: on some X servers Chromium in the
+//! app gets no wheel events at all (seen on XLibre with high-resolution wheels),
+//! and where it does get them the page skips the fallback's steps, so nothing
+//! scrolls twice. VRC_FRIEND_MAP_WHEEL_FIX=0 keeps it off. In other builds it's off
+//! unless the app is started with `--wheel-fix` (or VRC_FRIEND_MAP_WHEEL_FIX=1), or
+//! Settings → Performance → Mouse wheel turns it on.
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -23,7 +27,7 @@ static RUNNING: AtomicBool = AtomicBool::new(false);
 
 #[derive(Clone, Serialize)]
 struct NativeWheel {
-    /// Pointer position in the window, CSS pixels.
+    /// Pointer position in the web view, device pixels (origin: the page's top left).
     x: f64,
     y: f64,
     /// Wheel steps: +1 down / right, -1 up / left.
@@ -37,11 +41,20 @@ pub struct WheelFixState {
     running: bool,
     /// Started with --wheel-fix or the environment variable.
     forced: bool,
+    /// On by default (Chromium build on Linux), see [`auto_on`].
+    auto: bool,
 }
 
 pub fn forced_on() -> bool {
     std::env::args().any(|a| a == "--wheel-fix")
         || std::env::var("VRC_FRIEND_MAP_WHEEL_FIX").is_ok_and(|v| v == "1")
+}
+
+/// The Chromium build on Linux turns the fallback on by itself, unless
+/// VRC_FRIEND_MAP_WHEEL_FIX=0.
+pub fn auto_on() -> bool {
+    cfg!(all(target_os = "linux", feature = "chromium"))
+        && !std::env::var("VRC_FRIEND_MAP_WHEEL_FIX").is_ok_and(|v| v == "0")
 }
 
 pub fn set_enabled<R: Runtime>(app: &AppHandle<R>, on: bool) {
@@ -65,6 +78,7 @@ pub fn wheel_fix_state() -> WheelFixState {
         enabled: ENABLED.load(Ordering::SeqCst),
         running: RUNNING.load(Ordering::SeqCst),
         forced: forced_on(),
+        auto: auto_on(),
     }
 }
 
@@ -99,15 +113,13 @@ fn start<R: Runtime>(app: AppHandle<R>) {
 #[cfg(all(target_os = "linux", desktop))]
 fn listen<R: Runtime>(app: &AppHandle<R>, our: std::os::raw::c_ulong) -> Result<(), String> {
     x11::listen(our, &ENABLED, &RUNNING, |x, y, dx, dy| {
-        let scale = app
-            .get_webview_window("main")
-            .and_then(|w| w.scale_factor().ok())
-            .unwrap_or(1.0);
+        // Device pixels in the web view; the page divides by its own devicePixelRatio,
+        // which (unlike the window's scale factor) also covers Chromium's own scaling.
         let _ = app.emit(
             "native-wheel",
             NativeWheel {
-                x: x as f64 / scale,
-                y: y as f64 / scale,
+                x: x as f64,
+                y: y as f64,
                 dx,
                 dy,
             },
