@@ -286,6 +286,18 @@ can be designed around everything. Nothing here is started.
   and who may get it, are set per device today, which can conflict between devices. Keep them
   with the account (synced), per server.
 
+## Beta UI and servers (owner, 2026-11-20)
+
+- [ ] **Server connection status:** show whether the app is connected to each server (and live)
+  where you see your servers and in the main view, not only in the sync log.
+- [ ] **Beta UI: the sync status gets cut off** (the sync line / log in the beta shell). Fix the
+  layout so it fits on phones and narrow windows.
+- [ ] **Beta UI: less confusing**, with icons next to many options so they're quicker to find
+  and recognize.
+- [ ] **Bug: devices keep swapping changes** ("Took over changes from your other devices" on
+  almost every sync, and the server answered "slow down"). Check once phone and PC both run
+  0.12.2+ (the newer change wins since then); if it still happens, find which value flips.
+
 ## Compatibility (owner, 2026-11-20)
 
 - [ ] **App and server versions that don't fit together:** the server says the oldest app
