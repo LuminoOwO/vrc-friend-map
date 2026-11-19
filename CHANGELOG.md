@@ -3,7 +3,11 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
-## Unreleased
+## 0.12.2 (2026-11-19)
+
+Mostly fixes: much less CPU on Linux (also in the tray), a map that stays still, settings that
+no longer snap back between devices, and Android 17 reaching a server at home. Update your
+**vfm-server** too if you like; it has no changes of its own beyond the version.
 
 ### Changed
 - **Beta UI: Sharing & servers on one page** (Settings → Sharing & servers): your servers are
