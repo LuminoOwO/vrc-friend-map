@@ -19,6 +19,9 @@ minor releases can change behavior.
   afternoon, evening or late evening (only night is highlighted).
 
 ### Fixed
+- **The map shifted a little every few seconds**: each live status update from VRChat restarted
+  the layout (the list of friends you're placed between was rebuilt each time, same people). It
+  now restarts only when those people change.
 - **Less CPU in the tray:** a window hidden to the tray kept drawing the map (30 frames a second
   with the orbit on) and running animations, since hiding doesn't tell the page it's hidden.
   Now the app tells it, and the map and animations pause until the window is back.

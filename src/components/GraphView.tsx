@@ -1274,6 +1274,11 @@ export function GraphView() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Who you're placed between, by ID only: the list is rebuilt on every status update from
+  // VRChat (new array, same people), and the layout reads the current weights itself, so
+  // only a change of people should restart it. Otherwise the map shifted every few seconds.
+  const anchorsKey = extra.anchors.map(([id]) => id).join(",");
+
   // Build/refresh the simulation when people, lines or node shapes change.
   const extraKey = `${extra.others.map((o) => o.id).join(",")}#${extra.otherEdges.length}#${extra.me?.id ?? ""}`;
   const layoutKey = `${idsKey}#${lineData.list.length}#${extraKey}#${map.nodeStyle}#${map.nodeScale}#${map.sizeBy}#${map.spacing}#${map.gravity}`;
@@ -1550,7 +1555,7 @@ export function GraphView() {
     };
     sim.force("circles", force as unknown as d3.Force<GNode, GLink>);
     sim.alpha(Math.max(sim.alpha(), 0.3)).restart();
-  }, [circles, layoutKey, map.groupPull, map.gravity, extra.anchors]);
+  }, [circles, layoutKey, map.groupPull, map.gravity, anchorsKey]);
 
   // Any mouse, touch or key input anywhere in the window counts as "not idle"
   // for the frame-rate limits.
