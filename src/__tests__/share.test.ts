@@ -128,3 +128,11 @@ describe("live changes", () => {
     expect(changeMatters({ owner: "", kind: "", resync: true }, "usr_me", friends)).toBe(true);
   });
 });
+
+import { keepOwnUi } from "../share";
+describe("which UI a device shows stays its own", () => {
+  it("takes the other device's interface settings but not its classic / beta choice", () => {
+    expect(keepOwnUi({ beta: true, haptics: true }, { beta: false })).toEqual({ beta: false, haptics: true });
+    expect(keepOwnUi({ beta: false, haptics: false }, { beta: true })).toEqual({ beta: true, haptics: false });
+  });
+});

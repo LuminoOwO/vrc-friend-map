@@ -3,6 +3,13 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## Unreleased
+
+### Fixed
+- **Switching between the classic and the beta UI flipped back and forth** with settings
+  synced between devices: the choice synced to your other devices, which sent it back. Which UI
+  a device shows is now that device's own choice; the rest of the Look settings still sync.
+
 ## 0.12.3 (2026-11-20, pre-release)
 
 A preview of the Linux input fixes from #17 (thanks!): the app no longer takes the keyboard

@@ -640,6 +640,11 @@ async function syncDevices(s: ShareServer): Promise<string> {
   return changedHere ? "Took over changes from your other devices." : "";
 }
 
+/** Synced interface settings, keeping this device's own choice of UI (classic or beta). */
+export function keepOwnUi<T extends { beta: boolean }>(incoming: T, mine: { beta: boolean }): T {
+  return { ...incoming, beta: mine.beta };
+}
+
 /** Your circles, notes and settings, as your other devices get them directly. */
 export function selfForDevices(): SelfPayload {
   return { format: SELF_FORMAT, t: Date.now(), ...currentSelf() };
@@ -716,6 +721,10 @@ function applySelf(d: SelfData) {
   const patch: Partial<Settings> = { notify: { ...st.settings.notify, people: merged.notify.people } };
   if (st.settings.sharing.syncSettings && d.settings)
     for (const k of syncedKeys(st.settings.sharing.syncGroups, st.settings.sharing.localOnly)) if (k in d.settings) (patch as Record<string, unknown>)[k] = merged[k];
+  // Which UI this device shows (classic or beta) is its own choice: never taken over from
+  // another device. Otherwise switching on one device switched the others, and they kept
+  // swapping it back and forth.
+  if (patch.ui) patch.ui = keepOwnUi(patch.ui, st.settings.ui);
   // Keep the other device's change times, so the two don't keep swapping values.
   updateSettings(patch, d.settingsAt ?? {});
 }
