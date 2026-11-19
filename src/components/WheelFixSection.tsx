@@ -15,7 +15,7 @@ export function WheelFixSection() {
       <label className="check">
         <input
           type="checkbox"
-          checked={on || !!st?.forced}
+          checked={st ? st.enabled : on}
           disabled={!!st?.forced}
           onChange={async (e) => {
             updateSettings({ wheelFix: e.target.checked });
@@ -28,6 +28,8 @@ export function WheelFixSection() {
         On some X11 systems (seen with XLibre) the web view never gets the wheel. This reads the wheel from the X server instead, only when
         the web view got nothing, so nothing scrolls twice. Also on with the start option <code>--wheel-fix</code>.
         {st?.forced && " On now because the app was started with --wheel-fix."}
+        {st?.auto && !st.forced &&
+          " On by default in this build, since Chromium here can miss the wheel completely. Unticking turns it off until the app restarts; to keep it off, start the app with VRC_FRIEND_MAP_WHEEL_FIX=0."}
         {st && st.enabled && !st.running && " It couldn't start here (no X11 display); see the terminal output."}
       </p>
     </>

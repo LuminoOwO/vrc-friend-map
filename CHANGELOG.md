@@ -19,6 +19,22 @@ minor releases can change behavior.
   afternoon, evening or late evening (only night is highlighted).
 
 ### Fixed
+- **Linux (X11): the mouse wheel did nothing on some systems** (seen on Gentoo + Xfce + XLibre
+  with high-resolution wheels): Chromium in the app gets no wheel events there at all. The wheel
+  fallback (Settings → Performance → Mouse wheel) is now on by default in the Linux app; where
+  Chromium does get the wheel, the fallback stays out of the way as before.
+  `VRC_FRIEND_MAP_WHEEL_FIX=0` turns it off. The fallback also zooms around the pointer now (it
+  was off by Chromium's own scaling), and wheel events from Chromium that move nothing no longer
+  count as "the wheel works".
+- **Linux (X11): dropdowns couldn't be used on the same systems**: their option list was a
+  separate X11 popup window that Chromium in the app got no clicks for. The list is now drawn
+  inside the page, in the app's own look.
+- **Linux (X11): the app took the keyboard focus back** right after you switched to another
+  window, e.g. a password manager asking whether the app may use the keyring at start. Chromium
+  focused itself after page loads and window events, straight through the X server, past the
+  window manager's focus-stealing prevention. The Chromium build now patches Tauri's Chromium
+  runtime (src-tauri/chromium/patches) so it doesn't focus itself while another window has the
+  focus. `VRC_FRIEND_MAP_FOCUS_GUARD=0` turns that off.
 - **Settings that synced between your devices could snap back** when changed on a device that
   had just joined (switches you unticked turned themselves on again). Now the newer change
   wins; both devices need this version for it.

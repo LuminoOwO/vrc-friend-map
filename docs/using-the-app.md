@@ -195,8 +195,10 @@ Laid out like VRChat's own profile page:
 - **Game logs:** read logs, find the folder automatically, follow the log live, extra folders,
   how often to check, how long to keep history.
 - **Notifications:** see [below](#notifications).
-- **Mouse wheel (Linux):** if the wheel neither scrolls nor zooms (seen on XLibre), turn on
-  *Fix the mouse wheel*, or start the app with `--wheel-fix`.
+- **Mouse wheel (Linux):** on some X11 systems (seen on XLibre) Chromium in the app never gets
+  the wheel, so *Fix the mouse wheel* reads it from the X server instead. It's on by default in
+  the Linux app and only steps in when the wheel didn't arrive the normal way; start the app with
+  `VRC_FRIEND_MAP_WHEEL_FIX=0` to keep it off.
 - **Updates:** the app looks for new versions every few hours and asks you to update (on by
   default; turning it off isn't recommended while new versions come this often), or *Check now*. *Update now* in the dialog
   installs it the way this copy was installed; *Skip this version* stops asking for that one.

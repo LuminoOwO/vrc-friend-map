@@ -869,7 +869,7 @@ pub fn run() {
                     let _ = handle.run_on_main_thread(move || tray::show_main(&h));
                 });
             }
-            if wheelfix::forced_on() {
+            if wheelfix::forced_on() || wheelfix::auto_on() {
                 wheelfix::set_enabled(app.handle(), true);
             }
             Ok(())

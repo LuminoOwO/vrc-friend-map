@@ -2,7 +2,8 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
 /// Watches the X server for wheel buttons while the pointer is over `our` window (or its
-/// frame) and calls `on(x, y, dx, dy)` with the position in the window (device pixels).
+/// frame) and calls `on(x, y, dx, dy)` with the position in the web view's own window
+/// under the pointer (device pixels, origin at the page's top left).
 /// Runs until the X connection ends.
 pub fn listen(
     our: std::os::raw::c_ulong,
@@ -105,8 +106,25 @@ pub fn listen(
             {
                 continue;
             }
+            // Position relative to the deepest window under the pointer inside ours: that's
+            // the web view's own window (Chromium's), whose origin is the page's (0, 0). Our
+            // toplevel's origin isn't: GTK lays the web view out inside it with an offset.
+            let mut target = our;
+            for _ in 0..16 {
+                let (mut r2, mut child2) = (0, 0);
+                let (mut a, mut b, mut c2, mut d, mut m2): (c_int, c_int, c_int, c_int, c_uint) =
+                    (0, 0, 0, 0, 0);
+                if (xl.XQueryPointer)(
+                    display, target, &mut r2, &mut child2, &mut a, &mut b, &mut c2, &mut d, &mut m2,
+                ) == 0
+                    || child2 == 0
+                {
+                    break;
+                }
+                target = child2;
+            }
             let (mut x, mut y, mut c) = (0, 0, 0);
-            (xl.XTranslateCoordinates)(display, root, our, rx, ry, &mut x, &mut y, &mut c);
+            (xl.XTranslateCoordinates)(display, root, target, rx, ry, &mut x, &mut y, &mut c);
             on(x, y, dx, dy);
         }
     }
