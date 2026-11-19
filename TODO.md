@@ -6,6 +6,26 @@ their round. The bigger, discussed list lives in GitHub issue #14.
 Rounds are in the suggested order (2026-11-16): all features first, the UI rework last so it
 can be designed around everything. Nothing here is started.
 
+## Priorities (owner, 2026-11-20)
+
+Work through these in this order, one at a time; the rest of the file is the detail.
+
+1. Bug: devices keep swapping changes (Beta UI and servers)
+2. Beta UI: the sync status gets cut off
+3. Server connection status
+4. App and server versions that don't fit together (Compatibility)
+5. The UI release, as one block: one server's settings in the beta UI, the other Settings tabs,
+   icons and a less confusing layout, easier server connections, then the beta UI becomes the
+   main UI
+6. Sharing choices per account, not per device
+7. Notice when the server's VRChat login expires (and renew from the app)
+8. Use the app without logging in to VRChat in it
+9. In gaps: Door / Knock sounds, the pause before a person's tune
+
+Not ranked yet: everything under "More (owner, 2026-11-20)", the rest of Round 8 (keyboard
+navigation, translations), log out everywhere, the in-VR overlay, the renderer's CPU in the
+tray. On hold: Discord rich presence.
+
 ## Round 1: fixes and basics
 
 - [x] **Why a sync failed.** Tapping the sync status opens a sync log: every step (VRChat,
@@ -304,6 +324,23 @@ can be designed around everything. Nothing here is started.
   version it works with, the app the oldest server version; when they don't fit, the app shows
   "This server needs a newer app" (or "is too old for this app") with what to update, instead of
   failing in odd ways, and stops syncing with it until then.
+
+## More (owner, 2026-11-20)
+
+- [ ] **Move your setup to another device:** export the app's settings in a form every platform
+  reads, and import them there, so a new device doesn't need setting up by hand. With a QR code
+  for phones: every platform can show one, and scanning works wherever there's a camera (phones,
+  and PCs that have one), else paste or open the file.
+- [ ] **First setup with a server is too slow:** a new device's first sync can hit the server's
+  request limit (600 per account per 10 minutes; "slow down"). Raise the default and make it a
+  server setting; maybe a higher allowance in the first minutes after joining.
+- [ ] **A better admin page for vfm-server**, in the spirit of the beta UI.
+- [ ] **Invites in the Activity log:** when someone invites you (or asks for an invite), it shows
+  there too, not only as a notification.
+- [ ] **More themes, and your own colors** (pick the main colors yourself).
+- [ ] **Keep the main thread free on every platform:** move heavy work off it so the window
+  stays responsive (the Linux spinning is fixed; this is the general version).
+- [ ] **A general check of every feature on every platform** (very late, before 1.0).
 
 ## Parked
 
