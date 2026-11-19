@@ -8,7 +8,8 @@ import { SETTING_GROUPS } from "../devicesync";
 import { addServer, isLive, onLiveChange, serverName, serverSwitch, syncAllServers } from "../share";
 import { updateSharing, useApp } from "../store";
 import type { ShareServer } from "../types";
-import { ChangedKeys, DEFAULTS, KeySection, ServerCard } from "../components/ServersModal";
+import { ChangedKeys, DEFAULTS, KeySection } from "../components/ServersModal";
+import { ServerSettings } from "./ServerSettings";
 import { Icon } from "../components/Icon";
 
 /** One plain status per server: what's going on, in words. */
@@ -112,7 +113,7 @@ function ServerRow({ s, open, onToggle }: { s: ShareServer; open: boolean; onTog
       </button>
       {open && (
         <div className="ui2-server-detail">
-          <ServerCard server={s} />
+          <ServerSettings server={s} />
         </div>
       )}
     </li>

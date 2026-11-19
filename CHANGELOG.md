@@ -10,6 +10,10 @@ minor releases can change behavior.
   connected live, grey when connected, amber when one isn't joined, red when one has a problem;
   click it for Sharing & servers), and the same status on the phone's Me page.
 - **Beta UI on phones: a slightly taller bottom bar** with bigger icons.
+- **Beta UI: a server's settings in sections**: Join, What I share here (each item with a line
+  saying what it is, which friends it's about, who may get it, encryption), What I receive, My
+  other devices (with the ones connected right now), and the 24/7 logger; last sync, Sync now and
+  Remove at the bottom. Same options as before, just sorted.
 
 ### Fixed
 - **Beta UI: the sync status was cut off** in the top bar on narrower windows. It shortens with
