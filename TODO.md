@@ -238,7 +238,7 @@ can be designed around everything. Nothing here is started.
 - [x] **Tray menu extras:** online count, starred friends online, quick status switch.
 - [x] **Now playing in your status** (optional): the song from your music player (MPRIS on
   Linux) in your status text, with a template and an off switch.
-- [ ] **Discord rich presence** (optional): "in VRChat", never showing private instances unless
+- [ ] **Discord rich presence** (On hold, owner 2026-11-19.) (optional): "in VRChat", never showing private instances unless
   you allow it.
 
 ## Round 8: UI rework (last)
