@@ -943,6 +943,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.12.3": "Linux: the app no longer takes the keyboard focus back from other windows, the mouse wheel works where it didn't, and dropdown lists open inside the app in its own look.",
   "0.12.2": "much less CPU on Linux (also in the tray), the map no longer shifts every few seconds, synced settings don't snap back, Android 17 reaches a server at home, an easier time zone picker, and in the beta UI Sharing & servers on one page.",
   "0.12.1": "uploading stickers works again (the in-game effect is for emojis only).",
   "0.12.0": "an Insights tab, a Logbook of your game logs (day by day, rankings, pictures, video links, year in review), a VRChat tab (groups, favorites, avatars, prints and emojis), your other VRChat accounts on the same map, stars, nicknames and local times on profiles, quiet hours, your devices syncing with each other live, chatbox over OSC, now playing in your status, encrypted backups, and an opt-in new beta UI.",

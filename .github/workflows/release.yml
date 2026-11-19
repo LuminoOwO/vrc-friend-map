@@ -28,6 +28,10 @@ on:
       tag:
         description: "Version tag, e.g. v0.3.0 (must match package.json)"
         required: true
+      prerelease:
+        description: "Pre-release: a preview for testers. Apps and servers don't offer it as an update, and the container image keeps :latest on the last stable version."
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -41,6 +45,8 @@ env:
   TAG: ${{ inputs.tag || github.ref_name }}
   # "check" = build only, no release.
   MODE: ${{ startsWith(github.ref, 'refs/heads/build-check/') && 'check' || 'release' }}
+  # "true" for a pre-release (Actions -> Release builds -> the checkbox); tag pushes are stable releases.
+  PRERELEASE: ${{ github.event_name == 'workflow_dispatch' && inputs.prerelease && 'true' || 'false' }}
 
 jobs:
   # Decides where the tests run: my PC when it's online and idle, else GitHub.
@@ -150,8 +156,16 @@ jobs:
           else
             # Created as a draft; the last job publishes it once the files are attached.
             node scripts/release-notes.mjs "$TAG" > "$RUNNER_TEMP/notes.md"
+            if [ "$PRERELEASE" = true ]; then
+              # Said at the top of the notes, and marked so the app's updater and the servers skip it.
+              { echo "> **Pre-release:** a preview for testing. Apps and servers don't offer it as an update; download it from here."; echo; cat "$RUNNER_TEMP/notes.md"; } > "$RUNNER_TEMP/notes2.md"
+              mv "$RUNNER_TEMP/notes2.md" "$RUNNER_TEMP/notes.md"
+              PRE="--prerelease"
+            else
+              PRE=""
+            fi
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "${{ steps.pick.outputs.sha }}" \
-              --title "VRC Friend Map ${TAG#v}" --notes-file "$RUNNER_TEMP/notes.md" --draft
+              --title "VRC Friend Map ${TAG#v}" --notes-file "$RUNNER_TEMP/notes.md" --draft $PRE
           fi
 
   linux:
@@ -556,7 +570,7 @@ jobs:
           set -e
           TAGS="-t $IMAGE:$VERSION"
           # Only stable versions move :latest (not 1.0.0-beta.1).
-          case "$VERSION" in *-*) ;; *) TAGS="$TAGS -t $IMAGE:latest" ;; esac
+          case "$VERSION" in *-*) ;; *) [ "$PRERELEASE" = true ] || TAGS="$TAGS -t $IMAGE:latest" ;; esac
           if [ "$MODE" = release ]; then OUT=--push; else OUT=; fi
           docker buildx build "$RUNNER_TEMP/ctx" -f "$RUNNER_TEMP/ctx/Containerfile" \
             --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/386 \
@@ -591,7 +605,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "$TAG" upload/* --clobber --repo "$GITHUB_REPOSITORY"
-          gh release edit "$TAG" --draft=false --repo "$GITHUB_REPOSITORY"
+          if [ "$PRERELEASE" = true ]; then
+            gh release edit "$TAG" --draft=false --prerelease --latest=false --repo "$GITHUB_REPOSITORY"
+          else
+            gh release edit "$TAG" --draft=false --repo "$GITHUB_REPOSITORY"
+          fi
       - name: Summary
         if: always()
         run: |

@@ -208,6 +208,9 @@ To release a version:
 3. Add a section for it to `CHANGELOG.md`, then commit and push.
 4. Start the build in one of two ways:
    - **In the browser:** go to Actions → *Release builds* → *Run workflow*, and enter `vX.Y.Z`.
+     Tick *Pre-release* for a preview: it's marked as a pre-release on GitHub, apps and servers
+     don't offer it as an update, and the container image's `:latest` stays on the last stable
+     version. A pushed tag is always a stable release.
    - **From a terminal:** run `git tag vX.Y.Z && git push origin vX.Y.Z`.
 5. Wait about 20–40 minutes. The release stays a draft until the files are attached, then it's published.
 

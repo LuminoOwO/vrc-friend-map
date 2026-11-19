@@ -3,7 +3,12 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
-## Unreleased
+## 0.12.3 (2026-11-20, pre-release)
+
+A preview of the Linux input fixes from #17 (thanks!): the app no longer takes the keyboard
+focus back from other windows, the mouse wheel works on X11 systems where Chromium never got it,
+and dropdown lists open inside the app in its own look. Not offered as an update; on most
+systems nothing changes except the dropdowns' look.
 
 ### Fixed
 - **Linux (X11): the mouse wheel did nothing on some systems** (seen on Gentoo + Xfce + XLibre
