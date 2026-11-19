@@ -14,6 +14,8 @@ minor releases can change behavior.
   saying what it is, which friends it's about, who may get it, encryption), What I receive, My
   other devices (with the ones connected right now), and the 24/7 logger; last sync, Sync now and
   Remove at the bottom. Same options as before, just sorted.
+- **Beta UI: every Settings section has an icon and a line saying what it's for**, so you find
+  things faster (e.g. "Frame rate: smoothness against battery and fan noise").
 
 ### Fixed
 - **Beta UI: the sync status was cut off** in the top bar on narrower windows. It shortens with

@@ -36,6 +36,7 @@ import { BackupSection, NowPlayingSection, OscSection, PlaytimeSection } from ".
 import { AccountsSection } from "./AccountsSection";
 import { ServersPage } from "../ui2/ServersPage";
 import { betaActive } from "../ui2/active";
+import { SECTION_INFO } from "../ui2/sectionInfo";
 import { flagLine } from "../notesline";
 import { loadSlots, saveSlot, type MessageSlot } from "../invites";
 import type { UiSettings } from "../types";
@@ -707,8 +708,21 @@ function Sec({ id, cat, title, keys, children, unavailable }: { id: string; cat:
   });
   if (gone) return null;
   const shown = ctx.visible(id, cat);
+  // Beta UI: a header with an icon and what the section is for (replaces the section's own title).
+  const info = betaActive() ? SECTION_INFO[id] : undefined;
   return (
-    <section ref={ref} className={`settings-sec ${shown ? "" : "hidden"} ${unavailable ? "unavailable" : ""}`} style={{ order: ctx.order(id) }} data-sec={id}>
+    <section ref={ref} className={`settings-sec ${shown ? "" : "hidden"} ${unavailable ? "unavailable" : ""} ${info ? "ui2-sec" : ""}`} style={{ order: ctx.order(id) }} data-sec={id}>
+      {info && (
+        <header className="ui2-sec-head">
+          <span className="ui2-sec-icon">
+            <Icon name={info.icon} size={18} />
+          </span>
+          <span>
+            <b>{title}</b>
+            <span className="small muted">{info.about}</span>
+          </span>
+        </header>
+      )}
       {unavailable ? (
         <>
           <p className="unavailable-note small">
