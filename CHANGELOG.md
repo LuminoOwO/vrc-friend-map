@@ -19,6 +19,11 @@ minor releases can change behavior.
   afternoon, evening or late evening (only night is highlighted).
 
 ### Fixed
+- **Linux: the app used a full CPU core all the time**, also in the tray with nothing to do.
+  With Chromium's way of hooking into the window system's event loop there, the loop kept
+  checking for events without ever pausing (a known Chromium Embedded problem). The app now
+  lets that loop rest for a moment when it finds nothing to do; events still arrive at once.
+  `VRC_FRIEND_MAP_POLL_THROTTLE=0` turns this off.
 - **The map shifted a little every few seconds**: each live status update from VRChat restarted
   the layout (the list of friends you're placed between was rebuilt each time, same people). It
   now restarts only when those people change.

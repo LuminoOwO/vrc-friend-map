@@ -3,6 +3,8 @@ mod api;
 mod auth;
 mod extras;
 mod gamelogs;
+#[cfg(target_os = "linux")]
+mod glibpoll;
 #[cfg(all(target_os = "linux", feature = "chromium", vfm_gtk4_no_wayland))]
 mod gdk4_stubs;
 #[cfg(all(target_os = "linux", vfm_gdk_no_wayland))]
@@ -869,6 +871,9 @@ pub fn run() {
                     let _ = handle.run_on_main_thread(move || tray::show_main(&h));
                 });
             }
+            // Chromium build on Linux: stop the main loop from spinning on nothing (glibpoll.rs).
+            #[cfg(all(target_os = "linux", feature = "chromium"))]
+            glibpoll::install();
             if wheelfix::forced_on() {
                 wheelfix::set_enabled(app.handle(), true);
             }
