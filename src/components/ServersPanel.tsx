@@ -2,7 +2,7 @@
 // adding one, without digging through Settings.
 import { useState } from "react";
 import { backend } from "../backend";
-import { addServer, serverName, serverSwitch, syncAllServers } from "../share";
+import { addServerFromInput, serverName, serverSwitch, syncAllServers } from "../share";
 import { useApp } from "../store";
 import { Icon } from "./Icon";
 import { ago, openServers, POLICY_LABEL } from "./ServersModal";
@@ -24,7 +24,7 @@ export function ServersPanel() {
     setAdding(true);
     setError("");
     try {
-      await addServer(url);
+      await addServerFromInput(url);
       setUrl("");
       openServers(); // joining (invite code, sharing choices) happens there
     } catch (e) {

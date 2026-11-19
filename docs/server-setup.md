@@ -176,7 +176,12 @@ On the admin page you can set:
   | `optional` | Encryption starts off; people may turn it on. |
   | `force-off` | Never encrypted. The app warns everyone before each upload that the server can read it. |
 
-- **Invite codes:** make them here, or with `vfm-server invite --uses 5 --days 30`.
+- **Invite codes:** make them here, or with `vfm-server invite --uses 5 --days 30`. Each comes
+  with an **invite link** (*Copy invite link* on the admin page; the command prints it too).
+  Send your friend the link: pasted into the app's *Add a server*, it adds the server and joins
+  in one step. Opened in a browser, it explains what to do. The admin page builds the link from
+  the address you opened it with, so for friends outside your home open it through the address
+  they'll use (or set `VFM_PUBLIC_URL` for the command).
 - **Shared cache of public VRChat info** (`cache_worlds`, `cache_groups`, `cache_avatars`, all
   on by default): apps that loaded a public world, group or avatar put it on the server, and the
   others read it from there first, so VRChat gets fewer requests. Only public data, and every

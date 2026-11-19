@@ -6,7 +6,7 @@ import { backend, isTauri, type LoggerStatus, type MyIdentity } from "../backend
 import { fmtDate } from "../model";
 import {
   acceptKey,
-  addServer,
+  addServerFromInput,
   confirmUnencrypted,
   pairLogger,
   refreshServer,
@@ -129,7 +129,7 @@ export function ServersModal() {
     setAdding(true);
     setAddError("");
     try {
-      await addServer(url);
+      await addServerFromInput(url);
       setUrl("");
     } catch (e) {
       setAddError(errText(e));

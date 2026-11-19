@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { backend, isTauri, type MyIdentity } from "../backend";
 import { SETTING_GROUPS } from "../devicesync";
-import { addServer, isLive, onLiveChange, serverName, serverSwitch, syncAllServers } from "../share";
+import { addServerFromInput, isLive, onLiveChange, serverName, serverSwitch, syncAllServers } from "../share";
 import { updateSharing, useApp } from "../store";
 import type { ShareServer } from "../types";
 import { ChangedKeys, DEFAULTS, KeySection } from "../components/ServersModal";
@@ -46,7 +46,7 @@ function AddServer({ onDone }: { onDone: () => void }) {
     setBusy(true);
     setError("");
     try {
-      await addServer(url);
+      await addServerFromInput(url);
       setUrl("");
       onDone();
     } catch (e) {
@@ -58,8 +58,8 @@ function AddServer({ onDone }: { onDone: () => void }) {
   return (
     <div className="ui2-add-server">
       <ol className="ui2-steps small">
-        <li>Enter the address the server owner gave you (it shows it when it starts).</li>
-        <li>Then join it: most servers need an invite code from their owner.</li>
+        <li>Paste the invite link the server's owner gave you: it adds the server and joins it in one go.</li>
+        <li>Or enter the server's address, then join it with an invite code.</li>
         <li>Pick what to share there. Nothing is shared before you choose.</li>
       </ol>
       <div className="row">
@@ -67,7 +67,7 @@ function AddServer({ onDone }: { onDone: () => void }) {
           id="ui2-add-url"
           className="grow"
           value={url}
-          placeholder="e.g. 192.168.1.20:8787 or vfm.example.com"
+          placeholder="Invite link, or an address like vfm.example.com"
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && url.trim() && void add()}
           disabled={demo}

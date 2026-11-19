@@ -289,7 +289,7 @@ async function load() {
   $("#envNote").textContent = (s.envLocked || []).length ? `Fixed by environment variables: ${s.envLocked.join(", ")}. Change those in your container settings.` : "";
   $("#encHint").textContent = ENC[f.encryption.value];
 
-  $("#invites").innerHTML = Object.entries(s.invites).map(([code, i]) => `<tr><td class="mono">${esc(code)}</td><td>${i.uses_left}</td><td>${i.expires ? when(i.expires) : "never"}</td><td>${esc(i.note)}</td><td><button class="danger" data-inv="${esc(code)}">Delete</button></td></tr>`).join("") || `<tr><td colspan=5 class="dim">No open invite codes.</td></tr>`;
+  $("#invites").innerHTML = Object.entries(s.invites).map(([code, i]) => `<tr><td class="mono">${esc(code)}<br><button class="ghost" data-copy="${esc(location.origin + "/join/" + code)}" title="A link with this server's address and the code: pasted into the app, it adds the server and joins">Copy invite link</button></td><td>${i.uses_left}</td><td>${i.expires ? when(i.expires) : "never"}</td><td>${esc(i.note)}</td><td><button class="danger" data-inv="${esc(code)}">Delete</button></td></tr>`).join("") || `<tr><td colspan=5 class="dim">No open invite codes.</td></tr>`;
   $("#users").innerHTML = s.users.map((u) => `<tr><td>${u.name ? `<b>${esc(u.name)}</b>` : ""}${u.banned != null ? ' <span class="pill bad">banned</span>' : ""}<div class="mono">${esc(u.id)}</div><div class="dim mono">${esc(u.fingerprint)}</div><div class="dim">${esc(u.app || "")}${u.lastIp ? ` · ${esc(u.lastIp)}` : ""} · ${kb(u.bytes || 0)} stored</div></td>
       <td>${u.items.map((i) => `<div>${esc(i.kind)} <span class="pill ${i.sealed ? "ok" : "warn"}">${i.sealed ? "encrypted" : "readable"}</span> <span class="dim">→ ${i.recipients} · ${kb(i.bytes)} · ${ago(i.created)}</span></div>`).join("") || `<span class="dim">nothing</span>`}</td>
       <td>${ago(u.registered)}${u.invite ? `<div class="dim mono">${esc(u.invite)}</div>` : ""}</td><td>${ago(u.lastSeen)}</td>
@@ -318,6 +318,13 @@ $("#inviteForm").onsubmit = async (e) => {
   load();
 };
 document.addEventListener("click", async (e) => {
+  const cp = e.target.closest("[data-copy]");
+  if (cp) {
+    try { await navigator.clipboard.writeText(cp.dataset.copy); cp.textContent = "Copied"; }
+    catch { prompt("Copy this invite link:", cp.dataset.copy); }
+    setTimeout(() => (cp.textContent = "Copy invite link"), 1500);
+    return;
+  }
   const inv = e.target.closest("[data-inv]");
   if (inv) { await api("/admin/api/invites/" + encodeURIComponent(inv.dataset.inv), { method: "DELETE" }); load(); }
   const unban = e.target.closest("[data-unban]");

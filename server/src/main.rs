@@ -183,16 +183,7 @@ fn run(config_path: &Path) -> Result<(), String> {
     if !env_used.is_empty() {
         println!("From the environment: {}", env_used.join(", "));
     }
-    let port = listen.port();
-    let base = match std::env::var("VFM_PUBLIC_URL").ok().filter(|u| !u.trim().is_empty()) {
-        Some(u) => u.trim().trim_end_matches('/').to_string(),
-        // Inside a container our own address means nothing to the app.
-        None if in_container() => format!("http://<this computer's address>:<published port, usually {port}>"),
-        None => {
-            let host = if listen.ip().is_unspecified() { lan_address().map(|i| i.to_string()).unwrap_or_else(|| "localhost".into()) } else { listen.ip().to_string() };
-            format!("http://{host}:{port}")
-        }
-    };
+    let base = app_base(listen);
     println!("App:        add {base} in Settings → Servers");
     if cfg.admin.allow != config::AdminAllow::Off {
         println!("Admin page: {base}/admin   token: {}", cfg.admin.token);
@@ -249,6 +240,20 @@ async fn shutdown_signal() {
     let _ = tokio::signal::ctrl_c().await;
 }
 
+/** The address the app should use: VFM_PUBLIC_URL, else this machine's address on the network. */
+fn app_base(listen: SocketAddr) -> String {
+    let port = listen.port();
+    match std::env::var("VFM_PUBLIC_URL").ok().filter(|u| !u.trim().is_empty()) {
+        Some(u) => u.trim().trim_end_matches('/').to_string(),
+        // Inside a container our own address means nothing to the app.
+        None if in_container() => format!("http://<this computer's address>:<published port, usually {port}>"),
+        None => {
+            let host = if listen.ip().is_unspecified() { lan_address().map(|i| i.to_string()).unwrap_or_else(|| "localhost".into()) } else { listen.ip().to_string() };
+            format!("http://{host}:{port}")
+        }
+    }
+}
+
 fn cmd_invite(config_path: &Path, args: &mut Vec<String>) -> Result<(), String> {
     let (cfg, _) = with_config(config_path)?;
     let uses = take_opt(args, "--uses").map(|v| v.parse::<u32>().map_err(|e| format!("--uses: {e}"))).transpose()?.unwrap_or(1);
@@ -257,6 +262,10 @@ fn cmd_invite(config_path: &Path, args: &mut Vec<String>) -> Result<(), String> 
     upgrade::upgrade(&cfg.data_dir(config_path))?;
     let code = store::new_invite(&cfg.data_dir(config_path), uses, days, &note)?;
     println!("Invite code: {code}");
+    if let Ok(listen) = cfg.server.listen.parse::<SocketAddr>() {
+        // One link with the address and the code: pasted into the app, it adds the server and joins.
+        println!("Invite link: {}/join/{code}", app_base(listen));
+    }
     println!("{} use{}, {}", uses.max(1), if uses > 1 { "s" } else { "" }, if days == 0 { "never expires".to_string() } else { format!("expires in {days} days") });
     if cfg.access.registration != vfm_share::Registration::Invite {
         println!("Note: new accounts are set to \"{}\", so codes aren't needed right now.", reg_str(cfg.access.registration));

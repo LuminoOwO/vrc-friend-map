@@ -136,3 +136,14 @@ describe("which UI a device shows stays its own", () => {
     expect(keepOwnUi({ beta: false, haptics: false }, { beta: true })).toEqual({ beta: true, haptics: false });
   });
 });
+
+import { parseInviteLink } from "../share";
+describe("invite links", () => {
+  it("finds the server and the code", () => {
+    expect(parseInviteLink("http://192.168.178.70:8787/join/AB12-CD34-EF56-GH78")).toEqual({ url: "http://192.168.178.70:8787", code: "AB12-CD34-EF56-GH78" });
+    expect(parseInviteLink(" https://vfm.example.com/join/AB12-CD34/ ")).toEqual({ url: "https://vfm.example.com", code: "AB12-CD34" });
+    expect(parseInviteLink("vfm.example.com/join/AB12")).toEqual({ url: "vfm.example.com", code: "AB12" });
+    expect(parseInviteLink("vfm.example.com")).toBeNull();
+    expect(parseInviteLink("https://vfm.example.com/admin")).toBeNull();
+  });
+});

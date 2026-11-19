@@ -14,6 +14,10 @@ minor releases can change behavior.
   saying what it is, which friends it's about, who may get it, encryption), What I receive, My
   other devices (with the ones connected right now), and the 24/7 logger; last sync, Sync now and
   Remove at the bottom. Same options as before, just sorted.
+- **Invite links: join a server in one step.** The server's admin page has *Copy invite link*
+  next to each invite code (`vfm-server invite` prints it too). Paste the link into *Add a server*
+  and the app adds the server, joins with the code and syncs. Opened in a browser, the link says
+  what to do with it. Needs the new vfm-server for the links; codes work as before.
 - **Beta UI: every Settings section has an icon and a line saying what it's for**, so you find
   things faster (e.g. "Frame rate: smoothness against battery and fan noise").
 

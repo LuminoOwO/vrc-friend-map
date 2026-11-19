@@ -112,6 +112,36 @@ export function serverName(s: ShareServer): string {
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /** Look a server up and add it (not signed up yet). */
+/** An invite link from a server's admin page or `vfm-server invite`: its address and the code. */
+export function parseInviteLink(input: string): { url: string; code: string } | null {
+  const m = input.trim().match(/^((?:https?:\/\/)?[^/?#\s]+)\/join\/([A-Za-z0-9-]{4,40})\/?$/);
+  return m ? { url: m[1], code: m[2] } : null;
+}
+
+/**
+ * Add a server from what you typed or pasted: an address, or an invite link, which
+ * also joins with its code and syncs, all in one step.
+ */
+export async function addServerFromInput(input: string): Promise<ShareServer> {
+  const invite = parseInviteLink(input);
+  if (!invite) return addServer(input);
+  let s: ShareServer;
+  try {
+    s = await addServer(invite.url);
+  } catch (e) {
+    // Already in your list (maybe not joined yet): join that one.
+    const base = invite.url.replace(/^https?:\/\//, "").toLowerCase();
+    const found = getState().settings.sharing.servers.find((x) => x.url.replace(/^https?:\/\//, "").toLowerCase().startsWith(base));
+    if (!found) throw e;
+    s = found;
+  }
+  if (!s.registered) {
+    await registerServer(s.id, invite.code);
+    await syncServer(s.id, { manual: true });
+  }
+  return getState().settings.sharing.servers.find((x) => x.id === s.id) ?? s;
+}
+
 export async function addServer(url: string): Promise<ShareServer> {
   if (!(await allowHomeNetwork(url, true, true)))
     throw new Error("Android needs the Nearby devices permission to reach a server on your home network. Allow it in the app's settings (Permissions → Nearby devices), then try again.");

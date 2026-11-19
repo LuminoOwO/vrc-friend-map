@@ -254,6 +254,7 @@ pub fn router(app: Arc<App>) -> Router {
         .route("/v1/logger/heartbeat", post(logger_heartbeat))
         .route("/v1/logger/push", put(logger_push_set).delete(logger_push_delete))
         .route("/", get(landing))
+        .route("/join/{code}", get(join_page))
         .route("/v1/info", get(info))
         .route("/v1/register", post(register))
         .route("/v1/me", get(me).delete(delete_me))
@@ -342,6 +343,25 @@ async fn logger_push_delete(State(app): State<Arc<App>>, headers: HeaderMap, met
     let device = b.get("device").and_then(Value::as_str).unwrap_or("");
     app.logger.set_push(device, None).map_err(|e| err(StatusCode::INTERNAL_SERVER_ERROR, e))?;
     Ok(Json(json!({ "ok": true })).into_response())
+}
+
+/// An invite link opened in a browser: says what to do with it. (The app reads the server's
+/// address and the code from the link itself; this page doesn't check the code.)
+async fn join_page(State(app): State<Arc<App>>, Path(code): Path<String>) -> Html<String> {
+    let cfg = app.cfg();
+    let esc = |s: &str| s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
+    let code: String = code.chars().filter(|c| c.is_ascii_alphanumeric() || *c == '-').take(40).collect();
+    Html(format!(
+        "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width'><title>Join {n}</title>\
+         <body style='font:16px system-ui;max-width:36em;margin:3em auto;padding:0 1em;color:#ddd;background:#16171d'>\
+         <h1>You're invited to {n}</h1><p>A <b>VRC Friend Map</b> server. To join:</p>\
+         <ol><li>Open VRC Friend Map.</li><li>Go to Settings → Sharing &amp; servers → <b>Add a server</b>.</li>\
+         <li>Paste <b>this page's address</b> (the whole link) and press Add. The app joins with the invite code in it.</li></ol>\
+         <p style='color:#999'>Invite code, if you'd rather type it: <code>{c}</code></p><p>{m}</p>",
+        n = esc(&cfg.server.name),
+        c = code,
+        m = esc(&cfg.server.motd)
+    ))
 }
 
 async fn landing(State(app): State<Arc<App>>) -> Html<String> {
