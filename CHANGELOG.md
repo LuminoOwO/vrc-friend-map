@@ -3,7 +3,11 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
-## Unreleased
+## 0.12.4 (2026-11-20)
+
+Fixes switching between the classic and the beta UI, which flipped back and forth with
+settings synced between your devices. Also brings the Linux input fixes from 0.12.3 (focus,
+mouse wheel, dropdowns) to everyone. vfm-server has no changes beyond the version.
 
 ### Fixed
 - **Switching between the classic and the beta UI flipped back and forth** with settings
