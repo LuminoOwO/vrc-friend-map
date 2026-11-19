@@ -11,12 +11,10 @@ can be designed around everything. Nothing here is started.
 Work through these in this order, one at a time; the rest of the file is the detail.
 
 1. Bug: devices keep swapping changes (Beta UI and servers)
-2. Beta UI: the sync status gets cut off
-3. Server connection status
+2. ~~Beta UI: the sync status gets cut off~~ (done)
+3. ~~Server connection status~~ (done)
 4. App and server versions that don't fit together (Compatibility)
-5. The UI release, as one block: one server's settings in the beta UI, the other Settings tabs,
-   icons and a less confusing layout, easier server connections, then the beta UI becomes the
-   main UI
+5. ~~The UI release~~ (done on main, 2026-11-20; goes out as 0.13.0)
 6. Sharing choices per account, not per device
 7. Notice when the server's VRChat login expires (and renew from the app)
 8. Use the app without logging in to VRChat in it
@@ -275,7 +273,7 @@ tray. On hold: Discord rich presence.
     full), filters and settings as full-screen sheets, 44 px touch targets, haptics.
 - [ ] **Accessibility:** text size, reduced motion, colorblind-safe status colors, full
   keyboard navigation.
-- [ ] **Easier server connections.** (Owner, 2026-11-18: setting one up is confusing.) Joining
+- [x] **Easier server connections.** (Invite links done; the server settings are sorted by purpose in the beta UI.) (Owner, 2026-11-18: setting one up is confusing.) Joining
   should be one step: the admin page makes an invite link that holds the address and the invite
   code, and the app opens it (paste or share) and joins. In the app, the server settings start
   from what you want (share with friends, sync my devices, log around the clock) and keep the
@@ -308,11 +306,11 @@ tray. On hold: Discord rich presence.
 
 ## Beta UI and servers (owner, 2026-11-20)
 
-- [ ] **Server connection status:** show whether the app is connected to each server (and live)
+- [x] **Server connection status:** (Done for the beta UI: top-bar chip and the phone's Me page.) show whether the app is connected to each server (and live)
   where you see your servers and in the main view, not only in the sync log.
-- [ ] **Beta UI: the sync status gets cut off** (the sync line / log in the beta shell). Fix the
+- [x] **Beta UI: the sync status gets cut off** (the sync line / log in the beta shell). Fix the
   layout so it fits on phones and narrow windows.
-- [ ] **Beta UI: less confusing**, with icons next to many options so they're quicker to find
+- [x] **Beta UI: less confusing**, (Icons and a description for every Settings section, a server's settings in sections; more per-option icons later.) with icons next to many options so they're quicker to find
   and recognize.
 - [ ] **Bug: devices keep swapping changes** ("Took over changes from your other devices" on
   almost every sync, and the server answered "slow down"). Check once phone and PC both run
