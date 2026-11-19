@@ -8,8 +8,9 @@ minor releases can change behavior.
 ### Fixed
 - **Linux (X11): the mouse wheel did nothing on some systems** (seen on Gentoo + Xfce + XLibre
   with high-resolution wheels): Chromium in the app gets no wheel events there at all. The wheel
-  fallback (Settings → Performance → Mouse wheel) is now on by default in the Linux app; where
-  Chromium does get the wheel, the fallback stays out of the way as before.
+  fallback (Settings → Performance → Mouse wheel) is now on by default in the Linux app. On
+  systems where Chromium gets the wheel fine it stands down by itself after a few wheel steps,
+  so nothing scrolls twice there; it keeps working where steps go missing.
   `VRC_FRIEND_MAP_WHEEL_FIX=0` turns it off. The fallback also zooms around the pointer now (it
   was off by Chromium's own scaling), and wheel events from Chromium that move nothing no longer
   count as "the wheel works".

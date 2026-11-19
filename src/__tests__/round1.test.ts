@@ -37,3 +37,13 @@ describe("home network addresses (Android 17 asks first)", () => {
     for (const u of ["https://vfm.example.com", "http://172.32.0.1", "http://8.8.8.8"]) expect(onHomeNetwork(u), u).toBe(false);
   });
 });
+
+import { wheelWorksNatively } from "../wheelfix";
+describe("wheel fallback on normal systems", () => {
+  it("stands down once the web engine clearly gets the wheel, never where it misses steps", () => {
+    expect(wheelWorksNatively(4, 0, false)).toBe(false);
+    expect(wheelWorksNatively(5, 0, false)).toBe(true);
+    expect(wheelWorksNatively(50, 1, false)).toBe(false); // a missed step: the broken case
+    expect(wheelWorksNatively(50, 0, true)).toBe(false); // turned on by hand: stays on
+  });
+});

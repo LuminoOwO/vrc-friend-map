@@ -15,6 +15,20 @@ let real = 0;
 let empty = 0;
 let used = 0;
 let skipped = 0;
+/** Steps the X server saw that the web engine also delivered (and the ones it didn't). */
+let matched = 0;
+let unmatched = 0;
+
+/**
+ * Whether the fallback should stand down for this run: on by default in the Linux app, but on
+ * a system where the web engine gets the wheel fine (5 steps seen by both, none missed) it has
+ * nothing to do, so it stops instead of relying on timing to avoid double scrolling. One missed
+ * step (the broken case, or a mouse whose wheel doesn't arrive next to a touchpad that does)
+ * keeps it on. Turned on by hand in Settings, it always stays on.
+ */
+export function wheelWorksNatively(m: number, u: number, forcedOn: boolean): boolean {
+  return !forcedOn && u === 0 && m >= 5;
+}
 
 export interface WheelFixState {
   enabled: boolean;
@@ -28,7 +42,7 @@ export const wheelFixHere = isTauri && !isMobile && /Linux/.test(navigator.userA
 
 /** How many wheel steps the fallback handled / left to the normal path. */
 export function wheelFixCounts() {
-  return { real, empty, used, skipped };
+  return { real, empty, used, skipped, matched, unmatched };
 }
 
 function scrollable(el: Element | null, dx: number, dy: number): Element | null {
@@ -98,9 +112,16 @@ export function startWheelFix() {
     // A real wheel event for the same step may come a little before or after.
     setTimeout(() => {
       if (Math.abs(lastReal - at) < 150) {
+        matched++;
         skipped++;
         return;
       }
+      if (wheelWorksNatively(matched, unmatched, getState().settings.wheelFix)) {
+        // The wheel works here; a real event that came late is no reason to scroll twice.
+        skipped++;
+        return;
+      }
+      unmatched++;
       used++;
       // The payload is in device pixels; clientX/Y are CSS pixels.
       const dpr = window.devicePixelRatio || 1;

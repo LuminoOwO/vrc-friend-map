@@ -286,6 +286,13 @@ can be designed around everything. Nothing here is started.
   and who may get it, are set per device today, which can conflict between devices. Keep them
   with the account (synced), per server.
 
+## Compatibility (owner, 2026-11-20)
+
+- [ ] **App and server versions that don't fit together:** the server says the oldest app
+  version it works with, the app the oldest server version; when they don't fit, the app shows
+  "This server needs a newer app" (or "is too old for this app") with what to update, instead of
+  failing in odd ways, and stops syncing with it until then.
+
 ## Parked
 
 - [ ] **Why Chromium in the app gets no XInput2 wheel / popup input on XLibre** (Gentoo + Xfce +
