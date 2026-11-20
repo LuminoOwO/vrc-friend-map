@@ -1189,3 +1189,7 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
   --edges: 147, 161, 161|38, 139, 210|133, 153, 0|181, 137, 0|211, 54, 130;
   --shadow: 0 10px 30px rgba(60, 50, 20, 0.16); color-scheme: light;
 }
+/* Settings → Appearance: your own colors */
+.own-colors { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+.own-color { display: flex; align-items: center; gap: 8px; }
+.own-color input[type="color"] { width: 34px; height: 28px; padding: 0; border: 1px solid var(--border-strong); border-radius: 6px; background: none; cursor: pointer; }

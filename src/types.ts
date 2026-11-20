@@ -554,6 +554,8 @@ export interface Settings {
   theme: Theme;
   /** Accent color for the Catppuccin themes. */
   catAccent: import("./catppuccin").CatAccent;
+  /** Your own colors on top of the theme ("" = the theme's). */
+  ownColors: import("./owncolors").OwnColors;
   /** Open profiles as a popup over everything, or as a panel at the side. */
   profileAs: "popup" | "sidebar";
   sharing: SharingSettings;

@@ -66,11 +66,11 @@ export function serverShareOf(s: ShareServer): ServerShare {
 export const SELF_FORMAT = "vrc-friend-map/self-v1";
 
 /** Settings that follow you to other devices (when "Also sync settings" is on). */
-export const SYNCED_SETTINGS = ["theme", "catAccent", "map", "groups", "age", "people", "closeAction", "bios", "notesLine", "insights", "ui"] as const;
+export const SYNCED_SETTINGS = ["theme", "catAccent", "ownColors", "map", "groups", "age", "people", "closeAction", "bios", "notesLine", "insights", "ui"] as const;
 
 /** Groups of settings you can sync or keep per device (Servers → Also sync settings). */
 export const SETTING_GROUPS: { id: string; label: string; keys: (typeof SYNCED_SETTINGS)[number][] }[] = [
-  { id: "look", label: "Look (theme, colors, interface)", keys: ["theme", "catAccent", "ui"] },
+  { id: "look", label: "Look (theme, colors, interface)", keys: ["theme", "catAccent", "ownColors", "ui"] },
   { id: "map", label: "Map options", keys: ["map"] },
   { id: "groups", label: "Group detection", keys: ["groups"] },
   { id: "people", label: "People (age hints, bios, red flags, insights)", keys: ["age", "people", "bios", "notesLine", "insights"] },

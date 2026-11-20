@@ -23,6 +23,7 @@ import { SettingsModal } from "./components/SettingsModal";
 import { CloseDialog } from "./components/CloseDialog";
 import { UpdateDialog } from "./components/UpdateDialog";
 import { catppuccinVars, isCatFlavor } from "./catppuccin";
+import { ownColorVars } from "./owncolors";
 import { ConfirmUnencrypted, ServersModal } from "./components/ServersModal";
 import { loadShared, startSharing, stopSharing } from "./share";
 import { startAccounts, stopAccounts } from "./accounts";
@@ -227,6 +228,7 @@ const COLORBLIND_STATUS: Record<string, string> = {
 function ThemeSync() {
   const theme = useApp((s) => s.settings.theme);
   const catAccent = useApp((s) => s.settings.catAccent);
+  const ownColors = useApp((s) => s.settings.ownColors);
   const ui = useApp((s) => s.settings.ui);
   useLayoutEffect(() => {
     const root = document.documentElement;
@@ -246,8 +248,10 @@ function ThemeSync() {
     if (ui.colorblind) for (const [k, v] of Object.entries(COLORBLIND_STATUS)) root.style.setProperty(k, v);
     root.style.setProperty("--ui-zoom", String(ui.textScale));
     const cs = getComputedStyle(document.documentElement);
+    // Your own colors on top of the theme.
+    for (const [k, v] of Object.entries(ownColorVars(ownColors, (v) => cs.getPropertyValue(v)))) root.style.setProperty(k, v);
     applyThemeColors((v) => cs.getPropertyValue(v).trim());
-  }, [theme, catAccent, ui.colorblind]);
+  }, [theme, catAccent, ui.colorblind, ownColors]);
   return null;
 }
 

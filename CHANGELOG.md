@@ -17,6 +17,9 @@ minor releases can change behavior.
 - A profile has one close button instead of two.
 
 ### Added
+- **Your own colors** (Settings → Appearance): pick the accent, background, panels and text on
+  top of any theme; the other shades follow. Each goes back to the theme's with *Reset*. They
+  sync with the rest of your look when you sync settings.
 - **Invites in the Activity log**: when someone invites you (and to which world) or asks you for
   an invite, it shows there too, not only as a notification. Its own filter chip: *Invites*.
 - **You hear about it when your server's VRChat login expires** (the 24/7 logger stops then):

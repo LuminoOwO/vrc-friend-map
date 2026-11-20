@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { NO_OWN_COLORS, type OwnColors } from "../owncolors";
 import { scoreSection } from "../settingsSearch";
 import { backend, imgSrc, type GraphicsInfo, type GraphicsMode } from "../backend";
 import { iconUrl } from "../model";
@@ -501,6 +502,7 @@ export function SettingsModal() {
               </div>
             </div>
           )}
+          <OwnColorsField />
         </Sec>
 
         <Sec id="mapdisplay" cat="appearance" title="Map and profiles" keys="popup sidebar lines ring trust dim filters">
@@ -701,6 +703,49 @@ const CATS: { id: Cat; label: string; icon: string }[] = [
   { id: "sounds", label: "Notifications", icon: "sound" },
   { id: "account", label: "Account & data", icon: "user" },
 ];
+
+const OWN_COLOR_FIELDS: { key: keyof OwnColors; label: string }[] = [
+  { key: "accent", label: "Accent" },
+  { key: "bg", label: "Background" },
+  { key: "panel", label: "Panels" },
+  { key: "text", label: "Text" },
+];
+
+/** Appearance: pick your own main colors on top of the theme; each can go back to the theme's. */
+function OwnColorsField() {
+  const own = useApp((s) => s.settings.ownColors);
+  const set = (k: keyof OwnColors, v: string) => updateSettings({ ownColors: { ...own, [k]: v } });
+  // What the theme shows right now, so the picker starts there.
+  const cs = typeof document !== "undefined" ? getComputedStyle(document.documentElement) : null;
+  const shown = (k: keyof OwnColors) => {
+    const v = (cs?.getPropertyValue({ accent: "--accent", bg: "--bg", panel: "--panel", text: "--text" }[k]) ?? "").trim();
+    return /^#[0-9a-f]{6}$/i.test(v) ? v : "#808080";
+  };
+  const any = OWN_COLOR_FIELDS.some((f) => own[f.key]);
+  return (
+    <div className="field">
+      <span>Your own colors (on top of the theme)</span>
+      <div className="own-colors">
+        {OWN_COLOR_FIELDS.map((f) => (
+          <label key={f.key} className="own-color">
+            <input type="color" value={own[f.key] || shown(f.key)} onChange={(e) => set(f.key, e.target.value)} aria-label={`${f.label} color`} />
+            <span>{f.label}</span>
+            {own[f.key] && (
+              <button type="button" className="btn link small" onClick={() => set(f.key, "")} title="Back to the theme's color">
+                Reset
+              </button>
+            )}
+          </label>
+        ))}
+      </div>
+      {any && (
+        <button type="button" className="btn small ghost" onClick={() => updateSettings({ ownColors: { ...NO_OWN_COLORS } })}>
+          Use the theme's colors again
+        </button>
+      )}
+    </div>
+  );
+}
 
 /** New interface: the categories in groups, each heading with its own icon. */
 const NAV_GROUPS: { label: string; icon: string; cats: Cat[] }[] = [

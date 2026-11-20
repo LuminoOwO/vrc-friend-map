@@ -335,7 +335,7 @@ tray. On hold: Discord rich presence.
 - [ ] **A better admin page for vfm-server**, in the spirit of the beta UI.
 - [x] **Invites in the Activity log:** when someone invites you (or asks for an invite), it shows
   there too, not only as a notification.
-- [ ] **More themes, and your own colors** (pick the main colors yourself).
+- [x] **More themes, and your own colors** (pick the main colors yourself). (8 themes + own colors done 2026-11-20)
 - [ ] **Keep the main thread free on every platform:** move heavy work off it so the window
   stays responsive (the Linux spinning is fixed; this is the general version).
 - [ ] **A general check of every feature on every platform** (very late, before 1.0).

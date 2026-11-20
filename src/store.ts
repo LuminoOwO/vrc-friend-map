@@ -1,5 +1,6 @@
 // Global app state: a tiny external store + debounced persistence to disk.
 import { useSyncExternalStore } from "react";
+import { NO_OWN_COLORS, normalizeOwnColors } from "./owncolors";
 import { ACCOUNT_SHARE_KEYS } from "./devicesync";
 import { backend, type KeyPin, type SessionInfo } from "./backend";
 import { pickCircleColor } from "./colors";
@@ -300,6 +301,7 @@ export const defaultSettings = (): Settings => ({
   updates: { check: true, skipped: "" },
   theme: "dark",
   catAccent: "mauve",
+  ownColors: { ...NO_OWN_COLORS },
   profileAs: "popup",
   sharing: defaultSharing(),
   people: { loadEveryone: false, keep: "potential", showBlocked: false },
@@ -762,6 +764,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
     },
     theme: oneOf(raw.theme, ["dark", "oled", "light", "mocha", "macchiato", "frappe", "latte", "nord", "dracula", "graphite", "tokyonight", "gruvbox", "rosepine", "onedark", "everforest", "solarized", "solarizedlight"] as const, d.theme),
     catAccent: oneOf(raw.catAccent, CAT_ACCENTS, d.catAccent),
+    ownColors: normalizeOwnColors(raw.ownColors),
     profileAs: oneOf(raw.profileAs, ["popup", "sidebar"] as const, d.profileAs),
     perf: {
       fps: Math.round(num(raw.perf?.fps, d.perf.fps, -1, 1000)),
