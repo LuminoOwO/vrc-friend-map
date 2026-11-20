@@ -5,13 +5,6 @@ minor releases can change behavior.
 
 ## Unreleased
 
-### Fixed
-- **Your devices no longer keep swapping changes** ("Took over changes from your other devices"
-  on almost every sync, and servers answering "slow down"). Identical data could look different
-  (the same values in another order), the classic/new interface choice was still sent along,
-  and a device that doesn't sync some settings counted the others' values as its own changes.
-  Devices now settle after one round, and the message only shows when something really changed.
-
 ### Fixed (new interface)
 - Insights, Activity and the logbooks no longer start under the top bar.
 - A profile has one close button instead of two.
@@ -87,6 +80,11 @@ minor releases can change behavior.
   things faster (e.g. "Frame rate: smoothness against battery and fan noise").
 
 ### Fixed
+- **Your devices no longer keep swapping changes** ("Took over changes from your other devices"
+  on almost every sync, and servers answering "slow down"). Identical data could look different
+  (the same values in another order), the classic/new interface choice was still sent along,
+  and a device that doesn't sync some settings counted the others' values as its own changes.
+  Devices now settle after one round, and the message only shows when something really changed.
 - **Your own bubble opens your profile again**, also with filters that hide everyone else, and
   you can drag it: it stays where you drop it (Map options → *Put me back between my friends*).
 - **The bubbles around yours kept twitching.** Your bubble followed every tiny move of the
