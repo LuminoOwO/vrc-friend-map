@@ -73,19 +73,26 @@ export function PanelSections({ prefs, update, onWorld }: { prefs: PanelPrefs; u
     <>
       <WhereCard />
 
-      <section className="ui2-part">
+      <section className={`ui2-part ${open("overview") ? "open" : "shut"}`}>
         <PartHead title="Overview" open={open("overview")} onFold={() => fold("overview")} />
-        {open("overview") && <Overview />}
+        {/* Kept mounted and folded with a height transition, so folding is animated. */}
+        <div className="ui2-fold" aria-hidden={!open("overview")} inert={!open("overview")}>
+          <div className="ui2-fold-in">
+            <Overview />
+          </div>
+        </div>
       </section>
 
-      <section className={`ui2-part ${open("online") ? "grow" : ""}`} style={{ flexGrow: open("online") ? 1 : 0 }}>
+      <section className={`ui2-part growable ${open("online") ? "open" : "shut"}`} style={{ flexGrow: open("online") ? 1 : 0 }}>
         <PartHead
           title="Online now"
           extra={friendsInGame ? `· ${friendsInGame} ${friendsInGame === 1 ? "friend" : "friends"} in ${inGame.length} ${inGame.length === 1 ? "world" : "worlds"}` : undefined}
           open={open("online")}
           onFold={() => fold("online")}
         />
-        {open("online") && <OnlineNow onOpen={onWorld} side={prefs.side} />}
+        <div className="ui2-part-content" aria-hidden={!open("online")} inert={!open("online")}>
+          <OnlineNow onOpen={onWorld} side={prefs.side} />
+        </div>
       </section>
 
       <SideActivity open={open("activity")} onFold={() => fold("activity")} />
@@ -247,7 +254,7 @@ export function Overview() {
   const filters = useApp((s) => s.filters);
   const presence = useApp((s) => s.cache.presence);
   const { friends, edges } = useDerived();
-  const [hint, setHint] = useState("");
+  const [hint, setHint] = useState<{ text: string; x: number; y: number } | null>(null);
   const stats = useMemo(() => {
     let online = 0;
     let web = 0;
@@ -260,7 +267,12 @@ export function Overview() {
   }, [friends, presence]);
   const inGame = IN_GAME_STATUSES.every((k) => filters.statuses.includes(k)) && filters.statuses.length === IN_GAME_STATUSES.length;
   const webOnly = filters.statuses.length === 1 && filters.statuses[0] === "web";
-  const tile = (text: string) => ({ onMouseEnter: () => setHint(text), onMouseLeave: () => setHint("") });
+  // A small tooltip next to the mouse (it used to be a line under the tiles, which pushed everything down).
+  const tile = (text: string) => ({
+    onMouseMove: (e: React.MouseEvent) => setHint({ text, x: e.clientX, y: e.clientY }),
+    onMouseLeave: () => setHint(null),
+  });
+  const filtering = inGame || webOnly;
   return (
     <>
       <div className="ui2-tiles">
@@ -289,7 +301,11 @@ export function Overview() {
           </div>
         </span>
       </div>
-      <p className="ui2-tile-hint">{inGame || webOnly ? "Filtering the map. Click the tile again to stop." : hint}</p>
+      {hint && (
+        <span className="ui2-mouse-tip" role="tooltip" style={{ left: hint.x + 14, top: hint.y + 16 }}>
+          {filtering ? "Filtering the map. Click the tile again to stop." : hint.text}
+        </span>
+      )}
     </>
   );
 }
@@ -333,7 +349,7 @@ const hhmm = (t: number) => new Date(t).toLocaleTimeString([], { hour: "2-digit"
 function SideActivity({ open, onFold }: { open: boolean; onFold: () => void }) {
   const [fresh, setFresh] = useState(0);
   return (
-    <section className={`ui2-part ${open ? "grow" : ""}`} style={{ flexGrow: open ? 1.3 : 0 }}>
+    <section className={`ui2-part growable ${open ? "open" : "shut"}`} style={{ flexGrow: open ? 1.3 : 0 }}>
       <PartHead
         title="Activity"
         open={open}
@@ -345,7 +361,9 @@ function SideActivity({ open, onFold }: { open: boolean; onFold: () => void }) {
           </button>
         }
       />
-      {open && <ActivityFeed onFresh={setFresh} />}
+      <div className="ui2-part-content" aria-hidden={!open} inert={!open}>
+        <ActivityFeed onFresh={setFresh} />
+      </div>
     </section>
   );
 }

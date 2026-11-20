@@ -11,7 +11,8 @@ import { AgePanel } from "./AgePanel";
 import { ProfileEditor } from "./ProfileEditor";
 import { concernAbout } from "../age";
 import { PERSON_MODES, setPersonMode } from "./NotificationsSection";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useDismiss } from "../ui2/dismiss";
 import { backend, imgSrc } from "../backend";
 import { listMemberIds } from "../derived";
 import { playIntoProfile } from "../flip";
@@ -376,8 +377,8 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 <button className="btn" onClick={() => copy(`https://vrchat.com/home/user/${id}`)} title="Copy the profile link">
                   <Icon name="link" size={16} />
                 </button>
-                {relation === "friend" && <NotifyBell id={id} />}
                 {relation === "friend" && <StarButton id={id} />}
+                {relation === "friend" && <PersonMore id={id} />}
                 {relation === "me" && (
                   <button className="btn" onClick={() => setEditing(true)} title="Change your status, bio, links, languages and look">
                     <Icon name="settings" size={16} /> Edit profile
@@ -992,66 +993,76 @@ function ModerationRow({ id, name, friend, account }: { id: string; name: string
 }
 
 /** Per-person notification rule: general rules / always / once / never. */
-function NotifyBell({ id }: { id: string }) {
+/** Notifications and sound for this person, behind a "⋯" button (they're set once and rarely
+ *  looked at, so they don't need to sit in the row all the time). The button lights up when
+ *  either differs from the default. */
+function PersonMore({ id }: { id: string }) {
   const mode = useApp((s) => s.settings.notify.people[id]?.mode ?? "default") as (typeof PERSON_MODES)[number]["value"];
-  const label = PERSON_MODES.find((m) => m.value === mode)?.label ?? "";
-  return (
-    <>
-      <BellSelect id={id} mode={mode} label={label} />
-      <PersonSoundSelect id={id} />
-    </>
-  );
-}
-
-/** Their own notification sound instead of the generated tune. */
-function PersonSoundSelect({ id }: { id: string }) {
   const n = useApp((s) => s.settings.notify);
   const name = useApp((s) => s.cache.friends[id]?.displayName ?? "");
   const own = n.personSounds?.[id] ?? "";
   const [customs, setCustoms] = useState(customSounds());
   useEffect(() => onCustomSounds(() => setCustoms([...customSounds()])), []);
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  const ref = useDismiss(open, close);
+  const changed = mode !== "default" || !!own;
   return (
-    <label className={`btn select-btn ${own ? "on" : ""}`} title={own ? "Their own notification sound (instead of their tune)" : "Pick a sound for them (instead of their generated tune)"}>
-      <Icon name="sound" size={16} />
-      <select
-        value={own}
-        onChange={(e) => {
-          const personSounds = { ...(n.personSounds ?? {}) };
-          if (e.target.value) personSounds[id] = e.target.value;
-          else delete personSounds[id];
-          updateNotify({ personSounds });
-          if (e.target.value) setTimeout(() => previewEvent("online", name, id), 50);
-        }}
+    <div className="person-more" ref={ref}>
+      <button
+        className={`btn ${changed ? "on" : ""}`}
+        title="Notifications and sound for this person"
+        aria-label="Notifications and sound for this person"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
       >
-        <option value="">Their tune (from their name)</option>
-        {SOUNDS.map((s) => (
-          <option key={s.value} value={s.value}>
-            {s.label}
-          </option>
-        ))}
-        {customs.map((c) => (
-          <option key={c.id} value={`custom:${c.id}`}>
-            {c.name} (your file)
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function BellSelect({ id, mode, label }: { id: string; mode: (typeof PERSON_MODES)[number]["value"]; label: string }) {
-  return (
-    <label className={`btn notify-bell ${mode !== "default" ? "on" : ""}`} title={`Notifications for this person: ${label}`}>
-      <Icon name={mode === "never" ? "bell-off" : "bell"} size={16} />
-      {mode === "once" ? "Next time online" : mode === "always" ? "Always" : mode === "never" ? "Muted" : ""}
-      <select value={mode} onChange={(e) => setPersonMode(id, e.target.value as (typeof PERSON_MODES)[number]["value"])}>
-        {PERSON_MODES.map((m) => (
-          <option key={m.value} value={m.value}>
-            {m.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        <Icon name="more" size={18} />
+        {changed && <span className="person-more-dot" aria-hidden="true" />}
+      </button>
+      {open && (
+        <div className="person-more-menu" role="dialog" aria-label="Notifications and sound">
+          <label className="field">
+            <span>
+              <Icon name={mode === "never" ? "bell-off" : "bell"} size={14} /> Notify me
+            </span>
+            <select value={mode} onChange={(e) => setPersonMode(id, e.target.value as (typeof PERSON_MODES)[number]["value"])}>
+              {PERSON_MODES.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>
+              <Icon name="sound" size={14} /> Sound
+            </span>
+            <select
+              value={own}
+              onChange={(e) => {
+                const personSounds = { ...(n.personSounds ?? {}) };
+                if (e.target.value) personSounds[id] = e.target.value;
+                else delete personSounds[id];
+                updateNotify({ personSounds });
+                if (e.target.value) setTimeout(() => previewEvent("online", name, id), 50);
+              }}
+            >
+              <option value="">Their tune (from their name)</option>
+              {SOUNDS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+              {customs.map((c) => (
+                <option key={c.id} value={`custom:${c.id}`}>
+                  {c.name} (your file)
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+    </div>
   );
 }
 

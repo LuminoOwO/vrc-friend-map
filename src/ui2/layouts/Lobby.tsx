@@ -38,6 +38,8 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
     setOpen(v === "graph" ? null : v);
   };
   const covered = !!open || settingsOpen;
+  // Folding plays a slide-out first, then the panel goes away.
+  const [leaving, setLeaving] = useState(false);
   return (
     <div className={`lay-lobby ${covered ? "covered" : ""} ${prefs.collapsed ? "party-folded" : ""}`}>
       <div className="lob-bg" aria-hidden={covered}>
@@ -59,24 +61,23 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
               <span>{r.key === "graph" ? "Map" : r.label}</span>
             </button>
           ))}
-          <button className={`lob-item small ${settingsOpen ? "on" : ""}`} title="Settings" onClick={() => setState({ settingsOpen: !settingsOpen })}>
-            <Icon name="settings" size={22} />
+          <button className={`lob-item lob-settings ${settingsOpen ? "on" : ""}`} title="Settings" onClick={() => setState({ settingsOpen: !settingsOpen })}>
+            <Icon name="settings" size={26} />
             <span>Settings</span>
           </button>
         </nav>
       </div>
       {open && !settingsOpen && <Frame view={open} onClose={() => setOpen(null)} />}
       {prefs.collapsed ? (
-        <button className="lob-party-tab" title="Show your party" aria-label="Show your party" onClick={() => updatePrefs({ collapsed: false })}>
+        <button className="lob-party-tab" title="Show the side panel" aria-label="Show the side panel" onClick={() => updatePrefs({ collapsed: false })}>
           <Icon name="chevron-left" size={18} />
-          <span>Party</span>
+          <Icon name="users" size={18} />
         </button>
       ) : (
-        <aside className="lob-party">
+        <aside className={`lob-party ${leaving ? "leaving" : ""}`} onAnimationEnd={(e) => leaving && e.target === e.currentTarget && (setLeaving(false), updatePrefs({ collapsed: true }))}>
           <div className="lob-party-head">
-            <h2>Party</h2>
             <ToolCluster onPalette={onPalette} className="lob-tools" filters={false} />
-            <button className="lob-fold" title="Fold the party away" aria-label="Fold the party away" onClick={() => updatePrefs({ collapsed: true })}>
+            <button className="lob-fold" title="Fold the side panel away" aria-label="Fold the side panel away" onClick={() => setLeaving(true)}>
               <Icon name="chevron-right" size={18} />
             </button>
           </div>

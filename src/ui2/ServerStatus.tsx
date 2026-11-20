@@ -56,7 +56,16 @@ export function ServerMenu() {
   const ref = useDismiss(open, close);
   const [peers, setPeers] = useState<Peer[]>(() => knownPeers());
   useEffect(() => onPeers(() => setPeers(knownPeers())), []);
-  if (!sum) return null;
+  if (!sum)
+    return (
+      <div className="ui2-drop-wrap">
+        <button className="ui2-srv" onClick={openServers} title="No server yet: everything stays on this device. Open Sharing & servers" aria-label="No server: open Sharing & servers">
+          <Icon name="server" size={15} />
+          <span className="ui2-srv-dot" />
+          <span className="ui2-srv-text">Only this device</span>
+        </button>
+      </div>
+    );
   const now = Date.now();
   const online = peers.filter((p) => now - p.seen < PEER_ONLINE_MS);
   const nameOf = (url: string) => {
@@ -67,6 +76,7 @@ export function ServerMenu() {
   return (
     <div className="ui2-drop-wrap" ref={ref}>
       <button className={`ui2-srv ${open ? "on" : ""}`} onClick={() => setOpen(!open)} title={sum.text} aria-label={`Servers and your devices: ${sum.text}`} aria-expanded={open}>
+        <Icon name="server" size={15} />
         <span className={`ui2-srv-dot ${sum.tone}`} />
         <span className="ui2-srv-text">{sum.text}</span>
         {peers.length > 0 && (

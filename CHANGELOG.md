@@ -102,6 +102,17 @@ minor releases can change behavior.
 - **The views match the new interface:** People, Activity, Insights, Logbook, VRChat and Lists
   get flat panels, tab bars and a toolbar that stays at the top while you scroll; Activity shows
   each day as one panel with coloured icons.
+- **Much more motion in the new interface:** side panel parts fold with an animation, views and
+  their cards rise in one after another, cards lift under the mouse, buttons press in, tabs and
+  the bottom line animate in, the side panel slides out when folded (all off with Settings →
+  Animations → fewer).
+- **Side panel:** no "Party" title; the server button says what's going on (servers live,
+  your devices, or "Only this device"); the overview hints show next to the mouse instead of
+  pushing everything down; the menu's faded look also over views and Settings; Settings in the
+  menu is the same size as the rest.
+- **Profiles:** notifications and sound for a person moved behind a "⋯" button (it lights up
+  when either is changed); cards use the same colours as the rest of the new interface.
+- **Insights:** the group size slider sits on one line and shows how many groups it finds.
 - **Groups on a profile** are shown as tidy rows (picture, name, two lines of description,
   members) instead of a grid where pictures were cut off.
 - **Beta UI: see your servers at a glance**: a chip in the top bar (green when every server is

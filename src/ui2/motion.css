@@ -1,0 +1,139 @@
+/* Motion for the new interface: folding, entrances, hover and press feedback.
+   Everything here is switched off by Settings → Animations → fewer (and the system's
+   reduced-motion setting) through the rules at the end of ui2.css / styles.css. */
+
+:root {
+  --ease-out: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+/* ---------- side panel sections fold with an animation ---------- */
+/* The chevron turns, the content fades and slides while the height collapses. */
+.ui2-part-title svg { transition: transform 0.35s var(--ease-spring); }
+.ui2-part-title:hover { color: var(--text); }
+
+/* Overview: a height transition through a 1fr → 0fr grid row. */
+.ui2-fold { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 0.45s var(--ease-out); }
+.ui2-fold-in { min-height: 0; overflow: hidden; transition: opacity 0.3s ease, transform 0.45s var(--ease-out), filter 0.35s ease; }
+.ui2-part.shut .ui2-fold { grid-template-rows: 0fr; }
+.ui2-part.shut .ui2-fold-in { opacity: 0; transform: translateY(-10px) scale(0.98); filter: blur(4px); }
+
+/* Online now and Activity share the free height: their share animates to nothing. */
+.ui2-part.growable { flex-basis: 0; min-height: 34px; transition: flex-grow 0.5s var(--ease-out), min-height 0.5s var(--ease-out); }
+.ui2-part.growable.open { min-height: 110px; }
+.ui2-part.growable > .ui2-part-content { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; transition: opacity 0.3s ease, transform 0.45s var(--ease-out), filter 0.35s ease; }
+.ui2-part.growable.shut > .ui2-part-content { opacity: 0; transform: translateY(-12px); filter: blur(4px); pointer-events: none; }
+/* Opening again: the rows drop in one after another. */
+.ui2-part.growable.open .ui2-spot-wrap,
+.ui2-part.growable.open .ui2-act-row { animation: row-in 0.42s var(--ease-out) both; }
+.ui2-part.growable.open .ui2-spot-wrap:nth-child(2), .ui2-part.growable.open .ui2-act-row:nth-child(2) { animation-delay: 0.04s; }
+.ui2-part.growable.open .ui2-spot-wrap:nth-child(3), .ui2-part.growable.open .ui2-act-row:nth-child(3) { animation-delay: 0.08s; }
+.ui2-part.growable.open .ui2-spot-wrap:nth-child(4), .ui2-part.growable.open .ui2-act-row:nth-child(4) { animation-delay: 0.12s; }
+.ui2-part.growable.open .ui2-spot-wrap:nth-child(5), .ui2-part.growable.open .ui2-act-row:nth-child(5) { animation-delay: 0.16s; }
+.ui2-part.growable.open .ui2-spot-wrap:nth-child(n + 6), .ui2-part.growable.open .ui2-act-row:nth-child(n + 6) { animation-delay: 0.2s; }
+@keyframes row-in { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+
+/* ---------- the overview tooltip follows the mouse ---------- */
+.ui2-mouse-tip {
+  position: fixed;
+  z-index: 200;
+  max-width: 240px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: color-mix(in srgb, var(--panel) 96%, #000);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.35;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  animation: tip-in 0.16s ease-out;
+}
+@keyframes tip-in { from { opacity: 0; transform: translateY(4px) scale(0.96); } to { opacity: 1; transform: none; } }
+
+/* ---------- the side panel slides out when folded, the tab pops back in ---------- */
+.lob-party.leaving { animation: lob-out-r 0.28s cubic-bezier(0.5, 0, 0.75, 0) forwards; pointer-events: none; }
+@keyframes lob-out-r { to { opacity: 0; transform: translate3d(60px, 0, 0); } }
+.lob-party-tab { animation: tab-in 0.4s var(--ease-spring); gap: 8px; }
+@keyframes tab-in { from { opacity: 0; transform: translate(30px, -50%); } to { opacity: 1; transform: translateY(-50%); } }
+.lob-party-tab:hover { padding-right: 12px; transition: padding 0.2s var(--ease-out), color 0.15s; }
+/* Party's parts arrive one after another. */
+.lob-party > *, .lob-party-body > * { animation: rise-in 0.5s var(--ease-out) both; }
+.lob-party > :nth-child(2) { animation-delay: 0.05s; }
+.lob-party-body > :nth-child(1) { animation-delay: 0.1s; }
+.lob-party-body > :nth-child(2) { animation-delay: 0.15s; }
+.lob-party-body > :nth-child(3) { animation-delay: 0.2s; }
+.lob-party-body > :nth-child(4) { animation-delay: 0.25s; }
+@keyframes rise-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.lob-fold svg { transition: transform 0.25s var(--ease-spring); }
+.lob-fold:hover svg { transform: translateX(3px); }
+
+/* ---------- views: content rises in, staggered ---------- */
+.lob-frame > header h1 { animation: title-in 0.45s var(--ease-out) both; }
+@keyframes title-in { from { opacity: 0; transform: translateX(-16px); letter-spacing: 0.2em; } to { opacity: 1; transform: none; } }
+.lob-frame .card-grid > *,
+.lob-frame .insights > *,
+.lob-frame .activity-day,
+.lob-frame .lists-view > *,
+.lob-frame .group-list > *,
+.lob-frame .pic-grid > *,
+.lob-frame .group-tiles > * { animation: rise-in 0.45s var(--ease-out) both; }
+.lob-frame .card-grid > :nth-child(2), .lob-frame .insights > :nth-child(2), .lob-frame .activity-day:nth-child(2), .lob-frame .lists-view > :nth-child(2), .lob-frame .group-tiles > :nth-child(2), .lob-frame .pic-grid > :nth-child(2) { animation-delay: 0.03s; }
+.lob-frame .card-grid > :nth-child(3), .lob-frame .insights > :nth-child(3), .lob-frame .activity-day:nth-child(3), .lob-frame .lists-view > :nth-child(3), .lob-frame .group-tiles > :nth-child(3), .lob-frame .pic-grid > :nth-child(3) { animation-delay: 0.06s; }
+.lob-frame .card-grid > :nth-child(4), .lob-frame .insights > :nth-child(4), .lob-frame .activity-day:nth-child(4), .lob-frame .lists-view > :nth-child(4), .lob-frame .group-tiles > :nth-child(4), .lob-frame .pic-grid > :nth-child(4) { animation-delay: 0.09s; }
+.lob-frame .card-grid > :nth-child(5), .lob-frame .insights > :nth-child(5), .lob-frame .lists-view > :nth-child(5), .lob-frame .group-tiles > :nth-child(5), .lob-frame .pic-grid > :nth-child(5) { animation-delay: 0.12s; }
+.lob-frame .card-grid > :nth-child(6), .lob-frame .insights > :nth-child(6), .lob-frame .group-tiles > :nth-child(6), .lob-frame .pic-grid > :nth-child(6) { animation-delay: 0.15s; }
+.lob-frame .card-grid > :nth-child(n + 7):nth-child(-n + 15), .lob-frame .insights > :nth-child(n + 7) { animation-delay: 0.18s; }
+.lob-frame .act { animation: row-in 0.35s var(--ease-out) both; }
+
+/* Cards lift under the mouse; panels brighten a little. */
+.lob-frame .fcard,
+.lob-frame .group-tile,
+.lob-frame .pic,
+.groups-grid .group-card { transition: transform 0.25s var(--ease-out), box-shadow 0.25s ease, border-color 0.15s ease; }
+.lob-frame .fcard:hover,
+.lob-frame .group-tile:hover,
+.lob-frame .pic:hover,
+.groups-grid .group-card:hover { transform: translateY(-3px); box-shadow: 0 14px 30px rgba(0, 0, 0, 0.4); }
+.lob-frame .insight-card, .lob-frame .panel { transition: border-color 0.2s ease, background 0.2s ease; }
+.lob-frame .insight-card:hover, .lob-frame .panel:hover { border-color: rgba(255, 255, 255, 0.14); }
+
+/* Buttons and chips press in. */
+.lob-frame .btn, .lob-frame .chip-btn, .lob-frame .seg button, .ui2-pill-btn, .lob-fold, .lob-party-tab, .person-more > .btn {
+  transition: transform 0.15s var(--ease-out), background 0.15s, border-color 0.15s, color 0.15s;
+}
+.lob-frame .btn:active, .lob-frame .chip-btn:active, .lob-frame .seg button:active, .ui2-pill-btn:active, .lob-fold:active, .person-more > .btn:active { transform: scale(0.95); }
+.lob-frame .chip-btn.on { animation: chip-on 0.3s var(--ease-spring); }
+@keyframes chip-on { 50% { transform: scale(1.06); } }
+
+/* The active tab's underline grows in from the middle. */
+.lob-frame .seg button.on::after { animation: underline-in 0.3s var(--ease-out); }
+@keyframes underline-in { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+
+/* ---------- the bottom line and the menu ---------- */
+.lob-news-item { animation: news-in 0.5s var(--ease-out) both; }
+.lob-news-item:nth-child(2) { animation-delay: 0.06s; }
+.lob-news-item:nth-child(3) { animation-delay: 0.12s; }
+.lob-news-item:nth-child(4) { animation-delay: 0.18s; }
+@keyframes news-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+.lob-news-live { animation: live-pulse 2.4s ease-in-out infinite; }
+@keyframes live-pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--ok) 10%, transparent); } }
+.lob-item svg { transition: transform 0.3s var(--ease-spring); }
+.lob-item:hover svg { transform: scale(1.12); }
+.lob-item.on svg { transform: scale(1.06); }
+
+/* ---------- popups ---------- */
+.groups-backdrop { animation: fade-in 0.2s ease-out; }
+.groups-modal { animation: pop-up 0.35s var(--ease-out); }
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes pop-up { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: none; } }
+.groups-grid .group-card { animation: rise-in 0.4s var(--ease-out) both; }
+.groups-grid .group-card:nth-child(2) { animation-delay: 0.03s; }
+.groups-grid .group-card:nth-child(3) { animation-delay: 0.06s; }
+.groups-grid .group-card:nth-child(4) { animation-delay: 0.09s; }
+.groups-grid .group-card:nth-child(5) { animation-delay: 0.12s; }
+.groups-grid .group-card:nth-child(n + 6) { animation-delay: 0.15s; }
+
+/* Overview tiles count up visually: the number pops when it changes (key change remounts it). */
+.ui2-tiles b { display: inline-block; animation: num-in 0.4s var(--ease-spring); }
+@keyframes num-in { from { opacity: 0; transform: translateY(6px) scale(0.9); } to { opacity: 1; transform: none; } }

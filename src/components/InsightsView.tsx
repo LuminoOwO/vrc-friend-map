@@ -208,10 +208,13 @@ function FriendGroups() {
         <h3>
           <Icon name="users" size={16} /> Friend groups on your map
         </h3>
-        <label className="small row tight">
-          Bigger
-          <Range min={0.5} max={2} step={0.1} value={resolution} onChange={(e) => setResolution(Number(e.target.value))} />
-          Smaller
+        <label className="small group-size" title="How big the groups are: fewer, bigger groups to the left; more, smaller ones to the right">
+          <span className="muted">Bigger</span>
+          <Range min={0.5} max={2} step={0.1} value={resolution} onChange={(e) => setResolution(Number(e.target.value))} aria-label="Group size" />
+          <span className="muted">Smaller</span>
+          <output className="group-size-val">
+            {groups.length} {groups.length === 1 ? "group" : "groups"}
+          </output>
         </label>
       </div>
       <p className="small muted">Found from who is friends with whom (mutual friends). Make any of them a circle with one click.</p>

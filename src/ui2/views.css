@@ -95,16 +95,16 @@
 
 .lob-frame .btn { border-radius: 6px; }
 .lob-frame .btn.small { height: 32px; padding: 0 12px; }
+/* Only colours and corners for selects: their arrow and the in-page picker come from the base styles. */
 .lob-frame input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
 .lob-frame select,
 .lob-frame textarea {
   border-radius: 6px;
   border: 1px solid var(--v-line-strong);
-  background: rgba(255, 255, 255, 0.04);
+  background-color: rgba(255, 255, 255, 0.04);
   color: var(--text);
 }
-.lob-frame input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-.lob-frame select { height: 36px; padding: 0 10px; box-sizing: border-box; }
+.lob-frame input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) { height: 36px; padding: 0 10px; box-sizing: border-box; }
 .lob-frame input:focus-visible,
 .lob-frame select:focus-visible,
 .lob-frame textarea:focus-visible { outline: none; border-color: var(--accent); }
@@ -197,3 +197,17 @@
 .lob-frame .lists-cols { gap: 14px; }
 .lob-frame .pill { border-radius: 6px; }
 .lob-frame .matrix-wrap { border-radius: 8px; border: 1px solid var(--v-line); }
+
+/* ---------- the same palette in the profile and world popups ---------- */
+/* Before, the popups used the older, bluer card colour; now cards match the views' panels. */
+.profile.ui2-profile.popup { background: var(--bg); border-color: rgba(255, 255, 255, 0.12); border-radius: 10px; }
+.ui2-profile .pcard,
+.ui2-world-cards > * {
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+}
+.ui2-profile .profile-actions { gap: 6px; flex-wrap: wrap; }
+.ui2-profile .profile-actions .btn,
+.ui2-profile .mod-row .btn,
+.ui2-profile .person-extras .btn { border-radius: 6px; }
