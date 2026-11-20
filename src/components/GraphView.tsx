@@ -326,9 +326,59 @@ const PLAT_SHORT: Record<string, string> = { pc: "PC", android: "Quest", ios: "i
 
 /** How much of the map is hidden: 2 when it's faded out behind settings or a view's frame
  *  (new interface), 1 under a popup (it shows dimmed behind it), 0 not at all. */
+let coverAt = 0;
+let coverVal: 0 | 1 | 2 = 0;
 function mapCover(): 0 | 1 | 2 {
-  if (document.querySelector(".ui2-settings, .lob-frame")) return 2;
-  return document.querySelector(".profile-backdrop, .ui2-world-wrap, .modal-backdrop") ? 1 : 0;
+  // Asked every frame; looking through the page twice a frame showed up in profiles,
+  // and popups don't open faster than this anyway.
+  const now = performance.now();
+  if (now - coverAt < 150) return coverVal;
+  coverAt = now;
+  coverVal = document.querySelector(".ui2-settings, .lob-frame")
+    ? 2
+    : document.querySelector(".profile-backdrop, .ui2-world-wrap, .modal-backdrop")
+      ? 1
+      : 0;
+  return coverVal;
+}
+
+/** Outlined text (names on the map, circle names) drawn once into a small picture and reused:
+ *  strokeText + fillText every frame for every label was a big part of drawing the map. */
+const labelSprites = new Map<string, { c: HTMLCanvasElement; w: number; h: number; base: number }>();
+function labelSprite(text: string, px: number, weight: number, fill: string, outline: string, lw: number, dpr: number) {
+  const key = `${text}\u0000${px}\u0000${weight}\u0000${fill}\u0000${outline}\u0000${lw}\u0000${dpr}`;
+  let sp = labelSprites.get(key);
+  if (sp) return sp;
+  if (labelSprites.size > 3000) labelSprites.clear();
+  const c = document.createElement("canvas");
+  const g = c.getContext("2d")!;
+  const font = `${weight} ${px}px system-ui, sans-serif`;
+  g.font = font;
+  const m = g.measureText(text);
+  const pad = Math.ceil(lw) + 1;
+  const asc = Math.ceil(m.actualBoundingBoxAscent || px * 0.8);
+  const desc = Math.ceil(m.actualBoundingBoxDescent || px * 0.25);
+  const w = Math.ceil(m.width) + pad * 2;
+  const h = asc + desc + pad * 2;
+  c.width = Math.max(1, Math.ceil(w * dpr));
+  c.height = Math.max(1, Math.ceil(h * dpr));
+  g.scale(dpr, dpr);
+  g.font = font;
+  g.textAlign = "center";
+  g.lineJoin = "round";
+  g.lineWidth = lw;
+  g.strokeStyle = outline;
+  g.strokeText(text, w / 2, pad + asc);
+  g.fillStyle = fill;
+  g.fillText(text, w / 2, pad + asc);
+  sp = { c, w, h, base: pad + asc };
+  labelSprites.set(key, sp);
+  return sp;
+}
+/** Draw an outlined label centred on x with its baseline at y (map coordinates, zoom k). */
+function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, k: number, px: number, weight: number, fill: string, outline: string, lw: number, dpr: number) {
+  const sp = labelSprite(text, px, weight, fill, outline, lw, dpr);
+  ctx.drawImage(sp.c, x - sp.w / 2 / k, y - sp.base / k, sp.w / k, sp.h / k);
 }
 
 export function GraphView() {
@@ -1210,16 +1260,12 @@ export function GraphView() {
       }
       const labelled = n.kind === "me" || (!card && (showLabelsAuto || (focusSet?.has(n.id) && settings.showLabels !== "never") || selected));
       if (labelled && isMatch && !(card && n.kind !== "me")) {
-        const fs = (n.kind === "me" ? 13 : 12) / t.k;
+        const px = n.kind === "me" ? 13 : 12;
+        const fs = px / t.k;
         const name = n.kind === "me" ? "You" : f.displayName;
         const below = card ? n.hh : n.r;
-        ctx.font = `500 ${fs}px system-ui, sans-serif`;
-        ctx.textAlign = "center";
-        ctx.lineWidth = 3 / t.k;
-        ctx.strokeStyle = PAL.outline;
-        ctx.strokeText(name, n.x, n.y + below + 4 / t.k + fs);
-        ctx.fillStyle = n.kind === "other" ? PAL.sub : n.kind === "me" ? PAL.accent : PAL.label;
-        ctx.fillText(name, n.x, n.y + below + 4 / t.k + fs);
+        const fill = n.kind === "other" ? PAL.sub : n.kind === "me" ? PAL.accent : PAL.label;
+        drawLabel(ctx, name, n.x, n.y + below + 4 / t.k + fs, t.k, px, 500, fill, PAL.outline, 3, dpr);
       }
     }
     ctx.globalAlpha = 1;
@@ -1230,13 +1276,7 @@ export function GraphView() {
     for (const hull of hulls) {
       const top = hull.points.reduce((a, b) => (b[1] < a[1] ? b : a));
       const y = top[1] - 6 / t.k;
-      ctx.font = `600 ${13 / t.k}px system-ui, sans-serif`;
-      ctx.textAlign = "center";
-      ctx.lineWidth = 4 / t.k;
-      ctx.strokeStyle = PAL.outline;
-      ctx.strokeText(hull.circle.name, top[0], y);
-      ctx.fillStyle = hexA(hull.circle.color, 1);
-      ctx.fillText(hull.circle.name, top[0], y);
+      drawLabel(ctx, hull.circle.name, top[0], y, t.k, 13, 600, hexA(hull.circle.color, 1), PAL.outline, 4, dpr);
     }
     ctx.restore();
   }

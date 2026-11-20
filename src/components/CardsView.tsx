@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useDerived } from "../derived";
 import { lastSeen, presenceOf, presenceRank, toTime } from "../model";
 import { setState, useApp } from "../store";
@@ -14,6 +14,18 @@ const SORTS: [SortKey, string][] = [
   ["mutuals", "Most mutuals"],
   ["accountAge", "Account age"],
 ];
+
+/** How many cards to show: a first screenful right away, the rest over the next frames,
+ *  so opening People with hundreds of friends doesn't freeze the window. */
+function useGrowing(total: number, first = 48, step = 64): number {
+  const [n, setN] = useState(first);
+  useEffect(() => {
+    if (n >= total) return;
+    const id = requestAnimationFrame(() => setN((v) => v + step));
+    return () => cancelAnimationFrame(id);
+  }, [n, total, step]);
+  return n;
+}
 
 export function CardsView() {
   const fresh = useApp((s) => s.fresh);
@@ -66,6 +78,17 @@ export function CardsView() {
 
   if (!friends.length) return <div className="empty">No friends loaded yet.</div>;
 
+  // Cards before each group, for showing the first `shown` cards across all groups.
+  const before = useMemo(() => {
+    let acc = 0;
+    return groups.map((g) => {
+      const b = acc;
+      acc += g.items.length;
+      return b;
+    });
+  }, [groups]);
+  const shown = useGrowing(before.length ? before[before.length - 1] + groups[groups.length - 1].items.length : 0);
+
   return (
     <div className="cards-view">
       <div className="cards-toolbar">
@@ -84,13 +107,13 @@ export function CardsView() {
         </label>
         <span className="muted">Drag a card onto a circle in the sidebar to add them.</span>
       </div>
-      {groups.map((g) => (
+      {groups.map((g, gi) => (
         <section key={g.key} className="card-group">
           <h3>
             {g.label} <span className="muted">{g.items.length}</span>
           </h3>
           <div className="card-grid">
-            {g.items.map((f) => (
+            {g.items.slice(0, Math.max(0, shown - before[gi])).map((f) => (
               <FriendCard
                 key={f.id}
                 friend={f}

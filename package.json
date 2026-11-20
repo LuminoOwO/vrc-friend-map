@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "test": "vitest run"
+    "test": "vitest run",
+    "chromium": "bash scripts/run-chromium.sh"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.0",

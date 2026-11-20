@@ -44,6 +44,11 @@ minor releases can change behavior.
 - Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
 
 ### Changed
+- **Smoother map:** names and circle names are drawn once and reused instead of being outlined
+  again on every frame, and the map no longer searches the page on every frame to see whether a
+  popup covers it.
+- **People opens faster with many friends:** the first cards show right away, the rest follow over
+  the next frames.
 - **vfm-server: the first sync is no longer cut short by "slow down".** Each account may now make
   2000 requests per 10 minutes (was 600), and the server's owner can change it:
   `requests_per_10min` in the config, `VFM_REQUEST_LIMIT`, or on the admin page.

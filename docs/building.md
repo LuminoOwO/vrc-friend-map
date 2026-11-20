@@ -163,6 +163,13 @@ On Linux, `src-tauri/tauri.linux.conf.json` overrides a few settings:
 For development with hot reload: `npm run tauri dev`. `npm run dev` alone starts just the UI
 at http://localhost:1420 in a browser. Only demo mode works there, since login needs the app.
 
+`npm run tauri dev` uses WebKitGTK on Linux, which draws the map on the CPU on many systems (NVIDIA
+on X11 in particular), so it feels much slower than the real app. To judge speed, use
+`npm run chromium`: it builds the Chromium version (release, only what changed) and starts it
+(`npm run chromium -- --no-build` starts the last build). For live profiling,
+`VFM_REMOTE_DEBUG_PORT=9222 npm run chromium` opens Chromium's DevTools port on 127.0.0.1; never
+leave that on in normal use.
+
 ## Windows
 
 Install the "Desktop development with C++" workload from Visual Studio Build Tools,
