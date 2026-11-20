@@ -206,7 +206,9 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
         {prefs.side === "left" && panel}
         <main className="ui2-main">
           <div className="ui2-content">
-            <ViewBody view={view} />
+            <div className="ui2-view" key={view}>
+              <ViewBody view={view} />
+            </div>
           </div>
         </main>
         {prefs.side === "right" && panel}

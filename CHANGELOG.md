@@ -63,6 +63,12 @@ minor releases can change behavior.
     icon on every page, a round close button with *ESC*, switches instead of checkboxes, theme
     cards, **sliders like VRChat's** (a rounded bar that fills, the percent on the right).
   - **Phones**: Online now at the top of the People tab; the bottom bar's tabs a bit wider.
+  - **Profiles redesigned**: the banner across the top, a big picture with your status ring
+    overlapping it, name, status and details beside it, then the cards. The close button is round
+    and sits outside the window (with *ESC*) when there's room; the same for the world overview.
+  - **Smoother and more modern**: popups and menus fade and pop in, views and settings pages
+    slide in, the line under the active tab slides, tiles and cards lift on hover, buttons react
+    when pressed, new Activity entries slide in. Settings → Animations → *Reduce* turns it off.
 - **The new interface is the start for new installs.** Updating keeps the interface you use; on
   the classic one, a one-time hint offers to try the new one (*Try it* / *Not now*). Settings →
   Appearance → Interface switches either way, any time.

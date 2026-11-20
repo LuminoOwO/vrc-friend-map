@@ -324,7 +324,7 @@ export function SettingsModal() {
         ref={searchRef}
         autoFocus={!/Android|iPhone|iPad/i.test(navigator.userAgent)}
         value={query}
-        placeholder="Search settings (e.g. theme, fps, sound, blocked)"
+        placeholder={beta ? "Search settings" : "Search settings (e.g. theme, fps, sound, blocked)"}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape" && query) {
@@ -400,7 +400,7 @@ export function SettingsModal() {
           </nav>
           )}
           <div className="settings-body" ref={bodyRef}>
-            <div className="ui2-set-page">
+            <div className="ui2-set-page" key={beta ? cat : undefined}>
             {beta && !scores && (
               <header className="ui2-page-head">
                 <h1>

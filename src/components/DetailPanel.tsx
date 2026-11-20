@@ -5,6 +5,7 @@
 // this app's circles, time together and shared friends. One column on narrow
 // screens.
 import { openImage, type ViewerItem } from "./ImageViewer";
+import { betaActive } from "../ui2/active";
 import { removedByMe } from "../notifications";
 import { AgePanel } from "./AgePanel";
 import { ProfileEditor } from "./ProfileEditor";
@@ -230,74 +231,100 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   };
   const longBio = (detail?.bio ?? "").split("\n").length > 4 || (detail?.bio ?? "").length > 260;
 
+  // New interface (popup): banner, picture, name and details as one header across the top.
+  const hero = popup && betaActive();
+  const bannerEl = (
+    <div
+      className={`profile-banner ${bannerIdx >= 0 ? "viewable" : ""}`}
+      data-flip="banner"
+      style={{ background: f.bannerColor || "#2a9fcc" }}
+      role={bannerIdx >= 0 ? "button" : undefined}
+      tabIndex={bannerIdx >= 0 ? 0 : undefined}
+      title={bannerIdx >= 0 ? "View full size" : undefined}
+      onClick={show(bannerIdx)}
+      onKeyDown={show(bannerIdx)}
+    >
+      {banner && <img src={banner} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />}
+    </div>
+  );
+  const idEl = (
+    <div className="profile-id">
+      <div
+        className={`profile-icon ${iconIdx >= 0 ? "viewable" : ""}`}
+        data-flip="icon"
+        style={{ borderColor: sColor }}
+        role={iconIdx >= 0 ? "button" : undefined}
+        tabIndex={iconIdx >= 0 ? 0 : undefined}
+        title={iconIdx >= 0 ? "View full size" : undefined}
+        onClick={show(iconIdx)}
+        onKeyDown={show(iconIdx)}
+      >
+        {icon ? <img src={icon} alt="" /> : <span>{f.displayName.slice(0, 1).toUpperCase()}</span>}
+      </div>
+      <span className="status-pill" data-flip="status">
+        <span className="dot" style={{ background: sColor }} />
+        <span>{f.statusDescription || presenceLabel(f, p)}</span>
+      </span>
+    </div>
+  );
+  const nameEl = (
+    <h2>
+      <span data-flip="name">{f.displayName}</span>
+      {supporter && (
+        <span className="vrcplus-badge" data-flip-fade title="VRC+ supporter">
+          VRC+
+        </span>
+      )}
+    </h2>
+  );
+  const subEl = (
+    <div className="profile-sub">
+      {detail?.pronouns && (
+        <span className="muted" data-flip-fade>
+          {detail.pronouns}
+        </span>
+      )}
+      {detail?.ageVerified && (
+        <span className="verified" data-flip-fade title="Age verified by VRChat">
+          <Icon name="idcard" size={15} /> Verified 18+
+        </span>
+      )}
+      <span className="trust" data-flip="trust" style={{ color: trust.color }}>
+        <Icon name="shield" size={14} /> {trust.label}
+      </span>
+      {representing && (
+        <button className="group-pill" data-flip-fade title="Representing this group" onClick={() => open(`https://vrchat.com/home/group/${representing.groupId}`)}>
+          {representing.iconUrl && <img src={imgSrc(representing.iconUrl)} alt="" />}
+          {representing.name}
+        </button>
+      )}
+    </div>
+  );
   return (
-    <aside ref={rootRef} className={`profile ${popup ? "popup" : ""}`} role={popup ? "dialog" : undefined} aria-label={`Profile of ${f.displayName}`}>
+    <aside ref={rootRef} className={`profile ${popup ? "popup" : ""} ${hero ? "ui2-profile" : ""}`} role={popup ? "dialog" : undefined} aria-label={`Profile of ${f.displayName}`}>
       <button className="icon-btn profile-close" data-flip-fade title="Close (Esc)" onClick={close}>
         <Icon name="close" />
       </button>
+      {hero && (
+        <header className="profile-hero">
+          {bannerEl}
+          <div className="profile-hero-row">
+            {idEl}
+            <div className="profile-hero-text">
+              {nameEl}
+              {subEl}
+            </div>
+          </div>
+        </header>
+      )}
       <div className="profile-cols">
         <div className="profile-col">
           <section className="pcard profile-main">
-            <div
-              className={`profile-banner ${bannerIdx >= 0 ? "viewable" : ""}`}
-              data-flip="banner"
-              style={{ background: f.bannerColor || "#2a9fcc" }}
-              role={bannerIdx >= 0 ? "button" : undefined}
-              tabIndex={bannerIdx >= 0 ? 0 : undefined}
-              title={bannerIdx >= 0 ? "View full size" : undefined}
-              onClick={show(bannerIdx)}
-              onKeyDown={show(bannerIdx)}
-            >
-              {banner && <img src={banner} alt="" onError={(e) => (e.currentTarget.style.display = "none")} />}
-            </div>
-            <div className="profile-id">
-              <div
-                className={`profile-icon ${iconIdx >= 0 ? "viewable" : ""}`}
-                data-flip="icon"
-                style={{ borderColor: sColor }}
-                role={iconIdx >= 0 ? "button" : undefined}
-                tabIndex={iconIdx >= 0 ? 0 : undefined}
-                title={iconIdx >= 0 ? "View full size" : undefined}
-                onClick={show(iconIdx)}
-                onKeyDown={show(iconIdx)}
-              >
-                {icon ? <img src={icon} alt="" /> : <span>{f.displayName.slice(0, 1).toUpperCase()}</span>}
-              </div>
-              <span className="status-pill" data-flip="status">
-                <span className="dot" style={{ background: sColor }} />
-                <span>{f.statusDescription || presenceLabel(f, p)}</span>
-              </span>
-            </div>
+            {!hero && bannerEl}
+            {!hero && idEl}
             <div className="profile-text">
-              <h2>
-                <span data-flip="name">{f.displayName}</span>
-                {supporter && (
-                  <span className="vrcplus-badge" data-flip-fade title="VRC+ supporter">
-                    VRC+
-                  </span>
-                )}
-              </h2>
-              <div className="profile-sub">
-                {detail?.pronouns && (
-                  <span className="muted" data-flip-fade>
-                    {detail.pronouns}
-                  </span>
-                )}
-                {detail?.ageVerified && (
-                  <span className="verified" data-flip-fade title="Age verified by VRChat">
-                    <Icon name="idcard" size={15} /> Verified 18+
-                  </span>
-                )}
-                <span className="trust" data-flip="trust" style={{ color: trust.color }}>
-                  <Icon name="shield" size={14} /> {trust.label}
-                </span>
-                {representing && (
-                  <button className="group-pill" data-flip-fade title="Representing this group" onClick={() => open(`https://vrchat.com/home/group/${representing.groupId}`)}>
-                    {representing.iconUrl && <img src={imgSrc(representing.iconUrl)} alt="" />}
-                    {representing.name}
-                  </button>
-                )}
-              </div>
+              {!hero && nameEl}
+              {!hero && subEl}
               {(mutualFriends.length > 0 || mutualGroups > 0) && (
                 <div className="mutual-row">
                   <span className="face-stack" data-flip-fade>
