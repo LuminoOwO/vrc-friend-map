@@ -17,7 +17,9 @@ export type ActivityKind =
   | "offline" // a friend went offline
   | "location" // a friend changed worlds
   | "friend-add"
-  | "friend-remove";
+  | "friend-remove"
+  | "invite" // someone invited you (worldName: where to)
+  | "request-invite"; // someone asked you for an invite
 
 export interface ActivityEntry {
   key: string;

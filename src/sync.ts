@@ -1,7 +1,7 @@
 // Sync engine: pulls data from the VRChat API through the Rust client, which
 // spaces requests out (>= 1 s apart) and backs off on 429. Profiles and mutuals
 // are cached and only refetched when older than the configured age.
-import { noteFriend } from "./activity";
+import { addActivity, noteFriend } from "./activity";
 import { addNewFriendsToPicks } from "./selection";
 import { notifyEvent, removedByMe } from "./notifications";
 import { backend, type ApiResponse } from "./backend";
@@ -648,8 +648,22 @@ export function applyPipelineEvent(type: string, content: any, opts: { quiet?: b
     const kind = content.type;
     const from = typeof content.senderUserId === "string" ? content.senderUserId : "";
     const name = s.cache.friends[from]?.displayName ?? content.senderUsername ?? "Someone";
+    if (kind !== "invite" && kind !== "requestInvite") return;
     if (kind === "invite") notifyEvent("invite", from, name, { world: content.details?.worldName });
-    else if (kind === "requestInvite") notifyEvent("requestInvite", from, name);
+    else notifyEvent("requestInvite", from, name);
+    // Also in the Activity log (once per notification).
+    const world = typeof content.details?.worldName === "string" ? content.details.worldName : undefined;
+    const t = Date.parse(content.created_at ?? "") || Date.now();
+    addActivity([
+      {
+        key: `inv|${typeof content.id === "string" ? content.id : `${from}|${t}`}`,
+        t,
+        kind: kind === "invite" ? "invite" : "request-invite",
+        userId: from || undefined,
+        name,
+        worldName: world,
+      },
+    ]);
     return;
   }
   if (typeof content.userId !== "string") return;

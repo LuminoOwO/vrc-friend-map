@@ -333,7 +333,7 @@ tray. On hold: Discord rich presence.
   request limit (600 per account per 10 minutes; "slow down"). Raise the default and make it a
   server setting; maybe a higher allowance in the first minutes after joining.
 - [ ] **A better admin page for vfm-server**, in the spirit of the beta UI.
-- [ ] **Invites in the Activity log:** when someone invites you (or asks for an invite), it shows
+- [x] **Invites in the Activity log:** when someone invites you (or asks for an invite), it shows
   there too, not only as a notification.
 - [ ] **More themes, and your own colors** (pick the main colors yourself).
 - [ ] **Keep the main thread free on every platform:** move heavy work off it so the window

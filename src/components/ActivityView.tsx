@@ -6,13 +6,14 @@ import { getState, setState, useApp } from "../store";
 import type { FriendLogEntry } from "../types";
 import { Icon } from "./Icon";
 
-type Group = "instance" | "online" | "moving" | "list";
+type Group = "instance" | "online" | "moving" | "list" | "invites";
 
 const GROUPS: { key: Group; label: string; kinds: ActivityKind[] }[] = [
   { key: "instance", label: "My instance", kinds: ["world", "join", "leave", "left", "quit", "crash"] },
   { key: "online", label: "Friends online / offline", kinds: ["online", "offline"] },
   { key: "moving", label: "Friends changing worlds", kinds: ["location"] },
   { key: "list", label: "Friends added / removed", kinds: ["friend-add", "friend-remove"] },
+  { key: "invites", label: "Invites", kinds: ["invite", "request-invite"] },
 ];
 
 export const KIND_ICON: Record<ActivityKind, string> = {
@@ -27,6 +28,8 @@ export const KIND_ICON: Record<ActivityKind, string> = {
   location: "pin",
   "friend-add": "user",
   "friend-remove": "trash",
+  invite: "share",
+  "request-invite": "user-plus",
 };
 
 export function timeOf(t: number) {
@@ -85,6 +88,10 @@ export function ActivityText({ e }: { e: ActivityEntry }) {
         return <>{who(e)} is now your friend</>;
       case "friend-remove":
         return <>{who(e)} is no longer your friend</>;
+      case "invite":
+        return <>{who(e)} invited you{e.worldName ? <> to {world(e)}</> : null}</>;
+      case "request-invite":
+        return <>{who(e)} asked you for an invite</>;
     }
   };
 
@@ -120,7 +127,7 @@ export function ActivityView() {
   const showBlocked = useApp((s) => s.settings.people.showBlocked);
   const demo = useApp((s) => s.demo);
   const liveOn = useApp((s) => s.settings.logs.enabled && s.settings.logs.live);
-  const [groups, setGroups] = useState<Set<Group>>(() => new Set<Group>(["instance", "online", "list"]));
+  const [groups, setGroups] = useState<Set<Group>>(() => new Set<Group>(["instance", "online", "list", "invites"]));
   const [arrivals, setArrivals] = useState(true);
   const [search, setSearch] = useState("");
 
