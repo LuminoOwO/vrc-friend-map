@@ -267,8 +267,8 @@ pub fn chromium_runtime() -> tauri_runtime_cef::Cef {
     // DevTools port on 127.0.0.1 (never set in normal use).
     if let Some(port) = std::env::var("VFM_REMOTE_DEBUG_PORT").ok().and_then(|p| p.trim().parse::<u16>().ok()) {
         eprintln!("VRC Friend Map: DevTools port {port} on 127.0.0.1 (VFM_REMOTE_DEBUG_PORT)");
-        cef = cef.command_line_arg("--remote-debugging-port", Some(port.to_string()));
-        cef = cef.command_line_arg("--remote-debugging-address", Some("127.0.0.1".to_string()));
+        // The runtime refuses the plain switch; it has to be enabled here.
+        cef = cef.remote_debugging(tauri_runtime_cef::RemoteDebugging::Port { port, allowed_origins: vec![] });
     }
     if load_unlocked() {
         // No vsync and no frame cap: requestAnimationFrame runs as fast as it can;
