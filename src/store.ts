@@ -279,7 +279,7 @@ export const defaultUi = (): UiSettings => ({
   textScale: 1,
   reducedMotion: "system",
   colorblind: false,
-  look: "default",
+  layout: "topbar",
 });
 
 export const defaultSettings = (): Settings => ({
@@ -801,7 +801,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       ...u,
       textScale: num(u.textScale, 1, 0.8, 1.6),
       reducedMotion: oneOf(u.reducedMotion, ["system", "on", "off"] as const, "system"),
-      look: oneOf(u.look, ["default", "glass", "neon", "soft", "aurora"] as const, "default"),
+      layout: oneOf(u.layout, ["topbar", "columns", "hud", "dashboard", "deck"] as const, "topbar"),
     })),
   };
   // Format 2 (0.4.0) defaulted to no turning and ring gravity; 0.5.0 changed

@@ -66,10 +66,13 @@ minor releases can change behavior.
   - **Profiles redesigned**: the banner across the top, a big picture with your status ring
     overlapping it, name, status and details beside it, then the cards. The close button is round
     and sits outside the window (with *ESC*) when there's room; the same for the world overview.
-  - **Styles to try** (top bar → Style, test): *Glass* (frosted see-through panels over slowly
-    drifting color blobs), *Neon* (dark game HUD with glowing gradient edges and a grid on the
-    map), *Soft* (big rounded floating cards, pill tabs with a gradient, pastel tints) and
-    *Aurora* (northern lights moving behind smoky glass, gradient titles). On top of any theme.
+  - **Layouts to try** (Layout dropdown, test; computers): *Top bar* (the one above);
+    *Columns* (like Steam or Discord: a labeled nav sidebar with you at the bottom, the view in
+    the middle, a friends list grouped by world on the right); *HUD* (like VRChat's quick menu:
+    the map fills the window, floating widgets on it, a dock of big icons at the bottom, other
+    views slide up as a sheet); *Dashboard* (a home screen of cards: greeting, live map, where
+    you are, numbers, Online now, Activity, notifications, popular worlds; tabs open every view);
+    *Deck* (like TweetDeck: columns side by side that you add, remove and move).
   - **Smoother and more modern**: popups and menus fade and pop in, views and settings pages
     slide in, the line under the active tab slides, tiles and cards lift on hover, buttons react
     when pressed, new Activity entries slide in. Settings → Animations → *Reduce* turns it off.

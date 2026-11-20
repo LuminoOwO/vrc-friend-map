@@ -1,0 +1,254 @@
+// Pieces every desktop layout of the new interface uses: the views, the bell, filters, you,
+// the profile popup, the layout picker, and the keys that work everywhere.
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { imgSrc } from "../backend";
+import { useDerived } from "../derived";
+import { iconUrl, STATUS_LABEL, statusColor } from "../model";
+import { getState, setState, updateFilters, updateUi, useApp, type View } from "../store";
+import type { UiLayout } from "../types";
+import { useDismiss } from "./dismiss";
+import { ActivityView } from "../components/ActivityView";
+import { CardsView } from "../components/CardsView";
+import { DetailPanel } from "../components/DetailPanel";
+import { GraphView } from "../components/GraphView";
+import { Icon } from "../components/Icon";
+import { InsightsView, useUnreadMissed } from "../components/InsightsView";
+import { markAllRead, useHistory } from "../history";
+import { LogbookView } from "../components/LogbookView";
+import { SharedLists } from "../components/SharedLists";
+import { FilterPopover } from "../components/TopBar";
+import { VrchatView } from "../components/VrchatView";
+
+export const RAIL: { key: View; label: string; icon: string }[] = [
+  { key: "graph", label: "Map", icon: "graph" },
+  { key: "cards", label: "People", icon: "users" },
+  { key: "activity", label: "Activity", icon: "clock" },
+  { key: "insights", label: "Insights", icon: "bulb" },
+  { key: "logbook", label: "Logbook", icon: "calendar" },
+  { key: "vrchat", label: "VRChat", icon: "world" },
+  { key: "lists", label: "Shared lists", icon: "share" },
+];
+
+/** Opens the world overview popup (provided by the shell). */
+export const WorldOpener = createContext<(key: string) => void>(() => {});
+export const useOpenWorld = () => useContext(WorldOpener);
+
+export function ViewBody({ view }: { view: View }) {
+  return (
+    <>
+      {view === "graph" && <GraphView />}
+      {view === "cards" && <CardsView />}
+      {view === "lists" && <SharedLists />}
+      {view === "activity" && <ActivityView />}
+      {view === "insights" && <InsightsView />}
+      {view === "logbook" && <LogbookView />}
+      {view === "vrchat" && <VrchatView />}
+    </>
+  );
+}
+
+export function Avatar({ id, size = 34 }: { id: string; size?: number }) {
+  const f = useApp((s) => (s.cache.me?.id === id ? s.cache.me?.profile : (s.cache.friends[id] ?? s.cache.others?.[id])));
+  const src = f ? imgSrc(iconUrl(f)) : undefined;
+  return (
+    <span className="ui2-avatar" style={{ width: size, height: size }}>
+      {src ? <img src={src} alt="" /> : (f?.displayName?.[0] ?? "?")}
+    </span>
+  );
+}
+
+
+/** Keys for every layout: Ctrl+1…7 views, Ctrl+, settings. */
+export function useViewKeys() {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const s = getState();
+      if (s.settingsOpen || s.viewer) return;
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && !e.shiftKey && !e.altKey && /^[1-7]$/.test(e.key)) {
+        e.preventDefault();
+        setState({ view: RAIL[Number(e.key) - 1].key });
+      } else if (ctrl && e.key === ",") {
+        e.preventDefault();
+        setState({ settingsOpen: true });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+}
+
+export const LAYOUTS: { value: UiLayout; label: string }[] = [
+  { value: "topbar", label: "Top bar" },
+  { value: "columns", label: "Columns" },
+  { value: "hud", label: "HUD" },
+  { value: "dashboard", label: "Dashboard" },
+  { value: "deck", label: "Deck" },
+];
+
+/** Try the layouts of the new interface (to pick what works). */
+export function LayoutPicker({ className = "" }: { className?: string }) {
+  const layout = useApp((s) => s.settings.ui.layout);
+  return (
+    <label className={`ui2-look ${className}`} title="Layout of the new interface (test)">
+      <Icon name="cards" size={16} />
+      <select value={layout} aria-label="Layout" onChange={(e) => updateUi({ layout: e.target.value as UiLayout })}>
+        {LAYOUTS.map((l) => (
+          <option key={l.value} value={l.value}>
+            {l.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/** Notifications bell: what you missed (muted, quiet hours) and the latest ones shown. */
+export function Bell() {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  const ref = useDismiss(open, close);
+  const unread = useUnreadMissed();
+  const missed = useHistory((h) => h.missed);
+  const list = useMemo(() => [...missed].reverse().slice(0, 30), [missed]);
+  return (
+    <div className="ui2-drop-wrap" ref={ref}>
+      <button className={`ui2-top-icon ${open ? "on" : ""}`} title="Notifications" aria-label={unread ? `Notifications, ${unread} new` : "Notifications"} aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Icon name="bell" size={19} />
+        {unread > 0 && <span className="ui2-dot">{unread > 99 ? "99+" : unread}</span>}
+      </button>
+      {open && (
+        <div className="ui2-drop" role="dialog" aria-label="Notifications">
+          <div className="ui2-drop-head">
+            <b>Notifications</b>
+            <span className="ui2-grow" />
+            {unread > 0 && (
+              <button className="btn small" onClick={markAllRead}>
+                Mark read
+              </button>
+            )}
+          </div>
+          {list.length === 0 ? (
+            <p className="small muted ui2-drop-empty">Nothing yet.</p>
+          ) : (
+            <ul className="ui2-drop-list">
+              {list.map((m, i) => (
+                <li key={`${m.t}-${i}`}>
+                  <button
+                    className={m.why && !m.read ? "new" : ""}
+                    onClick={() => {
+                      setState({ selectedId: m.userId });
+                      close();
+                    }}
+                  >
+                    <span>{m.text}</span>
+                    <span className="small muted">
+                      {new Date(m.t).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}
+                      {m.why === "quiet" ? " · during quiet hours" : m.why === "muted" ? " · while muted" : ""}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            className="ui2-drop-foot"
+            onClick={() => {
+              setState({ view: "insights" });
+              close();
+            }}
+          >
+            All notifications in Insights
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Map and People filters behind one button; a dot shows when any filter is on. */
+export function FilterButton() {
+  const [open, setOpen] = useState(false);
+  const { matched, friends } = useDerived();
+  const filtering = matched.size !== friends.length;
+  return (
+    <div className="filter-wrap ui2-drop-wrap">
+      <button className={`ui2-top-icon ${open ? "on" : ""}`} title={filtering ? `Filters: showing ${matched.size} of ${friends.length}` : "Filters"} aria-label="Filters" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Icon name="filter" size={19} />
+        {filtering && <span className="ui2-dot small" />}
+      </button>
+      {open && <FilterPopover onClose={() => setOpen(false)} />}
+    </div>
+  );
+}
+
+/** You, top left: picture with your status ring, name and status. Opens your own profile. */
+export function MeButton() {
+  const me = useApp((s) => s.cache.me);
+  const f = me?.profile;
+  const color = f ? statusColor(f, "online") : "var(--muted)";
+  const src = f ? imgSrc(iconUrl(f)) : undefined;
+  return (
+    <button className="ui2-top-me" title="Your profile" aria-label="Your profile" onClick={() => me && setState({ selectedId: me.id })}>
+      <span className="ui2-avatar" style={{ width: 40, height: 40, boxShadow: `0 0 0 2px var(--panel), 0 0 0 4px ${color}` }}>
+        {src ? <img src={src} alt="" /> : (me?.displayName?.[0] ?? <Icon name="user" />)}
+      </span>
+      <span className="ui2-me-text">
+        <b>{me?.displayName ?? "You"}</b>
+        <span style={{ color }}>{f ? (STATUS_LABEL[f.status] ?? "Online") : ""}</span>
+      </span>
+    </button>
+  );
+}
+
+/** A profile in the middle of the window, like the classic interface. One close button (its own). */
+export function ProfilePopup({ id }: { id: string }) {
+  return (
+    <div className="profile-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setState({ selectedId: null })}>
+      <DetailPanel id={id} popup />
+    </div>
+  );
+}
+
+
+/** Search friends (filters the map and People). */
+export function SearchField({ placeholder = "Search friends", className = "", autoFocus = false }: { placeholder?: string; className?: string; autoFocus?: boolean }) {
+  const search = useApp((s) => s.filters.search);
+  return (
+    <label className={`ui2-field ${className}`}>
+      <Icon name="search" size={15} />
+      <input
+        value={search}
+        placeholder={placeholder}
+        aria-label="Search friends"
+        autoFocus={autoFocus}
+        onChange={(e) => updateFilters({ search: e.target.value })}
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && search) {
+            e.stopPropagation();
+            updateFilters({ search: "" });
+          }
+        }}
+      />
+    </label>
+  );
+}
+
+/** Notifications as a list (what you missed while muted or in quiet hours, and the ones shown). */
+export function NotificationList({ max = 30 }: { max?: number }) {
+  const missed = useHistory((h) => h.missed);
+  const list = useMemo(() => [...missed].reverse().slice(0, max), [missed, max]);
+  if (!list.length) return <p className="small muted ui2-side-empty">No notifications yet.</p>;
+  return (
+    <ul className="ui2-drop-list ui2-notes">
+      {list.map((m, i) => (
+        <li key={`${m.t}-${i}`}>
+          <button className={m.why && !m.read ? "new" : ""} onClick={() => setState({ selectedId: m.userId })}>
+            <span>{m.text}</span>
+            <span className="small muted">{new Date(m.t).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+  );
+}

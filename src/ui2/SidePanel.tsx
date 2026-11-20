@@ -178,7 +178,7 @@ function PartHead({ title, extra, open, onFold, action, dot }: { title: string; 
 // ---------- where you are ----------
 
 /** Your instance as a card: the world's picture, its name, the instance, and everyone there. */
-function WhereCard() {
+export function WhereCard() {
   const here = useApp((s) => s.here);
   const friends = useApp((s) => s.cache.friends);
   const others = useApp((s) => s.cache.others);
@@ -309,7 +309,7 @@ function InviteHere({ location, here }: { location: string; here: Set<string> })
 
 // ---------- overview ----------
 
-function Overview() {
+export function Overview() {
   const filters = useApp((s) => s.filters);
   const presence = useApp((s) => s.cache.presence);
   const { friends, edges } = useDerived();
@@ -397,28 +397,7 @@ const hhmm = (t: number) => new Date(t).toLocaleTimeString([], { hour: "2-digit"
 
 /** Recent activity in its own scroll area: new entries light up and get counted, "back to top" says how many. */
 function SideActivity({ open, onFold }: { open: boolean; onFold: () => void }) {
-  useActivityLoaded();
-  const activity = useApp((s) => s.activity);
-  const friendLog = useApp((s) => s.local.friendLog);
-  const list: ActivityEntry[] = useMemo(
-    () =>
-      [...activity.filter((e) => !e.initial && e.kind !== "friend-add" && e.kind !== "friend-remove"), ...friendLogEntries(friendLog.slice(-30))]
-        .sort((a, b) => b.t - a.t)
-        .slice(0, 80),
-    [activity, friendLog],
-  );
-  const box = useRef<HTMLDivElement>(null);
-  const [scrolled, setScrolled] = useState(false);
-  // Everything up to this time has been seen (shown while you were at the top).
-  const [seenUntil, setSeenUntil] = useState(() => Date.now());
-  const newest = list[0]?.t ?? 0;
-  useEffect(() => {
-    if (!open || scrolled || newest <= seenUntil) return;
-    // At the top: new entries stay lit for a few seconds, then count as seen.
-    const t = setTimeout(() => setSeenUntil(newest), 2500);
-    return () => clearTimeout(t);
-  }, [open, scrolled, newest, seenUntil]);
-  const fresh = list.filter((e) => e.t > seenUntil).length;
+  const [fresh, setFresh] = useState(0);
   return (
     <section className={`ui2-part ${open ? "grow" : ""}`} style={{ flexGrow: open ? 1.3 : 0 }}>
       <PartHead
@@ -432,37 +411,60 @@ function SideActivity({ open, onFold }: { open: boolean; onFold: () => void }) {
           </button>
         }
       />
-      {open && (
-        <div className="ui2-act-wrap">
-          <div className="ui2-scroll" ref={box} onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 8)}>
-            {list.length === 0 && <p className="muted small ui2-side-empty">Nothing yet. Friends coming online, joining your world, being added or removed show up here.</p>}
-            {list.map((e) => (
-              <div key={e.key} className={`ui2-act-row ${e.t > seenUntil ? "fresh" : ""}`} title={new Date(e.t).toLocaleString()}>
-                <span className="ui2-act-time">{hhmm(e.t)}</span>
-                <span className="ui2-act-icon" style={{ ["--k" as string]: KIND_COLOR[e.kind] ?? "var(--muted)" }}>
-                  <Icon name={KIND_ICONS[e.kind] ?? "info"} size={13} />
-                </span>
-                <span className="ui2-act-text">
-                  <ActivityText e={e} />
-                </span>
-              </div>
-            ))}
-          </div>
-          {scrolled && (
-            <button
-              className="ui2-jump"
-              onClick={() => {
-                box.current?.scrollTo({ top: 0, behavior: "smooth" });
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
-                <path d="M12 19V5M5 12l7-7 7 7" />
-              </svg>
-              {fresh > 0 ? `${fresh} new · back to top` : "Back to top"}
-            </button>
-          )}
-        </div>
-      )}
+      {open && <ActivityFeed onFresh={setFresh} />}
     </section>
+  );
+}
+
+/** The latest activity in its own scroll area: new entries light up and get counted, "back to top" says how many. */
+export function ActivityFeed({ onFresh, max = 80 }: { onFresh?: (n: number) => void; max?: number }) {
+  useActivityLoaded();
+  const activity = useApp((s) => s.activity);
+  const friendLog = useApp((s) => s.local.friendLog);
+  const list: ActivityEntry[] = useMemo(
+    () =>
+      [...activity.filter((e) => !e.initial && e.kind !== "friend-add" && e.kind !== "friend-remove"), ...friendLogEntries(friendLog.slice(-30))]
+        .sort((a, b) => b.t - a.t)
+        .slice(0, max),
+    [activity, friendLog, max],
+  );
+  const box = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+  // Everything up to this time has been seen (shown while you were at the top).
+  const [seenUntil, setSeenUntil] = useState(() => Date.now());
+  const newest = list[0]?.t ?? 0;
+  useEffect(() => {
+    if (scrolled || newest <= seenUntil) return;
+    // At the top: new entries stay lit for a few seconds, then count as seen.
+    const t = setTimeout(() => setSeenUntil(newest), 2500);
+    return () => clearTimeout(t);
+  }, [scrolled, newest, seenUntil]);
+  const fresh = list.filter((e) => e.t > seenUntil).length;
+  useEffect(() => onFresh?.(fresh), [fresh, onFresh]);
+  return (
+    <div className="ui2-act-wrap">
+      <div className="ui2-scroll" ref={box} onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 8)}>
+        {list.length === 0 && <p className="muted small ui2-side-empty">Nothing yet. Friends coming online, joining your world, being added or removed show up here.</p>}
+        {list.map((e) => (
+          <div key={e.key} className={`ui2-act-row ${e.t > seenUntil ? "fresh" : ""}`} title={new Date(e.t).toLocaleString()}>
+            <span className="ui2-act-time">{hhmm(e.t)}</span>
+            <span className="ui2-act-icon" style={{ ["--k" as string]: KIND_COLOR[e.kind] ?? "var(--muted)" }}>
+              <Icon name={KIND_ICONS[e.kind] ?? "info"} size={13} />
+            </span>
+            <span className="ui2-act-text">
+              <ActivityText e={e} />
+            </span>
+          </div>
+        ))}
+      </div>
+      {scrolled && (
+        <button className="ui2-jump" onClick={() => box.current?.scrollTo({ top: 0, behavior: "smooth" })}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+            <path d="M12 19V5M5 12l7-7 7 7" />
+          </svg>
+          {fresh > 0 ? `${fresh} new · back to top` : "Back to top"}
+        </button>
+      )}
+    </div>
   );
 }
