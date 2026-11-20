@@ -7,28 +7,46 @@
 .ui2-dot { position: absolute; top: 2px; right: 6px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--danger); color: #fff; font-size: 10px; line-height: 16px; font-weight: 700; text-align: center; }
 
 /* ---------- desktop ---------- */
-.ui2-desk { flex: 1; display: flex; min-height: 0; }
-.ui2-rail { width: 68px; flex: none; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0; background: var(--panel); border-right: 1px solid var(--border); }
-.ui2-rail-me { background: none; border: 0; padding: 0; margin-bottom: 10px; cursor: pointer; border-radius: 50%; }
-.ui2-rail-me:focus-visible, .ui2-rail-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.ui2-rail-btn { position: relative; width: 56px; padding: 7px 0 5px; border: 0; border-radius: 12px; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
-.ui2-rail-btn:hover { background: var(--card-hover); color: var(--text); }
-.ui2-rail-btn.on { background: var(--accent-soft); color: var(--accent-strong); }
-.ui2-rail-label { font-size: 10px; line-height: 1.1; max-width: 54px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ui2-main { flex: 1; min-width: 0; position: relative; display: flex; flex-direction: column; }
-.ui2-content { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
-.ui2-bar { position: absolute; z-index: 20; top: 10px; left: 12px; right: 12px; display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 14px; background: color-mix(in srgb, var(--panel) 88%, transparent); backdrop-filter: blur(10px); border: 1px solid var(--border); box-shadow: var(--shadow); }
-.ui2-bar + .ui2-content { padding-top: 62px; }
+.ui2-desk { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+/* Top bar: docked and flat, like a game menu. No gradients, no floating. */
+.ui2-top { flex: none; height: 52px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.ui2-top-me { background: none; border: 0; padding: 0; margin-right: 6px; cursor: pointer; border-radius: 50%; display: grid; }
+.ui2-top-me:hover .ui2-avatar { outline: 2px solid var(--accent); outline-offset: 1px; }
+.ui2-tabs-top { display: flex; align-self: stretch; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.ui2-ttab { position: relative; display: flex; align-items: center; gap: 7px; padding: 0 13px; border: 0; background: none; color: var(--muted); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.ui2-ttab:hover { color: var(--text); background: var(--card-hover); }
+.ui2-ttab.on { color: var(--text); background: var(--accent-soft); }
+.ui2-ttab.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--accent); }
+.ui2-top-me:focus-visible, .ui2-ttab:focus-visible, .ui2-top-icon:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.ui2-top-icon { position: relative; width: 38px; height: 38px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+.ui2-top-icon:hover, .ui2-top-icon.on { background: var(--card-hover); color: var(--text); }
+.ui2-top-icon .ui2-dot { top: 2px; right: 2px; }
 .ui2-search { display: flex; align-items: center; gap: 6px; padding: 0 10px; height: 34px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--border); min-width: 220px; color: var(--muted); }
+.ui2-search.top { min-width: 0; width: clamp(150px, 18vw, 260px); border-radius: 8px; }
 .ui2-search input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--text); font: inherit; }
 .ui2-search kbd { font-size: 10px; padding: 1px 5px; border-radius: 5px; border: 1px solid var(--border-strong); cursor: pointer; white-space: nowrap; }
+.ui2-body { flex: 1; display: flex; min-height: 0; }
+.ui2-main { flex: 1; min-width: 0; position: relative; display: flex; flex-direction: column; }
+.ui2-content { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
+.ui2-filters { flex: none; display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--panel); border-bottom: 1px solid var(--border); }
 .ui2-chips { display: flex; gap: 6px; flex: 1; min-width: 0; overflow-x: auto; scrollbar-width: none; align-items: center; }
 .ui2-chips .filter-wrap { position: relative; }
-.ui2-chip { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border-radius: 15px; border: 1px solid var(--border); background: var(--chip-bg); color: var(--text); white-space: nowrap; cursor: pointer; font: inherit; font-size: 13px; }
+.ui2-chip { display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px; border-radius: 6px; border: 1px solid var(--border); background: var(--chip-bg); color: var(--text); white-space: nowrap; cursor: pointer; font: inherit; font-size: 13px; }
 .ui2-chip:hover { border-color: var(--border-strong); }
 .ui2-chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-strong); }
 .ui2-chip-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--chip, var(--accent)); }
 .ui2-count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+/* Dropdowns from the top bar (bell). */
+.ui2-drop-wrap { position: relative; }
+.ui2-drop { position: absolute; z-index: 70; top: calc(100% + 8px); right: 0; width: 340px; max-height: min(480px, 70vh); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.ui2-drop-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.ui2-drop-empty { padding: 14px 12px; margin: 0; }
+.ui2-drop-list { list-style: none; margin: 0; padding: 4px; overflow-y: auto; flex: 1; min-height: 0; }
+.ui2-drop-list button { width: 100%; display: flex; flex-direction: column; gap: 2px; padding: 7px 9px 7px 18px; border: 0; border-radius: 6px; background: none; color: var(--text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; position: relative; }
+.ui2-drop-list button:hover { background: var(--card-hover); }
+.ui2-drop-list button.new::before { content: ""; position: absolute; left: 6px; top: 13px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+.ui2-drop-foot { border: 0; border-top: 1px solid var(--border); background: none; color: var(--accent-strong); padding: 9px 12px; font: inherit; font-size: 13px; cursor: pointer; text-align: center; }
+.ui2-drop-foot:hover { background: var(--card-hover); }
 .ui2-here-float { position: absolute; z-index: 15; left: 12px; bottom: 12px; max-width: min(420px, 60%); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
 .ui2-person { width: clamp(380px, 34vw, 560px); flex: none; display: flex; flex-direction: column; border-left: 1px solid var(--border); background: var(--panel); min-height: 0; overflow: hidden; }
 .ui2-person .profile { position: relative !important; inset: auto !important; width: auto; flex: 1; min-height: 0; border-left: 0; }
@@ -107,14 +125,12 @@
 
 /* Top bar: the sync status shrinks with "…" instead of being cut off; narrow windows keep just
    its icons (the text is in the tooltip and the sync log). */
-.ui2-bar .sync { flex: 0 1 auto; max-width: 260px; margin-left: 0; }
-.ui2-bar .sync .sync-text { min-width: 0; flex: 1 1 auto; }
-@media (max-width: 1180px) { .ui2-bar .sync .sync-text { display: none; } .ui2-bar .sync { padding-left: 6px; } }
-.ui2-bar .ui2-count, .ui2-bar .ui2-search { flex: none; }
-@media (max-width: 900px) { .ui2-bar .ui2-search { min-width: 150px; } }
+.ui2-top .sync { flex: 0 1 auto; max-width: 260px; margin-left: 0; }
+.ui2-top .sync .sync-text { min-width: 0; flex: 1 1 auto; }
+@media (max-width: 1180px) { .ui2-top .sync .sync-text { display: none; } .ui2-top .sync { padding-left: 6px; } }
 
 /* Server status: one chip, a dot per state (src/ui2/ServerStatus.tsx). */
-.ui2-srv { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 15px; border: 1px solid var(--border); background: var(--chip-bg); color: var(--text); font: inherit; font-size: 12px; cursor: pointer; flex: none; white-space: nowrap; }
+.ui2-srv { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--chip-bg); color: var(--text); font: inherit; font-size: 12px; cursor: pointer; flex: none; white-space: nowrap; }
 .ui2-srv:hover { border-color: var(--border-strong); }
 .ui2-srv-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
 .ui2-srv-dot.ok { background: var(--ok); }
@@ -146,5 +162,3 @@
 .ui2-sec-icon { width: 34px; height: 34px; flex: none; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-strong); }
 /* one close button: the panel's tab row has it, hide the profile's own */
 .ui2-person .profile-close { display: none; }
-/* full-area views start below the floating bar and scroll */
-.ui2-bar + .ui2-content > .activity-view { top: 62px; }

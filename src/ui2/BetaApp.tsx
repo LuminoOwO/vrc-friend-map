@@ -1,15 +1,15 @@
 // The new beta UI (Settings → Appearance → Interface → New beta UI). Same
 // data, same views and dialogs as the classic UI; a different shell:
-//  - computers: an icon rail on the left, the map nearly full-window under a
-//    slim floating search bar with filter chips, the person in a panel on the
-//    right with section tabs, who's here as a floating card, Ctrl+K for the
-//    command palette;
+//  - computers: a docked, flat top bar (your picture, the view tabs, server
+//    status, notifications bell, search, settings), filter chips under it on
+//    Map and People, the person in a panel on the right with section tabs,
+//    who's here as a floating card, Ctrl+K for the command palette;
 //  - phones: a bottom tab bar (Map, People, Here, Insights, Me), a person as
 //    a bottom sheet you drag between peek, half and full, settings and
 //    filters as full-screen sheets, bigger touch targets.
 // The classic UI stays the default; "Back to classic UI" is always one click
 // away (and `--classic-ui` at start).
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { imgSrc, isMobile } from "../backend";
 import { useDerived } from "../derived";
 import { iconUrl } from "../model";
@@ -25,6 +25,7 @@ import { GraphView } from "../components/GraphView";
 import { HereNow } from "../components/HereNow";
 import { Icon } from "../components/Icon";
 import { InsightsView, useUnreadMissed } from "../components/InsightsView";
+import { markAllRead, useHistory } from "../history";
 import { LogbookView } from "../components/LogbookView";
 import { SharedLists } from "../components/SharedLists";
 import { SyncLogDialog } from "../components/SyncLogDialog";
@@ -99,44 +100,132 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
   const view = useApp((s) => s.view);
   const selectedId = useApp((s) => s.selectedId);
   const me = useApp((s) => s.cache.me);
-  const unread = useUnreadMissed();
+  const search = useApp((s) => s.filters.search);
   return (
     <div className="ui2-desk">
-      <nav className="ui2-rail" aria-label="Views">
-        <button className="ui2-rail-me" title="Your profile" onClick={() => me && setState({ selectedId: me.id })}>
-          {me ? <Avatar id={me.id} size={36} /> : <Icon name="user" />}
+      <header className="ui2-top">
+        <button className="ui2-top-me" title="Your profile" aria-label="Your profile" onClick={() => me && setState({ selectedId: me.id })}>
+          {me ? <Avatar id={me.id} size={32} /> : <Icon name="user" />}
         </button>
-        {RAIL.map((r) => (
-          <button key={r.key} className={`ui2-rail-btn ${view === r.key ? "on" : ""}`} title={r.label} aria-label={r.label} aria-current={view === r.key} onClick={() => setState({ view: r.key })}>
-            <Icon name={r.icon} />
-            {r.key === "insights" && unread > 0 && <span className="ui2-dot">{unread}</span>}
-            <span className="ui2-rail-label">{r.label}</span>
-          </button>
-        ))}
+        <nav className="ui2-tabs-top" aria-label="Views">
+          {RAIL.map((r) => (
+            <button key={r.key} className={`ui2-ttab ${view === r.key ? "on" : ""}`} aria-current={view === r.key} onClick={() => setState({ view: r.key })}>
+              <Icon name={r.icon} size={17} />
+              <span>{r.label}</span>
+            </button>
+          ))}
+        </nav>
         <span className="ui2-grow" />
-        <button className="ui2-rail-btn" title="Search everything (Ctrl+K)" aria-label="Search everything" onClick={onPalette}>
-          <Icon name="search" />
-          <span className="ui2-rail-label">Search</span>
-        </button>
-        <button className="ui2-rail-btn" title="Settings" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
-          <Icon name="settings" />
-          <span className="ui2-rail-label">Settings</span>
-        </button>
-      </nav>
-      <main className="ui2-main">
-        <FloatingBar onPalette={onPalette} />
-        <div className="ui2-content">
-          {view === "graph" && <div className="ui2-here-float"><HereNow /></div>}
-          <ViewBody view={view} />
+        <ServerStatusChip />
+        <SyncPill />
+        <Bell />
+        <div className="ui2-search top">
+          <Icon name="search" size={15} />
+          <input value={search} placeholder="Search friends…" onChange={(e) => updateFilters({ search: e.target.value })} />
+          <kbd title="Search everything" onClick={onPalette}>
+            Ctrl K
+          </kbd>
         </div>
-      </main>
-      {selectedId && <PersonPanel id={selectedId} />}
+        <button className="ui2-top-icon" title="Settings" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
+          <Icon name="settings" size={19} />
+        </button>
+      </header>
+      <div className="ui2-body">
+        <main className="ui2-main">
+          {(view === "graph" || view === "cards") && <FilterRow />}
+          <div className="ui2-content">
+            {view === "graph" && <div className="ui2-here-float"><HereNow /></div>}
+            <ViewBody view={view} />
+          </div>
+        </main>
+        {selectedId && <PersonPanel id={selectedId} />}
+      </div>
     </div>
   );
 }
 
-/** Search and the most used filters as chips; the full filter menu behind "More". */
-function FloatingBar({ onPalette }: { onPalette: () => void }) {
+/** Closes a dropdown on a click outside it or on Escape. */
+function useDismiss(open: boolean, close: () => void) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && close();
+    const key = (e: KeyboardEvent) => e.key === "Escape" && close();
+    window.addEventListener("mousedown", down);
+    window.addEventListener("keydown", key);
+    return () => {
+      window.removeEventListener("mousedown", down);
+      window.removeEventListener("keydown", key);
+    };
+  }, [open, close]);
+  return ref;
+}
+
+/** Notifications bell: what you missed (muted, quiet hours) and the latest ones shown. */
+function Bell() {
+  const [open, setOpen] = useState(false);
+  const close = useCallback(() => setOpen(false), []);
+  const ref = useDismiss(open, close);
+  const unread = useUnreadMissed();
+  const missed = useHistory((h) => h.missed);
+  const list = useMemo(() => [...missed].reverse().slice(0, 30), [missed]);
+  return (
+    <div className="ui2-drop-wrap" ref={ref}>
+      <button className={`ui2-top-icon ${open ? "on" : ""}`} title="Notifications" aria-label={unread ? `Notifications, ${unread} new` : "Notifications"} aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Icon name="bell" size={19} />
+        {unread > 0 && <span className="ui2-dot">{unread > 99 ? "99+" : unread}</span>}
+      </button>
+      {open && (
+        <div className="ui2-drop" role="dialog" aria-label="Notifications">
+          <div className="ui2-drop-head">
+            <b>Notifications</b>
+            <span className="ui2-grow" />
+            {unread > 0 && (
+              <button className="btn small" onClick={markAllRead}>
+                Mark read
+              </button>
+            )}
+          </div>
+          {list.length === 0 ? (
+            <p className="small muted ui2-drop-empty">Nothing yet.</p>
+          ) : (
+            <ul className="ui2-drop-list">
+              {list.map((m, i) => (
+                <li key={`${m.t}-${i}`}>
+                  <button
+                    className={m.why && !m.read ? "new" : ""}
+                    onClick={() => {
+                      setState({ selectedId: m.userId });
+                      close();
+                    }}
+                  >
+                    <span>{m.text}</span>
+                    <span className="small muted">
+                      {new Date(m.t).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}
+                      {m.why === "quiet" ? " · during quiet hours" : m.why === "muted" ? " · while muted" : ""}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            className="ui2-drop-foot"
+            onClick={() => {
+              setState({ view: "insights" });
+              close();
+            }}
+          >
+            All notifications in Insights
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The most used filters as flat chips (Map and People); the full filter menu behind "More". */
+function FilterRow() {
   const filters = useApp((s) => s.filters);
   const circles = useApp((s) => s.local.circles);
   const starred = useApp((s) => s.local.starred ?? NONE);
@@ -144,14 +233,7 @@ function FloatingBar({ onPalette }: { onPalette: () => void }) {
   const { matched, friends } = useDerived();
   const onlineOnly = filters.presence === "online";
   return (
-    <div className="ui2-bar">
-      <div className="ui2-search">
-        <Icon name="search" size={16} />
-        <input value={filters.search} placeholder="Search friends…" onChange={(e) => updateFilters({ search: e.target.value })} />
-        <kbd title="Search everything" onClick={onPalette}>
-          Ctrl K
-        </kbd>
-      </div>
+    <div className="ui2-filters">
       <div className="ui2-chips">
         <button className={`ui2-chip ${onlineOnly ? "on" : ""}`} onClick={() => updateFilters({ presence: onlineOnly ? "all" : "online" })}>
           Online
@@ -176,8 +258,6 @@ function FloatingBar({ onPalette }: { onPalette: () => void }) {
       <span className="ui2-count" title="Friends matching the filters">
         {matched.size}/{friends.length}
       </span>
-      <ServerStatusChip />
-      <SyncPill />
     </div>
   );
 }

@@ -14,6 +14,10 @@ minor releases can change behavior.
 - Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
 
 ### Changed
+- **New interface on computers: a docked top bar** instead of the icon rail on the left and the
+  floating search bar. Left to right: your picture (opens your profile), the views as flat tabs,
+  server status, sync, a **notifications bell** (what you missed; click one to open the person),
+  search and settings. The filter chips sit in a slim row under it on Map and People.
 - **The new interface is the start for new installs.** Updating keeps the interface you use; on
   the classic one, a one-time hint offers to try the new one (*Try it* / *Not now*). Settings →
   Appearance → Interface switches either way, any time.
