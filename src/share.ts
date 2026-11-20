@@ -11,7 +11,7 @@ import { getState, subscribeState, newServer, normalizeSettings, setState, showT
 import { combineStats } from "./together";
 import { allowHomeNetwork } from "./phone";
 import { mainFriendIds } from "./accountmerge";
-import { mergeSelf, readSelf, sameSelf, SELF_FORMAT, syncedKeys, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
+import { mergeSelf, mineForMerge, readSelf, sameSelf, SELF_FORMAT, stableJson, syncedKeys, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
 import { selectedIds } from "./selection";
 import type { Settings, EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareNote, ShareServer, SharedData, SharedRemoval, SharedCircle } from "./types";
 
@@ -658,10 +658,13 @@ async function syncDevices(s: ShareServer): Promise<string> {
   const inbox = await backend.share.inbox(s.url);
   const own = inbox.find((i) => i.owner === me && i.kind === "self" && i.payload != null && !i.error);
   const theirs = own ? readSelf(own.payload) : null;
-  const mine = currentSelf();
-  const merged = theirs ? mergeSelf(st.local.selfBase ?? null, mine, theirs) : mine;
-  const changedHere = !sameSelf(merged, mine);
-  if (changedHere) applySelf(merged);
+  const before = currentSelf();
+  const base = st.local.selfBase ?? null;
+  const mine = mineForMerge(before, base, theirs, ownSyncedKeys());
+  const merged = theirs ? mergeSelf(base, mine, theirs) : mine;
+  if (!sameSelf(merged, mine)) applySelf(merged);
+  // Only what really changed on this device counts (not values it doesn't sync).
+  const changedHere = !sameSelf(currentSelf(), before);
   if (!theirs || !sameSelf(merged, theirs)) {
     const payload: SelfPayload = { format: SELF_FORMAT, t: Date.now(), ...merged };
     await backend.share.publish(s.url, "self", JSON.stringify(payload), [], true);
@@ -688,11 +691,12 @@ export function selfForDevices(): SelfPayload {
 export function takeSelfFromDevice(raw: unknown): { changedHere: boolean; sendBack: boolean } | null {
   const theirs = readSelf(raw);
   if (!theirs) return null;
-  const mine = currentSelf();
-  const merged = mergeSelf(getState().local.selfBase ?? null, mine, theirs);
-  const changedHere = !sameSelf(merged, mine);
-  if (changedHere) applySelf(merged);
-  return { changedHere, sendBack: !sameSelf(merged, theirs) };
+  const before = currentSelf();
+  const base = getState().local.selfBase ?? null;
+  const mine = mineForMerge(before, base, theirs, ownSyncedKeys());
+  const merged = mergeSelf(base, mine, theirs);
+  if (!sameSelf(merged, mine)) applySelf(merged);
+  return { changedHere: !sameSelf(currentSelf(), before), sendBack: !sameSelf(merged, theirs) };
 }
 
 /** Servers your devices can meet on: they relay, you sync your devices there, encrypted. */
@@ -702,7 +706,13 @@ export function deviceServers(): ShareServer[] {
 
 /** A change from your own devices' data, compared without its timestamp. */
 export function selfKey(): string {
-  return JSON.stringify(currentSelf());
+  return stableJson(currentSelf());
+}
+
+/** The settings keys this device syncs (none when syncing settings is off). */
+function ownSyncedKeys(): string[] {
+  const sh = getState().settings.sharing;
+  return sh.syncSettings ? syncedKeys(sh.syncGroups ?? [], sh.localOnly ?? []) : [];
 }
 
 function currentSelf(): SelfData {

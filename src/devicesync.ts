@@ -62,7 +62,19 @@ export interface SelfPayload extends SelfData {
   t: number;
 }
 
-const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+/** JSON with object keys sorted, so the same data always gives the same text. */
+export function stableJson(v: unknown): string {
+  return JSON.stringify(v, (_k, x) =>
+    x && typeof x === "object" && !Array.isArray(x) ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, (x as Record<string, unknown>)[k]])) : x,
+  );
+}
+
+/**
+ * Equal data, whatever order its keys are in. (Plain JSON.stringify depends on key order, and
+ * a merged copy is built in a different order than this device's own: they looked different on
+ * every sync, so devices kept "taking over" and re-sending the same data.)
+ */
+const same = (a: unknown, b: unknown) => stableJson(a) === stableJson(b);
 
 /** One value: whoever changed it since the base wins; if both did, `theirs`. */
 function pick<T>(base: T | undefined, mine: T | undefined, theirs: T | undefined): T | undefined {
@@ -195,6 +207,43 @@ export function mergeSelf(base: SelfData | null, mine: SelfData, theirs: SelfDat
   };
 }
 
+/**
+ * Values each device keeps for itself even when settings sync: which interface it shows
+ * (classic or new). They never go into the shared copy, so two devices with different choices
+ * don't overwrite each other's copy on every sync.
+ */
+function withoutDeviceOnly(settings: SyncedSettings | undefined): SyncedSettings | undefined {
+  if (!settings?.ui || typeof settings.ui !== "object") return settings;
+  const { beta: _beta, ...ui } = settings.ui as Settings["ui"];
+  return { ...settings, ui: ui as Settings["ui"] };
+}
+
+/**
+ * This device's side for a merge. Settings it doesn't sync (syncing settings off, or a group
+ * kept on this device) take the last agreed value, so this device counts as "didn't change
+ * them" instead of "removed them" and passes the other devices' values along untouched.
+ */
+export function mineForMerge(mine: SelfData, base: SelfData | null, theirs: SelfData | null, keys: readonly string[]): SelfData {
+  // Without an agreed base yet (first sync here), the other devices' copy is the reference.
+  const ref = base?.settings ? base : theirs;
+  const own = new Set(mine.settings ? keys : []);
+  const settings: Record<string, unknown> = {};
+  const at = { ...(mine.settingsAt ?? {}) };
+  for (const k of SYNCED_SETTINGS) {
+    if (own.has(k)) {
+      if (mine.settings?.[k] !== undefined) settings[k] = mine.settings[k];
+      continue;
+    }
+    // ...and their change times too: this device's own edits to them aren't shared.
+    const v = ref?.settings?.[k];
+    if (v !== undefined) settings[k] = v;
+    const t = ref?.settingsAt?.[k];
+    if (t === undefined) delete at[k];
+    else at[k] = t;
+  }
+  return { ...mine, settings: mine.settings || ref?.settings ? (settings as SyncedSettings) : undefined, settingsAt: at };
+}
+
 export function sameSelf(a: SelfData, b: SelfData): boolean {
   return same(a, b);
 }
@@ -203,7 +252,7 @@ export function sameSelf(a: SelfData, b: SelfData): boolean {
 export function syncedSettings(s: Settings): SyncedSettings {
   const out: Record<string, unknown> = {};
   for (const k of syncedKeys(s.sharing.syncGroups ?? [], s.sharing.localOnly ?? [])) out[k] = s[k];
-  return JSON.parse(JSON.stringify(out)) as SyncedSettings;
+  return withoutDeviceOnly(JSON.parse(JSON.stringify(out)) as SyncedSettings)!;
 }
 
 /** A received payload, checked; null when it isn't one. */
@@ -225,7 +274,8 @@ export function readSelf(raw: unknown): SelfData | null {
     dismissedGroups: Array.isArray(p.dismissedGroups) ? p.dismissedGroups.filter((g) => Array.isArray(g)) : [],
     shareNotes: notes,
     notifyPeople: rec<NotifyPerson>(p.notifyPeople),
-    settings: p.settings && typeof p.settings === "object" ? p.settings : undefined,
+    // Older apps still send device-only values; drop them like ours.
+    settings: p.settings && typeof p.settings === "object" ? withoutDeviceOnly(p.settings) : undefined,
     settingsAt:
       p.settingsAt && typeof p.settingsAt === "object" ? Object.fromEntries(Object.entries(p.settingsAt).filter(([, t]) => typeof t === "number")) : undefined,
     starred: Array.isArray(p.starred) ? p.starred.filter((x) => typeof x === "string") : undefined,

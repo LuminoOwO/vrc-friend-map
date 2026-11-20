@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeCircles, mergeRecord, mergeSelf, mergeSet, readSelf, SELF_FORMAT } from "../devicesync";
+import { mergeCircles, mergeRecord, mergeSelf, mergeSet, mineForMerge, readSelf, sameSelf, SELF_FORMAT, stableJson, type SelfData } from "../devicesync";
 import type { Circle } from "../types";
 
 const c = (id: string, members: string[], extra: Partial<Circle> = {}): Circle => ({ id, name: id, color: "#fff", members, ...extra });
@@ -86,5 +86,70 @@ describe("settings: the newer change wins", () => {
   it("only one side changed since the base: that side, whatever the times", () => {
     const base = self({ beta: true }, 5000);
     expect((mergeSelf(base, self({ beta: false }, 1), self({ beta: true }, 9999)).settings as { ui: unknown }).ui).toEqual({ beta: false });
+  });
+});
+
+describe("device sync settles (no swapping back and forth)", () => {
+  type Dev = { settings: Record<string, unknown> | undefined; at: Record<string, number>; base: SelfData | null; changes: number };
+  const empty = { circles: [], dismissedGroups: [], shareNotes: {}, notifyPeople: {} };
+  const self = (d: Dev): SelfData => ({ ...empty, settings: d.settings as SelfData["settings"], settingsAt: d.at });
+  /** One device syncing with the server copy, the way share.ts syncDevices does. */
+  const syncOnce = (d: Dev, server: { copy: SelfData | null; publishes: number }, keys: string[]) => {
+    const before = self(d);
+    const mine = mineForMerge(before, d.base, server.copy, keys);
+    const merged = server.copy ? mergeSelf(d.base, mine, server.copy) : mine;
+    if (d.settings && merged.settings) for (const k of keys) if (k in merged.settings) d.settings[k] = (merged.settings as Record<string, unknown>)[k];
+    for (const k of keys) if (merged.settingsAt?.[k] !== undefined) d.at[k] = merged.settingsAt[k];
+    if (stableJson(self(d)) !== stableJson(before)) d.changes++;
+    if (!server.copy || stableJson(merged) !== stableJson(server.copy)) {
+      server.copy = JSON.parse(JSON.stringify(merged));
+      server.publishes++;
+    }
+    d.base = merged;
+  };
+
+  it("a device that doesn't sync settings never 'takes over' changes and doesn't republish", () => {
+    const server = { copy: null as SelfData | null, publishes: 0 };
+    const pc: Dev = { settings: { theme: "dark", map: { a: 1 } }, at: { theme: 5, map: 5 }, base: null, changes: 0 };
+    const phone: Dev = { settings: undefined, at: { theme: 9 }, base: null, changes: 0 };
+    for (let i = 0; i < 6; i++) {
+      syncOnce(pc, server, ["theme", "map"]);
+      syncOnce(phone, server, []);
+    }
+    expect(phone.changes).toBe(0);
+    expect(pc.changes).toBe(0);
+    expect(server.publishes).toBeLessThanOrEqual(2);
+    expect((server.copy?.settings as Record<string, unknown>).theme).toBe("dark");
+  });
+
+  it("a group kept on one device: the other device's value passes through untouched", () => {
+    const server = { copy: null as SelfData | null, publishes: 0 };
+    const pc: Dev = { settings: { theme: "dark", map: { a: 1 } }, at: { theme: 5, map: 5 }, base: null, changes: 0 };
+    const phone: Dev = { settings: { map: { a: 2 } }, at: { map: 7, theme: 8 }, base: null, changes: 0 };
+    for (let i = 0; i < 6; i++) {
+      syncOnce(pc, server, ["theme", "map"]);
+      syncOnce(phone, server, ["map"]);
+    }
+    expect(pc.settings).toEqual({ theme: "dark", map: { a: 2 } });
+    expect(phone.settings).toEqual({ map: { a: 2 } });
+    expect(server.publishes).toBeLessThanOrEqual(3);
+    const before = server.publishes;
+    syncOnce(pc, server, ["theme", "map"]);
+    syncOnce(phone, server, ["map"]);
+    expect(server.publishes).toBe(before);
+  });
+
+  it("which interface a device shows (classic or new) isn't part of what syncs", () => {
+    const got = readSelf({ format: SELF_FORMAT, t: 1, circles: [], settings: { ui: { beta: true, haptics: false } } });
+    expect(got?.settings?.ui).toEqual({ haptics: false });
+  });
+});
+
+describe("device sync comparisons", () => {
+  it("the same data in a different key order counts as the same", () => {
+    const a: SelfData = { circles: [], dismissedGroups: [], shareNotes: {}, notifyPeople: {}, settingsAt: { map: 1, theme: 2 } };
+    const b: SelfData = { notifyPeople: {}, shareNotes: {}, dismissedGroups: [], circles: [], settingsAt: { theme: 2, map: 1 } };
+    expect(sameSelf(a, b)).toBe(true);
+    expect(sameSelf(a, { ...b, settingsAt: { theme: 3, map: 1 } })).toBe(false);
   });
 });

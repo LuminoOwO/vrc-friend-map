@@ -10,7 +10,7 @@ can be designed around everything. Nothing here is started.
 
 Work through these in this order, one at a time; the rest of the file is the detail.
 
-1. Bug: devices keep swapping changes (Beta UI and servers)
+1. ~~Bug: devices keep swapping changes~~ (fixed, owner to confirm)
 2. ~~Beta UI: the sync status gets cut off~~ (done)
 3. ~~Server connection status~~ (done)
 4. App and server versions that don't fit together (Compatibility)
@@ -312,7 +312,7 @@ tray. On hold: Discord rich presence.
   layout so it fits on phones and narrow windows.
 - [x] **Beta UI: less confusing**, (Icons and a description for every Settings section, a server's settings in sections; more per-option icons later.) with icons next to many options so they're quicker to find
   and recognize.
-- [ ] **Bug: devices keep swapping changes** ("Took over changes from your other devices" on
+- [x] **Bug: devices keep swapping changes** (fixed 2026-11-20: key order in comparisons, `ui.beta` in the payload, unsynced settings counted as changes; owner to confirm) ("Took over changes from your other devices" on
   almost every sync, and the server answered "slow down"). Check once phone and PC both run
   0.12.2+ (the newer change wins since then); if it still happens, find which value flips.
 
