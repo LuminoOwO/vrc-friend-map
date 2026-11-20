@@ -1,6 +1,8 @@
 import { defaultMap, setState, updateMap, updateSettings, useApp } from "../store";
 import type { Gravity, MapSettings, NodeStyle } from "../types";
 import { Icon } from "./Icon";
+import { useEffect, useState } from "react";
+import { mePinned, unpinMe } from "../mapstate";
 
 const STYLES: { value: NodeStyle; label: string; hint: string }[] = [
   { value: "dot", label: "Dot", hint: "Small colored dots. Fastest with big friend lists." },
@@ -53,6 +55,7 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
         </button>
       </div>
 
+      <MePinned />
       <div className="opt-group">
         <div className="opt-title">People</div>
         <div className="segmented" role="radiogroup" aria-label="How people are drawn">
@@ -240,6 +243,26 @@ function TimeTravel() {
         </button>
       )}
       <span className="small muted">Who was your friend then (since {new Date(since).toLocaleDateString()}). People you're no longer friends with aren't on the map.</span>
+    </div>
+  );
+}
+
+/** After dragging your own bubble somewhere: a way back to the automatic spot. */
+function MePinned() {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const f = () => tick((n) => n + 1);
+    mePinned.subs.add(f);
+    return () => {
+      mePinned.subs.delete(f);
+    };
+  }, []);
+  if (!mePinned.at) return null;
+  return (
+    <div className="opt-group">
+      <button className="btn small" onClick={unpinMe}>
+        <Icon name="pin" size={14} /> Put me back between my friends
+      </button>
     </div>
   );
 }

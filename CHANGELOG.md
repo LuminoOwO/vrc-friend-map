@@ -25,10 +25,13 @@ minor releases can change behavior.
   things faster (e.g. "Frame rate: smoothness against battery and fan noise").
 
 ### Fixed
+- **Your own bubble opens your profile again**, also with filters that hide everyone else, and
+  you can drag it: it stays where you drop it (Map options → *Put me back between my friends*).
 - **The bubbles around yours kept twitching.** Your bubble followed every tiny move of the
   friends it sits between while pushing them a little, and the layout restarted whenever two of
-  them swapped places in the time-together ranking. Now it only follows real moves, and only a
-  change of people restarts the layout.
+  them swapped places in the time-together ranking, or whenever device sync handed over an
+  identical copy of your circles. Now it only follows real moves, and only real changes restart
+  the layout. Settings → Diagnostics counts the restarts and their reason.
 - **Beta UI: the sync status was cut off** in the top bar on narrower windows. It shortens with
   "…" now, and on narrow windows shows just its buttons (the text is in the tooltip and the log).
 

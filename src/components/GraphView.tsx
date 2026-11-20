@@ -35,6 +35,7 @@ import { MapOptions } from "./MapOptions";
 import { friendsAt } from "../insights";
 import { accountColor, MAIN } from "../accountmerge";
 import { appHidden, onAppVisibility } from "../appvisible";
+import { mePinned, noteLayoutRestart } from "../mapstate";
 
 interface GNode extends d3.SimulationNodeDatum {
   id: string;
@@ -57,6 +58,7 @@ interface Hull {
 const imageCache = new Map<string, HTMLImageElement | "error">();
 /** Layout memory across tab switches (the component unmounts). */
 const savedPositions = new Map<string, { x: number; y: number }>();
+
 let savedTransform: d3.ZoomTransform | null = null;
 
 function mutualRadius(mutualCount: number) {
@@ -1274,6 +1276,10 @@ export function GraphView() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  // Circles by what's in them: device sync hands over an identical copy on every exchange, and
+  // that alone restarted the layout (the area around you kept twitching).
+  const circlesKey = JSON.stringify(circles.map((c) => [c.id, c.hidden ? 1 : 0, c.members]));
+
   // Who you're placed between, by ID only: the list is rebuilt on every status update from
   // VRChat (new array, same people), and the layout reads the current weights itself, so
   // only a change of people should restart it. Otherwise the map shifted every few seconds.
@@ -1405,6 +1411,7 @@ export function GraphView() {
       });
       sim.alpha(0.25).restart();
     } else {
+      noteLayoutRestart(added > 0 ? "people added" : "people, lines or node shapes changed");
       sim.alpha(added > 0 ? 0.5 : 0.35).restart();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1440,6 +1447,13 @@ export function GraphView() {
     const tx = sw ? sx / sw : 0;
     const ty = sw ? sy / sw : 0;
     if (draggingMeRef.current) return me;
+    if (mePinned.at) {
+      me.fx = mePinned.at.x;
+      me.fy = mePinned.at.y;
+      me.x = me.fx;
+      me.y = me.fy;
+      return me;
+    }
     if (me.fx == null || me.fy == null || !Number.isFinite(me.fx)) {
       me.fx = tx;
       me.fy = ty;
@@ -1566,8 +1580,9 @@ export function GraphView() {
       }
     };
     sim.force("circles", force as unknown as d3.Force<GNode, GLink>);
+    noteLayoutRestart("circles, groups or the people you sit between");
     sim.alpha(Math.max(sim.alpha(), 0.3)).restart();
-  }, [circles, layoutKey, map.groupPull, map.gravity, anchorsKey]);
+  }, [circlesKey, layoutKey, map.groupPull, map.gravity, anchorsKey]);
 
   // Any mouse, touch or key input anywhere in the window counts as "not idle"
   // for the frame-rate limits.
@@ -1629,6 +1644,19 @@ export function GraphView() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map.orbit, map.orbitDir]);
+
+  // "Put me back between my friends": settle from where you are.
+  useEffect(() => {
+    const f = () => {
+      simRef.current?.alpha(0.1).restart();
+      requestDraw();
+    };
+    mePinned.subs.add(f);
+    return () => {
+      mePinned.subs.delete(f);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Back from the tray: draw what was held back.
   useEffect(
@@ -1698,7 +1726,9 @@ export function GraphView() {
       const card = isCard(settings.map.nodeStyle);
       const slack = 4 / transformRef.current.k;
       for (const n of nodesRef.current.values()) {
-        if (settings.dimMode === "hide" && !matched.has(n.id)) continue;
+        // Hidden by the filters? You aren't a friend of yourself, so you're never "matched":
+        // your own bubble stays clickable (your profile) and draggable.
+        if (settings.dimMode === "hide" && !matched.has(n.id) && n.kind !== "me") continue;
         const dx = Math.abs(n.x! - x);
         const dy = Math.abs(n.y! - y);
         const inside = card ? dx <= n.hw + slack && dy <= n.hh + slack : Math.hypot(dx, dy) < n.r + slack;
@@ -1769,8 +1799,9 @@ export function GraphView() {
         // Only friends go into circles.
         if (target && moved > 25 && !n.kind) addToCircle(target, n.id);
         if (n.kind === "me") {
-          // Let go: drifts back between your closest friends.
+          // Let go: stays where you put it (Map options → Put me back between my friends).
           draggingMeRef.current = false;
+          if (moved > 4) mePinned.at = { x: n.fx!, y: n.fy! };
         } else {
           n.fx = null;
           n.fy = null;
