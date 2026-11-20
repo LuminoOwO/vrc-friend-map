@@ -362,6 +362,12 @@ tray. On hold: Discord rich presence.
 - [ ] Profiles open as a popup in the middle, like the classic UI (not in the side panel).
 - [ ] Online now and Activity scroll inside their own space, so Activity is always visible.
   New Activity entries show a dot; scrolled down, a "back to top" button appears.
+- [ ] Settings: your account card sits at the top of the settings sidebar (where "User" is), not at the bottom.
+- [ ] Notifications get their own bell button in the top right, after the server status.
+- [ ] Server status dropdown also shows which of your devices are online and which servers each one is connected to.
+- [ ] Clicking your own bubble (map) or your picture (top left) opens your own profile.
+- [ ] No gradients on the top bar tabs.
+- [ ] Clicking a world in "Online now" opens a world overview popup (no expanding inside the side panel).
 - [x] Put the OSC chatbox features aside: taken out of the app (may be scrapped for good; the owner's other programs do the same).
 
 ## Parked
