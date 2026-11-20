@@ -169,7 +169,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
 
       {s.registered && (
         <>
-          <Section icon="upload" title="What I share here" help="Goes only to the friends you pick, and only if they joined this server too.">
+          <Section icon="upload" title="What I share here" help="Goes only to the friends you pick, and only if they joined this server too. These choices follow you to your other devices (when they sync your devices).">
             <Check
               id={`up-${s.id}`}
               checked={s.upload}

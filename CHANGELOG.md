@@ -17,6 +17,11 @@ minor releases can change behavior.
 - A profile has one close button instead of two.
 
 ### Added
+- **Sharing choices follow your account.** What you share on a server, which friends it covers
+  and who may get it now sync between your devices (encrypted, with your circles and notes), so
+  your phone and PC no longer disagree. The newest change wins; a device that just added a
+  server takes over your choices from the others. Receiving, syncing your devices, the logger
+  and the cache stay per device.
 - **App and server versions are checked against each other.** The server says the oldest app
   it works with, the app the oldest server. When they don't fit, the server shows red with
   *Needs a newer app* or *Server too old* and what to update, and nothing syncs with it until

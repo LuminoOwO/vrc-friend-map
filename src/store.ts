@@ -1,5 +1,6 @@
 // Global app state: a tiny external store + debounced persistence to disk.
 import { useSyncExternalStore } from "react";
+import { ACCOUNT_SHARE_KEYS } from "./devicesync";
 import { backend, type KeyPin, type SessionInfo } from "./backend";
 import { pickCircleColor } from "./colors";
 import { uid } from "./model";
@@ -581,7 +582,14 @@ export function updateSharing(patch: Partial<SharingSettings>) {
 
 export function updateServer(id: string, patch: Partial<ShareServer> | ((s: ShareServer) => Partial<ShareServer>)) {
   updateSharing({
-    servers: state.settings.sharing.servers.map((s) => (s.id === id ? { ...s, ...(typeof patch === "function" ? patch(s) : patch) } : s)),
+    servers: state.settings.sharing.servers.map((s) => {
+      if (s.id !== id) return s;
+      const p = typeof patch === "function" ? patch(s) : patch;
+      // Your own change to the sharing choices (not one taken over from another device): stamp
+      // it, so it wins over older choices on your other devices.
+      const mine = !("shareAt" in p) && ACCOUNT_SHARE_KEYS.some((k) => k in p && JSON.stringify(p[k]) !== JSON.stringify(s[k]));
+      return { ...s, ...p, ...(mine ? { shareAt: Date.now() } : {}) };
+    }),
   });
 }
 

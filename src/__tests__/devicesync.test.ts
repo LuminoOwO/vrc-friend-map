@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeCircles, mergeRecord, mergeSelf, mergeSet, mineForMerge, readSelf, sameSelf, SELF_FORMAT, stableJson, type SelfData } from "../devicesync";
+import { mergeCircles, mergeRecord, mergeSelf, mergeServerShare, mergeSet, mineForMerge, readSelf, sameSelf, SELF_FORMAT, stableJson, type SelfData } from "../devicesync";
 import type { Circle } from "../types";
 
 const c = (id: string, members: string[], extra: Partial<Circle> = {}): Circle => ({ id, name: id, color: "#fff", members, ...extra });
@@ -151,5 +151,27 @@ describe("device sync comparisons", () => {
     const b: SelfData = { notifyPeople: {}, shareNotes: {}, dismissedGroups: [], circles: [], settingsAt: { theme: 2, map: 1 } };
     expect(sameSelf(a, b)).toBe(true);
     expect(sameSelf(a, { ...b, settingsAt: { theme: 3, map: 1 } })).toBe(false);
+  });
+});
+
+describe("sharing choices follow the account", () => {
+  const A = "https://a.example";
+  it("the newer choice wins; untouched defaults never win", () => {
+    const mine = { [A]: { shareFriends: true, audience: "all" as const } };
+    const theirs = { [A]: { shareFriends: false, audience: "picked" as const, shareAt: 10 } };
+    expect(mergeServerShare(mine, theirs)[A]).toEqual(theirs[A]);
+    expect(mergeServerShare({ [A]: { ...mine[A], shareAt: 20 } }, theirs)[A].shareFriends).toBe(true);
+  });
+  it("a server only one device has keeps its choices", () => {
+    expect(mergeServerShare({}, { [A]: { upload: true, shareAt: 1 } })).toEqual({ [A]: { upload: true, shareAt: 1 } });
+  });
+  it("received choices keep only known keys with the right types", () => {
+    const got = readSelf({
+      format: SELF_FORMAT,
+      t: 1,
+      circles: [],
+      serverShare: { [A]: { upload: true, audience: "everyone", circleIds: ["c", 3], loggerOwner: true, shareAt: 5 }, "javascript:x": { upload: true } },
+    });
+    expect(got?.serverShare).toEqual({ [A]: { upload: true, circleIds: ["c"], shareAt: 5 } });
   });
 });

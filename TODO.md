@@ -15,7 +15,7 @@ Work through these in this order, one at a time; the rest of the file is the det
 3. ~~Server connection status~~ (done)
 4. ~~App and server versions that don't fit together~~ (done)
 5. ~~The UI release~~ (done on main, 2026-11-20; goes out as 0.13.0)
-6. Sharing choices per account, not per device
+6. ~~Sharing choices per account, not per device~~ (done)
 7. Notice when the server's VRChat login expires (and renew from the app)
 8. Use the app without logging in to VRChat in it
 9. In gaps: Door / Knock sounds, the pause before a person's tune
@@ -300,7 +300,7 @@ tray. On hold: Discord rich presence.
 - [ ] **Door and Knock sounds:** hard to hear; make them clearer (louder attack, more distinct).
 - [ ] **Pause between the event sound and the person's own tune:** a little longer by default,
   and a setting to choose it freely.
-- [ ] **Sharing choices per account, not per device:** which friends go into what you share,
+- [x] **Sharing choices per account, not per device:** (done 2026-11-20: `serverShare` in the device-sync data, newer `shareAt` wins) which friends go into what you share,
   and who may get it, are set per device today, which can conflict between devices. Keep them
   with the account (synced), per server.
 

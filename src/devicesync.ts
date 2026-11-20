@@ -15,7 +15,53 @@
 // one device goes away unless the other changed it, and for single values
 // (a circle's name, a setting) the side that changed it wins, the other
 // device's change if both did.
-import type { BlockReason, Circle, InviteTemplate, LocalData, NotifyPerson, Settings, ShareNote } from "./types";
+import type { BlockReason, Circle, InviteTemplate, LocalData, NotifyPerson, Settings, ShareNote, ShareServer } from "./types";
+
+/**
+ * A server's sharing choices that belong to your account, not to one device: what you share,
+ * which friends it covers and who may get it. (Receiving, syncing your devices, the logger and
+ * the cache stay per device.)
+ */
+export const ACCOUNT_SHARE_KEYS = [
+  "upload",
+  "encrypt",
+  "shareFriends",
+  "shareActivity",
+  "audience",
+  "circleIds",
+  "audiencePicked",
+  "audienceAutoAdd",
+  "include",
+  "shareRemovals",
+  "shareBlocks",
+  "shareTimezone",
+  "hideAudience",
+  "shareNotes",
+] as const;
+export type ServerShare = Partial<Pick<ShareServer, (typeof ACCOUNT_SHARE_KEYS)[number] | "shareAt">>;
+
+/**
+ * Per server: the newer choice wins (by `shareAt`; a server's untouched defaults have none, so
+ * a device that just added a server takes the account's choices). A server only one device has
+ * stays as it is: removing a server from one device doesn't drop the choices for the others.
+ */
+export function mergeServerShare(mine: Record<string, ServerShare>, theirs: Record<string, ServerShare>): Record<string, ServerShare> {
+  const out: Record<string, ServerShare> = {};
+  for (const url of new Set([...Object.keys(mine), ...Object.keys(theirs)])) {
+    const m = mine[url];
+    const t = theirs[url];
+    out[url] = !m ? t : !t || same(m, t) ? m : (m.shareAt ?? 0) > (t.shareAt ?? 0) ? m : t;
+  }
+  return out;
+}
+
+/** One server's account choices, as they sync. */
+export function serverShareOf(s: ShareServer): ServerShare {
+  const out: Record<string, unknown> = {};
+  for (const k of ACCOUNT_SHARE_KEYS) if (s[k] !== undefined) out[k] = s[k];
+  if (s.shareAt) out.shareAt = s.shareAt;
+  return JSON.parse(JSON.stringify(out)) as ServerShare;
+}
 
 export const SELF_FORMAT = "vrc-friend-map/self-v1";
 
@@ -55,6 +101,8 @@ export interface SelfData {
   pushTargets?: NonNullable<LocalData["pushTargets"]>;
   /** Since 0.12.2: when each settings group was last changed, so the newer change wins. */
   settingsAt?: Record<string, number>;
+  /** Since 0.13: each server's sharing choices (by its address), see ACCOUNT_SHARE_KEYS. */
+  serverShare?: Record<string, ServerShare>;
 }
 
 export interface SelfPayload extends SelfData {
@@ -204,6 +252,7 @@ export function mergeSelf(base: SelfData | null, mine: SelfData, theirs: SelfDat
     sharedCircles: theirs.sharedCircles === undefined ? mine.sharedCircles : mergeRecord(b.sharedCircles ?? {}, mine.sharedCircles ?? {}, theirs.sharedCircles),
     worldNotes: theirs.worldNotes === undefined ? mine.worldNotes : mergeRecord(b.worldNotes ?? {}, mine.worldNotes ?? {}, theirs.worldNotes),
     pushTargets: theirs.pushTargets === undefined ? mine.pushTargets : mergeRecord(b.pushTargets ?? {}, mine.pushTargets ?? {}, theirs.pushTargets),
+    serverShare: theirs.serverShare === undefined ? mine.serverShare : mergeServerShare(mine.serverShare ?? {}, theirs.serverShare),
   };
 }
 
@@ -241,7 +290,19 @@ export function mineForMerge(mine: SelfData, base: SelfData | null, theirs: Self
     if (t === undefined) delete at[k];
     else at[k] = t;
   }
-  return { ...mine, settings: mine.settings || ref?.settings ? (settings as SyncedSettings) : undefined, settingsAt: at };
+  // Servers this device hasn't added: their choices pass along untouched.
+  let serverShare = mine.serverShare;
+  const refShare = (base ?? theirs)?.serverShare;
+  if (serverShare && refShare) {
+    serverShare = { ...serverShare };
+    for (const [url, v] of Object.entries(refShare)) if (!(url in serverShare)) serverShare[url] = v;
+  }
+  return { ...mine, settings: mine.settings || ref?.settings ? (settings as SyncedSettings) : undefined, settingsAt: at, serverShare };
+}
+
+/** Two pieces of synced data are equal (key order doesn't matter). */
+export function sameSelfPart(a: unknown, b: unknown): boolean {
+  return same(a, b);
 }
 
 export function sameSelf(a: SelfData, b: SelfData): boolean {
@@ -286,5 +347,32 @@ export function readSelf(raw: unknown): SelfData | null {
     sharedCircles: p.sharedCircles ? rec(p.sharedCircles) : undefined,
     worldNotes: p.worldNotes ? rec(p.worldNotes) : undefined,
     pushTargets: p.pushTargets ? rec(p.pushTargets) : undefined,
+    serverShare: p.serverShare ? readServerShare(p.serverShare) : undefined,
   };
+}
+
+const AUDIENCES = ["all", "circles", "picked"];
+const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : undefined);
+
+/** Received server choices, keeping only known keys with the right types. */
+function readServerShare(raw: unknown): Record<string, ServerShare> {
+  const out: Record<string, ServerShare> = {};
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return out;
+  for (const [url, v] of Object.entries(raw as Record<string, unknown>)) {
+    if (!/^https?:\/\//.test(url) || !v || typeof v !== "object") continue;
+    const r = v as Record<string, unknown>;
+    const s: Record<string, unknown> = {};
+    for (const k of ["upload", "shareFriends", "shareActivity", "audienceAutoAdd", "shareRemovals", "shareBlocks", "shareTimezone", "hideAudience", "shareNotes"])
+      if (typeof r[k] === "boolean") s[k] = r[k];
+    if (typeof r.encrypt === "boolean" || r.encrypt === null) s.encrypt = r.encrypt;
+    if (typeof r.shareAt === "number") s.shareAt = r.shareAt;
+    if (typeof r.audience === "string" && AUDIENCES.includes(r.audience)) s.audience = r.audience;
+    if (strings(r.circleIds)) s.circleIds = strings(r.circleIds);
+    if (strings(r.audiencePicked)) s.audiencePicked = strings(r.audiencePicked);
+    const inc = r.include as Record<string, unknown> | undefined;
+    if (inc && typeof inc === "object" && typeof inc.who === "string" && AUDIENCES.includes(inc.who))
+      s.include = { who: inc.who, circleIds: strings(inc.circleIds) ?? [], picked: strings(inc.picked) ?? [], autoAdd: inc.autoAdd === true };
+    out[url] = s as ServerShare;
+  }
+  return out;
 }

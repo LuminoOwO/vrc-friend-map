@@ -12,7 +12,7 @@ import { getState, subscribeState, newServer, normalizeSettings, setState, showT
 import { combineStats } from "./together";
 import { allowHomeNetwork } from "./phone";
 import { mainFriendIds } from "./accountmerge";
-import { mergeSelf, mineForMerge, readSelf, sameSelf, SELF_FORMAT, stableJson, syncedKeys, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
+import { mergeSelf, mineForMerge, readSelf, sameSelf, sameSelfPart, SELF_FORMAT, serverShareOf, stableJson, syncedKeys, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
 import { selectedIds } from "./selection";
 import type { Settings, EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareNote, ShareServer, SharedData, SharedRemoval, SharedCircle } from "./types";
 
@@ -747,6 +747,7 @@ function currentSelf(): SelfData {
     worldNotes: st.local.worldNotes ?? {},
     pushTargets: st.local.pushTargets ?? {},
     settingsAt: st.local.settingsAt ?? {},
+    serverShare: Object.fromEntries(st.settings.sharing.servers.map((s) => [s.url, serverShareOf(s)])),
   };
 }
 
@@ -782,6 +783,11 @@ function applySelf(d: SelfData) {
   if (patch.ui) patch.ui = keepOwnUi(patch.ui, st.settings.ui);
   // Keep the other device's change times, so the two don't keep swapping values.
   updateSettings(patch, d.settingsAt ?? {});
+  // Sharing choices of the servers added here.
+  for (const s of getState().settings.sharing.servers) {
+    const want = d.serverShare?.[s.url];
+    if (want && !sameSelfPart(want, serverShareOf(s))) updateServer(s.id, want);
+  }
 }
 
 let syncing = false;

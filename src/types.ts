@@ -472,6 +472,8 @@ export interface ShareServer {
   loggerOwner: boolean;
   /** You confirmed uploading unencrypted to this server ("don't ask again"). */
   ackUnencrypted: boolean;
+  /** When you last changed this server's sharing choices (they sync with your account; the newer wins). */
+  shareAt?: number;
   /** Kinds currently uploaded, to remove them when you stop sharing. */
   published: string[];
   lastSync: number;
