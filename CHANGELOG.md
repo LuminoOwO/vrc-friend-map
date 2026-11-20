@@ -25,6 +25,10 @@ minor releases can change behavior.
   things faster (e.g. "Frame rate: smoothness against battery and fan noise").
 
 ### Fixed
+- **The bubbles around yours kept twitching.** Your bubble followed every tiny move of the
+  friends it sits between while pushing them a little, and the layout restarted whenever two of
+  them swapped places in the time-together ranking. Now it only follows real moves, and only a
+  change of people restarts the layout.
 - **Beta UI: the sync status was cut off** in the top bar on narrower windows. It shortens with
   "…" now, and on narrow windows shows just its buttons (the text is in the tooltip and the log).
 

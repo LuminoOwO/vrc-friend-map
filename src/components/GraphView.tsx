@@ -1277,10 +1277,18 @@ export function GraphView() {
   // Who you're placed between, by ID only: the list is rebuilt on every status update from
   // VRChat (new array, same people), and the layout reads the current weights itself, so
   // only a change of people should restart it. Otherwise the map shifted every few seconds.
-  const anchorsKey = extra.anchors.map(([id]) => id).join(",");
+  // Sorted: the list is ordered by time together, which keeps growing, so two people swapping
+  // places is no change of people (and restarted the layout, making the area around you twitch).
+  const anchorsKey = extra.anchors
+    .map(([id]) => id)
+    .sort()
+    .join(",");
 
   // Build/refresh the simulation when people, lines or node shapes change.
-  const extraKey = `${extra.others.map((o) => o.id).join(",")}#${extra.otherEdges.length}#${extra.me?.id ?? ""}`;
+  const extraKey = `${extra.others
+    .map((o) => o.id)
+    .sort()
+    .join(",")}#${extra.otherEdges.length}#${extra.me?.id ?? ""}`;
   const layoutKey = `${idsKey}#${lineData.list.length}#${extraKey}#${map.nodeStyle}#${map.nodeScale}#${map.sizeBy}#${map.spacing}#${map.gravity}`;
   const ringRef = useRef(300);
   useEffect(() => {
@@ -1435,7 +1443,9 @@ export function GraphView() {
     if (me.fx == null || me.fy == null || !Number.isFinite(me.fx)) {
       me.fx = tx;
       me.fy = ty;
-    } else {
+    } else if (Math.hypot(tx - me.fx, ty - me.fy) > ME_DEADBAND) {
+      // Follow only real moves of your friends. Your bubble pushes them a little, which moves
+      // the middle a little; following that too kept you and your neighbours twitching.
       me.fx += (tx - me.fx) * 0.15;
       me.fy += (ty - me.fy) * 0.15;
     }
@@ -1445,6 +1455,8 @@ export function GraphView() {
     return me;
   }
   const draggingMeRef = useRef(false);
+  /** How far (map units) the middle of your friends must move before your bubble follows. */
+  const ME_DEADBAND = 6;
 
   // Gravity: where everyone is pulled. People in two circles sit between them.
   //  mutuals  – the middle pulls lightly; people without lines float in a ring
