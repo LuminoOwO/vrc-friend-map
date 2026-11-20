@@ -1104,3 +1104,91 @@ textarea { width: 100%; box-sizing: border-box; font: inherit; color: var(--text
 
 /* In the tray (src/appvisible.ts): no animations running for nobody. */
 html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animation-play-state: paused !important; }
+
+/* More themes (0.13.0). Graphite is the colourless one: grey, not black. */
+:root[data-theme="graphite"] {
+  --here: #e4e4e7;
+  --bg: #1c1c1f; --panel: #202024; --panel-2: #28282d; --card: #2a2a2f; --card-hover: #333339; --border: #2e2e33; --border-strong: #3d3d44;
+  --text: #ececee; --muted: #a1a1aa; --accent: #d4d4d8; --accent-strong: #ffffff; --accent-soft: rgba(212, 212, 216,0.15); --on-accent: #18181b;
+  --danger: #f87171; --danger-text: #f87171; --ok: #86efac; --warn: #fcd34d; --gold: #fcd34d;
+  --glow: #1c1c1f; --node-bg: #333339; --profile-bg: #202024; --pcard: #2a2a2f; --chip-bg: #2a2a2f;
+  --canvas-card: #202024; --canvas-label: #ececee; --canvas-outline: rgba(28, 28, 31,0.85); --canvas-sub: #a1a1aa; --canvas-dim: #71717a; --canvas-line: 113, 113, 122;
+}
+:root[data-theme="tokyonight"] {
+  --here: #bb9af7;
+  --bg: #1a1b26; --panel: #16161e; --panel-2: #1f2335; --card: #24283b; --card-hover: #292e42; --border: #292e42; --border-strong: #3b4261;
+  --text: #c0caf5; --muted: #9aa5ce; --accent: #7aa2f7; --accent-strong: #bb9af7; --accent-soft: rgba(122, 162, 247,0.15); --on-accent: #1a1b26;
+  --danger: #f7768e; --danger-text: #f7768e; --ok: #9ece6a; --warn: #e0af68; --gold: #e0af68;
+  --glow: #1a1b26; --node-bg: #292e42; --profile-bg: #16161e; --pcard: #24283b; --chip-bg: #24283b;
+  --canvas-card: #16161e; --canvas-label: #c0caf5; --canvas-outline: rgba(26, 27, 38,0.85); --canvas-sub: #9aa5ce; --canvas-dim: #565f89; --canvas-line: 86, 95, 137;
+  --status-joinme: #7dcfff; --status-active: #9ece6a; --status-askme: #ff9e64; --status-busy: #f7768e; --status-offline: #565f89; --status-web: #e0af68;
+  --trust-visitor: #c0caf5; --trust-new: #7aa2f7; --trust-user: #9ece6a; --trust-known: #ff9e64; --trust-trusted: #bb9af7; --trust-team: #f7768e;
+  --edges: 86, 95, 137|122, 162, 247|158, 206, 106|224, 175, 104|187, 154, 247;
+}
+:root[data-theme="gruvbox"] {
+  --here: #d3869b;
+  --bg: #282828; --panel: #1d2021; --panel-2: #32302f; --card: #3c3836; --card-hover: #504945; --border: #3c3836; --border-strong: #504945;
+  --text: #ebdbb2; --muted: #bdae93; --accent: #fabd2f; --accent-strong: #fe8019; --accent-soft: rgba(250, 189, 47,0.15); --on-accent: #282828;
+  --danger: #fb4934; --danger-text: #fb4934; --ok: #b8bb26; --warn: #fabd2f; --gold: #fabd2f;
+  --glow: #282828; --node-bg: #504945; --profile-bg: #1d2021; --pcard: #3c3836; --chip-bg: #3c3836;
+  --canvas-card: #1d2021; --canvas-label: #ebdbb2; --canvas-outline: rgba(40, 40, 40,0.85); --canvas-sub: #bdae93; --canvas-dim: #928374; --canvas-line: 146, 131, 116;
+  --status-joinme: #83a598; --status-active: #b8bb26; --status-askme: #fe8019; --status-busy: #fb4934; --status-offline: #665c54; --status-web: #fabd2f;
+  --trust-visitor: #ebdbb2; --trust-new: #83a598; --trust-user: #b8bb26; --trust-known: #fe8019; --trust-trusted: #d3869b; --trust-team: #fb4934;
+  --edges: 146, 131, 116|250, 189, 47|184, 187, 38|250, 189, 47|211, 134, 155;
+}
+:root[data-theme="rosepine"] {
+  --here: #ebbcba;
+  --bg: #191724; --panel: #1f1d2e; --panel-2: #26233a; --card: #26233a; --card-hover: #312e48; --border: #26233a; --border-strong: #403d52;
+  --text: #e0def4; --muted: #908caa; --accent: #c4a7e7; --accent-strong: #ebbcba; --accent-soft: rgba(196, 167, 231,0.15); --on-accent: #191724;
+  --danger: #eb6f92; --danger-text: #eb6f92; --ok: #9ccfd8; --warn: #f6c177; --gold: #f6c177;
+  --glow: #191724; --node-bg: #312e48; --profile-bg: #1f1d2e; --pcard: #26233a; --chip-bg: #26233a;
+  --canvas-card: #1f1d2e; --canvas-label: #e0def4; --canvas-outline: rgba(25, 23, 36,0.85); --canvas-sub: #908caa; --canvas-dim: #6e6a86; --canvas-line: 110, 106, 134;
+  --status-joinme: #9ccfd8; --status-active: #31748f; --status-askme: #f6c177; --status-busy: #eb6f92; --status-offline: #524f67; --status-web: #f6c177;
+  --trust-visitor: #e0def4; --trust-new: #9ccfd8; --trust-user: #31748f; --trust-known: #f6c177; --trust-trusted: #c4a7e7; --trust-team: #eb6f92;
+  --edges: 110, 106, 134|196, 167, 231|49, 116, 143|246, 193, 119|235, 188, 186;
+}
+:root[data-theme="onedark"] {
+  --here: #c678dd;
+  --bg: #282c34; --panel: #21252b; --panel-2: #2c313a; --card: #2c313a; --card-hover: #353b45; --border: #2c313a; --border-strong: #3e4451;
+  --text: #dcdfe4; --muted: #9da5b4; --accent: #61afef; --accent-strong: #c678dd; --accent-soft: rgba(97, 175, 239,0.15); --on-accent: #21252b;
+  --danger: #e06c75; --danger-text: #e06c75; --ok: #98c379; --warn: #e5c07b; --gold: #e5c07b;
+  --glow: #282c34; --node-bg: #353b45; --profile-bg: #21252b; --pcard: #2c313a; --chip-bg: #2c313a;
+  --canvas-card: #21252b; --canvas-label: #dcdfe4; --canvas-outline: rgba(40, 44, 52,0.85); --canvas-sub: #9da5b4; --canvas-dim: #5c6370; --canvas-line: 92, 99, 112;
+  --status-joinme: #56b6c2; --status-active: #98c379; --status-askme: #d19a66; --status-busy: #e06c75; --status-offline: #5c6370; --status-web: #e5c07b;
+  --trust-visitor: #dcdfe4; --trust-new: #61afef; --trust-user: #98c379; --trust-known: #d19a66; --trust-trusted: #c678dd; --trust-team: #e06c75;
+  --edges: 92, 99, 112|97, 175, 239|152, 195, 121|229, 192, 123|198, 120, 221;
+}
+:root[data-theme="everforest"] {
+  --here: #d699b6;
+  --bg: #2d353b; --panel: #272e33; --panel-2: #343f44; --card: #343f44; --card-hover: #3d484d; --border: #3d484d; --border-strong: #475258;
+  --text: #d3c6aa; --muted: #a6b0a0; --accent: #a7c080; --accent-strong: #83c092; --accent-soft: rgba(167, 192, 128,0.15); --on-accent: #2d353b;
+  --danger: #e67e80; --danger-text: #e67e80; --ok: #a7c080; --warn: #dbbc7f; --gold: #dbbc7f;
+  --glow: #2d353b; --node-bg: #3d484d; --profile-bg: #272e33; --pcard: #343f44; --chip-bg: #343f44;
+  --canvas-card: #272e33; --canvas-label: #d3c6aa; --canvas-outline: rgba(45, 53, 59,0.85); --canvas-sub: #a6b0a0; --canvas-dim: #7a8478; --canvas-line: 122, 132, 120;
+  --status-joinme: #7fbbb3; --status-active: #a7c080; --status-askme: #e69875; --status-busy: #e67e80; --status-offline: #56635f; --status-web: #dbbc7f;
+  --trust-visitor: #d3c6aa; --trust-new: #7fbbb3; --trust-user: #a7c080; --trust-known: #e69875; --trust-trusted: #d699b6; --trust-team: #e67e80;
+  --edges: 122, 132, 120|167, 192, 128|167, 192, 128|219, 188, 127|214, 153, 182;
+}
+:root[data-theme="solarized"] {
+  --here: #d33682;
+  --bg: #002b36; --panel: #00252e; --panel-2: #073642; --card: #073642; --card-hover: #0d4250; --border: #073642; --border-strong: #124d5c;
+  --text: #eee8d5; --muted: #93a1a1; --accent: #2aa198; --accent-strong: #268bd2; --accent-soft: rgba(42, 161, 152,0.15); --on-accent: #002b36;
+  --danger: #dc322f; --danger-text: #dc322f; --ok: #859900; --warn: #b58900; --gold: #b58900;
+  --glow: #002b36; --node-bg: #0d4250; --profile-bg: #00252e; --pcard: #073642; --chip-bg: #073642;
+  --canvas-card: #00252e; --canvas-label: #eee8d5; --canvas-outline: rgba(0, 43, 54,0.85); --canvas-sub: #93a1a1; --canvas-dim: #586e75; --canvas-line: 88, 110, 117;
+  --status-joinme: #2aa198; --status-active: #859900; --status-askme: #cb4b16; --status-busy: #dc322f; --status-offline: #586e75; --status-web: #b58900;
+  --trust-visitor: #eee8d5; --trust-new: #268bd2; --trust-user: #859900; --trust-known: #cb4b16; --trust-trusted: #6c71c4; --trust-team: #dc322f;
+  --edges: 88, 110, 117|42, 161, 152|133, 153, 0|181, 137, 0|211, 54, 130;
+}
+:root[data-theme="solarizedlight"] {
+  --here: #d33682;
+  --bg: #fdf6e3; --panel: #fffbef; --panel-2: #eee8d5; --card: #fffbef; --card-hover: #f5efdc; --border: #e4ddc8; --border-strong: #d3cbb4;
+  --text: #073642; --muted: #586e75; --accent: #268bd2; --accent-strong: #2aa198; --accent-soft: rgba(38, 139, 210,0.15); --on-accent: #fdf6e3;
+  --danger: #dc322f; --danger-text: #dc322f; --ok: #859900; --warn: #b58900; --gold: #b58900;
+  --glow: #fdf6e3; --node-bg: #f5efdc; --profile-bg: #fffbef; --pcard: #fffbef; --chip-bg: #fffbef;
+  --canvas-card: #fffbef; --canvas-label: #073642; --canvas-outline: rgba(253, 246, 227,0.85); --canvas-sub: #586e75; --canvas-dim: #93a1a1; --canvas-line: 147, 161, 161;
+  --status-joinme: #2aa198; --status-active: #859900; --status-askme: #cb4b16; --status-busy: #dc322f; --status-offline: #93a1a1; --status-web: #b58900;
+  --trust-visitor: #657b83; --trust-new: #268bd2; --trust-user: #859900; --trust-known: #cb4b16; --trust-trusted: #6c71c4; --trust-team: #dc322f;
+  --edges: 147, 161, 161|38, 139, 210|133, 153, 0|181, 137, 0|211, 54, 130;
+  --shadow: 0 10px 30px rgba(60, 50, 20, 0.16); color-scheme: light;
+}

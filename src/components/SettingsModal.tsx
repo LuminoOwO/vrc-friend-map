@@ -16,12 +16,20 @@ import { CAT_ACCENTS, CAT_FLAVORS, CAT_LABEL, CAT_PALETTES, isCatFlavor } from "
 const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: string }[] = [
   { value: "dark", label: "Dark", bg: "#0b1015", panel: "#18242e", accent: "#19c3b1" },
   { value: "oled", label: "OLED black", bg: "#000000", panel: "#0e1215", accent: "#19c3b1" },
+  { value: "graphite", label: "Graphite (grey)", bg: "#1c1c1f", panel: "#2a2a2f", accent: "#d4d4d8" },
   { value: "light", label: "Light", bg: "#eef2f5", panel: "#ffffff", accent: "#0f9d8f" },
   ...CAT_FLAVORS.slice()
     .reverse()
     .map((f) => ({ value: f as Theme, label: `Catppuccin ${CAT_LABEL[f]}`, bg: CAT_PALETTES[f].base, panel: CAT_PALETTES[f].surface0, accent: CAT_PALETTES[f].mauve })),
   { value: "nord", label: "Nord", bg: "#2e3440", panel: "#3b4252", accent: "#88c0d0" },
   { value: "dracula", label: "Dracula", bg: "#21222c", panel: "#44475a", accent: "#bd93f9" },
+  { value: "tokyonight", label: "Tokyo Night", bg: "#1a1b26", panel: "#24283b", accent: "#7aa2f7" },
+  { value: "gruvbox", label: "Gruvbox", bg: "#282828", panel: "#3c3836", accent: "#fabd2f" },
+  { value: "rosepine", label: "Rosé Pine", bg: "#191724", panel: "#26233a", accent: "#c4a7e7" },
+  { value: "onedark", label: "One Dark", bg: "#282c34", panel: "#2c313a", accent: "#61afef" },
+  { value: "everforest", label: "Everforest", bg: "#2d353b", panel: "#343f44", accent: "#a7c080" },
+  { value: "solarized", label: "Solarized dark", bg: "#002b36", panel: "#073642", accent: "#2aa198" },
+  { value: "solarizedlight", label: "Solarized light", bg: "#fdf6e3", panel: "#fffbef", accent: "#268bd2" },
 ];
 import { Icon } from "./Icon";
 import { Diagnostics } from "./Diagnostics";
@@ -435,7 +443,7 @@ export function SettingsModal() {
           <InterfaceSection />
         </Sec>
 
-        <Sec id="display" cat="appearance" title="Themes" keys="theme colors dark light style look catppuccin accent latte frappe macchiato mocha">
+        <Sec id="display" cat="appearance" title="Themes" keys="theme colors dark light style look catppuccin accent latte frappe macchiato mocha graphite grey gray tokyo night gruvbox rose pine one dark everforest solarized nord dracula">
           <h3>Themes</h3>
           <div className="field">
             <span>Color theme</span>

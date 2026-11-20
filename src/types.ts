@@ -361,7 +361,7 @@ export interface MapSettings {
   herePlace: "sidebar" | "map";
 }
 
-export type Theme = "dark" | "oled" | "light" | "mocha" | "macchiato" | "frappe" | "latte" | "nord" | "dracula";
+export type Theme = "dark" | "oled" | "light" | "mocha" | "macchiato" | "frappe" | "latte" | "nord" | "dracula" | "graphite" | "tokyonight" | "gruvbox" | "rosepine" | "onedark" | "everforest" | "solarized" | "solarizedlight";
 
 export interface LogSettings {
   /** Read VRChat's log files on this computer. */

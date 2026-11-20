@@ -10,6 +10,7 @@ minor releases can change behavior.
 - A profile has one close button instead of two.
 
 ### Added
+- **8 more themes:** Graphite (grey, colourless, not pure black), Tokyo Night, Gruvbox, Rosé Pine, One Dark, Everforest, Solarized dark and Solarized light.
 - Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
 
 ### Changed

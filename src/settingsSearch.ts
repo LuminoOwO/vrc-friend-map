@@ -19,6 +19,8 @@ export const SYNONYMS: Record<string, string[]> = {
   light: ["theme"],
   mode: ["theme"],
   oled: ["theme"],
+  grey: ["theme"],
+  gray: ["theme"],
   font: ["theme"],
   fps: ["frame rate", "vsync"],
   framerate: ["frame rate"],

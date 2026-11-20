@@ -750,7 +750,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       useLogs: typeof g.useLogs === "boolean" ? g.useLogs : d.groups.useLogs,
       useLive: typeof g.useLive === "boolean" ? g.useLive : d.groups.useLive,
     },
-    theme: oneOf(raw.theme, ["dark", "oled", "light", "mocha", "macchiato", "frappe", "latte", "nord", "dracula"] as const, d.theme),
+    theme: oneOf(raw.theme, ["dark", "oled", "light", "mocha", "macchiato", "frappe", "latte", "nord", "dracula", "graphite", "tokyonight", "gruvbox", "rosepine", "onedark", "everforest", "solarized", "solarizedlight"] as const, d.theme),
     catAccent: oneOf(raw.catAccent, CAT_ACCENTS, d.catAccent),
     profileAs: oneOf(raw.profileAs, ["popup", "sidebar"] as const, d.profileAs),
     perf: {
