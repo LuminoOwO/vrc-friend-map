@@ -9,6 +9,7 @@ import {
   pairLogger,
   refreshServer,
   registerServer,
+  mismatchOf,
   removeServer,
   serverSwitch,
   syncServer,
@@ -21,7 +22,7 @@ import { Icon } from "../components/Icon";
 import { PeopleChooser } from "../components/PeopleChooser";
 import { ago, EncryptionSwitch, POLICY_LABEL, Why } from "../components/ServersModal";
 import { knownPeers, onPeers, type Peer } from "../peers";
-import { newerVersion } from "../updates";
+import { newerVersion } from "../compat";
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -114,7 +115,11 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
         </button>
       </div>
       {info?.motd && <p className="motd">{info.motd}</p>}
-      {info && newerVersion(__APP_VERSION__, info.version) && (
+      {mismatchOf(s) ? (
+        <p className="small warn-text">
+          <Icon name="warn" size={14} /> {mismatchOf(s)!.text} Nothing syncs with this server until then.
+        </p>
+      ) : info && newerVersion(__APP_VERSION__, info.version) && (
         <p className="small warn-text">
           <Icon name="warn" size={14} /> This server is older than your app; some things (like syncing your devices) need it updated.
         </p>

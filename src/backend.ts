@@ -98,6 +98,8 @@ export interface RawServerInfo {
   motd: string;
   /** e.g. "hidden-recipients"; missing on older servers. */
   features?: string[];
+  /** The oldest app version the server works with; missing on older servers. */
+  min_app?: string;
 }
 
 export interface InfoResult {

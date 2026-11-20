@@ -17,6 +17,10 @@ minor releases can change behavior.
 - A profile has one close button instead of two.
 
 ### Added
+- **App and server versions are checked against each other.** The server says the oldest app
+  it works with, the app the oldest server. When they don't fit, the server shows red with
+  *Needs a newer app* or *Server too old* and what to update, and nothing syncs with it until
+  then (instead of failing in odd ways). Both minimums start at 0.12.0.
 - **8 more themes:** Graphite (grey, colourless, not pure black), Tokyo Night, Gruvbox, Rosé Pine, One Dark, Everforest, Solarized dark and Solarized light.
 - Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
 

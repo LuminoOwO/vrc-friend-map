@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { backend, isTauri, type MyIdentity } from "../backend";
 import { SETTING_GROUPS } from "../devicesync";
-import { addServerFromInput, isLive, onLiveChange, serverName, serverSwitch, syncAllServers } from "../share";
+import { addServerFromInput, isLive, mismatchOf, onLiveChange, serverName, serverSwitch, syncAllServers } from "../share";
 import { updateSharing, useApp } from "../store";
 import type { ShareServer } from "../types";
 import { ChangedKeys, DEFAULTS, KeySection } from "../components/ServersModal";
@@ -16,6 +16,8 @@ import { Icon } from "../components/Icon";
 export function serverStatus(s: ShareServer, live: boolean): { text: string; tone: "ok" | "warn" | "bad" | "" } {
   if (s.keyChanged) return { text: "Server key changed: check it", tone: "bad" };
   if (!s.info) return { text: s.lastError ? "Can't reach it" : "Checking…", tone: s.lastError ? "bad" : "" };
+  const mismatch = mismatchOf(s);
+  if (mismatch) return { text: mismatch.short, tone: "bad" };
   if (!s.registered) return { text: "Not joined yet", tone: "warn" };
   if (s.lastError) return { text: "Last sync failed", tone: "bad" };
   if (live) return { text: "Connected · live", tone: "ok" };

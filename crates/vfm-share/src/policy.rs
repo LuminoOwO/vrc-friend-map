@@ -80,4 +80,7 @@ pub struct ServerInfo {
     /// What this server can do beyond protocol 1: "hidden-recipients" (version 2 items).
     #[serde(default)]
     pub features: Vec<String>,
+    /// The oldest app version this server works with ("0.12.0"); missing on older servers.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub min_app: String,
 }

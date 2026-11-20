@@ -48,12 +48,7 @@ export const KIND_LABEL: Record<InstallKind, string> = {
 };
 
 /** a is newer than b ("0.10.1" > "0.10.0"). */
-export function newerVersion(a: string, b: string): boolean {
-  const p = (v: string) => v.replace(/^v/, "").split("-")[0].split(".").map((x) => Number(x) || 0);
-  const [x, y] = [p(a), p(b)];
-  for (let i = 0; i < Math.max(x.length, y.length); i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) > (y[i] ?? 0);
-  return false;
-}
+export { newerVersion } from "./compat";
 
 /** How often to look for a new version: often, since new versions come quickly right now. */
 const EVERY = 6 * 3600_000;

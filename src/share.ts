@@ -3,6 +3,7 @@
 // Encryption and signatures happen in Rust (src-tauri/src/share.rs); this
 // file decides what to send where, and merges what comes back.
 import { describeError, isNetworkError, logSync, wasInterrupted } from "./synclog";
+import { versionMismatch, type Mismatch } from "./compat";
 import { REASON_IDS } from "./personal";
 import { mergeSharedCircles, outgoingSharedCircles, validSharedCircle } from "./sharedcircles";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -92,7 +93,13 @@ function lite(r: InfoResult): ServerInfoLite {
     hiddenRecipients: (i.features ?? []).includes("hidden-recipients"),
     liveChanges: (i.features ?? []).includes("live-changes"),
     deviceRelay: (i.features ?? []).includes("device-relay"),
+    minApp: i.min_app || undefined,
   };
+}
+
+/** This app and the server don't fit together (src/compat.ts): what to update. Null when they do. */
+export function mismatchOf(s: ShareServer): Mismatch | null {
+  return s.info ? versionMismatch(__APP_VERSION__, s.info) : null;
 }
 
 /** Hide who you share with on this server: you want it, it's encrypted, and the server can. */
@@ -517,6 +524,14 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
   const st = getState();
   if (st.demo || !st.cache.me) return;
   if (!s.registered) return;
+  // Versions that don't fit: say what to update, sync nothing until then.
+  const mismatch = mismatchOf(s);
+  if (mismatch) {
+    updateServer(id, { lastNote: mismatch.text });
+    logSync({ area: serverName(s), step: "Sync", result: "failed", detail: mismatch.text });
+    if (opts.manual) showToast(`${serverName(s)}: ${mismatch.short}`);
+    return;
+  }
   const notes: string[] = [];
   try {
     // ---- upload ----
@@ -701,7 +716,7 @@ export function takeSelfFromDevice(raw: unknown): { changedHere: boolean; sendBa
 
 /** Servers your devices can meet on: they relay, you sync your devices there, encrypted. */
 export function deviceServers(): ShareServer[] {
-  return getState().settings.sharing.servers.filter((s) => s.registered && s.syncMine && s.info?.deviceRelay && !s.keyChanged && serverSwitch(s).on);
+  return getState().settings.sharing.servers.filter((s) => s.registered && s.syncMine && s.info?.deviceRelay && !s.keyChanged && !mismatchOf(s) && serverSwitch(s).on);
 }
 
 /** A change from your own devices' data, compared without its timestamp. */
@@ -828,7 +843,7 @@ const soon = new Map<string, ReturnType<typeof setTimeout>>();
 function watchable(): string[] {
   const st = getState();
   if (st.demo || st.mode !== "app" || !st.settings.sharing.autoSync) return [];
-  return st.settings.sharing.servers.filter((s) => s.registered && s.info?.liveChanges && !s.keyChanged && (s.download || s.syncMine)).map((s) => s.url);
+  return st.settings.sharing.servers.filter((s) => s.registered && s.info?.liveChanges && !s.keyChanged && !mismatchOf(s) && (s.download || s.syncMine)).map((s) => s.url);
 }
 
 function updateWatch() {

@@ -13,7 +13,7 @@ Work through these in this order, one at a time; the rest of the file is the det
 1. ~~Bug: devices keep swapping changes~~ (fixed, owner to confirm)
 2. ~~Beta UI: the sync status gets cut off~~ (done)
 3. ~~Server connection status~~ (done)
-4. App and server versions that don't fit together (Compatibility)
+4. ~~App and server versions that don't fit together~~ (done)
 5. ~~The UI release~~ (done on main, 2026-11-20; goes out as 0.13.0)
 6. Sharing choices per account, not per device
 7. Notice when the server's VRChat login expires (and renew from the app)
@@ -318,7 +318,7 @@ tray. On hold: Discord rich presence.
 
 ## Compatibility (owner, 2026-11-20)
 
-- [ ] **App and server versions that don't fit together:** the server says the oldest app
+- [x] **App and server versions that don't fit together:** (done 2026-11-20: `src/compat.ts` MIN_SERVER, server `MIN_APP` in `api.rs`, both 0.12.0) the server says the oldest app
   version it works with, the app the oldest server version; when they don't fit, the app shows
   "This server needs a newer app" (or "is too old for this app") with what to update, instead of
   failing in odd ways, and stops syncing with it until then.

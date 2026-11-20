@@ -424,6 +424,8 @@ export interface ServerInfoLite {
   liveChanges?: boolean;
   /** The server passes messages between your own devices live. */
   deviceRelay?: boolean;
+  /** The oldest app version the server works with (src/compat.ts). */
+  minApp?: string;
 }
 
 export interface ShareServer {

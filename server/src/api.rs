@@ -19,6 +19,9 @@ use crate::logger::Logger;
 use crate::store::{now, Store, UserRecord};
 
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");
+/// The oldest app version this server works with. Raise it when the server starts to need
+/// something newer apps send (the app shows "This server needs a newer app" and stops syncing).
+pub const MIN_APP: &str = "0.12.0";
 const MAX_RECIPIENTS: usize = 5000;
 /// Requests per user (or address, before sign-up) per 10 minutes.
 const RATE_LIMIT: u32 = 600;
@@ -157,6 +160,7 @@ impl App {
             logger: LoggerInfo { enabled: cfg.logger.enabled, paired: self.logger.owner().is_some(), owner: None },
             motd: cfg.server.motd.clone(),
             features: vec!["hidden-recipients".into(), "live-changes".into(), "device-relay".into()],
+            min_app: MIN_APP.into(),
         }
     }
 }
