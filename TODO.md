@@ -353,6 +353,11 @@ tray. On hold: Discord rich presence.
   further left than the pages and have icons too, so headings and buttons are easy to tell apart.
 - [ ] Keep the settings cogwheel.
 - [ ] Phone: "Online now" lives in the People tab.
+- [ ] Side panel holds more than "Online now": where you are (world card with everyone there),
+  the Overview tiles (hover says what a click does, click filters the map), Online now with each
+  world collapsed (hover peeks at who's there, click keeps it open), and recent Activity. Each
+  part can be folded.
+- [ ] Put the OSC chatbox features aside: take them out of the app for now.
 
 ## Parked
 
