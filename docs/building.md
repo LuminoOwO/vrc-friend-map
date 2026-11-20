@@ -212,6 +212,12 @@ To release a version:
      don't offer it as an update, and the container image's `:latest` stays on the last stable
      version. A pushed tag is always a stable release.
    - **From a terminal:** run `git tag vX.Y.Z && git push origin vX.Y.Z`.
+
+**Test builds without releasing:** push to a branch named `build-check/<anything>`, for example
+`git push -f origin main:build-check/test`. The files end up as workflow artifacts. To build only
+some platforms (much quicker), name the branch `build-check/only-<platforms>`, for example
+`build-check/only-linux-android`; the words are `linux`, `windows`, `macos`, `android`, `ios` and
+`server`. The tests always run.
 5. Wait about 20–40 minutes. The release stays a draft until the files are attached, then it's published.
 
 The workflow refuses to run if the tag and the three version numbers don't match. If one platform

@@ -10,7 +10,9 @@
 #
 # Pushing a branch named build-check/<anything> runs the same builds without
 # releasing anything (files end up as workflow artifacts), to test changes to
-# the build itself.
+# the build itself. build-check/only-<platforms> builds just those, for a quicker
+# test build: e.g. build-check/only-linux-android. Words: linux, windows, macos,
+# android, ios, server. The tests always run.
 #
 # Android needs four repository secrets so every version is signed with the
 # same key (otherwise phones refuse to update and you'd have to reinstall):
@@ -170,6 +172,8 @@ jobs:
 
   linux:
     needs: test
+    # build-check/only-<platforms> builds just those (e.g. only-linux-android); everything else builds all.
+    if: ${{ !startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-linux') }}
     strategy:
       fail-fast: false
       matrix:
@@ -238,6 +242,8 @@ jobs:
 
   windows:
     needs: test
+    # build-check/only-<platforms> builds just those (e.g. only-linux-android); everything else builds all.
+    if: ${{ !startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-windows') }}
     runs-on: windows-latest
     defaults:
       run:
@@ -271,6 +277,8 @@ jobs:
 
   macos:
     needs: test
+    # build-check/only-<platforms> builds just those (e.g. only-linux-android); everything else builds all.
+    if: ${{ !startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-macos') }}
     runs-on: macos-latest
     timeout-minutes: 60
     steps:
@@ -320,6 +328,8 @@ jobs:
 
   android:
     needs: test
+    # build-check/only-<platforms> builds just those (e.g. only-linux-android); everything else builds all.
+    if: ${{ !startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-android') }}
     runs-on: ubuntu-22.04
     env:
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -401,6 +411,8 @@ jobs:
 
   ios:
     needs: test
+    # build-check/only-<platforms> builds just those (e.g. only-linux-android); everything else builds all.
+    if: ${{ !startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-ios') }}
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v5
@@ -438,6 +450,8 @@ jobs:
   # vfm-server: one small file per platform, no dependencies.
   server-linux:
     needs: test
+    # build-check/only-<platforms> builds just those (e.g. only-linux-android); everything else builds all.
+    if: ${{ !startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-server') }}
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v5
@@ -494,6 +508,8 @@ jobs:
 
   server-windows:
     needs: test
+    # build-check/only-<platforms> builds just those (e.g. only-linux-android); everything else builds all.
+    if: ${{ !startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-server') }}
     runs-on: windows-latest
     defaults:
       run:
@@ -531,6 +547,8 @@ jobs:
   # emulation): ghcr.io/<owner>/vfm-server:<version> and :latest.
   server-image:
     needs: [test, server-linux]
+    # build-check/only-<platforms> builds just those (e.g. only-linux-android); everything else builds all.
+    if: ${{ !startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-server') }}
     runs-on: ubuntu-22.04
     permissions:
       contents: read
