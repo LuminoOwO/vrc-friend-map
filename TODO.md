@@ -339,8 +339,24 @@ tray. On hold: Discord rich presence.
 - [ ] **Keep the main thread free on every platform:** move heavy work off it so the window
   stays responsive (the Linux spinning is fixed; this is the general version).
 - [ ] **A general check of every feature on every platform** (very late, before 1.0).
+- [ ] **Split the server's sync part from the rest:** the part that syncs between your own
+  devices should be able to run on its own (e.g. a public sync server), separate from sharing
+  with friends.
+
+## Redesign notes (owner, 2026-11-20, from the mockups)
+
+- [ ] Keep the classic **Activity log** (filter chips, day sections): one of the most important features.
+- [ ] Sliders like VRChat's: a rounded bar that fills, the percent on the right.
+- [ ] Side panels can be resized and snap back near their default width; they can collapse
+  completely, leaving a small "wing" tab on the edge to reopen them.
+- [ ] Settings: an icon on every page; the group headings (User, App, People, ...) sit a bit
+  further left than the pages and have icons too, so headings and buttons are easy to tell apart.
+- [ ] Keep the settings cogwheel.
+- [ ] Phone: "Online now" lives in the People tab.
 
 ## Parked
+
+- [ ] **"Liquid glass" theme** like Apple's, on every platform (put aside for now).
 
 - [ ] **Why Chromium in the app gets no XInput2 wheel / popup input on XLibre** (Gentoo + Xfce +
   XLibre; Chromium 146 on the same system is fine, and so is the app on Mint/X.Org). His mouse
