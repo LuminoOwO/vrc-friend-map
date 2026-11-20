@@ -73,7 +73,10 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
         </div>
       )}
       <aside className="lob-party">
-        <h2>Party</h2>
+        <div className="lob-party-head">
+          <h2>Party</h2>
+          <ToolCluster onPalette={onPalette} className="lob-tools" filters={false} />
+        </div>
         <div className="lob-me">
           <MeButton />
         </div>
@@ -81,7 +84,6 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
           <PanelSections prefs={{ ...prefs, side: "right" }} update={updatePrefs} onWorld={openWorld} />
         </div>
       </aside>
-      <ToolCluster onPalette={onPalette} className="lob-tools" filters={false} />
       <News />
     </div>
   );

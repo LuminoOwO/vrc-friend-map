@@ -6,6 +6,12 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Fixed (new interface)
+- **Much less lag.** "Slowly turn the map" redrew the whole map 60 times a second all the time,
+  even with nothing else happening; the slow turn now draws 15–40 times a second (depending on
+  its speed), while dragging, zooming and the layout still get every frame. The map also slows
+  down while something covers it (a popup, a view's frame) and stops under full-screen
+  Settings. See-through blurs over the map are gone (they had to be redone on every frame).
+  Measured idle: about 70% less work on the map, about 95% less with Settings open.
 - Insights, Activity and the logbooks no longer start under the top bar.
 - A profile has one close button instead of two.
 

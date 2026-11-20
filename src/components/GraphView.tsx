@@ -324,6 +324,12 @@ function rectCollide(pad: number, strength = 0.7) {
 
 const PLAT_SHORT: Record<string, string> = { pc: "PC", android: "Quest", ios: "iOS", web: "Web", unknown: "" };
 
+/** How much of the map is hidden: 2 under full-screen settings, 1 under a popup or a view's frame, 0 not. */
+function mapCover(): 0 | 1 | 2 {
+  if (document.querySelector(".ui2-settings")) return 2;
+  return document.querySelector(".profile-backdrop, .ui2-world-wrap, .modal-backdrop, .lob-frame") ? 1 : 0;
+}
+
 export function GraphView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -482,9 +488,14 @@ export function GraphView() {
   function frameCap(): number {
     // In the tray: nothing to look at, nothing to draw.
     if (appHidden()) return 0;
+    // Covered: under full-screen settings nothing to draw; under a popup or a view's frame
+    // (the map only shows dimmed around it) a few frames a second are plenty.
+    const cover = mapCover();
+    if (cover === 2) return 0;
     const p = viewRef.current.settings.perf;
     // "Match the screen" also holds when the app runs without vsync (after an unlimited limit).
     let cap = p.fps > 0 ? p.fps : p.fps === 0 && p.screenHz > 0 ? p.screenHz : Infinity;
+    if (cover === 1) cap = Math.min(cap, 8);
     const quiet = Date.now() - lastInteractionRef.current;
     if (quiet > 1500) {
       if (!document.hasFocus() && p.unfocusedFps >= 0) cap = Math.min(cap, p.unfocusedFps);
@@ -1606,6 +1617,11 @@ export function GraphView() {
   useEffect(() => {
     if (!map.orbit) return;
     const speed = ([0, 0.012, 0.03, 0.07][Math.round(map.orbit)] ?? 0.012) * (map.orbitDir === -1 ? -1 : 1); // radians per second
+    // The turn is slow (a couple of degrees a second), so it doesn't need every frame: drawing the
+    // whole map 60 times a second just for it kept the app busy all the time. Its own frames are
+    // fewer; anything else (dragging, zooming, hovering, the layout moving) still asks for full ones.
+    const orbitFps = [0, 15, 24, 40][Math.round(map.orbit)] ?? 24;
+    let lastOrbitDraw = 0;
     let raf = 0;
     let nap: ReturnType<typeof setTimeout> | undefined;
     orbitRef.current.last = performance.now();
@@ -1635,7 +1651,10 @@ export function GraphView() {
       // zoom and the layout also ask for draws). Full frame rate while the
       // window has focus; every other frame (about 30 fps) while it doesn't,
       // to save power when it just sits on a second screen.
-      if (!document.hidden) requestDraw();
+      if (!document.hidden && now - lastOrbitDraw >= 1000 / orbitFps - 2) {
+        lastOrbitDraw = now;
+        requestDraw();
+      }
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);

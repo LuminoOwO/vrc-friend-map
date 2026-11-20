@@ -256,7 +256,7 @@
 .ui2-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .ui2-act-row { display: flex; align-items: center; gap: 8px; padding: 6px; border-radius: 6px; font-size: 13px; transition: background 1s; }
 .ui2-act-row.fresh { background: color-mix(in srgb, var(--accent) 16%, transparent); }
-.ui2-act-time { width: 38px; flex: none; color: var(--muted); font-variant-numeric: tabular-nums; }
+.ui2-act-time { min-width: 38px; flex: none; white-space: nowrap; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .ui2-act-icon { width: 22px; height: 22px; flex: none; border-radius: 6px; display: grid; place-items: center; color: var(--k); background: color-mix(in srgb, var(--k) 14%, transparent); }
 .ui2-act-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ui2-act-text .act-name { font-weight: 700; }
@@ -373,7 +373,7 @@
 /* The close button: round. Inside the popup's corner on narrow windows; on wide ones the popup
    leaves room beside it and the button sits outside, with "ESC" under it, like Settings. */
 .ui2-close { position: absolute; z-index: 5; top: 14px; right: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0; border: 0; background: none; color: #fff; cursor: pointer; }
-.ui2-close-x { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.25); backdrop-filter: blur(8px); transition: transform 0.15s, background 0.15s, border-color 0.15s, color 0.15s; }
+.ui2-close-x { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: rgba(0, 0, 0, 0.6); border: 1px solid rgba(255, 255, 255, 0.25); transition: transform 0.15s, background 0.15s, border-color 0.15s, color 0.15s; }
 .ui2-close:hover .ui2-close-x { transform: scale(1.08); background: rgba(0, 0, 0, 0.65); }
 .ui2-close-esc { display: none; font-size: 12px; font-weight: 700; color: var(--muted); }
 @media (min-width: 900px) {
@@ -393,7 +393,7 @@
 @keyframes ui2-rise { from { opacity: 0; transform: translateY(10px); } }
 @keyframes ui2-slide { from { opacity: 0; transform: translateX(-10px); } }
 @keyframes ui2-glow { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 55%, transparent); } 100% { box-shadow: 0 0 0 8px transparent; } }
-.ui2 .profile-backdrop, .ui2-world-wrap, .ui2 .modal-backdrop { animation: ui2-fade 0.2s ease-out; backdrop-filter: blur(3px); }
+.ui2 .profile-backdrop, .ui2-world-wrap, .ui2 .modal-backdrop { animation: ui2-fade 0.2s ease-out; }
 .ui2 .profile.popup { animation: ui2-fade 0.25s ease-out; }
 .ui2-world, .ui2 .modal:not(.settings-modal) { animation: ui2-pop 0.32s cubic-bezier(0.2, 0.9, 0.25, 1.1); }
 .ui2-settings .settings-modal { animation: ui2-pop 0.28s cubic-bezier(0.2, 0.9, 0.25, 1); }
@@ -402,7 +402,7 @@
 .ui2-view { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; animation: ui2-rise 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .ui2-set-page { animation: ui2-rise 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .ui2-act-row.fresh { animation: ui2-slide 0.35s ease-out; }
-.ui2-new-dot { animation: ui2-glow 1.6s ease-out infinite; }
+.ui2-new-dot { animation: ui2-glow 1.6s ease-out 3; }
 .ui2-side { animation: ui2-fade 0.25s ease-out; transition: width 0.12s; }
 .ui2-side.dragging { transition: none; }
 /* Tabs: the line under the active tab slides in. */
