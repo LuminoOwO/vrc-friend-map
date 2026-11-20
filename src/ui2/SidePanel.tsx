@@ -21,7 +21,6 @@ const LS = "vfm-ui2-panel";
 export const PANEL_DEFAULT = 360;
 const MIN = 240;
 const MAX = 600;
-const SNAP = 28;
 
 type Part = "overview" | "online" | "activity";
 export interface PanelPrefs {
@@ -63,60 +62,6 @@ export function usePanelPrefs() {
   return [prefs, update] as const;
 }
 
-export function SidePanel({ prefs, update, onWorld }: { prefs: PanelPrefs; update: (p: Partial<PanelPrefs>) => void; onWorld: (key: string) => void }) {
-  const [drag, setDrag] = useState<number | null>(null);
-  const start = useRef<{ x: number; w: number } | null>(null);
-  const width = drag ?? prefs.width;
-  const left = prefs.side === "left";
-  return (
-    <aside className={`ui2-side ${prefs.side} ${drag !== null ? "dragging" : ""}`} style={{ width }} aria-label="Side panel">
-      <div
-        className="ui2-side-grip"
-        role="separator"
-        aria-orientation="vertical"
-        aria-label="Drag to resize the side panel (double-click: default width)"
-        onDoubleClick={() => update({ width: PANEL_DEFAULT })}
-        onPointerDown={(e) => {
-          (e.target as HTMLElement).setPointerCapture(e.pointerId);
-          start.current = { x: e.clientX, w: prefs.width };
-        }}
-        onPointerMove={(e) => {
-          if (!start.current) return;
-          const dx = (e.clientX - start.current.x) * (left ? 1 : -1);
-          let w = Math.min(MAX, Math.max(160, start.current.w + dx));
-          if (Math.abs(w - PANEL_DEFAULT) < SNAP) w = PANEL_DEFAULT;
-          setDrag(w);
-        }}
-        onPointerUp={() => {
-          if (!start.current) return;
-          start.current = null;
-          // Dragged very narrow: fold it away (it comes back at the default width).
-          if (drag !== null && drag < MIN) update({ collapsed: true, width: PANEL_DEFAULT });
-          else if (drag !== null) update({ width: drag });
-          setDrag(null);
-        }}
-      >
-        <span />
-      </div>
-      {drag === PANEL_DEFAULT && <span className="ui2-snap">Default width</span>}
-
-      <div className="ui2-side-tools">
-        <span className="ui2-grow" />
-        <button className="ui2-side-tool" title={`Move the panel to the ${left ? "right" : "left"} side`} aria-label={`Move the panel to the ${left ? "right" : "left"} side`} onClick={() => update({ side: left ? "right" : "left" })}>
-          <SwapIcon />
-        </button>
-        <button className="ui2-side-tool" title="Fold away (Ctrl+B)" aria-label="Fold the side panel away" onClick={() => update({ collapsed: true })}>
-          <Icon name={left ? "chevron-left" : "chevron-right"} size={18} />
-        </button>
-      </div>
-
-      <div className="ui2-side-body">
-        <PanelSections prefs={prefs} update={update} onWorld={onWorld} />
-      </div>
-    </aside>
-  );
-}
-
 /** What the side panel holds: where you are, overview, Online now, Activity (each foldable). */
 export function PanelSections({ prefs, update, onWorld }: { prefs: PanelPrefs; update: (p: Partial<PanelPrefs>) => void; onWorld: (key: string) => void }) {
   const fold = (p: Part) => update({ folded: prefs.folded.includes(p) ? prefs.folded.filter((x) => x !== p) : [...prefs.folded, p] });
@@ -145,26 +90,6 @@ export function PanelSections({ prefs, update, onWorld }: { prefs: PanelPrefs; u
 
       <SideActivity open={open("activity")} onFold={() => fold("activity")} />
     </>
-  );
-}
-
-function SwapIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M7 4 3 8l4 4M3 8h14M17 12l4 4-4 4M21 16H7" />
-    </svg>
-  );
-}
-
-/** The folded panel: a small tab on the window's edge with how many friends are in VRChat. */
-export function PanelWing({ side, onOpen }: { side: "left" | "right"; onOpen: () => void }) {
-  const presence = useApp((s) => s.cache.presence);
-  const online = useMemo(() => Object.values(presence).filter((p) => p === "online").length, [presence]);
-  return (
-    <button className={`ui2-wing ${side}`} title="Show the side panel (Ctrl+B)" aria-label="Open the side panel" onClick={onOpen}>
-      <Icon name={side === "left" ? "chevron-right" : "chevron-left"} size={16} />
-      {online > 0 && <span className="ui2-wing-count">{online}</span>}
-    </button>
   );
 }
 

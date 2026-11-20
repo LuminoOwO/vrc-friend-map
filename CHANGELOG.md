@@ -66,26 +66,10 @@ minor releases can change behavior.
   - **Profiles redesigned**: the banner across the top, a big picture with your status ring
     overlapping it, name, status and details beside it, then the cards. The close button is round
     and sits outside the window (with *ESC*) when there's room; the same for the world overview.
-  - **Lobby is the new interface's layout on computers** (others to try in the Layout
-    dropdown): the map fills the window like a game's main menu. On the left a menu of big
+  - **Lobby is the new interface's layout on computers**: the map fills the window like a game's main menu. On the left a menu of big
     icons that slides out with the names when you point at it; on the right your *Party*: you,
     where you are, the overview tiles, Online now and Activity (each folds); a news line at the
     bottom. Views open in a large frame between the two.
-  - **Layouts to try** (Layout dropdown, test; computers): *Top bar* (the one above);
-    *Columns* (like Steam or Discord: a labeled nav sidebar with you at the bottom, the view in
-    the middle, a friends list grouped by world on the right); *HUD* (like VRChat's quick menu:
-    the map fills the window, floating widgets on it, a dock of big icons at the bottom, other
-    views slide up as a sheet); *Dashboard* (a home screen of cards: greeting, live map, where
-    you are, numbers, Online now, Activity, notifications, popular worlds; tabs open every view);
-    *Deck* (like TweetDeck: columns side by side that you add, remove and move).
-    Ten more: *Radial* (just the map; a round hub opens a ring of views, like VRChat's action
-    menu), *Spotlight* (a big search bar over a dimmed map, suggestions under it), *Timeline*
-    (a time river of the last hours along the bottom), *Split* (two views side by side with a
-    divider), *Magazine* (a front page: the busiest world as the hero, headlines), *Windows* (a
-    desktop: the map as wallpaper, windows you drag and resize, a taskbar and start menu),
-    *Explorer* (like VS Code: a friends tree, views and profiles as tabs, a status bar), *Board*
-    (friends as cards in lanes by status), *Zen* (only the map, a ticker line, a drawer from the
-    left edge) and *Lobby* (a game's main menu with a party panel and a news line).
   - **Smoother and more modern**: popups and menus fade and pop in, views and settings pages
     slide in, the line under the active tab slides, tiles and cards lift on hover, buttons react
     when pressed, new Activity entries slide in. Settings → Animations → *Reduce* turns it off.

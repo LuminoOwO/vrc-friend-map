@@ -4,8 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { imgSrc } from "../backend";
 import { useDerived } from "../derived";
 import { iconUrl, STATUS_LABEL, statusColor } from "../model";
-import { getState, setState, updateFilters, updateUi, useApp, type View } from "../store";
-import type { UiLayout } from "../types";
+import { getState, setState, useApp, type View } from "../store";
 import { useDismiss } from "./dismiss";
 import { ServerMenu } from "./ServerStatus";
 import { ActivityView } from "../components/ActivityView";
@@ -77,41 +76,6 @@ export function useViewKeys() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-}
-
-export const LAYOUTS: { value: UiLayout; label: string }[] = [
-  { value: "topbar", label: "Top bar" },
-  { value: "columns", label: "Columns" },
-  { value: "hud", label: "HUD" },
-  { value: "dashboard", label: "Dashboard" },
-  { value: "deck", label: "Deck" },
-  { value: "radial", label: "Radial" },
-  { value: "spotlight", label: "Spotlight" },
-  { value: "timeline", label: "Timeline" },
-  { value: "split", label: "Split" },
-  { value: "magazine", label: "Magazine" },
-  { value: "windows", label: "Windows" },
-  { value: "explorer", label: "Explorer" },
-  { value: "board", label: "Board" },
-  { value: "zen", label: "Zen" },
-  { value: "lobby", label: "Lobby" },
-];
-
-/** Try the layouts of the new interface (to pick what works). */
-export function LayoutPicker({ className = "" }: { className?: string }) {
-  const layout = useApp((s) => s.settings.ui.layout);
-  return (
-    <label className={`ui2-look ${className}`} title="Layout of the new interface (test)">
-      <Icon name="cards" size={16} />
-      <select value={layout} aria-label="Layout" onChange={(e) => updateUi({ layout: e.target.value as UiLayout })}>
-        {LAYOUTS.map((l) => (
-          <option key={l.value} value={l.value}>
-            {l.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
 }
 
 /** Notifications bell: what you missed (muted, quiet hours) and the latest ones shown. */
@@ -222,48 +186,6 @@ export function ProfilePopup({ id }: { id: string }) {
 }
 
 
-/** Search friends (filters the map and People). */
-export function SearchField({ placeholder = "Search friends", className = "", autoFocus = false }: { placeholder?: string; className?: string; autoFocus?: boolean }) {
-  const search = useApp((s) => s.filters.search);
-  return (
-    <label className={`ui2-field ${className}`}>
-      <Icon name="search" size={15} />
-      <input
-        value={search}
-        placeholder={placeholder}
-        aria-label="Search friends"
-        autoFocus={autoFocus}
-        onChange={(e) => updateFilters({ search: e.target.value })}
-        onKeyDown={(e) => {
-          if (e.key === "Escape" && search) {
-            e.stopPropagation();
-            updateFilters({ search: "" });
-          }
-        }}
-      />
-    </label>
-  );
-}
-
-/** Notifications as a list (what you missed while muted or in quiet hours, and the ones shown). */
-export function NotificationList({ max = 30 }: { max?: number }) {
-  const missed = useHistory((h) => h.missed);
-  const list = useMemo(() => [...missed].reverse().slice(0, max), [missed, max]);
-  if (!list.length) return <p className="small muted ui2-side-empty">No notifications yet.</p>;
-  return (
-    <ul className="ui2-drop-list ui2-notes">
-      {list.map((m, i) => (
-        <li key={`${m.t}-${i}`}>
-          <button className={m.why && !m.read ? "new" : ""} onClick={() => setState({ selectedId: m.userId })}>
-            <span>{m.text}</span>
-            <span className="small muted">{new Date(m.t).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}</span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 /** The usual buttons: search everything, filters (Map and People), servers, bell, layout, settings. */
 export function ToolCluster({ onPalette, className = "", filters = true }: { onPalette?: () => void; className?: string; filters?: boolean }) {
   const view = useApp((s) => s.view);
@@ -277,30 +199,9 @@ export function ToolCluster({ onPalette, className = "", filters = true }: { onP
       {filters && (view === "graph" || view === "cards") && <FilterButton />}
       <ServerMenu />
       <Bell />
-      <LayoutPicker />
       <button className="ui2-top-icon" title="Settings (Ctrl+,)" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
         <Icon name="settings" size={18} />
       </button>
-    </div>
-  );
-}
-
-/** A view in a big panel with its title and a close (or back) button. */
-export function ViewSheet({ view, onClose, closeLabel = "Close", className = "" }: { view: View; onClose: () => void; closeLabel?: string; className?: string }) {
-  const r = RAIL.find((x) => x.key === view) ?? RAIL[0];
-  return (
-    <div className={`ui2-sheet-panel ${className}`} key={view}>
-      <header className="ui2-sheet-head">
-        <Icon name={r.icon} size={20} />
-        <h1>{r.label}</h1>
-        <span className="ui2-grow" />
-        <button className="ui2-pill-btn" onClick={onClose}>
-          <Icon name="close" size={14} /> {closeLabel}
-        </button>
-      </header>
-      <div className="ui2-sheet-body">
-        <ViewBody view={view} />
-      </div>
     </div>
   );
 }

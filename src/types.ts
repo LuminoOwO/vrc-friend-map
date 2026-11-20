@@ -639,11 +639,8 @@ export interface UiSettings {
   reducedMotion: "system" | "on" | "off";
   /** Status colors that also differ for red/green color blindness. */
   colorblind: boolean;
-  /** New interface on computers: which layout (src/ui2/layouts). */
-  layout: UiLayout;
 }
 
-export type UiLayout = "topbar" | "columns" | "hud" | "dashboard" | "deck" | "radial" | "spotlight" | "timeline" | "split" | "magazine" | "windows" | "explorer" | "board" | "zen" | "lobby";
 
 /** People who aren't friends: whose profiles to load and keep. */
 export interface PeopleSettings {

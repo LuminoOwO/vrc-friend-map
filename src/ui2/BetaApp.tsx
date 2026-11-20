@@ -1,24 +1,19 @@
-// The new beta UI (Settings → Appearance → Interface → New beta UI). Same
-// data, same views and dialogs as the classic UI; a different shell:
-//  - computers: a docked, flat top bar (your picture, the view tabs, server
-//    status with your devices, notifications bell, search, settings), filter
-//    chips under it on Map and People, a side panel (left or right, resizable,
-//    folds to a wing) with where you are, overview tiles, online now and
-//    activity; profiles and worlds open as popups in the middle; Ctrl+K for
-//    the command palette;
-//  - phones: a bottom tab bar (Map, People, Here, Insights, Me), a person as
-//    a bottom sheet you drag between peek, half and full, settings and
-//    filters as full-screen sheets, bigger touch targets.
-// The classic UI stays the default; "Back to classic UI" is always one click
-// away (and `--classic-ui` at start).
+// The new interface (Settings → Appearance → Interface). Same data, views and dialogs as the
+// classic one; a different shell:
+//  - computers: the "Lobby" layout (src/ui2/layouts/Lobby.tsx): the map like a game's main
+//    menu, a menu of icons on the left, your party (where you are, overview, online now,
+//    activity) on the right, views in a frame between; profiles and worlds as popups;
+//    Ctrl+K for the command palette. Other layouts that were tried are on the branch
+//    archive/ui-layouts;
+//  - phones: a bottom tab bar (Map, People, Here, Insights, Me), a person as a bottom sheet
+//    you drag between peek, half and full, settings and filters as full-screen sheets.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isMobile } from "../backend";
 import { shownName } from "../personal";
-import { getState, setState, updateFilters, updateUi, useApp, type View } from "../store";
+import { setState, updateFilters, updateUi, useApp, type View } from "../store";
 import { openServers } from "../components/ServersModal";
-import { ServerMenu, useServersSummary } from "./ServerStatus";
+import { useServersSummary } from "./ServerStatus";
 import { OnlineNow, WorldPopup } from "./OnlineNow";
-import { PanelWing, SidePanel, usePanelPrefs } from "./SidePanel";
 import { syncAll } from "../sync";
 import { CardsView } from "../components/CardsView";
 import { DetailPanel } from "../components/DetailPanel";
@@ -29,10 +24,9 @@ import { SyncLogDialog } from "../components/SyncLogDialog";
 import { FilterPopover } from "../components/TopBar";
 import { CommandPalette } from "./CommandPalette";
 import "./ui2.css";
-import "./layouts.css";
-import "./layouts2.css";
-import { Avatar, Bell, FilterButton, LayoutPicker, MeButton, ProfilePopup, RAIL, ViewBody, WorldOpener, useOpenWorld, useViewKeys } from "./parts";
-import { LAYOUT_COMPONENTS } from "./layouts";
+import "./lobby.css";
+import { Avatar, ProfilePopup, ViewBody, WorldOpener, useViewKeys } from "./parts";
+import { LobbyLayout } from "./layouts/Lobby";
 
 
 
@@ -63,129 +57,16 @@ export function BetaApp({ children }: { children: React.ReactNode }) {
 
 /** Computers: the chosen layout, plus the world and profile popups every layout shares. */
 function Desktop({ onPalette }: { onPalette: () => void }) {
-  const layout = useApp((s) => s.settings.ui.layout);
-  const Layout = LAYOUT_COMPONENTS[layout];
   const selectedId = useApp((s) => s.selectedId);
   const [world, setWorld] = useState<string | null>(null);
   const closeWorld = useCallback(() => setWorld(null), []);
   useViewKeys();
   return (
     <WorldOpener.Provider value={setWorld}>
-      {Layout ? <Layout onPalette={onPalette} /> : <DesktopShell onPalette={onPalette} />}
+      <LobbyLayout onPalette={onPalette} />
       {world && <WorldPopup spotKey={world} onClose={closeWorld} />}
       {selectedId && <ProfilePopup id={selectedId} />}
     </WorldOpener.Provider>
-  );
-}
-
-function DesktopShell({ onPalette }: { onPalette: () => void }) {
-  const view = useApp((s) => s.view);
-  const search = useApp((s) => s.filters.search);
-  const [prefs, updatePrefs] = usePanelPrefs();
-  const setWorld = useOpenWorld();
-  const searchRef = useRef<HTMLInputElement>(null);
-  const [searching, setSearching] = useState(false);
-  const searchOpen = searching || search !== "";
-  // Keyboard: "/" search, Ctrl+B side panel (views and settings: useViewKeys).
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const typing = e.target instanceof HTMLElement && (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName));
-      const s = getState();
-      if (s.settingsOpen || s.viewer) return;
-      const ctrl = e.ctrlKey || e.metaKey;
-      if (ctrl && e.key.toLowerCase() === "b") {
-        e.preventDefault();
-        updatePrefs({ collapsed: !prefs.collapsed });
-      } else if (!typing && !ctrl && e.key === "/") {
-        e.preventDefault();
-        setSearching(true);
-        requestAnimationFrame(() => searchRef.current?.focus());
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [prefs.collapsed, updatePrefs]);
-  // Arrow keys move between the tabs (the focused tab opens with Enter or Space).
-  const onTabsKey = (e: React.KeyboardEvent<HTMLElement>) => {
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
-    const tabs = [...e.currentTarget.querySelectorAll<HTMLButtonElement>("button")];
-    const i = tabs.indexOf(document.activeElement as HTMLButtonElement);
-    const next = e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : (i + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
-    e.preventDefault();
-    tabs[next]?.focus();
-  };
-  const panel = prefs.collapsed ? <PanelWing side={prefs.side} onOpen={() => updatePrefs({ collapsed: false })} /> : <SidePanel prefs={prefs} update={updatePrefs} onWorld={setWorld} />;
-  return (
-    <div className="ui2-desk">
-      <header className="ui2-top">
-        <MeButton />
-        <nav className="ui2-tabs-top" aria-label="Views" onKeyDown={onTabsKey}>
-          {RAIL.map((r, i) => (
-            <button key={r.key} className={`ui2-ttab ${view === r.key ? "on" : ""}`} aria-current={view === r.key ? "page" : undefined} title={`${r.label} (Ctrl+${i + 1})`} onClick={() => setState({ view: r.key })}>
-              <Icon name={r.icon} size={22} />
-              <span>{r.label}</span>
-            </button>
-          ))}
-        </nav>
-        <span className="ui2-grow" />
-        <div className="ui2-top-right">
-          <ServerMenu />
-          <Bell />
-          {searchOpen && (
-            <div className="ui2-search top">
-              <Icon name="search" size={15} />
-              <input
-                ref={searchRef}
-                value={search}
-                placeholder="Search friends…"
-                aria-label="Search friends"
-                onChange={(e) => updateFilters({ search: e.target.value })}
-                onBlur={() => setSearching(false)}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") {
-                    e.stopPropagation();
-                    updateFilters({ search: "" });
-                    setSearching(false);
-                  }
-                }}
-              />
-              <kbd title="Search everything" onMouseDown={(e) => e.preventDefault()} onClick={onPalette}>
-                Ctrl K
-              </kbd>
-            </div>
-          )}
-          {!searchOpen && (
-            <button
-              className="ui2-top-icon"
-              title="Search friends ( / ), everything with Ctrl+K"
-              aria-label="Search"
-              onClick={() => {
-                setSearching(true);
-                requestAnimationFrame(() => searchRef.current?.focus());
-              }}
-            >
-              <Icon name="search" size={19} />
-            </button>
-          )}
-          {(view === "graph" || view === "cards") && <FilterButton />}
-          <LayoutPicker />
-          <button className="ui2-top-icon" title="Settings (Ctrl+,)" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
-            <Icon name="settings" size={19} />
-          </button>
-        </div>
-      </header>
-      <div className="ui2-body">
-        {prefs.side === "left" && panel}
-        <main className="ui2-main">
-          <div className="ui2-content">
-            <div className="ui2-view" key={view}>
-              <ViewBody view={view} />
-            </div>
-          </div>
-        </main>
-        {prefs.side === "right" && panel}
-      </div>
-    </div>
   );
 }
 
