@@ -326,6 +326,10 @@ const PLAT_SHORT: Record<string, string> = { pc: "PC", android: "Quest", ios: "i
 
 /** How much of the map is hidden: 2 when it's faded out behind settings or a view's frame
  *  (new interface), 1 under a popup (it shows dimmed behind it), 0 not at all. */
+/** How visible each person is right now while a filter fades them in or out. */
+const filterFade = new Map<string, number>();
+let fadeAt = 0;
+
 let coverAt = 0;
 let coverVal: 0 | 1 | 2 = 0;
 function mapCover(): 0 | 1 | 2 {
@@ -1161,6 +1165,10 @@ export function GraphView() {
     const nowMs = Date.now();
     const { fresh, named, starred, travel } = viewRef.current;
     let animating = false;
+    // Time-based easing for the filter fade (about a quarter of a second at any frame rate).
+    const fadeNow = performance.now();
+    const fadeStep = 1 - Math.exp(-Math.min(100, fadeNow - (fadeAt || fadeNow - 16)) / 90);
+    fadeAt = fadeNow;
     for (const n of order) {
       const f = named.get(n.id) ?? cache.friends[n.id] ?? (n.kind === "other" ? othersById.get(n.id) : n.kind === "me" ? (extra.me ?? undefined) : undefined);
       if (!f || n.x == null || n.y == null) continue;
@@ -1169,8 +1177,17 @@ export function GraphView() {
       if (n.x + n.hw < vx0 - margin || n.x - n.hw > vx1 + margin || n.y + n.hh < vy0 - margin || n.y - n.hh > vy1 + margin + 20 / t.k) continue;
       // Filters are about friends; you and non-friends are always shown.
       const isMatch = n.kind ? true : matched.has(n.id);
-      if (hideMode && !isMatch) continue;
-      let alpha = isMatch ? 1 : 0.13;
+      // Filters fade people in and out instead of switching them at once.
+      const want = isMatch ? 1 : hideMode ? 0 : 0.13;
+      let shown = filterFade.get(n.id) ?? want;
+      if (shown !== want) {
+        shown += (want - shown) * fadeStep;
+        if (Math.abs(want - shown) < 0.01) shown = want;
+        else animating = true;
+      }
+      filterFade.set(n.id, shown);
+      if (shown <= 0.001) continue;
+      let alpha = shown;
       if (n.kind === "other") alpha *= 0.85;
       if (focusSet && !focusSet.has(n.id)) alpha *= 0.35;
       ctx.globalAlpha = alpha;

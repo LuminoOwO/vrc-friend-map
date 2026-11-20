@@ -47,6 +47,8 @@ minor releases can change behavior.
 - Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
 
 ### Changed
+- **Filters fade:** people who don't match a filter (or an overview tile) fade out and back in on
+  the map instead of switching at once.
 - **Smoother map:** names and circle names are drawn once and reused instead of being outlined
   again on every frame, and the map no longer searches the page on every frame to see whether a
   popup covers it.
