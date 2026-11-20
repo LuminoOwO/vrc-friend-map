@@ -144,14 +144,16 @@ function News() {
   return (
     <footer className="lob-news" aria-label="Latest activity">
       <span className="lob-news-live" aria-hidden="true" />
-      {items.map((e) => (
-        <span key={e.key} className="lob-news-item">
-          <span className="lob-news-time">{new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
-          <ActivityText e={e} />
-        </span>
-      ))}
-      {!items.length && <span className="lob-news-item muted">All quiet.</span>}
-      <span className="ui2-grow" />
+      {/* Items that don't fit wrap onto a hidden second line: never cut off mid-word. */}
+      <div className="lob-news-items">
+        {items.map((e) => (
+          <span key={e.key} className="lob-news-item">
+            <span className="lob-news-time">{new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+            <ActivityText e={e} />
+          </span>
+        ))}
+        {!items.length && <span className="lob-news-item muted">All quiet.</span>}
+      </div>
       <button className="lob-news-all" onClick={() => setState({ view: "activity" })}>
         All activity <Icon name="chevron-right" size={14} />
       </button>

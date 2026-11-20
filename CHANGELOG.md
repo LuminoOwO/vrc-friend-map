@@ -6,6 +6,9 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Fixed (new interface)
+- Views, Party and Settings no longer look blurry after sliding in.
+- The activity line at the bottom no longer cuts entries off mid-word.
+- The menu over an open view is a solid drawer instead of a dark shade across the view.
 - **Smoother menus**: a view's frame (and Settings) slides in first and fills a moment later, and
   the map fades out and stops drawing behind it, so the animation doesn't stutter.
 - Sliders show a percent only where the value is one (volume), not their position.
@@ -93,9 +96,14 @@ minor releases can change behavior.
   - **Smoother and more modern**: popups and menus fade and pop in, views and settings pages
     slide in, the line under the active tab slides, tiles and cards lift on hover, buttons react
     when pressed, new Activity entries slide in. Settings → Animations → *Reduce* turns it off.
-- **The new interface is the start for new installs.** Updating keeps the interface you use; on
-  the classic one, a one-time hint offers to try the new one (*Try it* / *Not now*). Settings →
-  Appearance → Interface switches either way, any time.
+- **The new interface is now everyone's interface.** New installs start in it, and updating
+  switches to it once. The classic one is still there for now: Settings → Appearance → Interface →
+  *Classic interface* (per device).
+- **The views match the new interface:** People, Activity, Insights, Logbook, VRChat and Lists
+  get flat panels, tab bars and a toolbar that stays at the top while you scroll; Activity shows
+  each day as one panel with coloured icons.
+- **Groups on a profile** are shown as tidy rows (picture, name, two lines of description,
+  members) instead of a grid where pictures were cut off.
 - **Beta UI: see your servers at a glance**: a chip in the top bar (green when every server is
   connected live, grey when connected, amber when one isn't joined, red when one has a problem;
   click it for Sharing & servers), and the same status on the phone's Me page.

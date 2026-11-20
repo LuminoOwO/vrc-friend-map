@@ -262,6 +262,8 @@ export interface LocalData {
   selfBase?: import("./devicesync").SelfData | null;
   /** The one-time "try the new interface" hint was answered (classic UI users). */
   betaHintSeen?: boolean;
+  /** Set once the 0.13.0 switch to the new interface has happened on this device. */
+  newUiSwitched?: boolean;
   /** When each settings group was last changed (ms), so device sync knows which change is newer. */
   settingsAt?: Record<string, number>;
   /** Starred friends (top of lists, stand out on the map). Synced between your devices. */

@@ -893,6 +893,7 @@ export function normalizeLocal(raw: Raw | null): LocalData {
     dismissedGroups: Array.isArray(raw.dismissedGroups) ? raw.dismissedGroups.filter(Array.isArray) : [],
     selfBase: isObj(raw.selfBase) ? (raw.selfBase as LocalData["selfBase"]) : null,
     betaHintSeen: raw.betaHintSeen === true,
+    newUiSwitched: raw.newUiSwitched === true,
     settingsAt: isObj(raw.settingsAt) ? Object.fromEntries(Object.entries(raw.settingsAt as Record<string, unknown>).filter(([, t]) => typeof t === "number")) as Record<string, number> : {},
     starred: Array.isArray(raw.starred) ? raw.starred.filter((x: unknown) => typeof x === "string") : [],
     nicknames: isObj(raw.nicknames) ? Object.fromEntries(Object.entries(raw.nicknames).filter(([, v]) => typeof v === "string" && v)) as Record<string, string> : {},

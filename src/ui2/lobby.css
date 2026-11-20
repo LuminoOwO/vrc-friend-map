@@ -15,7 +15,7 @@
 .lob-left { position: absolute; z-index: 9; left: 0; top: 0; bottom: 48px; width: 92px; display: flex; flex-direction: column; justify-content: center; gap: 28px; padding: 0 22px; box-sizing: border-box; overflow: hidden; transition: width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .lob-left:hover, .lob-left:has(:focus-visible) { width: 440px; background: linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0, rgba(0, 0, 0, 0.78) 45%, rgba(0, 0, 0, 0.35) 75%, rgba(0, 0, 0, 0) 100%); }
 .lob-logo { display: flex; align-items: center; gap: 14px; color: #fff; white-space: nowrap; }
-.lob-logo .app-logo { flex: none; border-radius: 12px; filter: drop-shadow(0 0 18px color-mix(in srgb, var(--accent) 45%, transparent)); }
+.lob-logo .app-logo { flex: none; border-radius: 12px; }
 .lob-logo-text { display: flex; flex-direction: column; line-height: 1; opacity: 0; transform: translateX(-10px); transition: opacity 0.2s, transform 0.3s; }
 .lob-logo-text span { font-size: 12px; font-weight: 800; letter-spacing: 0.5em; color: var(--accent); }
 .lob-logo-text b { font-size: 30px; font-weight: 900; letter-spacing: -0.02em; font-style: italic; }
@@ -39,7 +39,7 @@
 .lob-item.on { color: var(--accent); }
 .lob-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
 /* Party: everything the Top bar layout's side panel has. */
-.lob-party { position: absolute; z-index: 5; right: 20px; top: 16px; bottom: 64px; width: 360px; display: flex; flex-direction: column; gap: 10px; padding: 16px 14px 14px; box-sizing: border-box; border-radius: 8px; background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text); animation: lob-in-r 0.32s cubic-bezier(0.2, 0.9, 0.25, 1); will-change: transform, opacity; }
+.lob-party { position: absolute; z-index: 5; right: 20px; top: 16px; bottom: 64px; width: 360px; display: flex; flex-direction: column; gap: 10px; padding: 16px 14px 14px; box-sizing: border-box; border-radius: 8px; background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text); animation: lob-in-r 0.32s cubic-bezier(0.2, 0.9, 0.25, 1); }
 @keyframes lob-in-r { from { opacity: 0; transform: translate3d(30px, 0, 0); } }
 .lob-party h2 { flex: none; margin: 0 2px; font-size: 13px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; font-style: italic; color: var(--accent); }
 .lob-me { flex: none; border-radius: 8px; background: rgba(255, 255, 255, 0.05); }
@@ -47,7 +47,7 @@
 .lob-party-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
 .lob-party .ui2-where { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); }
 .lob-party .ui2-tiles .filter-chip, .lob-party .ui2-tiles .stat-static { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); }
-.lob-frame { position: absolute; z-index: 6; left: 112px; right: 400px; top: 16px; bottom: 64px; display: flex; flex-direction: column; overflow: hidden; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); background: var(--bg); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7); animation: lob-in 0.32s cubic-bezier(0.2, 0.9, 0.25, 1); will-change: transform, opacity; contain: layout paint; }
+.lob-frame { position: absolute; z-index: 6; left: 112px; right: 400px; top: 16px; bottom: 64px; display: flex; flex-direction: column; overflow: hidden; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); background: var(--bg); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7); animation: lob-in 0.32s cubic-bezier(0.2, 0.9, 0.25, 1); }
 @keyframes lob-in { from { opacity: 0; transform: translate3d(-36px, 0, 0); } }
 .lob-frame-body > * { animation: ui2-fade 0.2s ease-out; }
 .lay-lobby.party-folded .lob-frame { right: 64px; }
@@ -63,7 +63,8 @@
 .lob-tools .ui2-srv-text, .lob-tools .ui2-srv-devices { display: none !important; }
 .lob-news { position: absolute; z-index: 7; left: 0; right: 0; bottom: 0; height: 48px; display: flex; align-items: center; gap: 26px; padding: 0 18px 0 112px; overflow: hidden; background: linear-gradient(0deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.55)); border-top: 1px solid rgba(255, 255, 255, 0.06); color: #cfd6dc; font-size: 13px; white-space: nowrap; }
 .lob-news-live { flex: none; width: 8px; height: 8px; margin-right: -14px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
-.lob-news-item { display: inline-flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.lob-news-items { flex: 1; min-width: 0; height: 48px; display: flex; flex-wrap: wrap; align-content: flex-start; column-gap: 26px; overflow: hidden; }
+.lob-news-item { flex: none; height: 48px; display: inline-flex; align-items: center; gap: 8px; }
 .lob-news-item + .lob-news-item { padding-left: 26px; border-left: 1px solid rgba(255, 255, 255, 0.1); }
 .lob-news-time { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
 .lob-news-item .act-name { color: #fff; }
@@ -93,10 +94,17 @@
 .lob-party-tab:hover { color: var(--accent); }
 .lay-lobby.party-folded .graph-controls { right: 64px; }
 /* Settings open in the frame like everything else. */
-.ui2-desktop:has(.lay-lobby) .ui2-settings.modal-backdrop { position: fixed; inset: 16px 400px 64px 112px; z-index: 40; padding: 0; overflow: hidden; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7); animation: lob-in 0.32s cubic-bezier(0.2, 0.9, 0.25, 1); will-change: transform, opacity; }
+.ui2-desktop:has(.lay-lobby) .ui2-settings.modal-backdrop { position: fixed; inset: 16px 400px 64px 112px; z-index: 40; padding: 0; overflow: hidden; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7); animation: lob-in 0.32s cubic-bezier(0.2, 0.9, 0.25, 1); }
 .ui2-desktop:has(.lay-lobby.party-folded) .ui2-settings.modal-backdrop { right: 64px; }
 .ui2-desktop:has(.lay-lobby) .ui2-settings .modal.settings-modal { animation: none; }
 .ui2-desktop:has(.lay-lobby) .ui2-set-side { flex-basis: 250px; flex-grow: 0; }
 .ui2-desktop:has(.lay-lobby) .ui2-settings .settings-nav { padding-top: 20px; width: 250px; }
 .ui2-desktop:has(.lay-lobby) .ui2-set-page { padding: 24px 28px 60px; }
 .ui2-desktop:has(.lay-lobby) .ui2-set-close { padding: 20px 16px 0 0; }
+
+/* Animations end at exactly no transform, so text is drawn sharp afterwards
+   (a lasting will-change kept frames on a separate, sometimes blurry layer). */
+@keyframes lob-in { from { opacity: 0; transform: translate3d(-36px, 0, 0); } to { opacity: 1; transform: none; } }
+@keyframes lob-in-r { from { opacity: 0; transform: translate3d(30px, 0, 0); } to { opacity: 1; transform: none; } }
+/* Over an open view the menu is a solid drawer, not a dark smear across the frame. */
+.lay-lobby.covered .lob-left:hover, .lay-lobby.covered .lob-left:has(:focus-visible) { width: 330px; background: color-mix(in srgb, var(--panel) 97%, transparent); border-right: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 20px 0 50px rgba(0, 0, 0, 0.6); }

@@ -22,6 +22,8 @@ export default defineConfig({
   plugins: [react()],
   define: { __APP_VERSION__: JSON.stringify(version), __APP_BUILD__: JSON.stringify(build) },
   clearScreen: false,
+  // .tools holds Tauri's own sources for the Chromium build; their tests aren't ours.
+  test: { exclude: ["**/node_modules/**", "**/dist/**", ".tools/**", "src-tauri/**"] },
   server: {
     port: 1420,
     strictPort: true,

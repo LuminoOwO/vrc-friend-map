@@ -25,6 +25,7 @@ import { FilterPopover } from "../components/TopBar";
 import { CommandPalette } from "./CommandPalette";
 import "./ui2.css";
 import "./lobby.css";
+import "./views.css";
 import { Avatar, ProfilePopup, ViewBody, WorldOpener, useViewKeys } from "./parts";
 import { LobbyLayout } from "./layouts/Lobby";
 

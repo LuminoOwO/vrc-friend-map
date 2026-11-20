@@ -183,7 +183,7 @@ export default function App() {
       <ThemeSync />
       <TopBar />
       <Notice />
-      <BetaHint />
+      <NewUiOnce />
       <div className="main" key={theme}>
         {sidebarOpen && <Sidebar />}
         <div className="content">
@@ -315,31 +315,16 @@ function LogsAndGroups() {
   return null;
 }
 
-/** Classic UI, once: an invitation to try the new interface (new installs start in it). */
-function BetaHint() {
-  const show = useApp((s) => !s.demo && s.mode === "app" && !s.settings.ui.beta && !s.local.betaHintSeen);
-  if (!show) return null;
-  const done = () => updateLocal((l) => ({ ...l, betaHintSeen: true }));
-  return (
-    <div className="notice" role="status">
-      <span>
-        <b>Try the new interface:</b> clearer settings with icons, everything about a server on one page, and invite links. You can switch back any time in
-        Settings → Appearance → Interface.
-      </span>
-      <button
-        className="btn small primary"
-        onClick={() => {
-          done();
-          updateUi({ beta: true });
-        }}
-      >
-        Try it
-      </button>
-      <button className="btn small ghost" onClick={done}>
-        Not now
-      </button>
-    </div>
-  );
+/** 0.13.0: the new interface becomes everyone's interface, once per device. After that the
+ *  choice is theirs again (Settings → Appearance → Interface → classic interface). */
+function NewUiOnce() {
+  const due = useApp((s) => s.mode === "app" && !s.local.newUiSwitched);
+  useEffect(() => {
+    if (!due) return;
+    updateLocal((l) => ({ ...l, newUiSwitched: true, betaHintSeen: true }));
+    if (!getState().settings.ui.beta) updateUi({ beta: true });
+  }, [due]);
+  return null;
 }
 
 function Notice() {

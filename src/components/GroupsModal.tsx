@@ -30,33 +30,35 @@ export function GroupsModal({ name, groups, onClose }: { name: string; groups: U
         <div className="groups-grid">
           {groups.map((g) => (
             <button key={g.groupId} className="group-card" title="Open the group" onClick={() => { setState({ openGroup: g.groupId }); onClose(); }}>
-              <div
-                className={`group-card-banner ${g.bannerUrl ? "viewable" : ""}`}
+              {g.bannerUrl && <img className="group-card-banner" src={imgSrc(g.bannerUrl)} alt="" loading="lazy" />}
+              <span
+                className={`group-card-icon ${g.iconUrl || g.bannerUrl ? "viewable" : ""}`}
                 onClick={(e) => {
-                  if (!g.bannerUrl) return;
+                  if (!g.iconUrl && !g.bannerUrl) return;
                   e.stopPropagation();
-                  openImage([{ url: g.bannerUrl, title: `Group ${g.name} – banner` }, ...(g.iconUrl ? [{ url: g.iconUrl, title: `Group ${g.name} – icon` }] : [])]);
+                  openImage([...(g.iconUrl ? [{ url: g.iconUrl, title: `Group ${g.name} – icon` }] : []), ...(g.bannerUrl ? [{ url: g.bannerUrl, title: `Group ${g.name} – banner` }] : [])]);
                 }}
               >
-                {g.bannerUrl && <img src={imgSrc(g.bannerUrl)} alt="" loading="lazy" />}
-              </div>
-              <div className="group-card-id">
-                <span className="group-card-icon">{g.iconUrl ? <img src={imgSrc(g.iconUrl)} alt="" loading="lazy" /> : g.name.slice(0, 1)}</span>
-                <span className="group-card-name">{g.name}</span>
-                {g.isRepresenting && (
-                  <span className="rep" title="Representing">
-                    <Icon name="bookmark" size={15} />
+                {g.iconUrl ? <img src={imgSrc(g.iconUrl)} alt="" loading="lazy" /> : g.name.slice(0, 1)}
+              </span>
+              <span className="group-card-text">
+                <span className="group-card-name">
+                  <b>{g.name}</b>
+                  {g.isRepresenting && (
+                    <span className="rep" title="Representing">
+                      <Icon name="bookmark" size={14} />
+                    </span>
+                  )}
+                </span>
+                {g.description && <span className="group-card-desc">{g.description}</span>}
+                <span className="group-card-foot">
+                  <span>
+                    <Icon name="users" size={13} /> {g.memberCount?.toLocaleString() ?? "?"}
                   </span>
-                )}
-              </div>
-              <p className="group-card-desc">{g.description || " "}</p>
-              <div className="group-card-foot">
-                <span>
-                  <Icon name="users" size={14} /> {g.memberCount?.toLocaleString() ?? "?"}
+                  {g.shortCode && <span>{`${g.shortCode}.${g.discriminator ?? ""}`}</span>}
                   {g.mutual && <span className="mutual-tag">you're in it</span>}
                 </span>
-                <span>{g.shortCode ? `${g.shortCode}.${g.discriminator ?? ""}` : ""}</span>
-              </div>
+              </span>
             </button>
           ))}
         </div>

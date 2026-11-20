@@ -1,0 +1,199 @@
+/* The views (People, Activity, Insights, Logbook, VRChat, Lists) inside the Lobby frame,
+   restyled to match the new interface: flat dark panels, 8 px corners, small uppercase
+   section titles, a sticky toolbar under the frame's title, teal for what's active.
+   Scoped to .lob-frame, so the classic interface keeps its look. */
+
+.lob-frame {
+  --v-panel: rgba(255, 255, 255, 0.035);
+  --v-panel-hover: rgba(255, 255, 255, 0.06);
+  --v-line: rgba(255, 255, 255, 0.09);
+  --v-line-strong: rgba(255, 255, 255, 0.16);
+}
+
+/* ---------- page and scrolling ---------- */
+.lob-frame .activity-view,
+.lob-frame .cards-view,
+.lob-frame .lists-view {
+  padding: 0 26px 40px;
+  scrollbar-gutter: stable;
+}
+.lob-frame .lists-view { gap: 18px; padding-top: 18px; }
+
+/* ---------- section titles ---------- */
+.lob-frame .card-group h3,
+.lob-frame .activity-day h3,
+.lob-frame .lists-title {
+  margin: 22px 0 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.lob-frame .card-group h3 .muted { margin-left: 4px; color: var(--accent); }
+
+/* ---------- toolbars: sticky under the frame's title ---------- */
+.lob-frame .activity-bar,
+.lob-frame .cards-toolbar,
+.lob-frame .day-nav,
+.lob-frame .logbook-tabs,
+.lob-frame .vrc-bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin: 0 -26px;
+  padding: 14px 26px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--v-line);
+}
+.lob-frame .activity-bar,
+.lob-frame .cards-toolbar { margin-bottom: 4px; gap: 8px 12px; font-size: 13px; color: var(--muted); }
+/* Two sticky rows in the Logbook: tabs, then the day picker under them. */
+.lob-frame .logbook-tabs + .day-nav,
+.lob-frame .logbook-tabs ~ .row.day-nav { top: 59px; z-index: 2; }
+
+/* ---------- chips, tabs, buttons, fields ---------- */
+.lob-frame .chip-btn {
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 6px;
+  border: 1px solid var(--v-line-strong);
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.lob-frame .chip-btn:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
+.lob-frame .chip-btn.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+
+/* Segmented controls become tabs with a teal underline, like the Lobby's own titles. */
+.lob-frame .seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+}
+.lob-frame .seg button {
+  position: relative;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.lob-frame .seg button:hover { color: var(--text); background: var(--v-panel); }
+.lob-frame .seg button.on { background: transparent; color: var(--accent); }
+.lob-frame .seg button.on::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -15px; height: 2px; border-radius: 2px; background: var(--accent); }
+/* Inside panels a segmented control stays a compact switch (no underline under the toolbar line). */
+.lob-frame .panel .seg button.on::after,
+.lob-frame .insight-card .seg button.on::after { bottom: -2px; }
+
+.lob-frame .btn { border-radius: 6px; }
+.lob-frame .btn.small { height: 32px; padding: 0 12px; }
+.lob-frame input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.lob-frame select,
+.lob-frame textarea {
+  border-radius: 6px;
+  border: 1px solid var(--v-line-strong);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+}
+.lob-frame input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.lob-frame select { height: 36px; padding: 0 10px; box-sizing: border-box; }
+.lob-frame input:focus-visible,
+.lob-frame select:focus-visible,
+.lob-frame textarea:focus-visible { outline: none; border-color: var(--accent); }
+.lob-frame .activity-search { flex: 1 1 160px; max-width: 280px; margin-left: auto; }
+
+/* ---------- panels and cards ---------- */
+.lob-frame .insight-card,
+.lob-frame .panel {
+  background: var(--v-panel);
+  border: 1px solid var(--v-line);
+  border-radius: 8px;
+  padding: 16px 18px;
+  box-shadow: none;
+}
+.lob-frame .insight-card h3,
+.lob-frame .panel h2,
+.lob-frame .panel h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+}
+.lob-frame .insight-card h3 svg { color: var(--accent); }
+.lob-frame .insight-card h4 { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.lob-frame .insights { gap: 14px; padding-top: 18px; }
+
+/* Names as chips (Insights, Logbook): one quiet style. */
+.lob-frame .face-btn {
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid transparent;
+  padding: 3px 10px 3px 3px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.lob-frame .face-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+.lob-frame .group-item { border-radius: 8px; border-color: var(--v-line); background: rgba(0, 0, 0, 0.15); padding: 10px 12px; }
+
+/* ---------- People ---------- */
+.lob-frame .card-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.lob-frame .fcard { border-radius: 8px; border-color: var(--v-line); background: var(--v-panel); box-shadow: none; }
+.lob-frame .fcard:hover { border-color: var(--accent); }
+.lob-frame .fcard-banner { opacity: 0.75; }
+
+/* ---------- Activity: one panel per day, rows like the party feed ---------- */
+.lob-frame .activity-note { margin: 12px 0 0; }
+.lob-frame .activity-day ul {
+  border: 1px solid var(--v-line);
+  border-radius: 8px;
+  background: var(--v-panel);
+  overflow: hidden;
+}
+.lob-frame .act {
+  gap: 12px;
+  min-height: 42px;
+  padding: 6px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 14px;
+}
+.lob-frame .act:last-child { border-bottom: 0; }
+.lob-frame .act:hover { background: rgba(255, 255, 255, 0.03); }
+.lob-frame .act-time { width: 72px; font-size: 13px; }
+.lob-frame .act > svg {
+  box-sizing: content-box;
+  width: 14px;
+  height: 14px;
+  padding: 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.lob-frame .act-join > svg, .lob-frame .act-online > svg, .lob-frame .act-friend-add > svg { background: color-mix(in srgb, var(--ok, #51e57e) 16%, transparent); }
+.lob-frame .act-leave > svg, .lob-frame .act-offline > svg, .lob-frame .act-friend-remove > svg, .lob-frame .act-crash > svg { background: color-mix(in srgb, var(--danger, #f87171) 16%, transparent); }
+.lob-frame .act-world > svg, .lob-frame .act-location > svg { background: var(--accent-soft); }
+.lob-frame .act.initial { opacity: 0.6; }
+.lob-frame .act-name { text-decoration: none; }
+.lob-frame .act-name:hover { text-decoration: underline; }
+
+/* ---------- Logbook ---------- */
+.lob-frame .day-nav { gap: 8px; }
+.lob-frame .insight-card.visit h3 svg { color: var(--accent); }
+.lob-frame .visit-events { margin: 8px 0; }
+.lob-frame .heatmap { border-radius: 8px; }
+
+/* ---------- VRChat ---------- */
+.lob-frame .open-link { gap: 8px; }
+.lob-frame .group-tile { border-radius: 8px; border-color: var(--v-line); background: var(--v-panel); padding: 8px; }
+.lob-frame .group-tile:hover { border-color: var(--accent); }
+.lob-frame .pic,
+.lob-frame .avatar-grid > * { border-radius: 8px; }
+
+/* ---------- Lists ---------- */
+.lob-frame .lists-cols { gap: 14px; }
+.lob-frame .pill { border-radius: 6px; }
+.lob-frame .matrix-wrap { border-radius: 8px; border: 1px solid var(--v-line); }

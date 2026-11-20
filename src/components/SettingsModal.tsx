@@ -238,12 +238,12 @@ function InterfaceSection() {
         Color-blind friendly status colors (online / offline also differ in brightness and shape)
       </label>
       <label className="check">
-        <input type="checkbox" checked={ui.beta} onChange={(e) => set({ beta: e.target.checked })} />
-        New beta UI
+        <input type="checkbox" checked={!ui.beta} onChange={(e) => set({ beta: !e.target.checked })} />
+        Classic interface
       </label>
       <p className="small muted">
-        A redesigned layout for computers and phones, still being worked on. The classic layout stays the default; you can switch back any time
-        (also from the beta's own settings, or by starting the app with <code>--classic-ui</code>).
+        The older layout, for now. The new interface is the default and where new things land; the classic one will go away later. Only this device
+        switches (you can also start the app with <code>--classic-ui</code>).
       </p>
     </>
   );
