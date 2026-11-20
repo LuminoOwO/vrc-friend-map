@@ -357,6 +357,11 @@ tray. On hold: Discord rich presence.
   the Overview tiles (hover says what a click does, click filters the map), Online now with each
   world collapsed (hover peeks at who's there, click keeps it open), and recent Activity. Each
   part can be folded.
+- [ ] Top bar: not Mac-like. Docked, flat, game-menu style (liquid glass stays inside its own theme later).
+- [ ] The side panel can sit on the left or the right.
+- [ ] Profiles open as a popup in the middle, like the classic UI (not in the side panel).
+- [ ] Online now and Activity scroll inside their own space, so Activity is always visible.
+  New Activity entries show a dot; scrolled down, a "back to top" button appears.
 - [x] Put the OSC chatbox features aside: taken out of the app (may be scrapped for good; the owner's other programs do the same).
 
 ## Parked
