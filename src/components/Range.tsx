@@ -3,7 +3,7 @@
 import type { InputHTMLAttributes } from "react";
 import { betaActive } from "../ui2/active";
 
-export function Range({ pct = true, ...props }: Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & { pct?: boolean }) {
+export function Range({ pct = false, ...props }: Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & { pct?: boolean }) {
   if (!betaActive()) return <input type="range" {...props} />;
   const min = Number(props.min ?? 0);
   const max = Number(props.max ?? 100);

@@ -324,10 +324,11 @@ function rectCollide(pad: number, strength = 0.7) {
 
 const PLAT_SHORT: Record<string, string> = { pc: "PC", android: "Quest", ios: "iOS", web: "Web", unknown: "" };
 
-/** How much of the map is hidden: 2 under full-screen settings, 1 under a popup or a view's frame, 0 not. */
+/** How much of the map is hidden: 2 when it's faded out behind settings or a view's frame
+ *  (new interface), 1 under a popup (it shows dimmed behind it), 0 not at all. */
 function mapCover(): 0 | 1 | 2 {
-  if (document.querySelector(".ui2-settings")) return 2;
-  return document.querySelector(".profile-backdrop, .ui2-world-wrap, .modal-backdrop, .lob-frame") ? 1 : 0;
+  if (document.querySelector(".ui2-settings, .lob-frame")) return 2;
+  return document.querySelector(".profile-backdrop, .ui2-world-wrap, .modal-backdrop") ? 1 : 0;
 }
 
 export function GraphView() {
@@ -1617,11 +1618,6 @@ export function GraphView() {
   useEffect(() => {
     if (!map.orbit) return;
     const speed = ([0, 0.012, 0.03, 0.07][Math.round(map.orbit)] ?? 0.012) * (map.orbitDir === -1 ? -1 : 1); // radians per second
-    // The turn is slow (a couple of degrees a second), so it doesn't need every frame: drawing the
-    // whole map 60 times a second just for it kept the app busy all the time. Its own frames are
-    // fewer; anything else (dragging, zooming, hovering, the layout moving) still asks for full ones.
-    const orbitFps = [0, 15, 24, 40][Math.round(map.orbit)] ?? 24;
-    let lastOrbitDraw = 0;
     let raf = 0;
     let nap: ReturnType<typeof setTimeout> | undefined;
     orbitRef.current.last = performance.now();
@@ -1651,10 +1647,7 @@ export function GraphView() {
       // zoom and the layout also ask for draws). Full frame rate while the
       // window has focus; every other frame (about 30 fps) while it doesn't,
       // to save power when it just sits on a second screen.
-      if (!document.hidden && now - lastOrbitDraw >= 1000 / orbitFps - 2) {
-        lastOrbitDraw = now;
-        requestDraw();
-      }
+      if (!document.hidden) requestDraw();
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);

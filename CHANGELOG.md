@@ -6,6 +6,9 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Fixed (new interface)
+- **Smoother menus**: a view's frame (and Settings) slides in first and fills a moment later, and
+  the map fades out and stops drawing behind it, so the animation doesn't stutter.
+- Sliders show a percent only where the value is one (volume), not their position.
 - **Much less lag.** "Slowly turn the map" redrew the whole map 60 times a second all the time,
   even with nothing else happening; the slow turn now draws 15–40 times a second (depending on
   its speed), while dragging, zooming and the layout still get every frame. The map also slows
@@ -76,6 +79,12 @@ minor releases can change behavior.
     icons that slides out with the names when you point at it; on the right your *Party*: you,
     where you are, the overview tiles, Online now and Activity (each folds); a news line at the
     bottom. Views open in a large frame between the two.
+  - **Lobby details**: the menu only slides out while you point at it; *Settings* opens in the
+    same frame as the views; your party shows your banner behind you (fading out toward your
+    name) and folds away to a tab on the edge; the bottom line shows the latest activity with
+    times. Clicking your picture flies it into your profile.
+  - **A new app logo**: you in the middle, friends around you with their status rings, the lines
+    between them and a circle of friends, like on the map (app icons on every platform).
   - **Smoother and more modern**: popups and menus fade and pop in, views and settings pages
     slide in, the line under the active tab slides, tiles and cards lift on hover, buttons react
     when pressed, new Activity entries slide in. Settings → Animations → *Reduce* turns it off.

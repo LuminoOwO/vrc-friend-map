@@ -6,6 +6,7 @@ import { useDerived } from "../derived";
 import { iconUrl, STATUS_LABEL, statusColor } from "../model";
 import { getState, setState, useApp, type View } from "../store";
 import { useDismiss } from "./dismiss";
+import { capturePicture } from "../flip";
 import { ServerMenu } from "./ServerStatus";
 import { ActivityView } from "../components/ActivityView";
 import { CardsView } from "../components/CardsView";
@@ -164,7 +165,18 @@ export function MeButton() {
   const color = f ? statusColor(f, "online") : "var(--muted)";
   const src = f ? imgSrc(iconUrl(f)) : undefined;
   return (
-    <button className="ui2-top-me" title="Your profile" aria-label="Your profile" onClick={() => me && setState({ selectedId: me.id })}>
+    <button
+      className="ui2-top-me"
+      title="Your profile"
+      aria-label="Your profile"
+      onClick={(e) => {
+        if (!me) return;
+        // Your picture flies into the profile's picture.
+        const pic = e.currentTarget.querySelector(".ui2-avatar");
+        if (pic) capturePicture(me.id, pic.getBoundingClientRect());
+        setState({ selectedId: me.id });
+      }}
+    >
       <span className="ui2-avatar" style={{ width: 40, height: 40, boxShadow: `0 0 0 2px var(--panel), 0 0 0 4px ${color}` }}>
         {src ? <img src={src} alt="" /> : (me?.displayName?.[0] ?? <Icon name="user" />)}
       </span>

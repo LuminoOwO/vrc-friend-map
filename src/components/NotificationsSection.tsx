@@ -241,7 +241,7 @@ export function NotificationsSection() {
       <div className="row">
         <label className="field narrow">
           <span>Volume {Math.round(n.volume * 100)}%</span>
-          <Range min={0} max={1} step={0.05} value={n.volume} onChange={(e) => updateNotify({ volume: Number(e.target.value) })} />
+          <Range pct min={0} max={1} step={0.05} value={n.volume} onChange={(e) => updateNotify({ volume: Number(e.target.value) })} />
         </label>
         <label className="field narrow">
           <span>Pause before the person's tune: {n.pause.toFixed(2)} s</span>
