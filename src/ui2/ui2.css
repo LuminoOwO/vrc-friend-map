@@ -144,3 +144,7 @@
 .ui2-sec-head > span:last-child { display: grid; gap: 1px; min-width: 0; }
 .ui2-sec-head b { font-size: 15px; }
 .ui2-sec-icon { width: 34px; height: 34px; flex: none; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-strong); }
+/* one close button: the panel's tab row has it, hide the profile's own */
+.ui2-person .profile-close { display: none; }
+/* full-area views start below the floating bar and scroll */
+.ui2-bar + .ui2-content > .activity-view { top: 62px; }

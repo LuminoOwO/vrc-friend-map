@@ -5,6 +5,13 @@ minor releases can change behavior.
 
 ## Unreleased
 
+### Fixed (new interface)
+- Insights, Activity and the logbooks no longer start under the top bar.
+- A profile has one close button instead of two.
+
+### Added
+- Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
+
 ### Changed
 - **The new interface is the start for new installs.** Updating keeps the interface you use; on
   the classic one, a one-time hint offers to try the new one (*Try it* / *Not now*). Settings →

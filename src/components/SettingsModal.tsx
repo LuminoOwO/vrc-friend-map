@@ -661,7 +661,7 @@ export function SettingsModal() {
         </Sec>
         <Sec id="about" cat="account" title="About" keys="version">
           <h3>About</h3>
-          <p className="small muted">VRC Friend Map {__APP_VERSION__}. Not affiliated with VRChat Inc.</p>
+          <p className="small muted">VRC Friend Map {__APP_VERSION__} (build {__APP_BUILD__}). Not affiliated with VRChat Inc.</p>
         </Sec>
             </SecContext.Provider>
           </div>
