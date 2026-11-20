@@ -1,0 +1,193 @@
+/* Styles of the new interface to try out (top bar → Style). Each sits on top of any theme: the
+   theme's colors are taken from :root (--b-*) and mixed here, so light themes work too.
+   Only looks: no behavior. Off with Settings → Animations → Reduce (the moving backgrounds stop). */
+
+.ui2-backdrop { display: none; }
+.ui2-desk, .ui2-phone-shell { position: relative; z-index: 1; }
+
+/* The theme's own colors, for mixing below (a variable can't mix itself on one element). */
+.ui2[data-look] {
+  --b-bg: var(--bg);
+  --b-panel: var(--panel);
+  --b-panel2: var(--panel-2);
+  --b-card: var(--card);
+  --b-text: var(--text);
+  --b-accent: var(--accent);
+  --b-profile: var(--profile-bg);
+  --pink: #ff4fd8;
+  --violet: #8b5cf6;
+}
+
+/* Shared by the see-through styles (Glass, Aurora): moving colors behind, frosted panels in front. */
+.ui2[data-look="glass"] .ui2-backdrop,
+.ui2[data-look="aurora"] .ui2-backdrop { display: block; position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.ui2[data-look="glass"] .ui2-backdrop span,
+.ui2[data-look="aurora"] .ui2-backdrop span { position: absolute; display: block; will-change: transform; }
+.ui2[data-look="glass"] .graph,
+.ui2[data-look="aurora"] .graph { background: transparent; }
+.ui2[data-look="glass"] :is(.ui2-top, .ui2-side, .ui2-wing, .ui2-drop, .ui2-peek, .ui2-world, .profile.popup, .modal, .popover, .ui2-set-side, .graph-controls .icon-btn, .ui2-tabs),
+.ui2[data-look="aurora"] :is(.ui2-top, .ui2-side, .ui2-wing, .ui2-drop, .ui2-peek, .ui2-world, .profile.popup, .modal, .popover, .ui2-set-side, .graph-controls .icon-btn, .ui2-tabs) {
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+}
+.ui2[data-look="glass"] .ui2-settings.modal-backdrop,
+.ui2[data-look="aurora"] .ui2-settings.modal-backdrop { background: color-mix(in srgb, var(--b-bg) 35%, transparent); backdrop-filter: blur(30px); }
+.ui2[data-look="glass"] .ui2-settings .modal.settings-modal,
+.ui2[data-look="aurora"] .ui2-settings .modal.settings-modal { background: transparent; }
+
+/* ============================== 1. GLASS ==============================
+   Frosted, see-through panels over slowly drifting color blobs. Light edges, soft depth. */
+.ui2[data-look="glass"] > * {
+  --panel: color-mix(in srgb, var(--b-panel) 42%, transparent);
+  --panel-2: color-mix(in srgb, var(--b-panel2) 48%, transparent);
+  --card: color-mix(in srgb, var(--b-card) 45%, transparent);
+  --pcard: color-mix(in srgb, var(--b-card) 50%, transparent);
+  --card-hover: color-mix(in srgb, var(--b-text) 10%, transparent);
+  --chip-bg: color-mix(in srgb, var(--b-text) 8%, transparent);
+  --border: color-mix(in srgb, var(--b-text) 13%, transparent);
+  --border-strong: color-mix(in srgb, var(--b-text) 24%, transparent);
+  --profile-bg: color-mix(in srgb, var(--b-profile) 58%, transparent);
+}
+.ui2[data-look="glass"] .ui2-backdrop span { width: 46vmax; height: 46vmax; border-radius: 50%; filter: blur(90px); opacity: 0.55; }
+.ui2[data-look="glass"] .ui2-backdrop span:nth-child(1) { left: -10vmax; top: -12vmax; background: var(--b-accent); animation: look-drift-a 38s ease-in-out infinite alternate; }
+.ui2[data-look="glass"] .ui2-backdrop span:nth-child(2) { right: -12vmax; top: 10vh; background: var(--violet); animation: look-drift-b 44s ease-in-out infinite alternate; }
+.ui2[data-look="glass"] .ui2-backdrop span:nth-child(3) { left: 30vw; bottom: -18vmax; background: var(--pink); opacity: 0.35; animation: look-drift-c 52s ease-in-out infinite alternate; }
+.ui2[data-look="glass"] .ui2-top { border-bottom: 1px solid var(--border); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 30px -18px rgba(0, 0, 0, 0.6); }
+.ui2[data-look="glass"] .ui2-ttab.on { background: color-mix(in srgb, var(--b-text) 9%, transparent); color: var(--text); }
+.ui2[data-look="glass"] .ui2-ttab.on svg { color: var(--b-accent); }
+.ui2[data-look="glass"] .ui2-side { border-radius: 18px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 24px 50px -20px rgba(0, 0, 0, 0.6); }
+.ui2[data-look="glass"] .ui2-where, .ui2[data-look="glass"] .ui2-tiles .filter-chip, .ui2[data-look="glass"] .ui2-tiles .stat-static { box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07); }
+.ui2[data-look="glass"] .ui2-top-icon, .ui2[data-look="glass"] .ui2-srv { border-radius: 12px; box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08); }
+.ui2[data-look="glass"] .profile.popup.ui2-profile, .ui2[data-look="glass"] .ui2-world { border-color: color-mix(in srgb, var(--b-text) 20%, transparent); }
+
+/* ============================== 2. NEON ==============================
+   A dark game HUD: glowing accent edges, an accent-to-pink gradient, a faint grid on the map. */
+.ui2[data-look="neon"] > * {
+  --bg: color-mix(in srgb, var(--b-bg) 55%, #000);
+  --panel: color-mix(in srgb, var(--b-panel) 60%, #000);
+  --panel-2: color-mix(in srgb, var(--b-panel2) 65%, #000);
+  --card: color-mix(in srgb, var(--b-card) 70%, #000);
+  --profile-bg: color-mix(in srgb, var(--b-profile) 60%, #000);
+  --border: color-mix(in srgb, var(--b-accent) 22%, transparent);
+  --border-strong: color-mix(in srgb, var(--b-accent) 45%, transparent);
+  --glow-a: color-mix(in srgb, var(--b-accent) 60%, transparent);
+}
+.ui2[data-look="neon"] { background: color-mix(in srgb, var(--b-bg) 55%, #000); }
+.ui2[data-look="neon"] .graph {
+  background:
+    linear-gradient(color-mix(in srgb, var(--b-accent) 7%, transparent) 1px, transparent 1px) 0 0 / 44px 44px,
+    linear-gradient(90deg, color-mix(in srgb, var(--b-accent) 7%, transparent) 1px, transparent 1px) 0 0 / 44px 44px,
+    radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--b-accent) 10%, #000), #000 75%);
+}
+.ui2[data-look="neon"] .ui2-top { background: linear-gradient(180deg, var(--panel), var(--bg)); border-bottom: 1px solid transparent; border-image: linear-gradient(90deg, transparent, var(--b-accent), var(--pink), transparent) 1; box-shadow: 0 6px 30px -12px var(--glow-a); }
+.ui2[data-look="neon"] .ui2-ttab { font-family: ui-monospace, "JetBrains Mono", "Cascadia Code", monospace; letter-spacing: 0.14em; }
+.ui2[data-look="neon"] .ui2-ttab.on { background: transparent; color: var(--b-accent); text-shadow: 0 0 10px var(--glow-a); }
+.ui2[data-look="neon"] .ui2-ttab.on svg { filter: drop-shadow(0 0 6px var(--b-accent)); }
+.ui2[data-look="neon"] .ui2-ttab::after { background: linear-gradient(90deg, var(--b-accent), var(--pink)); box-shadow: 0 0 12px var(--b-accent); }
+.ui2[data-look="neon"] :is(.ui2-side, .ui2-world, .profile.popup.ui2-profile, .ui2-drop) {
+  border: 1px solid transparent;
+  background: linear-gradient(var(--panel), var(--panel)) padding-box, linear-gradient(140deg, var(--b-accent), var(--pink) 50%, var(--violet)) border-box;
+  box-shadow: 0 0 30px -10px var(--glow-a), 0 0 60px -30px var(--pink);
+}
+.ui2[data-look="neon"] .ui2-side { border-radius: 4px; }
+.ui2[data-look="neon"] .ui2-part-title { color: var(--b-accent); letter-spacing: 0.18em; font-family: ui-monospace, "JetBrains Mono", monospace; }
+.ui2[data-look="neon"] .ui2-tiles .filter-chip, .ui2[data-look="neon"] .ui2-tiles .stat-static { border-radius: 2px; border-color: var(--border); background: color-mix(in srgb, var(--b-accent) 5%, transparent); }
+.ui2[data-look="neon"] .ui2-tiles b { text-shadow: 0 0 12px currentColor; font-family: ui-monospace, "JetBrains Mono", monospace; }
+.ui2[data-look="neon"] .ui2-top-icon, .ui2[data-look="neon"] .ui2-srv, .ui2[data-look="neon"] .ui2-square { border-radius: 2px; }
+.ui2[data-look="neon"] .ui2-top-icon:hover, .ui2[data-look="neon"] .ui2-srv:hover { border-color: var(--b-accent); box-shadow: 0 0 14px -2px var(--glow-a); }
+.ui2[data-look="neon"] .btn.primary { background: linear-gradient(90deg, var(--b-accent), var(--pink)); border: 0; color: #000; box-shadow: 0 0 18px -4px var(--glow-a); }
+.ui2[data-look="neon"] .ui2-act-icon { box-shadow: 0 0 10px -2px var(--k); }
+.ui2[data-look="neon"] .ui2-where { border-radius: 2px; border-color: var(--border); }
+.ui2[data-look="neon"] .ui2-where-pic::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.18) 0 1px, transparent 1px 3px); }
+.ui2[data-look="neon"] .ui2-new-dot { background: var(--pink); }
+
+/* ============================== 3. SOFT ==============================
+   Pillowy and friendly: big rounded corners, floating cards with soft shadows, pill tabs with a
+   gradient, pastel tints. */
+.ui2[data-look="soft"] > * {
+  --panel: color-mix(in srgb, var(--b-panel) 88%, var(--b-text));
+  --panel-2: color-mix(in srgb, var(--b-panel2) 90%, var(--b-text));
+  --card: color-mix(in srgb, var(--b-card) 90%, var(--b-text));
+  --border: transparent;
+  --border-strong: color-mix(in srgb, var(--b-text) 14%, transparent);
+  --soft-shadow: 0 18px 40px -16px rgba(0, 0, 0, 0.5), 0 2px 6px -2px rgba(0, 0, 0, 0.25);
+  --soft-grad: linear-gradient(135deg, var(--b-accent), color-mix(in srgb, var(--b-accent) 40%, var(--violet)));
+}
+.ui2[data-look="soft"] .graph { background: radial-gradient(60% 50% at 20% 20%, color-mix(in srgb, var(--violet) 14%, transparent), transparent), radial-gradient(50% 50% at 85% 80%, color-mix(in srgb, var(--b-accent) 14%, transparent), transparent), var(--b-bg); }
+.ui2[data-look="soft"] .ui2-top { height: 76px; border-bottom: 0; background: var(--b-bg); padding: 0 6px; }
+.ui2[data-look="soft"] .ui2-top-me { border-right: 0; border-radius: 22px; margin: 8px 0; }
+.ui2[data-look="soft"] .ui2-tabs-top { gap: 4px; padding: 10px 8px; }
+.ui2[data-look="soft"] .ui2-ttab { min-width: 78px; border: 0 !important; border-radius: 18px; text-transform: none; letter-spacing: 0; font-size: 12px; font-weight: 700; }
+.ui2[data-look="soft"] .ui2-ttab::after { display: none; }
+.ui2[data-look="soft"] .ui2-ttab.on { background: var(--soft-grad); color: var(--on-accent); box-shadow: 0 10px 24px -10px var(--b-accent); }
+.ui2[data-look="soft"] .ui2-top-icon, .ui2[data-look="soft"] .ui2-srv { border: 0; border-radius: 999px; background: var(--panel); box-shadow: var(--soft-shadow); }
+.ui2[data-look="soft"] .ui2-top-icon { width: 44px; height: 44px; }
+.ui2[data-look="soft"] .ui2-side { margin: 14px; border: 0; border-radius: 28px; background: var(--panel); box-shadow: var(--soft-shadow); }
+.ui2[data-look="soft"] .ui2-where { border: 0; border-radius: 22px; box-shadow: var(--soft-shadow); }
+.ui2[data-look="soft"] .ui2-where-pic { border-radius: 22px 22px 0 0; }
+.ui2[data-look="soft"] .ui2-tiles { gap: 10px; }
+.ui2[data-look="soft"] .ui2-tiles .filter-chip, .ui2[data-look="soft"] .ui2-tiles .stat-static { border: 0; border-radius: 18px; padding: 12px 14px; box-shadow: var(--soft-shadow); }
+.ui2[data-look="soft"] .ui2-tiles > span:nth-child(1) > * { background: linear-gradient(135deg, color-mix(in srgb, #7aa2f7 22%, var(--panel)), var(--panel)); }
+.ui2[data-look="soft"] .ui2-tiles > span:nth-child(2) > * { background: linear-gradient(135deg, color-mix(in srgb, #51e57e 22%, var(--panel)), var(--panel)); }
+.ui2[data-look="soft"] .ui2-tiles > span:nth-child(3) > * { background: linear-gradient(135deg, color-mix(in srgb, #e6c35c 22%, var(--panel)), var(--panel)); }
+.ui2[data-look="soft"] .ui2-tiles > span:nth-child(4) > * { background: linear-gradient(135deg, color-mix(in srgb, #c4a7e7 22%, var(--panel)), var(--panel)); }
+.ui2[data-look="soft"] .ui2-spot { border-radius: 16px; }
+.ui2[data-look="soft"] .ui2-spot-pic { border-radius: 12px; }
+.ui2[data-look="soft"] .ui2-act-icon { border-radius: 50%; }
+.ui2[data-look="soft"] .ui2-part-title { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); }
+.ui2[data-look="soft"] :is(.ui2-world, .profile.popup.ui2-profile, .ui2-drop, .modal) { border: 0; border-radius: 28px; box-shadow: 0 40px 80px -24px rgba(0, 0, 0, 0.7); }
+.ui2[data-look="soft"] .ui2-profile .pcard, .ui2[data-look="soft"] .ui2-card { border: 0; border-radius: 22px; box-shadow: var(--soft-shadow); }
+.ui2[data-look="soft"] .btn { border-radius: 999px; }
+.ui2[data-look="soft"] .btn.primary { background: var(--soft-grad); border: 0; }
+.ui2[data-look="soft"] .ui2-settings .settings-cat { border-radius: 14px; }
+.ui2[data-look="soft"] .ui2-settings .settings-cat.on { background: var(--soft-grad); color: var(--on-accent); }
+
+/* ============================== 4. AURORA ==============================
+   Northern lights moving slowly behind smoky glass; gradient titles and buttons. */
+.ui2[data-look="aurora"] > * {
+  --panel: color-mix(in srgb, var(--b-bg) 52%, transparent);
+  --panel-2: color-mix(in srgb, var(--b-bg) 45%, transparent);
+  --card: color-mix(in srgb, var(--b-text) 7%, transparent);
+  --pcard: color-mix(in srgb, var(--b-text) 6%, transparent);
+  --card-hover: color-mix(in srgb, var(--b-text) 12%, transparent);
+  --chip-bg: color-mix(in srgb, var(--b-text) 9%, transparent);
+  --border: color-mix(in srgb, var(--b-text) 11%, transparent);
+  --border-strong: color-mix(in srgb, var(--b-text) 22%, transparent);
+  --profile-bg: color-mix(in srgb, var(--b-bg) 62%, transparent);
+  --aurora: linear-gradient(90deg, #2ee6a8, #3fb8ff 35%, #a26bff 70%, #ff6bd0);
+}
+.ui2[data-look="aurora"] { background: color-mix(in srgb, var(--b-bg) 85%, #000); }
+.ui2[data-look="aurora"] .ui2-backdrop span { width: 140vw; height: 38vh; left: -20vw; border-radius: 50%; filter: blur(70px); opacity: 0.5; mix-blend-mode: screen; }
+.ui2[data-look="aurora"] .ui2-backdrop span:nth-child(1) { top: 5vh; background: linear-gradient(90deg, transparent, #2ee6a8, #3fb8ff, transparent); animation: look-aurora-a 26s ease-in-out infinite alternate; }
+.ui2[data-look="aurora"] .ui2-backdrop span:nth-child(2) { top: 35vh; background: linear-gradient(90deg, transparent, #a26bff, #ff6bd0, transparent); animation: look-aurora-b 34s ease-in-out infinite alternate; opacity: 0.4; }
+.ui2[data-look="aurora"] .ui2-backdrop span:nth-child(3) { top: 65vh; background: linear-gradient(90deg, transparent, #3fb8ff, #2ee6a8, transparent); animation: look-aurora-a 42s ease-in-out infinite alternate-reverse; opacity: 0.3; }
+.ui2[data-look="aurora"] .ui2-top { border-bottom: 1px solid var(--border); }
+.ui2[data-look="aurora"] .ui2-ttab.on { background: transparent; color: var(--text); }
+.ui2[data-look="aurora"] .ui2-ttab::after { background: var(--aurora); height: 3px; box-shadow: 0 0 14px rgba(63, 184, 255, 0.7); }
+.ui2[data-look="aurora"] .ui2-ttab.on svg { color: #3fb8ff; filter: drop-shadow(0 0 8px rgba(63, 184, 255, 0.6)); }
+.ui2[data-look="aurora"] :is(.ui2-where-name, .ui2-world-title h2, .ui2-page-head h1, .ui2-profile .profile-hero-row h2 > span[data-flip="name"], .ui2-me-text b) {
+  background: var(--aurora);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.ui2[data-look="aurora"] .ui2-side { border-radius: 20px; box-shadow: 0 30px 60px -30px rgba(0, 0, 0, 0.8); }
+.ui2[data-look="aurora"] .ui2-tiles b { background: var(--aurora); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.ui2[data-look="aurora"] .btn.primary { background: var(--aurora); border: 0; color: #08131c; }
+.ui2[data-look="aurora"] .ui2-new-dot, .ui2[data-look="aurora"] .ui2-wing-count { background: var(--aurora); }
+.ui2[data-look="aurora"] .ui2-settings .settings-cat.on { background: linear-gradient(90deg, rgba(63, 184, 255, 0.22), rgba(162, 107, 255, 0.16)); }
+.ui2[data-look="aurora"] .ui2-range input[type="range"] { background: var(--aurora) 0 0 / var(--p) 100% no-repeat, var(--card); }
+
+/* ---------- motion of the backgrounds ---------- */
+@keyframes look-drift-a { to { transform: translate(18vw, 14vh) scale(1.15); } }
+@keyframes look-drift-b { to { transform: translate(-22vw, 18vh) scale(0.9); } }
+@keyframes look-drift-c { to { transform: translate(-16vw, -20vh) scale(1.2); } }
+@keyframes look-aurora-a { 0% { transform: translateX(-8vw) skewY(-4deg) scaleY(0.8); } 100% { transform: translateX(10vw) skewY(5deg) scaleY(1.2); } }
+@keyframes look-aurora-b { 0% { transform: translateX(10vw) skewY(6deg); } 100% { transform: translateX(-12vw) skewY(-3deg) scaleY(1.3); } }
+
+/* The style dropdown in the top bar. */
+.ui2-look { display: flex; align-items: center; gap: 6px; height: 40px; padding: 0 4px 0 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); color: var(--muted); cursor: pointer; }
+.ui2-look select { height: 100%; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; outline: none; }
+.ui2-look select option { background: var(--b-panel, var(--panel)); color: var(--text); }
+.ui2[data-look="soft"] .ui2-look { border: 0; border-radius: 999px; background: var(--panel); box-shadow: var(--soft-shadow); }
+.ui2[data-look="neon"] .ui2-look { border-radius: 2px; }

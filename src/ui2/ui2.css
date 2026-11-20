@@ -266,7 +266,6 @@
 .ui2-world-wrap { position: fixed; inset: 0; z-index: 45; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(4, 8, 11, 0.66); }
 .ui2-world { position: relative; width: min(900px, 100%); max-height: 100%; overflow-y: auto; border-radius: 14px; background: var(--profile-bg, var(--panel)); border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
 .ui2-world-hero { position: relative; height: 220px; background: linear-gradient(135deg, #5a6b78, var(--card) 80%) center / cover no-repeat; }
-.ui2-world-close { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border-radius: 8px; border: 0; background: rgba(0, 0, 0, 0.5); color: #fff; display: grid; place-items: center; cursor: pointer; }
 .ui2-world-tags { position: absolute; left: 16px; bottom: 14px; display: flex; gap: 6px; }
 .ui2-world-tags .ui2-tag { font-size: 12px; padding: 4px 9px; letter-spacing: 0; text-transform: none; }
 .ui2-world-title { padding: 18px 28px 0; display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
@@ -371,21 +370,22 @@
 .ui2-profile .profile-actions { margin-top: 0; }
 .ui2-profile .profile-actions .btn { border-radius: 8px; background: var(--panel-2); border-color: var(--border); }
 .ui2-profile .profile-actions .btn:hover { border-color: var(--accent); filter: none; }
-/* The close button: round; outside the window when there's room, like Settings. */
-.ui2 .profile-close, .ui2-world-close { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; padding: 0; background: rgba(0, 0, 0, 0.45); color: #fff; border: 1px solid rgba(255, 255, 255, 0.25); backdrop-filter: blur(8px); transition: transform 0.15s, background 0.15s; }
-.ui2 .profile-close:hover, .ui2-world-close:hover { transform: scale(1.08); background: rgba(0, 0, 0, 0.65); }
-@media (min-width: 1180px) {
-  .ui2 .profile.popup .profile-close { position: absolute; top: 0; right: -62px; background: var(--panel); border: 2px solid var(--muted); color: var(--muted); backdrop-filter: none; }
-  .ui2 .profile.popup .profile-close::after { content: "ESC"; position: absolute; top: calc(100% + 6px); font-size: 12px; font-weight: 700; color: var(--muted); }
-  .ui2 .profile.popup .profile-close:hover { color: var(--text); border-color: var(--text); }
+/* The close button: round. Inside the popup's corner on narrow windows; on wide ones the popup
+   leaves room beside it and the button sits outside, with "ESC" under it, like Settings. */
+.ui2-close { position: absolute; z-index: 5; top: 14px; right: 14px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 0; border: 0; background: none; color: #fff; cursor: pointer; }
+.ui2-close-x { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; background: rgba(0, 0, 0, 0.45); border: 1px solid rgba(255, 255, 255, 0.25); backdrop-filter: blur(8px); transition: transform 0.15s, background 0.15s, border-color 0.15s, color 0.15s; }
+.ui2-close:hover .ui2-close-x { transform: scale(1.08); background: rgba(0, 0, 0, 0.65); }
+.ui2-close-esc { display: none; font-size: 12px; font-weight: 700; color: var(--muted); }
+@media (min-width: 900px) {
+  .profile.popup.ui2-profile, .ui2-world { width: min(1040px, calc(100vw - 200px)); overflow: visible; }
+  .ui2-world-hero, .ui2-profile .profile-hero .profile-banner { border-radius: 13px 13px 0 0; }
+  .ui2-profile > .ui2-close, .ui2-world > .ui2-world-hero > .ui2-close { top: 0; right: -66px; color: var(--muted); }
+  .ui2-world > .ui2-world-hero > .ui2-close { top: 0; }
+  .ui2-profile > .ui2-close .ui2-close-x, .ui2-world .ui2-close .ui2-close-x { background: var(--panel); border: 2px solid var(--muted); backdrop-filter: none; }
+  .ui2-profile > .ui2-close:hover, .ui2-world .ui2-close:hover { color: var(--text); }
+  .ui2-profile > .ui2-close:hover .ui2-close-x, .ui2-world .ui2-close:hover .ui2-close-x { border-color: var(--text); background: var(--panel); }
+  .ui2-profile > .ui2-close .ui2-close-esc, .ui2-world .ui2-close .ui2-close-esc { display: block; }
 }
-@media (min-width: 1040px) {
-  .ui2-world { overflow: visible; }
-  .ui2-world-hero { border-radius: 13px 13px 0 0; }
-  .ui2-world .ui2-world-close { top: 0; right: -62px; background: var(--panel); border: 2px solid var(--muted); color: var(--muted); backdrop-filter: none; }
-  .ui2-world .ui2-world-close:hover { color: var(--text); border-color: var(--text); }
-}
-
 /* ================= motion: smoother, more modern (off with Settings → Animations: reduce) ================= */
 @keyframes ui2-fade { from { opacity: 0; } }
 @keyframes ui2-pop { from { opacity: 0; transform: translateY(14px) scale(0.97); } }
@@ -421,3 +421,5 @@
 .ui2-range input[type="range"] { transition: background-size 0.08s; }
 [data-motion="reduce"] .ui2 *, [data-motion="reduce"] .ui2 *::after { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="full"]) .ui2 *, :root:not([data-motion="full"]) .ui2 *::after { animation: none !important; transition: none !important; } }
+.ui2-world-wrap { overflow-y: auto; align-items: flex-start; }
+.ui2-world { margin: auto 0; max-height: none; }

@@ -639,7 +639,11 @@ export interface UiSettings {
   reducedMotion: "system" | "on" | "off";
   /** Status colors that also differ for red/green color blindness. */
   colorblind: boolean;
+  /** New interface: which style (src/ui2/looks.css). */
+  look: UiLook;
 }
+
+export type UiLook = "default" | "glass" | "neon" | "soft" | "aurora";
 
 /** People who aren't friends: whose profiles to load and keep. */
 export interface PeopleSettings {

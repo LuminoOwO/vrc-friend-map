@@ -302,9 +302,18 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   );
   return (
     <aside ref={rootRef} className={`profile ${popup ? "popup" : ""} ${hero ? "ui2-profile" : ""}`} role={popup ? "dialog" : undefined} aria-label={`Profile of ${f.displayName}`}>
-      <button className="icon-btn profile-close" data-flip-fade title="Close (Esc)" onClick={close}>
-        <Icon name="close" />
-      </button>
+      {hero ? (
+        <button className="ui2-close" data-flip-fade title="Close (Esc)" aria-label="Close profile" onClick={close}>
+          <span className="ui2-close-x">
+            <Icon name="close" size={20} />
+          </span>
+          <span className="ui2-close-esc">ESC</span>
+        </button>
+      ) : (
+        <button className="icon-btn profile-close" data-flip-fade title="Close (Esc)" onClick={close}>
+          <Icon name="close" />
+        </button>
+      )}
       {hero && (
         <header className="profile-hero">
           {bannerEl}

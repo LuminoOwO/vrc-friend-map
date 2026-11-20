@@ -38,6 +38,8 @@ import { FilterPopover } from "../components/TopBar";
 import { VrchatView } from "../components/VrchatView";
 import { CommandPalette } from "./CommandPalette";
 import "./ui2.css";
+import "./looks.css";
+import type { UiLook } from "../types";
 
 const RAIL: { key: View; label: string; icon: string }[] = [
   { key: "graph", label: "Map", icon: "graph" },
@@ -54,6 +56,7 @@ type PhoneTab = "graph" | "cards" | "here" | "insights" | "me";
 
 export function BetaApp({ children }: { children: React.ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const look = useApp((s) => s.settings.ui.look);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -65,7 +68,12 @@ export function BetaApp({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
   return (
-    <div className={`ui2 ${isMobile ? "ui2-phone" : "ui2-desktop"}`}>
+    <div className={`ui2 ${isMobile ? "ui2-phone" : "ui2-desktop"}`} data-look={look}>
+      <div className="ui2-backdrop" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
       {isMobile ? <PhoneShell /> : <DesktopShell onPalette={() => setPaletteOpen(true)} />}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
       {children}
@@ -197,6 +205,7 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
             </button>
           )}
           {(view === "graph" || view === "cards") && <FilterButton />}
+          <LookPicker />
           <button className="ui2-top-icon" title="Settings (Ctrl+,)" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
             <Icon name="settings" size={19} />
           </button>
@@ -295,6 +304,31 @@ function FilterButton() {
       </button>
       {open && <FilterPopover onClose={() => setOpen(false)} />}
     </div>
+  );
+}
+
+export const LOOKS: { value: UiLook; label: string }[] = [
+  { value: "default", label: "Default" },
+  { value: "glass", label: "Glass" },
+  { value: "neon", label: "Neon" },
+  { value: "soft", label: "Soft" },
+  { value: "aurora", label: "Aurora" },
+];
+
+/** Try the styles of the new interface (for picking what looks good). */
+function LookPicker() {
+  const look = useApp((s) => s.settings.ui.look);
+  return (
+    <label className="ui2-look" title="Style of the new interface">
+      <Icon name="eye" size={16} />
+      <select value={look} aria-label="Style" onChange={(e) => updateUi({ look: e.target.value as UiLook })}>
+        {LOOKS.map((l) => (
+          <option key={l.value} value={l.value}>
+            {l.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

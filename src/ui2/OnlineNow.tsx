@@ -168,8 +168,11 @@ export function WorldPopup({ spotKey, onClose }: { spotKey: string; onClose: () 
     <div className="ui2-world-wrap" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="ui2-world" role="dialog" aria-label={title}>
         <div className="ui2-world-hero" style={pic ? { backgroundImage: `url("${pic}")` } : undefined}>
-          <button className="ui2-world-close" title="Close (Esc)" aria-label="Close world" onClick={onClose}>
-            <Icon name="close" size={20} />
+          <button className="ui2-close" title="Close (Esc)" aria-label="Close world" onClick={onClose}>
+            <span className="ui2-close-x">
+              <Icon name="close" size={20} />
+            </span>
+            <span className="ui2-close-esc">ESC</span>
           </button>
           <span className="ui2-world-tags">
             {loc && <span className="ui2-tag">{loc.type}</span>}
