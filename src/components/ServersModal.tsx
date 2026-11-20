@@ -592,6 +592,19 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
                   ) : (
                     <p className="small muted">Paired with you.</p>
                   )}
+                  {(s.loggerExpired || logger?.expired) && (
+                    <>
+                      <p className="small warn-text">
+                        <Icon name="warn" size={14} /> The server's VRChat login expired, so it isn't logging. Log in again with a new pairing code from the server (its window or admin page).
+                      </p>
+                      <div className="row">
+                        <input className="code-input" inputMode="numeric" maxLength={7} value={code} placeholder="123456" aria-label="Pairing code" onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ""))} />
+                        <button className="btn small primary" disabled={code.length !== 6 || working !== ""} onClick={() => run("pair", () => pairLogger(s.id, code))}>
+                          {working === "pair" ? "Logging in…" : "Log in again"}
+                        </button>
+                      </div>
+                    </>
+                  )}
                   <div className="row">
                     <button className="btn small" onClick={() => run("unpair", () => unpairLogger(s.id, false))}>
                       Unpair (keep history)

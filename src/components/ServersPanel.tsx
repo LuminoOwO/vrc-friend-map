@@ -2,7 +2,7 @@
 // adding one, without digging through Settings.
 import { useState } from "react";
 import { backend } from "../backend";
-import { addServerFromInput, serverName, serverSwitch, syncAllServers } from "../share";
+import { addServerFromInput, mismatchOf, serverName, serverSwitch, syncAllServers } from "../share";
 import { useApp } from "../store";
 import { Icon } from "./Icon";
 import { ago, openServers, POLICY_LABEL } from "./ServersModal";
@@ -79,14 +79,15 @@ export function ServersPanel() {
             return (
               <li key={s.id}>
                 <button className="server-row" onClick={openServers} title="Manage this server">
-                  <span className={`server-state ${s.lastError ? "bad" : s.registered ? "ok" : ""}`} />
+                  <span className={`server-state ${s.lastError || s.loggerExpired || mismatchOf(s) ? "bad" : s.registered ? "ok" : ""}`} />
                   <span className="server-text">
                     <b>{serverName(s)}</b>
                     <span className="small muted">
                       {state}
                       {s.info?.encryption ? ` · ${POLICY_LABEL[s.info.encryption]}` : ""}
-                      {s.loggerOwner ? " · logger paired" : ""} · last sync {ago(s.lastSync)}
+                      {s.loggerOwner ? (s.loggerExpired ? " · server login expired" : " · logger paired") : ""} · last sync {ago(s.lastSync)}
                     </span>
+                    {mismatchOf(s) && <span className="small error-text">{mismatchOf(s)!.text}</span>}
                     {s.lastError && <span className="small error-text">{s.lastError}</span>}
                   </span>
                   <Icon name="chevron-right" size={16} />
