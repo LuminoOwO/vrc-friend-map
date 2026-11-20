@@ -57,6 +57,7 @@ jobs:
     timeout-minutes: 5
     outputs:
       runs-on: ${{ steps.pick.outputs.runs-on }}
+      build-where: ${{ steps.pickbuild.outputs.where }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -66,13 +67,24 @@ jobs:
         with:
           token: ${{ secrets.RUNNER_STATUS_TOKEN }}
           mode: ${{ vars.USE_MY_PC }}
+      # Linux x86 test builds (build-check branches, my own pushes only; releases always build on
+      # GitHub): my PC when it's online and idle. RunnerDock asks me there before it runs; if I
+      # say no (or it fails), linux-fallback builds it on GitHub instead.
+      - id: pickbuild
+        uses: ./.github/actions/pick-runner
+        with:
+          token: ${{ secrets.RUNNER_STATUS_TOKEN }}
+          mode: ${{ vars.USE_MY_PC }}
+          allowed: ${{ startsWith(github.ref, 'refs/heads/build-check/') && github.event_name == 'push' }}
+          fallback: ubuntu-24.04
 
   test:
     # Tests: my PC (RunnerDock) if it's online and idle, otherwise GitHub's runners. The builds
     # below always stay on GitHub: ubuntu-22.04 keeps Linux packages compatible with older
     # distros, and Windows/macOS/iOS/ARM need their own machines.
     needs: pick
-    runs-on: ${{ fromJSON(needs.pick.outputs.runs-on) }}
+    # On GitHub when the Linux build goes to my PC: RunnerDock asks once per job, so one question.
+    runs-on: ${{ fromJSON(needs.pick.outputs.build-where == 'pc' && '"ubuntu-latest"' || needs.pick.outputs.runs-on) }}
     outputs:
       sha: ${{ steps.pick.outputs.sha }}
     steps:
@@ -171,16 +183,17 @@ jobs:
           fi
 
   linux:
-    needs: test
+    needs: [pick, test]
     # build-check/only-<platforms> builds just those (e.g. only-linux-android); everything else builds all.
-    if: ${{ !startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-linux') }}
+    # x86 goes to my PC when pick says so (linux-pc below), so then only ARM is left here.
+    if: ${{ (!startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-linux')) && !(needs.pick.outputs.build-where == 'pc' && github.event.repository.private) }}
     strategy:
       fail-fast: false
       matrix:
         # The Chromium build needs GTK 4.14 (Tauri's CEF runtime), so it's built on
         # Ubuntu 24.04: it runs on Ubuntu/Mint 24.04+, Debian 13+, Fedora 40+ and
         # current Arch. Free ARM runners are only available to public repositories.
-        runner: ${{ fromJSON(github.event.repository.private && '["ubuntu-24.04"]' || '["ubuntu-24.04","ubuntu-24.04-arm"]') }}
+        runner: ${{ fromJSON(needs.pick.outputs.build-where == 'pc' && '["ubuntu-24.04-arm"]' || (github.event.repository.private && '["ubuntu-24.04"]' || '["ubuntu-24.04","ubuntu-24.04-arm"]')) }}
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
@@ -234,6 +247,113 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: linux-${{ matrix.runner }}
+          path: release/*
+          if-no-files-found: error
+      - name: Show the end of the build log
+        if: failure()
+        run: node scripts/log-tail.mjs "$RUNNER_TEMP/build.log"
+
+
+  # The x86 test build on my PC (RunnerDock asks first). Only the .deb, and the build folder stays
+  # between runs, so only what changed compiles again. System libraries must be installed once.
+  linux-pc:
+    needs: [pick, test]
+    if: ${{ needs.pick.outputs.build-where == 'pc' && (!startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-linux')) }}
+    runs-on: [self-hosted, Linux, X64]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.test.outputs.sha }}
+          # Keep src-tauri/target and .tools: incremental builds.
+          clean: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - uses: dtolnay/rust-toolchain@stable
+      - name: System libraries (installed once on my PC)
+        run: |
+          MISSING=""
+          for p in libgtk-4-dev libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file zstd; do
+            dpkg -s "$p" >/dev/null 2>&1 || MISSING="$MISSING $p"
+          done
+          if [ -n "$MISSING" ]; then
+            echo "::error::Missing on this PC:$MISSING. Run once: sudo apt install$MISSING"
+            exit 1
+          fi
+      - name: Build the .deb (Chromium)
+        timeout-minutes: 50
+        run: |
+          set -o pipefail
+          rm -rf release   # the folder stays between runs: only this build's files
+          CI=true ./scripts/build-linux.sh deb 2>&1 | tee "$RUNNER_TEMP/build.log"
+      - run: rm -f release/SHA256SUMS
+      - uses: actions/upload-artifact@v6
+        with:
+          name: linux-ubuntu-24.04
+          path: release/*
+          if-no-files-found: error
+      - name: Show the end of the build log
+        if: failure()
+        run: node scripts/log-tail.mjs "$RUNNER_TEMP/build.log"
+
+  # The x86 test build on GitHub after all: I said no on my PC (RunnerDock), or it failed there.
+  linux-fallback:
+    needs: [pick, test, linux-pc]
+    if: ${{ always() && needs.test.result == 'success' && needs.pick.outputs.build-where == 'pc' && needs.linux-pc.result != 'success' && (!startsWith(github.ref_name, 'build-check/only-') || contains(github.ref_name, '-linux')) }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.test.outputs.sha }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Make disk space (Chromium is big)
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL /usr/local/share/boost &
+          wait
+          df -h /
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          key: ubuntu-24.04-chromium-${{ hashFiles('src-tauri/chromium/Cargo.lock') }}
+      # Tauri's CLI built from its Chromium branch (scripts/chromium.py pins the commit),
+      # and the Chromium (CEF) download, are the same until that pin changes.
+      - uses: actions/cache@v5
+        with:
+          path: |
+            .tools
+            ~/.cache/tauri-cef
+          key: chromium-ubuntu-24.04-${{ hashFiles('scripts/chromium.py', 'src-tauri/chromium/Cargo.lock') }}
+      - name: System libraries
+        timeout-minutes: 15
+        run: |
+          # Ubuntu's mirrors sometimes hang: give each try 3 minutes, up to 3 tries.
+          APT='-o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30'
+          for try in 1 2 3; do
+            timeout 180 sudo apt-get $APT update && timeout 300 sudo apt-get $APT install -y libgtk-4-dev libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file zstd flatpak flatpak-builder && break
+            [ $try = 3 ] && exit 1; echo "::warning::package install try $try failed, retrying"; sleep 10
+          done
+          # flatpak-builder's sandbox (bubblewrap) needs user namespaces, which
+          # Ubuntu 24.04 restricts for programs without an AppArmor profile.
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      # The GNOME runtime and SDK for the Flatpak (about 1 GB), until the version changes.
+      - uses: actions/cache@v5
+        with:
+          path: ~/.local/share/flatpak
+          key: flatpak-gnome-48-ubuntu-24.04
+      - name: Build deb, rpm, AppImage, tarball and Flatpak (Chromium)
+        timeout-minutes: 100
+        run: |
+          set -o pipefail
+          CI=true ./scripts/build-linux.sh all 2>&1 | tee "$RUNNER_TEMP/build.log"
+      - run: rm -f release/SHA256SUMS
+      - uses: actions/upload-artifact@v6
+        with:
+          name: linux-ubuntu-24.04
           path: release/*
           if-no-files-found: error
       - name: Show the end of the build log

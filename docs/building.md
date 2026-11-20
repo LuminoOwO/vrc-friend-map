@@ -218,6 +218,14 @@ To release a version:
 some platforms (much quicker), name the branch `build-check/only-<platforms>`, for example
 `build-check/only-linux-android`; the words are `linux`, `windows`, `macos`, `android`, `ios` and
 `server`. The tests always run.
+
+**Linux test builds on your own PC:** with the self-hosted runner (RunnerDock) online and idle,
+the Linux x86 part of a test build goes to your PC, where RunnerDock asks first (turn on *Ask me
+before running each job* for the runner). Approve, and it builds only the `.deb`, keeping its
+build folder between runs, so later builds only compile what changed. Deny (or if it fails),
+and the same build runs on GitHub instead. Releases always build on GitHub. Your PC needs the
+system libraries once:
+`sudo apt install libgtk-4-dev libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libxdo-dev libssl-dev file zstd`.
 5. Wait about 20–40 minutes. The release stays a draft until the files are attached, then it's published.
 
 The workflow refuses to run if the tag and the three version numbers don't match. If one platform
