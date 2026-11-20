@@ -345,29 +345,29 @@ tray. On hold: Discord rich presence.
 
 ## Redesign notes (owner, 2026-11-20, from the mockups)
 
-- [ ] Keep the classic **Activity log** (filter chips, day sections): one of the most important features.
-- [ ] Sliders like VRChat's: a rounded bar that fills, the percent on the right.
-- [ ] Side panels can be resized and snap back near their default width; they can collapse
+- [x] Keep the classic **Activity log** (filter chips, day sections): one of the most important features.
+- [x] Sliders like VRChat's: a rounded bar that fills, the percent on the right.
+- [x] Side panels can be resized and snap back near their default width; they can collapse
   completely, leaving a small "wing" tab on the edge to reopen them.
-- [ ] Settings: an icon on every page; the group headings (User, App, People, ...) sit a bit
+- [x] Settings: an icon on every page; the group headings (User, App, People, ...) sit a bit
   further left than the pages and have icons too, so headings and buttons are easy to tell apart.
-- [ ] Keep the settings cogwheel.
-- [ ] Phone: "Online now" lives in the People tab.
-- [ ] Side panel holds more than "Online now": where you are (world card with everyone there),
+- [x] Keep the settings cogwheel.
+- [x] Phone: "Online now" lives in the People tab.
+- [x] Side panel holds more than "Online now": where you are (world card with everyone there),
   the Overview tiles (hover says what a click does, click filters the map), Online now with each
   world collapsed (hover peeks at who's there, click keeps it open), and recent Activity. Each
   part can be folded.
-- [ ] Top bar: not Mac-like. Docked, flat, game-menu style (liquid glass stays inside its own theme later).
-- [ ] The side panel can sit on the left or the right.
-- [ ] Profiles open as a popup in the middle, like the classic UI (not in the side panel).
-- [ ] Online now and Activity scroll inside their own space, so Activity is always visible.
+- [x] Top bar: not Mac-like. Docked, flat, game-menu style (liquid glass stays inside its own theme later).
+- [x] The side panel can sit on the left or the right.
+- [x] Profiles open as a popup in the middle, like the classic UI (not in the side panel).
+- [x] Online now and Activity scroll inside their own space, so Activity is always visible.
   New Activity entries show a dot; scrolled down, a "back to top" button appears.
-- [ ] Settings: your account card sits at the top of the settings sidebar (where "User" is), not at the bottom.
-- [ ] Notifications get their own bell button in the top right, after the server status.
-- [ ] Server status dropdown also shows which of your devices are online and which servers each one is connected to.
-- [ ] Clicking your own bubble (map) or your picture (top left) opens your own profile.
-- [ ] No gradients on the top bar tabs.
-- [ ] Clicking a world in "Online now" opens a world overview popup (no expanding inside the side panel).
+- [x] Settings: your account card sits at the top of the settings sidebar (where "User" is), not at the bottom.
+- [x] Notifications get their own bell button in the top right, after the server status.
+- [x] Server status dropdown also shows which of your devices are online and which servers each one is connected to.
+- [x] Clicking your own bubble (map) or your picture (top left) opens your own profile.
+- [x] No gradients on the top bar tabs.
+- [x] Clicking a world in "Online now" opens a world overview popup (no expanding inside the side panel).
 - [x] Put the OSC chatbox features aside: taken out of the app (may be scrapped for good; the owner's other programs do the same).
 
 ## Parked

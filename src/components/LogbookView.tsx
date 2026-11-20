@@ -30,6 +30,7 @@ import { shownName } from "../personal";
 import { loadSteamDays, steamDay } from "../steamdays";
 import { setState, showToast, useApp } from "../store";
 import { Icon } from "./Icon";
+import { Range } from "./Range";
 
 type Tab = "day" | "stats" | "videos" | "pictures" | "year";
 
@@ -213,7 +214,7 @@ function VisitCard({ v }: { v: TimelineVisit }) {
       </div>
       {replay && (
         <div className="replay">
-          <input type="range" min={v.start} max={v.end} step={30} value={t} onChange={(e) => setT(Number(e.target.value))} />
+          <Range pct={false} min={v.start} max={v.end} step={30} value={t} onChange={(e) => setT(Number(e.target.value))} />
           <p className="small">
             <b>{fmtClock(t)}</b>: {here.length} {here.length === 1 ? "person" : "people"} besides you
           </p>

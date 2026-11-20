@@ -18,6 +18,7 @@ import { celebrateNewFriends, SOUNDS } from "../notify";
 import { getState, NOTIFY_EVENTS, setState, showToast, updateCache, updateNotify, updateSettings, useApp } from "../store";
 import type { NotifyEvent, NotifyPerson } from "../types";
 import { Icon } from "./Icon";
+import { Range } from "./Range";
 
 export const PERSON_MODES: { value: NotifyPerson["mode"] | "default"; label: string }[] = [
   { value: "default", label: "General rules" },
@@ -240,7 +241,7 @@ export function NotificationsSection() {
       <div className="row">
         <label className="field narrow">
           <span>Volume {Math.round(n.volume * 100)}%</span>
-          <input type="range" min={0} max={1} step={0.05} value={n.volume} onChange={(e) => updateNotify({ volume: Number(e.target.value) })} />
+          <Range min={0} max={1} step={0.05} value={n.volume} onChange={(e) => updateNotify({ volume: Number(e.target.value) })} />
         </label>
         <label className="field narrow">
           <span>Hear someone's tune</span>

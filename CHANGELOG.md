@@ -14,10 +14,25 @@ minor releases can change behavior.
 - Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
 
 ### Changed
-- **New interface on computers: a docked top bar** instead of the icon rail on the left and the
-  floating search bar. Left to right: your picture (opens your profile), the views as flat tabs,
-  server status, sync, a **notifications bell** (what you missed; click one to open the person),
-  search and settings. The filter chips sit in a slim row under it on Map and People.
+- **New interface redesigned** (closer to VRChat's own menus, flat and docked):
+  - **Top bar** instead of the icon rail and the floating search bar: your picture (opens your
+    profile), the views as flat tabs, server status, sync, a **notifications bell** (what you
+    missed; click one to open the person), search and settings. Filter chips sit in a slim row
+    under it on Map and People.
+  - **Server status dropdown**: every server with its state, and which of your devices are online
+    right now and which server each one is connected through.
+  - **Side panel** with where you are (your instance and everyone in it), the overview tiles
+    (hover says what a click does, click filters the map), **Online now** (one row per world;
+    hover for a quick look, click for a world overview) and **Activity** (its own scroll area,
+    new entries get a dot, "back to top" says how many are new). Left or right (swap button),
+    resizable (snaps back near its default width, double-click resets), folds away to a small
+    tab on the edge; each part folds too.
+  - **Profiles and worlds open as a popup in the middle**, with one close button.
+  - **Settings full screen, like Discord**: your account at the top of the sidebar, the
+    categories under group headings (App, People, Connect, Advanced) with icons, close and Esc
+    on the right.
+  - **Sliders like VRChat's**: a rounded bar that fills, the percent on the right.
+  - **Phones**: Online now at the top of the People tab; the bottom bar's tabs a bit wider.
 - **The new interface is the start for new installs.** Updating keeps the interface you use; on
   the classic one, a one-time hint offers to try the new one (*Try it* / *Not now*). Settings →
   Appearance → Interface switches either way, any time.

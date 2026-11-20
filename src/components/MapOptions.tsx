@@ -3,6 +3,7 @@ import type { Gravity, MapSettings, NodeStyle } from "../types";
 import { Icon } from "./Icon";
 import { useEffect, useState } from "react";
 import { mePinned, unpinMe } from "../mapstate";
+import { Range } from "./Range";
 
 const STYLES: { value: NodeStyle; label: string; hint: string }[] = [
   { value: "dot", label: "Dot", hint: "Small colored dots. Fastest with big friend lists." },
@@ -33,7 +34,7 @@ function Slider({
       <span>
         {label} <b>{format(value)}</b>
       </span>
-      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
+      <Range min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
     </label>
   );
 }
@@ -224,8 +225,7 @@ function TimeTravel() {
         <span>
           Show the map as of <b>{at ? new Date(at).toLocaleDateString() : "now"}</b>
         </span>
-        <input
-          type="range"
+        <Range pct={false}
           min={0}
           max={days}
           step={1}

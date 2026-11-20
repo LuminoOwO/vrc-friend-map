@@ -12,6 +12,7 @@ import { shownName } from "../personal";
 import { createCircle, setState, showToast, updateSettings, useApp } from "../store";
 import { EVENT_LABEL } from "../notifications";
 import { Icon } from "./Icon";
+import { Range } from "./Range";
 
 export function InsightsView() {
   return (
@@ -209,7 +210,7 @@ function FriendGroups() {
         </h3>
         <label className="small row tight">
           Bigger
-          <input type="range" min={0.5} max={2} step={0.1} value={resolution} onChange={(e) => setResolution(Number(e.target.value))} />
+          <Range min={0.5} max={2} step={0.1} value={resolution} onChange={(e) => setResolution(Number(e.target.value))} />
           Smaller
         </label>
       </div>

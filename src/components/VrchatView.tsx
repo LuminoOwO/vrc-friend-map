@@ -33,6 +33,7 @@ import { openVrchatLink } from "../vrclinks";
 import { EventList } from "./ContentDialogs";
 import { Icon } from "./Icon";
 import { openImage } from "./ImageViewer";
+import { Range } from "./Range";
 
 type Tab = "groups" | "favorites" | "avatars" | "files" | "worlds";
 
@@ -453,13 +454,13 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
             />
             <label className="field">
               <span>Zoom (drag the picture to move it)</span>
-              <input type="range" min={1} max={5} step={0.01} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} />
+              <Range min={1} max={5} step={0.01} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} />
             </label>
             {frames && <p className="small">Animated: {frames.length} frames (an animated emoji).</p>}
             {frames && (
               <label className="field narrow">
                 <span>Frames per second: {fps}</span>
-                <input type="range" min={1} max={30} value={fps} onChange={(e) => setFps(Number(e.target.value))} />
+                <Range min={1} max={30} value={fps} onChange={(e) => setFps(Number(e.target.value))} />
               </label>
             )}
             {kind === "emoji" && (

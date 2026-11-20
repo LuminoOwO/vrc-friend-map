@@ -47,12 +47,7 @@
 .ui2-drop-list button.new::before { content: ""; position: absolute; left: 6px; top: 13px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
 .ui2-drop-foot { border: 0; border-top: 1px solid var(--border); background: none; color: var(--accent-strong); padding: 9px 12px; font: inherit; font-size: 13px; cursor: pointer; text-align: center; }
 .ui2-drop-foot:hover { background: var(--card-hover); }
-.ui2-here-float { position: absolute; z-index: 15; left: 12px; bottom: 12px; max-width: min(420px, 60%); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
-.ui2-person { width: clamp(380px, 34vw, 560px); flex: none; display: flex; flex-direction: column; border-left: 1px solid var(--border); background: var(--panel); min-height: 0; overflow: hidden; }
-.ui2-person .profile { position: relative !important; inset: auto !important; width: auto; flex: 1; min-height: 0; border-left: 0; }
-.ui2-person-tabs { flex: none; display: flex; gap: 2px; padding: 6px; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; align-items: center; }
-.ui2-person-tabs button:not(.icon-btn) { border: 0; background: none; color: var(--muted); padding: 5px 8px; border-radius: 8px; font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; }
-.ui2-person-tabs button:not(.icon-btn):hover { background: var(--card-hover); color: var(--text); }
+.ui2-here-float { position: absolute; z-index: 15; left: 30px; bottom: 12px; max-width: min(420px, 60%); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
 
 /* ---------- command palette ---------- */
 .ui2-palette-wrap { align-items: flex-start; padding-top: 12vh; }
@@ -69,9 +64,9 @@
 .ui2-search.phone { flex: 1; min-width: 0; height: 42px; border-radius: 21px; padding-right: 4px; }
 .ui2-phone-main { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; overflow: hidden; }
 .ui2-tabs { display: flex; background: var(--panel); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.ui2-tab { position: relative; flex: 1; min-height: 66px; border: 0; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font: inherit; font-size: 11px; }
+.ui2-tab { position: relative; flex: 1; min-height: 70px; border: 0; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font: inherit; font-size: 11px; }
 .ui2-tab.on { color: var(--accent-strong); }
-.ui2-tab.on::before { content: ""; position: absolute; top: 8px; width: 60px; height: 34px; border-radius: 17px; background: var(--accent-soft); z-index: -1; }
+.ui2-tab.on::before { content: ""; position: absolute; top: 8px; width: 72px; height: 34px; border-radius: 17px; background: var(--accent-soft); z-index: -1; }
 .ui2-tab .ui2-dot { right: calc(50% - 22px); top: 4px; }
 .ui2-page { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
 .ui2-me-card { display: flex; gap: 14px; align-items: center; text-align: left; padding: 14px; border-radius: 16px; border: 1px solid var(--border); background: var(--card); color: var(--text); font: inherit; }
@@ -160,5 +155,117 @@
 .ui2-sec-head > span:last-child { display: grid; gap: 1px; min-width: 0; }
 .ui2-sec-head b { font-size: 15px; }
 .ui2-sec-icon { width: 34px; height: 34px; flex: none; border-radius: 10px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-strong); }
-/* one close button: the panel's tab row has it, hide the profile's own */
-.ui2-person .profile-close { display: none; }
+
+/* ---------- side panel (src/ui2/SidePanel.tsx) ---------- */
+.ui2-side { position: relative; flex: none; display: flex; flex-direction: column; min-height: 0; background: var(--panel); overflow: hidden; }
+.ui2-side.left { border-right: 1px solid var(--border); }
+.ui2-side.right { border-left: 1px solid var(--border); }
+.ui2-side-tools { flex: none; display: flex; align-items: center; padding: 4px 6px 0; }
+.ui2-side-tools .icon-btn { display: inline-flex; gap: 0; color: var(--muted); }
+.ui2-side-empty { margin: 0; padding: 4px 2px 8px; }
+.ui2-side-grip { position: absolute; top: 0; bottom: 0; width: 7px; cursor: col-resize; z-index: 5; touch-action: none; }
+.ui2-side.left .ui2-side-grip { right: -3px; }
+.ui2-side.right .ui2-side-grip { left: -3px; }
+.ui2-side-grip:hover, .ui2-side-grip:active { background: color-mix(in srgb, var(--accent) 40%, transparent); }
+.ui2-wing { flex: none; align-self: center; width: 18px; height: 72px; display: grid; place-items: center; padding: 0; border: 1px solid var(--border); background: var(--panel); color: var(--muted); cursor: pointer; z-index: 16; }
+.ui2-wing.left { border-left: 0; border-radius: 0 10px 10px 0; }
+.ui2-wing.right { border-right: 0; border-radius: 10px 0 0 10px; }
+.ui2-wing:hover { color: var(--text); background: var(--card-hover); }
+.ui2-body > .ui2-wing { position: absolute; top: 50%; transform: translateY(-50%); }
+.ui2-body { position: relative; }
+.ui2-body > .ui2-wing.left { left: 0; }
+.ui2-body > .ui2-wing.right { right: 0; }
+.ui2-here-float.right { left: 12px; }
+.ui2-part { flex: none; display: flex; flex-direction: column; min-height: 0; border-bottom: 1px solid var(--border); }
+.ui2-part.grow { flex: 1 1 0; min-height: 120px; }
+.ui2-part-head { flex: none; display: flex; align-items: center; gap: 6px; padding: 2px 10px 2px 6px; }
+.ui2-part-title { flex: 1; display: flex; align-items: center; gap: 7px; padding: 8px 4px; border: 0; background: none; color: var(--text); font: inherit; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; text-align: left; cursor: pointer; }
+.ui2-part-title svg:first-child { color: var(--muted); }
+.ui2-part-body { padding: 0 10px 10px; min-height: 0; }
+.ui2-part.grow .ui2-part-body { flex: 1; display: flex; flex-direction: column; padding-bottom: 0; }
+.ui2-part-body .here-now.in-sidebar { margin: 0; }
+.ui2-part-body .here-now.in-sidebar .here-scroll { max-height: 30vh; }
+/* the panel always holds "Where you are": no "show over the map instead" switch here */
+.ui2-part-body .here-now button[title="Show over the map instead"] { display: none; }
+.ui2-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.ui2-tiles > span { display: grid; }
+.ui2-tiles .filter-chip, .ui2-tiles .stat-static { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; display: flex; flex-direction: column; }
+.ui2-tiles .filter-chip:hover { border-color: var(--border-strong); background: var(--card-hover); }
+.ui2-tiles .filter-chip.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.ui2-tiles b { font-size: 19px; font-variant-numeric: tabular-nums; }
+.ui2-tiles b.online { color: var(--ok); }
+.ui2-tiles span span { color: var(--muted); font-size: 12px; }
+.ui2-tile-hint { margin: 6px 0 0; min-height: 1.3em; }
+.ui2-spots { list-style: none; margin: 0; padding: 0; flex: 1; min-height: 0; overflow-y: auto; }
+.ui2-spot { width: 100%; display: flex; align-items: center; gap: 9px; padding: 6px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.ui2-spot:hover, .ui2-spot:focus-visible { background: var(--card-hover); }
+.ui2-spot-pic { width: 44px; height: 32px; flex: none; border-radius: 6px; overflow: hidden; display: grid; place-items: center; background: var(--panel-2); color: var(--muted); }
+.ui2-spot-pic img { width: 100%; height: 100%; object-fit: cover; }
+.ui2-spot-text { flex: 1; min-width: 0; display: grid; }
+.ui2-spot-text b, .ui2-spot-text span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+.ui2-spot-text span { font-size: 11.5px; }
+.ui2-spot-faces { display: flex; flex: none; }
+.ui2-spot-faces .ui2-avatar { border: 2px solid var(--panel); margin-left: -7px; }
+.ui2-peek { position: fixed; z-index: 75; width: 250px; display: grid; gap: 5px; padding: 10px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 10px; box-shadow: var(--shadow); font-size: 13px; pointer-events: none; }
+.ui2-peek > span { display: flex; align-items: center; gap: 7px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.ui2-scroll { position: relative; flex: 1; min-height: 0; overflow-y: auto; }
+.ui2-act { margin: 0; }
+.ui2-act li { position: relative; padding-left: 12px; }
+.ui2-act li.fresh::before { content: ""; position: absolute; left: 1px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%; background: var(--accent); }
+.ui2-top-btn { position: sticky; bottom: 8px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 4px; margin: 4px 0 8px; padding: 5px 12px; border: 1px solid var(--accent); border-radius: 999px; background: var(--panel); color: var(--accent-strong); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; box-shadow: var(--shadow); }
+
+/* ---------- world popup (src/ui2/OnlineNow.tsx) ---------- */
+.ui2-world-wrap { z-index: 45; align-items: center; }
+.ui2-world { position: relative; width: min(560px, 96vw); max-height: 90vh; overflow-y: auto; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 16px; box-shadow: var(--shadow); }
+.ui2-world-close { position: absolute; top: 10px; right: 10px; z-index: 2; background: color-mix(in srgb, var(--panel) 80%, transparent); }
+.ui2-world-hero { height: 200px; display: grid; place-items: center; background: var(--panel-2); color: var(--muted); }
+.ui2-world-hero img { width: 100%; height: 100%; object-fit: cover; }
+.ui2-world-body { padding: 14px 18px 18px; display: grid; gap: 8px; }
+.ui2-world-body h2 { margin: 0; font-size: 20px; }
+.ui2-world-body h3 { margin: 6px 0 0; font-size: 14px; }
+.ui2-world-body p { margin: 0; }
+.ui2-world-people { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 4px; }
+.ui2-world-people button { width: 100%; display: flex; align-items: center; gap: 9px; padding: 6px; border: 0; border-radius: 8px; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.ui2-world-people button:hover { background: var(--card-hover); }
+.ui2-world-people button > span:last-child { display: grid; min-width: 0; }
+.ui2-world-people button > span:last-child > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---------- server menu (src/ui2/ServerStatus.tsx) ---------- */
+.ui2-srv.on { border-color: var(--accent); }
+.ui2-drop-head.sub { border-top: 1px solid var(--border); }
+.ui2-drop-rows { list-style: none; margin: 0; padding: 6px 12px; display: grid; gap: 6px; }
+.ui2-drop-rows li { display: flex; align-items: center; gap: 8px; font-size: 13px; min-width: 0; }
+.ui2-drop-rows li > .small { max-width: 55%; text-align: right; }
+.ui2-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+
+/* ---------- sliders like VRChat's (src/components/Range.tsx) ---------- */
+.ui2-range { display: flex; align-items: center; gap: 10px; width: 100%; }
+.ui2-range.dim { opacity: 0.5; }
+.ui2-range input[type="range"] { -webkit-appearance: none; appearance: none; flex: 1; min-width: 80px; height: 14px; border-radius: 7px; background: linear-gradient(to right, var(--accent) 0 var(--p), var(--panel-2) var(--p) 100%); border: 1px solid var(--border); cursor: pointer; }
+.ui2-range input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 6px; height: 20px; border-radius: 3px; background: var(--text); border: 0; box-shadow: 0 0 0 2px var(--panel); }
+.ui2-range input[type="range"]::-moz-range-thumb { width: 6px; height: 20px; border-radius: 3px; background: var(--text); border: 0; }
+.ui2-range input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ui2-range output { flex: none; min-width: 3.2em; text-align: right; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); }
+
+/* ---------- settings like Discord: full screen, grouped categories, account on top ---------- */
+.ui2-settings.modal-backdrop { padding: 0; background: var(--bg); }
+.ui2-settings .modal.settings-modal { width: 100%; height: 100%; max-height: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.ui2-settings .settings-layout { grid-template-columns: 250px minmax(0, 860px); }
+.ui2-settings .settings-nav { padding: 12px 10px 20px 8px; gap: 1px; background: var(--panel); }
+.ui2-settings .settings-close { display: grid; justify-items: center; gap: 2px; height: auto; padding: 4px; }
+.settings-esc { font-size: 10px; font-weight: 700; color: var(--muted); letter-spacing: 0.05em; }
+.settings-account { display: flex; align-items: center; gap: 10px; padding: 10px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel-2); color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+.settings-account:hover { border-color: var(--border-strong); background: var(--card-hover); }
+.settings-account-text { display: grid; min-width: 0; }
+.settings-account-text > * { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.settings-group { display: flex; flex-direction: column; gap: 1px; }
+.settings-group + .settings-group { margin-top: 10px; }
+.settings-group-head { display: flex; align-items: center; gap: 6px; padding: 6px 4px 4px 2px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.ui2-settings .settings-group:not(.plain) .settings-cat { margin-left: 12px; }
+
+/* ---------- phone: Online now in People ---------- */
+.ui2-phone-people { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.ui2-phone-people > .ui2-part.open .ui2-part-body { max-height: 34vh; display: flex; flex-direction: column; }
+.ui2-phone-cards { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
+.ui2-phone .ui2-world-wrap { padding: 0; align-items: stretch; }
+.ui2-phone .ui2-world { width: 100%; max-height: none; border-radius: 0; border: 0; padding-top: env(safe-area-inset-top, 0px); }

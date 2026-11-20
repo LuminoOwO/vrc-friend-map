@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { scoreSection } from "../settingsSearch";
-import { backend, type GraphicsInfo, type GraphicsMode } from "../backend";
+import { backend, imgSrc, type GraphicsInfo, type GraphicsMode } from "../backend";
+import { iconUrl } from "../model";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, wipeEverything } from "../session";
 import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, updateUi, useApp } from "../store";
@@ -48,6 +49,7 @@ import { SECTION_INFO } from "../ui2/sectionInfo";
 import { flagLine } from "../notesline";
 import { loadSlots, saveSlot, type MessageSlot } from "../invites";
 import type { UiSettings } from "../types";
+import { Range } from "./Range";
 
 function NotesLineSection() {
   const n = useApp((s) => s.settings.notesLine);
@@ -181,7 +183,7 @@ function BioSection() {
       </label>
       <label className="field narrow">
         <span>One person every {b.everySecs} s</span>
-        <input type="range" min={10} max={300} step={5} value={b.everySecs} disabled={!b.background} onChange={(e) => updateSettings({ bios: { ...b, everySecs: Number(e.target.value) } })} />
+        <Range min={10} max={300} step={5} value={b.everySecs} disabled={!b.background} onChange={(e) => updateSettings({ bios: { ...b, everySecs: Number(e.target.value) } })} />
       </label>
       <p className="small muted">
         So profiles open with their bio right away, and age hints and time zone guesses are ready. Friends first (online ones before offline),
@@ -219,7 +221,7 @@ function InterfaceSection() {
       <div className="row">
         <label className="field narrow">
           <span>Text size: {Math.round(ui.textScale * 100)} %</span>
-          <input type="range" min={0.8} max={1.6} step={0.05} value={ui.textScale} onChange={(e) => set({ textScale: Number(e.target.value) })} />
+          <Range min={0.8} max={1.6} step={0.05} value={ui.textScale} onChange={(e) => set({ textScale: Number(e.target.value) })} />
         </label>
         <label className="field narrow">
           <span>Animations</span>
@@ -291,6 +293,12 @@ export function SettingsModal() {
   }, [query, gfx]);
 
   const close = () => setState({ settingsOpen: false });
+  const beta = betaActive();
+  const pick = (c: Cat) => {
+    setQuery("");
+    setCat(c);
+    bodyRef.current?.scrollTo({ top: 0 });
+  };
   const ranked = scores ? Object.entries(scores).sort((a, b) => b[1] - a[1]) : [];
   const jump = (id: string) => {
     const sec = sections.current.get(id);
@@ -309,7 +317,7 @@ export function SettingsModal() {
   };
 
   return (
-    <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && close()}>
+    <div className={`modal-backdrop ${beta ? "ui2-settings" : ""}`} onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <div className="modal settings-modal" role="dialog" aria-label="Settings">
         <div className="modal-head settings-head">
           <h2>Settings</h2>
@@ -334,23 +342,28 @@ export function SettingsModal() {
               </button>
             )}
           </div>
-          <button className="icon-btn" onClick={close} title="Close">
+          <button className="icon-btn settings-close" onClick={close} title="Close (Esc)" aria-label="Close settings">
             <Icon name="close" />
+            {beta && <span className="settings-esc">ESC</span>}
           </button>
         </div>
         <div className="settings-layout">
           <nav className="settings-nav" aria-label="Settings categories">
-            {CATS.map((c) => {
+            {beta && <AccountCard onOpen={() => pick("account")} />}
+            {(beta ? NAV_GROUPS : [{ label: "", icon: "", cats: CATS.map((c) => c.id) }]).map((g) => (
+              <div key={g.label || "all"} className={g.label ? "settings-group" : "settings-group plain"}>
+                {g.label && (
+                  <span className="settings-group-head">
+                    <Icon name={g.icon} size={13} /> {g.label}
+                  </span>
+                )}
+            {CATS.filter((c) => g.cats.includes(c.id)).map((c) => {
               const hits = scores ? ranked.filter(([id]) => sections.current.get(id)?.cat === c.id).length : 0;
               return (
                 <button
                   key={c.id}
                   className={`settings-cat ${!scores && cat === c.id ? "on" : ""} ${scores && !hits ? "dim" : ""}`}
-                  onClick={() => {
-                    setQuery("");
-                    setCat(c.id);
-                    bodyRef.current?.scrollTo({ top: 0 });
-                  }}
+                  onClick={() => pick(c.id)}
                 >
                   <Icon name={c.icon} size={16} />
                   <span>{c.label}</span>
@@ -358,6 +371,8 @@ export function SettingsModal() {
                 </button>
               );
             })}
+              </div>
+            ))}
           </nav>
           <div className="settings-body" ref={bodyRef}>
             {scores && (
@@ -420,7 +435,7 @@ export function SettingsModal() {
           </label>
           <label className="field">
             <span>Time between requests: {(settings.intervalMs / 1000).toFixed(1)} s</span>
-            <input type="range" min={1000} max={4000} step={100} value={settings.intervalMs} onChange={(e) => updateSettings({ intervalMs: Number(e.target.value) })} />
+            <Range min={1000} max={4000} step={100} value={settings.intervalMs} onChange={(e) => updateSettings({ intervalMs: Number(e.target.value) })} />
             <small>Never faster than one per second. Slower is gentler on VRChat; the first full sync takes about 2 × (number of friends) requests.</small>
           </label>
           <label className="check">
@@ -686,6 +701,32 @@ const CATS: { id: Cat; label: string; icon: string }[] = [
   { id: "sounds", label: "Notifications", icon: "sound" },
   { id: "account", label: "Account & data", icon: "user" },
 ];
+
+/** New interface: the categories in groups, each heading with its own icon. */
+const NAV_GROUPS: { label: string; icon: string; cats: Cat[] }[] = [
+  { label: "App", icon: "sliders", cats: ["appearance", "performance", "sounds"] },
+  { label: "People", icon: "users", cats: ["people", "logs"] },
+  { label: "Connect", icon: "link", cats: ["sharing"] },
+  { label: "Advanced", icon: "key", cats: ["account"] },
+];
+
+/** New interface: you at the top of the settings sidebar; opens Account & data. */
+function AccountCard({ onOpen }: { onOpen: () => void }) {
+  const me = useApp((s) => s.cache.me);
+  const demo = useApp((s) => s.demo);
+  const src = me?.profile ? imgSrc(iconUrl(me.profile)) : undefined;
+  return (
+    <button className="settings-account" onClick={onOpen} title="Account & data">
+      <span className="ui2-avatar" style={{ width: 40, height: 40 }}>
+        {src ? <img src={src} alt="" /> : (me?.displayName?.[0] ?? "?")}
+      </span>
+      <span className="settings-account-text">
+        <b>{me?.displayName ?? (demo ? "Demo" : "Not signed in")}</b>
+        <span className="small muted">{demo ? "Demo mode" : "Account, backup, data"}</span>
+      </span>
+    </button>
+  );
+}
 
 interface SecInfo {
   cat: Cat;
@@ -983,7 +1024,7 @@ function GroupSection() {
         <span>
           Group size: <b>{g.resolution < 0.8 ? "bigger, looser groups" : g.resolution > 1.25 ? "smaller, tighter groups" : "balanced"}</b>
         </span>
-        <input type="range" min={0.4} max={2.2} step={0.05} value={g.resolution} onChange={(e) => set({ resolution: Number(e.target.value) })} />
+        <Range min={0.4} max={2.2} step={0.05} value={g.resolution} onChange={(e) => set({ resolution: Number(e.target.value) })} />
       </label>
       <div className="row">
         <label className="field narrow">

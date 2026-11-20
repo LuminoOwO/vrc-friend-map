@@ -1,9 +1,11 @@
 // The new beta UI (Settings → Appearance → Interface → New beta UI). Same
 // data, same views and dialogs as the classic UI; a different shell:
 //  - computers: a docked, flat top bar (your picture, the view tabs, server
-//    status, notifications bell, search, settings), filter chips under it on
-//    Map and People, the person in a panel on the right with section tabs,
-//    who's here as a floating card, Ctrl+K for the command palette;
+//    status with your devices, notifications bell, search, settings), filter
+//    chips under it on Map and People, a side panel (left or right, resizable,
+//    folds to a wing) with where you are, overview tiles, online now and
+//    activity; profiles and worlds open as popups in the middle; Ctrl+K for
+//    the command palette;
 //  - phones: a bottom tab bar (Map, People, Here, Insights, Me), a person as
 //    a bottom sheet you drag between peek, half and full, settings and
 //    filters as full-screen sheets, bigger touch targets.
@@ -16,7 +18,10 @@ import { iconUrl } from "../model";
 import { shownName } from "../personal";
 import { setState, updateFilters, updateUi, useApp, type View } from "../store";
 import { openServers } from "../components/ServersModal";
-import { ServerStatusChip, useServersSummary } from "./ServerStatus";
+import { ServerMenu, useServersSummary } from "./ServerStatus";
+import { OnlineNow, WorldPopup } from "./OnlineNow";
+import { PanelWing, SidePanel, usePanelPrefs } from "./SidePanel";
+import { useDismiss } from "./dismiss";
 import { syncAll } from "../sync";
 import { ActivityView } from "../components/ActivityView";
 import { CardsView } from "../components/CardsView";
@@ -101,6 +106,10 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
   const selectedId = useApp((s) => s.selectedId);
   const me = useApp((s) => s.cache.me);
   const search = useApp((s) => s.filters.search);
+  const [prefs, updatePrefs] = usePanelPrefs();
+  const [world, setWorld] = useState<string | null>(null);
+  const closeWorld = useCallback(() => setWorld(null), []);
+  const panel = prefs.collapsed ? <PanelWing side={prefs.side} onOpen={() => updatePrefs({ collapsed: false })} /> : <SidePanel prefs={prefs} update={updatePrefs} onWorld={setWorld} />;
   return (
     <div className="ui2-desk">
       <header className="ui2-top">
@@ -116,7 +125,7 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
           ))}
         </nav>
         <span className="ui2-grow" />
-        <ServerStatusChip />
+        <ServerMenu />
         <SyncPill />
         <Bell />
         <div className="ui2-search top">
@@ -131,34 +140,20 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
         </button>
       </header>
       <div className="ui2-body">
+        {prefs.side === "left" && panel}
         <main className="ui2-main">
           {(view === "graph" || view === "cards") && <FilterRow />}
           <div className="ui2-content">
-            {view === "graph" && <div className="ui2-here-float"><HereNow /></div>}
+            {view === "graph" && prefs.collapsed && <div className={`ui2-here-float ${prefs.side}`}><HereNow /></div>}
             <ViewBody view={view} />
           </div>
         </main>
-        {selectedId && <PersonPanel id={selectedId} />}
+        {prefs.side === "right" && panel}
       </div>
+      {world && <WorldPopup spotKey={world} onClose={closeWorld} />}
+      {selectedId && <ProfilePopup id={selectedId} />}
     </div>
   );
-}
-
-/** Closes a dropdown on a click outside it or on Escape. */
-function useDismiss(open: boolean, close: () => void) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const down = (e: MouseEvent) => ref.current && !ref.current.contains(e.target as Node) && close();
-    const key = (e: KeyboardEvent) => e.key === "Escape" && close();
-    window.addEventListener("mousedown", down);
-    window.addEventListener("keydown", key);
-    return () => {
-      window.removeEventListener("mousedown", down);
-      window.removeEventListener("keydown", key);
-    };
-  }, [open, close]);
-  return ref;
 }
 
 /** Notifications bell: what you missed (muted, quiet hours) and the latest ones shown. */
@@ -262,42 +257,12 @@ function FilterRow() {
   );
 }
 
-const SECTIONS: [string, string][] = [
-  ["Overview", ""],
-  ["About", "About me"],
-  ["Age", "Age"],
-  ["Time", "Local time"],
-  ["Online", "Online"],
-  ["Note", "Your note"],
-  ["Logs", "From your game logs"],
-  ["Groups", "Groups"],
-];
-
-/** The person on the right (desktop), with section tabs that jump within the profile. */
-function PersonPanel({ id }: { id: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const jump = (label: string) => {
-    const root = ref.current;
-    if (!root) return;
-    if (!label) return root.querySelector(".profile")?.scrollTo({ top: 0, behavior: "smooth" });
-    const h = [...root.querySelectorAll("h3")].find((x) => x.textContent?.trim().startsWith(label));
-    h?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+/** A profile in the middle of the window, like the classic interface. One close button (its own). */
+function ProfilePopup({ id }: { id: string }) {
   return (
-    <aside className="ui2-person" ref={ref}>
-      <div className="ui2-person-tabs">
-        {SECTIONS.map(([t, h]) => (
-          <button key={t} onClick={() => jump(h)}>
-            {t}
-          </button>
-        ))}
-        <span className="ui2-grow" />
-        <button className="icon-btn" aria-label="Close" onClick={() => setState({ selectedId: null })}>
-          <Icon name="close" size={16} />
-        </button>
-      </div>
-      <DetailPanel id={id} />
-    </aside>
+    <div className="profile-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setState({ selectedId: null })}>
+      <DetailPanel id={id} popup />
+    </div>
   );
 }
 
@@ -308,6 +273,8 @@ function PhoneShell() {
   const selectedId = useApp((s) => s.selectedId);
   const unread = useUnreadMissed();
   const [page, setPage] = useState<"here" | "me" | null>(null);
+  const [world, setWorld] = useState<string | null>(null);
+  const closeWorld = useCallback(() => setWorld(null), []);
   const tab: PhoneTab = page ?? (view === "cards" ? "cards" : view === "insights" ? "insights" : view === "graph" ? "graph" : "me");
   const go = (t: PhoneTab | View) => {
     if (t === "here" || t === "me") setPage(t);
@@ -325,7 +292,15 @@ function PhoneShell() {
         </button>
       </header>
       <main className="ui2-phone-main">
-        {page === "here" ? <HerePage /> : page === "me" ? <MePage onOpen={(v) => go(v)} /> : <ViewBody view={view} />}
+        {page === "here" ? (
+          <HerePage />
+        ) : page === "me" ? (
+          <MePage onOpen={(v) => go(v)} />
+        ) : view === "cards" ? (
+          <PhonePeople onWorld={setWorld} />
+        ) : (
+          <ViewBody view={view} />
+        )}
       </main>
       <nav className="ui2-tabs" aria-label="Views">
         {(
@@ -344,7 +319,34 @@ function PhoneShell() {
           </button>
         ))}
       </nav>
+      {world && <WorldPopup spotKey={world} onClose={closeWorld} />}
       {selectedId && <PersonSheet id={selectedId} />}
+    </div>
+  );
+}
+
+/** Phones: the People tab starts with who's online, one row per world (foldable), then everyone. */
+function PhonePeople({ onWorld }: { onWorld: (key: string) => void }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="ui2-phone-people">
+      <section className={`ui2-part ${open ? "open" : ""}`}>
+        <div className="ui2-part-head">
+          <button className="ui2-part-title" aria-expanded={open} onClick={() => setOpen(!open)}>
+            <Icon name={open ? "chevron-down" : "chevron-right"} size={14} />
+            <Icon name="world" size={15} />
+            <span>Online now</span>
+          </button>
+        </div>
+        {open && (
+          <div className="ui2-part-body">
+            <OnlineNow onOpen={onWorld} />
+          </div>
+        )}
+      </section>
+      <div className="ui2-phone-cards">
+        <CardsView />
+      </div>
     </div>
   );
 }

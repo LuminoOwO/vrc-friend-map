@@ -25,6 +25,7 @@ import {
   trustRank,
 } from "../model";
 import { addToCircle, getState, setState, updateSettings, useApp } from "../store";
+import { betaActive } from "../ui2/active";
 import type { Cache, Circle, Filters, Friend, MapSettings, Presence } from "../types";
 import { captureCard, capturePicture } from "../flip";
 import { FRESH_MS } from "../notify";
@@ -1265,7 +1266,7 @@ export function GraphView() {
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
       const s = getState();
-      if (s.settingsOpen || s.serversOpen || s.viewer || s.closeAsk || (s.selectedId && s.settings.profileAs === "popup")) return;
+      if (s.settingsOpen || s.serversOpen || s.viewer || s.closeAsk || (s.selectedId && (s.settings.profileAs === "popup" || betaActive()))) return;
       if (e.key === "+" || e.key === "=") zoomKeysRef.current.zoomBy(1.4);
       else if (e.key === "-" || e.key === "_") zoomKeysRef.current.zoomBy(1 / 1.4);
       else if (e.key === "0") zoomKeysRef.current.fit();
