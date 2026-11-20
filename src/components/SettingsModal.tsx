@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState
 import { NO_OWN_COLORS, type OwnColors } from "../owncolors";
 import { scoreSection } from "../settingsSearch";
 import { backend, imgSrc, type GraphicsInfo, type GraphicsMode } from "../backend";
-import { iconUrl } from "../model";
+import { iconUrl, STATUS_LABEL, statusColor } from "../model";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, wipeEverything } from "../session";
 import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, updateUi, useApp } from "../store";
@@ -258,7 +258,7 @@ export function SettingsModal() {
   const [gfx, setGfx] = useState<GraphicsInfo | null>(null);
   const [gfxStart, setGfxStart] = useState<GraphicsMode | null>(null);
   const [confirmWipe, setConfirmWipe] = useState(false);
-  const [cat, setCat] = useState<Cat>("appearance");
+  const [cat, setCat] = useState<string>("appearance");
   const [query, setQuery] = useState("");
   const [scores, setScores] = useState<Record<string, number> | null>(null);
   const sections = useRef(new Map<string, { cat: Cat; title: string; keys: string; el: HTMLElement | null }>());
@@ -274,7 +274,7 @@ export function SettingsModal() {
   useEffect(() => {
     if (tab !== "general") {
       const id = tab;
-      const c = sections.current.get(id)?.cat ?? (id === "groups" || id === "logs" ? "logs" : null);
+      const c = betaActive() ? (BETA_OF[id] ?? null) : (sections.current.get(id)?.cat ?? (id === "groups" || id === "logs" ? "logs" : null));
       if (c) setCat(c);
       requestAnimationFrame(() => sections.current.get(id)?.el?.scrollIntoView({ block: "start" }));
       setState({ settingsTab: "general" });
@@ -295,7 +295,7 @@ export function SettingsModal() {
 
   const close = () => setState({ settingsOpen: false });
   const beta = betaActive();
-  const pick = (c: Cat) => {
+  const pick = (c: string) => {
     setQuery("");
     setCat(c);
     bodyRef.current?.scrollTo({ top: 0 });
@@ -305,11 +305,11 @@ export function SettingsModal() {
     const sec = sections.current.get(id);
     if (!sec) return;
     setQuery("");
-    setCat(sec.cat);
+    setCat(betaActive() ? (BETA_OF[id] ?? "appearance") : sec.cat);
     requestAnimationFrame(() => sec.el?.scrollIntoView({ block: "start", behavior: "smooth" }));
   };
   const ctx: SecCtx = {
-    visible: (id, c) => (scores ? id in scores : c === cat),
+    visible: (id, c) => (scores ? id in scores : betaActive() ? BETA_OF[id] === cat : c === cat),
     order: (id) => (scores ? ranked.findIndex(([x]) => x === id) : 0),
     register: (id, info) => {
       if (info) sections.current.set(id, info);
@@ -317,48 +317,73 @@ export function SettingsModal() {
     },
   };
 
+  const searchBox = (
+    <div className="settings-search">
+      <Icon name="search" size={16} />
+      <input
+        ref={searchRef}
+        autoFocus={!/Android|iPhone|iPad/i.test(navigator.userAgent)}
+        value={query}
+        placeholder="Search settings (e.g. theme, fps, sound, blocked)"
+        onChange={(e) => setQuery(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && query) {
+            e.stopPropagation();
+            setQuery("");
+          } else if (e.key === "Enter" && ranked[0]) jump(ranked[0][0]);
+        }}
+      />
+      {query && (
+        <button className="icon-btn small" title="Clear" onClick={() => setQuery("")}>
+          <Icon name="close" size={14} />
+        </button>
+      )}
+    </div>
+  );
+  const page = BETA_PAGES.find((p) => p.id === cat) ?? BETA_PAGES[2];
+
   return (
     <div className={`modal-backdrop ${beta ? "ui2-settings" : ""}`} onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <div className="modal settings-modal" role="dialog" aria-label="Settings">
+        {!beta && (
         <div className="modal-head settings-head">
           <h2>Settings</h2>
-          <div className="settings-search">
-            <Icon name="search" size={16} />
-            <input
-              ref={searchRef}
-              autoFocus={!/Android|iPhone|iPad/i.test(navigator.userAgent)}
-              value={query}
-              placeholder="Search settings (e.g. theme, fps, sound, blocked)"
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Escape" && query) {
-                  e.stopPropagation();
-                  setQuery("");
-                } else if (e.key === "Enter" && ranked[0]) jump(ranked[0][0]);
-              }}
-            />
-            {query && (
-              <button className="icon-btn small" title="Clear" onClick={() => setQuery("")}>
-                <Icon name="close" size={14} />
-              </button>
-            )}
-          </div>
-          <button className="icon-btn settings-close" onClick={close} title="Close (Esc)" aria-label="Close settings">
+          {!beta && searchBox}
+          <button className="icon-btn" onClick={close} title="Close (Esc)" aria-label="Close settings">
             <Icon name="close" />
-            {beta && <span className="settings-esc">ESC</span>}
           </button>
         </div>
+        )}
         <div className="settings-layout">
+          {beta ? (
+            <div className="ui2-set-side">
+              <nav className="settings-nav" aria-label="Settings sections">
+                {searchBox}
+                <AccountCard onOpen={() => pick("account")} />
+                {BETA_GROUPS.map((g) => (
+                  <div key={g.label} className="settings-group">
+                    {g.label !== "User" && (
+                      <span className="settings-group-head">
+                        <Icon name={g.icon} size={14} /> {g.label}
+                      </span>
+                    )}
+                    {BETA_PAGES.filter((p) => p.group === g.label).map((p) => {
+                      const hits = scores ? ranked.filter(([id]) => BETA_OF[id] === p.id).length : 0;
+                      return (
+                        <button key={p.id} className={`settings-cat ${!scores && cat === p.id ? "on" : ""} ${scores && !hits ? "dim" : ""}`} aria-current={!scores && cat === p.id ? "page" : undefined} onClick={() => pick(p.id)}>
+                          <Icon name={p.icon} size={18} />
+                          <span>{p.label}</span>
+                          {scores && hits > 0 && <span className="settings-hits">{hits}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
+              </nav>
+            </div>
+          ) : (
           <nav className="settings-nav" aria-label="Settings categories">
-            {beta && <AccountCard onOpen={() => pick("account")} />}
-            {(beta ? NAV_GROUPS : [{ label: "", icon: "", cats: CATS.map((c) => c.id) }]).map((g) => (
-              <div key={g.label || "all"} className={g.label ? "settings-group" : "settings-group plain"}>
-                {g.label && (
-                  <span className="settings-group-head">
-                    <Icon name={g.icon} size={13} /> {g.label}
-                  </span>
-                )}
-            {CATS.filter((c) => g.cats.includes(c.id)).map((c) => {
+            {CATS.map((c) => {
               const hits = scores ? ranked.filter(([id]) => sections.current.get(id)?.cat === c.id).length : 0;
               return (
                 <button
@@ -372,10 +397,21 @@ export function SettingsModal() {
                 </button>
               );
             })}
-              </div>
-            ))}
           </nav>
+          )}
           <div className="settings-body" ref={bodyRef}>
+            <div className="ui2-set-page">
+            {beta && !scores && (
+              <header className="ui2-page-head">
+                <h1>
+                  <span className="ui2-page-icon">
+                    <Icon name={page.icon} size={22} />
+                  </span>
+                  {page.label}
+                </h1>
+                <p>{page.about}</p>
+              </header>
+            )}
             {scores && (
               <div className="settings-results">
                 {ranked.length ? (
@@ -476,7 +512,7 @@ export function SettingsModal() {
                     <span style={{ background: t.panel }} />
                     <span style={{ background: t.accent }} />
                   </span>
-                  {t.label}
+                  <span>{t.label}</span>
                 </button>
               ))}
             </div>
@@ -686,6 +722,15 @@ export function SettingsModal() {
           <p className="small muted">VRC Friend Map {__APP_VERSION__} (build {__APP_BUILD__}). Not affiliated with VRChat Inc.</p>
         </Sec>
             </SecContext.Provider>
+            </div>
+            {beta && (
+              <div className="ui2-set-close">
+                <button onClick={close} title="Close (Esc)" aria-label="Close settings">
+                  <Icon name="close" size={18} />
+                </button>
+                <span>ESC</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -747,29 +792,77 @@ function OwnColorsField() {
   );
 }
 
-/** New interface: the categories in groups, each heading with its own icon. */
-const NAV_GROUPS: { label: string; icon: string; cats: Cat[] }[] = [
-  { label: "App", icon: "sliders", cats: ["appearance", "performance", "sounds"] },
-  { label: "People", icon: "users", cats: ["people", "logs"] },
-  { label: "Connect", icon: "link", cats: ["sharing"] },
-  { label: "Advanced", icon: "key", cats: ["account"] },
+/** New interface: settings pages in groups (User, App, People, Connect, Advanced), like Discord. */
+const BETA_PAGES: { id: string; group: string; label: string; icon: string; about: string }[] = [
+  { id: "account", group: "User", label: "My account", icon: "user", about: "Your VRChat login and what this app asks VRChat for." },
+  { id: "status", group: "User", label: "Status extras", icon: "star", about: "Things the app can put into your VRChat status or bio." },
+  { id: "appearance", group: "App", label: "Appearance", icon: "eye", about: "Theme, colours and how the map and profiles look." },
+  { id: "performance", group: "App", label: "Performance", icon: "rocket", about: "How smooth the map is and how much power it uses." },
+  { id: "notify", group: "App", label: "Notifications & sounds", icon: "bell", about: "What you hear and see when friends do things." },
+  { id: "people", group: "People", label: "People & safety", icon: "shield", about: "Hints about people, and who shows up at all." },
+  { id: "invites", group: "People", label: "Invite messages", icon: "user-plus", about: "Ready-made messages for invites and requests." },
+  { id: "logs", group: "People", label: "Game logs & groups", icon: "clock", about: "Reading VRChat's log files on this computer." },
+  { id: "servers", group: "Connect", label: "Sharing & servers", icon: "server", about: "Share with friends, sync your devices, log around the clock." },
+  { id: "devices", group: "Connect", label: "Devices & backup", icon: "phone", about: "Keep your phone and PC in step." },
+  { id: "data", group: "Advanced", label: "Local data", icon: "folder", about: "Everything stored on this device." },
+  { id: "diagnostics", group: "Advanced", label: "Diagnostics", icon: "chart", about: "Numbers that help find bugs." },
+  { id: "updates", group: "Advanced", label: "Updates", icon: "download", about: "Checks GitHub for new versions." },
+  { id: "about", group: "Advanced", label: "About", icon: "info", about: "Version, build and links." },
 ];
+const BETA_GROUPS: { label: string; icon: string }[] = [
+  { label: "User", icon: "user" },
+  { label: "App", icon: "sliders" },
+  { label: "People", icon: "users" },
+  { label: "Connect", icon: "link" },
+  { label: "Advanced", icon: "key" },
+];
+/** Which page each section is on in the new interface. */
+const BETA_OF: Record<string, string> = {
+  account: "account", requests: "account", accounts: "account",
+  nowplaying: "status", playtime: "status",
+  interface: "appearance", display: "appearance", mapdisplay: "appearance",
+  framerate: "performance", graphics: "performance", wheel: "performance",
+  notify: "notify", phone: "notify", close: "notify",
+  age: "people", redflags: "people", bios: "people", people: "people",
+  invites: "invites",
+  logs: "logs", groups: "logs",
+  servers: "servers",
+  backup: "devices",
+  data: "data",
+  diagnostics: "diagnostics",
+  updates: "updates",
+  about: "about",
+};
 
-/** New interface: you at the top of the settings sidebar; opens Account & data. */
+/** New interface: you at the top of the settings sidebar (opens My account), with Log out. */
 function AccountCard({ onOpen }: { onOpen: () => void }) {
   const me = useApp((s) => s.cache.me);
   const demo = useApp((s) => s.demo);
-  const src = me?.profile ? imgSrc(iconUrl(me.profile)) : undefined;
+  const alts = useApp((s) => Object.keys(s.cache.alts ?? {}).length);
+  const f = me?.profile;
+  const src = f ? imgSrc(iconUrl(f)) : undefined;
+  const ring = f ? statusColor(f, "online") : "var(--muted)";
+  const status = f ? (STATUS_LABEL[f.status] ?? "Online") : demo ? "Demo mode" : "Not signed in";
   return (
-    <button className="settings-account" onClick={onOpen} title="Account & data">
-      <span className="ui2-avatar" style={{ width: 40, height: 40 }}>
-        {src ? <img src={src} alt="" /> : (me?.displayName?.[0] ?? "?")}
-      </span>
-      <span className="settings-account-text">
-        <b>{me?.displayName ?? (demo ? "Demo" : "Not signed in")}</b>
-        <span className="small muted">{demo ? "Demo mode" : "Account, backup, data"}</span>
-      </span>
-    </button>
+    <div className="settings-account">
+      <button className="settings-account-me" onClick={onOpen} title="My account">
+        <span className="ui2-avatar" style={{ width: 38, height: 38, boxShadow: `0 0 0 2px var(--panel-2), 0 0 0 4px ${ring}` }}>
+          {src ? <img src={src} alt="" /> : (me?.displayName?.[0] ?? "?")}
+        </span>
+        <span className="settings-account-text">
+          <b>{me?.displayName ?? (demo ? "Demo" : "Not signed in")}</b>
+          <span className="small muted">
+            {status}
+            {alts > 0 ? ` · ${alts + 1} accounts` : ""}
+          </span>
+        </span>
+      </button>
+      {!demo && me && (
+        <button className="settings-logout" onClick={() => logoutAll(false)} title="Log out (keeps your data)">
+          Log out
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -805,13 +898,8 @@ function Sec({ id, cat, title, keys, children, unavailable }: { id: string; cat:
     <section ref={ref} className={`settings-sec ${shown ? "" : "hidden"} ${unavailable ? "unavailable" : ""} ${info ? "ui2-sec" : ""}`} style={{ order: ctx.order(id) }} data-sec={id}>
       {info && (
         <header className="ui2-sec-head">
-          <span className="ui2-sec-icon">
-            <Icon name={info.icon} size={18} />
-          </span>
-          <span>
-            <b>{title}</b>
-            <span className="small muted">{info.about}</span>
-          </span>
+          <h2>{title}</h2>
+          <span className="small muted">{info.about}</span>
         </header>
       )}
       {unavailable ? (

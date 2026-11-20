@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { imgSrc, isMobile } from "../backend";
 import { useDerived } from "../derived";
-import { iconUrl } from "../model";
+import { iconUrl, STATUS_LABEL, statusColor } from "../model";
 import { shownName } from "../personal";
 import { getState, setState, updateFilters, updateUi, useApp, type View } from "../store";
 import { openServers } from "../components/ServersModal";
@@ -34,7 +34,7 @@ import { markAllRead, useHistory } from "../history";
 import { LogbookView } from "../components/LogbookView";
 import { SharedLists } from "../components/SharedLists";
 import { SyncLogDialog } from "../components/SyncLogDialog";
-import { FilterPopover, SyncPill } from "../components/TopBar";
+import { FilterPopover } from "../components/TopBar";
 import { VrchatView } from "../components/VrchatView";
 import { CommandPalette } from "./CommandPalette";
 import "./ui2.css";
@@ -49,8 +49,6 @@ const RAIL: { key: View; label: string; icon: string }[] = [
   { key: "lists", label: "Shared lists", icon: "share" },
 ];
 
-/** Phones: "here" and "me" are pages of the beta shell, the rest are views. */
-const NONE: string[] = [];
 
 type PhoneTab = "graph" | "cards" | "here" | "insights" | "me";
 
@@ -104,12 +102,13 @@ function Avatar({ id, size = 34 }: { id: string; size?: number }) {
 function DesktopShell({ onPalette }: { onPalette: () => void }) {
   const view = useApp((s) => s.view);
   const selectedId = useApp((s) => s.selectedId);
-  const me = useApp((s) => s.cache.me);
   const search = useApp((s) => s.filters.search);
   const [prefs, updatePrefs] = usePanelPrefs();
   const [world, setWorld] = useState<string | null>(null);
   const closeWorld = useCallback(() => setWorld(null), []);
   const searchRef = useRef<HTMLInputElement>(null);
+  const [searching, setSearching] = useState(false);
+  const searchOpen = searching || search !== "";
   // Keyboard: Ctrl+1…7 views, "/" search, Ctrl+, settings, Ctrl+B side panel.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -128,7 +127,8 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
         updatePrefs({ collapsed: !prefs.collapsed });
       } else if (!typing && !ctrl && e.key === "/") {
         e.preventDefault();
-        searchRef.current?.focus();
+        setSearching(true);
+        requestAnimationFrame(() => searchRef.current?.focus());
       }
     };
     window.addEventListener("keydown", onKey);
@@ -147,38 +147,65 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
   return (
     <div className="ui2-desk">
       <header className="ui2-top">
-        <button className="ui2-top-me" title="Your profile" aria-label="Your profile" onClick={() => me && setState({ selectedId: me.id })}>
-          {me ? <Avatar id={me.id} size={32} /> : <Icon name="user" />}
-        </button>
+        <MeButton />
         <nav className="ui2-tabs-top" aria-label="Views" onKeyDown={onTabsKey}>
           {RAIL.map((r, i) => (
-            <button key={r.key} className={`ui2-ttab ${view === r.key ? "on" : ""}`} aria-current={view === r.key} title={`${r.label} (Ctrl+${i + 1})`} onClick={() => setState({ view: r.key })}>
-              <Icon name={r.icon} size={17} />
+            <button key={r.key} className={`ui2-ttab ${view === r.key ? "on" : ""}`} aria-current={view === r.key ? "page" : undefined} title={`${r.label} (Ctrl+${i + 1})`} onClick={() => setState({ view: r.key })}>
+              <Icon name={r.icon} size={22} />
               <span>{r.label}</span>
             </button>
           ))}
         </nav>
         <span className="ui2-grow" />
-        <ServerMenu />
-        <SyncPill />
-        <Bell />
-        <div className="ui2-search top">
-          <Icon name="search" size={15} />
-          <input ref={searchRef} value={search} placeholder="Search friends… ( / )" aria-label="Search friends" onChange={(e) => updateFilters({ search: e.target.value })} />
-          <kbd title="Search everything" onClick={onPalette}>
-            Ctrl K
-          </kbd>
+        <div className="ui2-top-right">
+          <ServerMenu />
+          <Bell />
+          {searchOpen && (
+            <div className="ui2-search top">
+              <Icon name="search" size={15} />
+              <input
+                ref={searchRef}
+                value={search}
+                placeholder="Search friends…"
+                aria-label="Search friends"
+                onChange={(e) => updateFilters({ search: e.target.value })}
+                onBlur={() => setSearching(false)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    e.stopPropagation();
+                    updateFilters({ search: "" });
+                    setSearching(false);
+                  }
+                }}
+              />
+              <kbd title="Search everything" onMouseDown={(e) => e.preventDefault()} onClick={onPalette}>
+                Ctrl K
+              </kbd>
+            </div>
+          )}
+          {!searchOpen && (
+            <button
+              className="ui2-top-icon"
+              title="Search friends ( / ), everything with Ctrl+K"
+              aria-label="Search"
+              onClick={() => {
+                setSearching(true);
+                requestAnimationFrame(() => searchRef.current?.focus());
+              }}
+            >
+              <Icon name="search" size={19} />
+            </button>
+          )}
+          {(view === "graph" || view === "cards") && <FilterButton />}
+          <button className="ui2-top-icon" title="Settings (Ctrl+,)" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
+            <Icon name="settings" size={19} />
+          </button>
         </div>
-        <button className="ui2-top-icon" title="Settings (Ctrl+,)" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
-          <Icon name="settings" size={19} />
-        </button>
       </header>
       <div className="ui2-body">
         {prefs.side === "left" && panel}
         <main className="ui2-main">
-          {(view === "graph" || view === "cards") && <FilterRow />}
           <div className="ui2-content">
-            {view === "graph" && prefs.collapsed && <div className={`ui2-here-float ${prefs.side}`}><HereNow /></div>}
             <ViewBody view={view} />
           </div>
         </main>
@@ -253,41 +280,38 @@ function Bell() {
   );
 }
 
-/** The most used filters as flat chips (Map and People); the full filter menu behind "More". */
-function FilterRow() {
-  const filters = useApp((s) => s.filters);
-  const circles = useApp((s) => s.local.circles);
-  const starred = useApp((s) => s.local.starred ?? NONE);
-  const [more, setMore] = useState(false);
+/** Map and People filters behind one button; a dot shows when any filter is on. */
+function FilterButton() {
+  const [open, setOpen] = useState(false);
   const { matched, friends } = useDerived();
-  const onlineOnly = filters.presence === "online";
+  const filtering = matched.size !== friends.length;
   return (
-    <div className="ui2-filters">
-      <div className="ui2-chips">
-        <button className={`ui2-chip ${onlineOnly ? "on" : ""}`} onClick={() => updateFilters({ presence: onlineOnly ? "all" : "online" })}>
-          Online
-        </button>
-        {starred.length > 0 && (
-          <button className={`ui2-chip ${filters.starredOnly ? "on" : ""}`} title="Only starred friends" onClick={() => updateFilters({ starredOnly: !filters.starredOnly })}>
-            <Icon name="star" size={13} /> Starred
-          </button>
-        )}
-        {circles.slice(0, 4).map((c) => (
-          <button key={c.id} className={`ui2-chip ${filters.circleId === c.id ? "on" : ""}`} style={{ ["--chip" as string]: c.color }} onClick={() => updateFilters({ circleId: filters.circleId === c.id ? null : c.id })}>
-            <span className="ui2-chip-dot" /> {c.name}
-          </button>
-        ))}
-        <div className="filter-wrap">
-          <button className={`ui2-chip ${more ? "on" : ""}`} onClick={() => setMore(!more)}>
-            <Icon name="filter" size={14} /> More
-          </button>
-          {more && <FilterPopover onClose={() => setMore(false)} />}
-        </div>
-      </div>
-      <span className="ui2-count" title="Friends matching the filters">
-        {matched.size}/{friends.length}
-      </span>
+    <div className="filter-wrap ui2-drop-wrap">
+      <button className={`ui2-top-icon ${open ? "on" : ""}`} title={filtering ? `Filters: showing ${matched.size} of ${friends.length}` : "Filters"} aria-label="Filters" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <Icon name="filter" size={19} />
+        {filtering && <span className="ui2-dot small" />}
+      </button>
+      {open && <FilterPopover onClose={() => setOpen(false)} />}
     </div>
+  );
+}
+
+/** You, top left: picture with your status ring, name and status. Opens your own profile. */
+function MeButton() {
+  const me = useApp((s) => s.cache.me);
+  const f = me?.profile;
+  const color = f ? statusColor(f, "online") : "var(--muted)";
+  const src = f ? imgSrc(iconUrl(f)) : undefined;
+  return (
+    <button className="ui2-top-me" title="Your profile" aria-label="Your profile" onClick={() => me && setState({ selectedId: me.id })}>
+      <span className="ui2-avatar" style={{ width: 40, height: 40, boxShadow: `0 0 0 2px var(--panel), 0 0 0 4px ${color}` }}>
+        {src ? <img src={src} alt="" /> : (me?.displayName?.[0] ?? <Icon name="user" />)}
+      </span>
+      <span className="ui2-me-text">
+        <b>{me?.displayName ?? "You"}</b>
+        <span style={{ color }}>{f ? (STATUS_LABEL[f.status] ?? "Online") : ""}</span>
+      </span>
+    </button>
   );
 }
 

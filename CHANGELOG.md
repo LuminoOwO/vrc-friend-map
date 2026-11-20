@@ -42,24 +42,26 @@ minor releases can change behavior.
   through on phone and laptop speakers (before, they were low thumps that mostly vanished).
 - **A longer pause before a person's own tune** (0.25 s instead of 0.1 s), and you can set it:
   Notifications → *Pause before the person's tune*.
-- **New interface redesigned** (closer to VRChat's own menus, flat and docked):
-  - **Top bar** instead of the icon rail and the floating search bar: your picture (opens your
-    profile), the views as flat tabs, server status, sync, a **notifications bell** (what you
-    missed; click one to open the person), search and settings. Filter chips sit in a slim row
-    under it on Map and People.
-  - **Server status dropdown**: every server with its state, and which of your devices are online
-    right now and which server each one is connected through.
-  - **Side panel** with where you are (your instance and everyone in it), the overview tiles
-    (hover says what a click does, click filters the map), **Online now** (one row per world;
-    hover for a quick look, click for a world overview) and **Activity** (its own scroll area,
-    new entries get a dot, "back to top" says how many are new). Left or right (swap button),
-    resizable (snaps back near its default width, double-click resets), folds away to a small
-    tab on the edge; each part folds too.
-  - **Profiles and worlds open as a popup in the middle**, with one close button.
-  - **Settings full screen, like Discord**: your account at the top of the sidebar, the
-    categories under group headings (App, People, Connect, Advanced) with icons, close and Esc
-    on the right.
-  - **Sliders like VRChat's**: a rounded bar that fills, the percent on the right.
+- **New interface redesigned** to match the mockups (flat and docked, like VRChat's own menus):
+  - **Top bar**: you (picture with your status ring, name and status; opens your profile), the
+    views as tabs with the icon above the name, then servers ("2 servers OK · 2 of 3 devices"),
+    the **notifications bell**, search, filters (Map and People) and settings.
+  - **Servers dropdown**: sync status, every server with its state, and each of your devices
+    (online or last seen) with the servers it's on.
+  - **Side panel** as a card beside the map (right by default, swap to the left): *You are here*
+    (the world's picture, instance, time, faces, everyone there including non-friends, invite
+    friends here), the **Overview** tiles (hover says what a click does, click filters the map),
+    **Online now** (one row per world plus the website/app; hover for who's there, click for the
+    world overview) and **Activity** (its own scroll area, new entries light up, "N new · back to
+    top"). Resizable with a grip (snaps to the default width, dragged very narrow it folds away);
+    folds to a small tab on the edge showing how many friends are in VRChat.
+  - **World overview** in the middle: picture, instance, friends there (ask them for an invite),
+    *Join*, your note on the world.
+  - **Profiles open as a popup in the middle**, like the classic interface.
+  - **Settings like Discord**: full screen, search and your account (with *Log out*) on top of
+    the sidebar, pages grouped under User, App, People, Connect and Advanced, a title with an
+    icon on every page, a round close button with *ESC*, switches instead of checkboxes, theme
+    cards, **sliders like VRChat's** (a rounded bar that fills, the percent on the right).
   - **Phones**: Online now at the top of the People tab; the bottom bar's tabs a bit wider.
 - **The new interface is the start for new installs.** Updating keeps the interface you use; on
   the classic one, a one-time hint offers to try the new one (*Try it* / *Not now*). Settings →

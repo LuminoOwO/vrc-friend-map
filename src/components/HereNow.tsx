@@ -15,7 +15,7 @@ import { Icon } from "./Icon";
 
 const PROFILE_LIMIT = 25;
 
-function since(ts: number, now: number): string {
+export function since(ts: number, now: number): string {
   const mins = Math.max(0, Math.round((now - naiveToDate(ts).getTime()) / 60000));
   if (mins < 1) return "just joined";
   if (mins < 60) return `${mins} min`;
@@ -40,7 +40,7 @@ function detailLine(id: string, friend: boolean, cache: Cache): string {
 }
 
 /** Players and slots of an instance, from VRChat (refreshed every minute while you're there). */
-function useInstanceSlots(location: string | undefined, active: boolean) {
+export function useInstanceSlots(location: string | undefined, active: boolean) {
   const [slots, setSlots] = useState<{ users: number; capacity?: number } | null>(null);
   useEffect(() => {
     setSlots(null);

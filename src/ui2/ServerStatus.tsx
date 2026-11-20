@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { isLive, onLiveChange, serverName } from "../share";
 import { knownPeers, onPeers, type Peer } from "../peers";
 import { useDismiss } from "./dismiss";
+import { SyncPill } from "../components/TopBar";
 import { useApp } from "../store";
 import { openServers } from "../components/ServersModal";
 import { Icon } from "../components/Icon";
@@ -38,6 +39,8 @@ export function ServerStatusChip() {
   );
 }
 
+const agoShort = (ms: number) => (ms < 3600_000 ? `${Math.max(1, Math.round(ms / 60_000))} min ago` : `${Math.round(ms / 3600_000)} h ago`);
+
 /** A device counts as online when it said hello in the last few minutes. */
 const PEER_ONLINE_MS = 5 * 60_000;
 
@@ -63,14 +66,20 @@ export function ServerMenu() {
   const liveHere = servers.filter((s) => s.registered && isLive(s.url));
   return (
     <div className="ui2-drop-wrap" ref={ref}>
-      <button className={`ui2-srv ${open ? "on" : ""}`} onClick={() => setOpen(!open)} title={sum.text} aria-label={`Servers: ${sum.text}`} aria-expanded={open}>
-        <Icon name="server" size={14} />
+      <button className={`ui2-srv ${open ? "on" : ""}`} onClick={() => setOpen(!open)} title={sum.text} aria-label={`Servers and your devices: ${sum.text}`} aria-expanded={open}>
         <span className={`ui2-srv-dot ${sum.tone}`} />
         <span className="ui2-srv-text">{sum.text}</span>
-        <Icon name="chevron-down" size={12} />
+        {peers.length > 0 && (
+          <span className="ui2-srv-devices">
+            · {online.length + 1} of {peers.length + 1} devices
+          </span>
+        )}
       </button>
       {open && (
         <div className="ui2-drop" role="dialog" aria-label="Servers and devices">
+          <div className="ui2-drop-sync">
+            <SyncPill />
+          </div>
           <div className="ui2-drop-head">
             <b>Servers</b>
           </div>
@@ -89,20 +98,39 @@ export function ServerMenu() {
           <div className="ui2-drop-head sub">
             <b>Your devices</b>
           </div>
-          <ul className="ui2-drop-rows">
+          <ul className="ui2-devices-list">
             <li>
-              <Icon name="desktop" size={14} />
-              <span className="ui2-grow">This device</span>
-              <span className="small muted ui2-ellipsis">{liveHere.length ? liveHere.map(serverName).join(", ") : "not connected live"}</span>
+              <span className="ui2-dev-icon on">
+                <Icon name="desktop" size={17} />
+              </span>
+              <span className="ui2-dev-text">
+                <b>This device</b>
+                <span>Online now</span>
+              </span>
+              <span className="ui2-dev-servers">
+                {liveHere.map((x) => (
+                  <span key={x.id}>{serverName(x)}</span>
+                ))}
+              </span>
             </li>
-            {online.map((p) => (
-              <li key={p.device}>
-                <Icon name={/phone|android|ios|quest/i.test(p.name) ? "phone" : "desktop"} size={14} />
-                <span className="ui2-grow ui2-ellipsis">{p.name}</span>
-                <span className="small muted ui2-ellipsis">{p.direct ? "directly, at home" : nameOf(p.via)}</span>
-              </li>
-            ))}
-            {online.length === 0 && <li className="small muted">No other device of yours is online right now.</li>}
+            {peers.map((p) => {
+              const on = now - p.seen < PEER_ONLINE_MS;
+              return (
+                <li key={p.device}>
+                  <span className={`ui2-dev-icon ${on ? "on" : ""}`}>
+                    <Icon name={/phone|android|ios|quest/i.test(p.name) ? "phone" : "desktop"} size={17} />
+                  </span>
+                  <span className="ui2-dev-text">
+                    <b>{p.name}</b>
+                    <span>{on ? "Online" : `Offline · last seen ${agoShort(now - p.seen)}`}</span>
+                  </span>
+                  <span className="ui2-dev-servers">
+                    <span>{p.direct ? "At home" : nameOf(p.via)}</span>
+                  </span>
+                </li>
+              );
+            })}
+            {peers.length === 0 && <li className="small muted">Your other devices show up here once they're online.</li>}
           </ul>
           <button
             className="ui2-drop-foot"
@@ -111,7 +139,7 @@ export function ServerMenu() {
               openServers();
             }}
           >
-            Sharing & servers
+            Open Sharing & servers settings
           </button>
         </div>
       )}
