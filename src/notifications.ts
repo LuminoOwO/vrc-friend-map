@@ -223,14 +223,14 @@ function inScope(userId: string, n: NotifySettings): boolean {
 
 // ---------- delivery ----------
 
-const queue: { parts: SoundPart[]; volume: number }[] = [];
+const queue: { parts: SoundPart[]; volume: number; pause?: number }[] = [];
 let playing = false;
 async function drain() {
   if (playing) return;
   playing = true;
   while (queue.length) {
     const next = queue.shift()!;
-    await playParts(next.parts, next.volume).catch(() => {});
+    await playParts(next.parts, next.volume, next.pause).catch(() => {});
   }
   playing = false;
 }
@@ -310,7 +310,7 @@ export function notifyEvent(event: NotifyEvent, userId: string, name: string, ex
   void import("./phone").then((m) => m.pushToPhones(event, "VRC Friend Map", text));
 
   if (n.sound && queue.length < 4) {
-    queue.push({ parts: soundFor(event, name, n, userId), volume: n.volume });
+    queue.push({ parts: soundFor(event, name, n, userId), volume: n.volume, pause: n.pause });
     void drain();
   }
   const background = document.hidden || !document.hasFocus();
@@ -323,7 +323,7 @@ export function notifyEvent(event: NotifyEvent, userId: string, name: string, ex
 export function previewEvent(event: NotifyEvent, name: string, userId?: string) {
   const n = getState().settings.notify;
   queue.length = 0;
-  queue.push({ parts: soundFor(event, name, n, userId), volume: n.volume || 0.5 });
+  queue.push({ parts: soundFor(event, name, n, userId), volume: n.volume || 0.5, pause: n.pause });
   void drain();
 }
 

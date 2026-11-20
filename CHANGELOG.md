@@ -34,6 +34,10 @@ minor releases can change behavior.
 - Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
 
 ### Changed
+- **Door and Knock are easier to hear**: each now starts with a short, bright tap, so they come
+  through on phone and laptop speakers (before, they were low thumps that mostly vanished).
+- **A longer pause before a person's own tune** (0.25 s instead of 0.1 s), and you can set it:
+  Notifications → *Pause before the person's tune*.
 - **New interface redesigned** (closer to VRChat's own menus, flat and docked):
   - **Top bar** instead of the icon rail and the floating search bar: your picture (opens your
     profile), the views as flat tabs, server status, sync, a **notifications bell** (what you

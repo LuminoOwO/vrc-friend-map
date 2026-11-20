@@ -814,6 +814,8 @@ export interface NotifySettings {
   sound: boolean;
   /** 0 – 1 */
   volume: number;
+  /** Seconds between the event's sound and the person's own tune. */
+  pause: number;
   /** Per event: a built-in sound's name, "custom:<id>", or "none". */
   actionSounds: Record<NotifyEvent, string>;
   /** After the action sound: each person's own tune, made from their name. */

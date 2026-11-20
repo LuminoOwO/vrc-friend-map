@@ -18,7 +18,7 @@ Work through these in this order, one at a time; the rest of the file is the det
 6. ~~Sharing choices per account, not per device~~ (done)
 7. ~~Notice when the server's VRChat login expires~~ (done; renew from the app with a password: not started, owner to decide)
 8. Use the app without logging in to VRChat in it
-9. In gaps: Door / Knock sounds, the pause before a person's tune
+9. ~~In gaps: Door / Knock sounds, the pause before a person's tune~~ (done, owner to listen)
 
 Not ranked yet: everything under "More (owner, 2026-11-20)", the rest of Round 8 (keyboard
 navigation, translations), log out everywhere, the in-VR overlay, the renderer's CPU in the
@@ -297,8 +297,8 @@ tray. On hold: Discord rich presence.
 
 ## Notifications and sharing (owner, 2026-11-18)
 
-- [ ] **Door and Knock sounds:** hard to hear; make them clearer (louder attack, more distinct).
-- [ ] **Pause between the event sound and the person's own tune:** a little longer by default,
+- [x] **Door and Knock sounds:** hard to hear; make them clearer (louder attack, more distinct).
+- [x] **Pause between the event sound and the person's own tune:** a little longer by default,
   and a setting to choose it freely.
 - [x] **Sharing choices per account, not per device:** (done 2026-11-20: `serverShare` in the device-sync data, newer `shareAt` wins) which friends go into what you share,
   and who may get it, are set per device today, which can conflict between devices. Keep them

@@ -244,6 +244,10 @@ export function NotificationsSection() {
           <Range min={0} max={1} step={0.05} value={n.volume} onChange={(e) => updateNotify({ volume: Number(e.target.value) })} />
         </label>
         <label className="field narrow">
+          <span>Pause before the person's tune: {n.pause.toFixed(2)} s</span>
+          <Range pct={false} min={0} max={1} step={0.05} value={n.pause} disabled={!n.sound || !n.personTune} onChange={(e) => updateNotify({ pause: Number(e.target.value) })} />
+        </label>
+        <label className="field narrow">
           <span>Hear someone's tune</span>
           <div className="row tight">
             <input value={sample} placeholder={myName ?? "A name"} onChange={(e) => setSample(e.target.value)} />

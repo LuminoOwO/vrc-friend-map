@@ -48,6 +48,35 @@ function tone(ac: Ctx, out: AudioNode, freq: number, start: number, len: number,
   o.stop(start + len + 0.05);
 }
 
+/** A short burst of filtered noise: the bright "tick" that makes knocks and clicks audible on
+ *  small speakers (a low thump alone mostly vanishes on phones and laptops). */
+function tap(ac: Ctx, out: AudioNode, start: number, center: number, len: number, peak: number) {
+  const n = Math.max(1, Math.floor(ac.sampleRate * len));
+  const buf = ac.createBuffer(1, n, ac.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const src = ac.createBufferSource();
+  src.buffer = buf;
+  const f = ac.createBiquadFilter();
+  f.type = "bandpass";
+  f.frequency.value = center;
+  f.Q.value = 1.4;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(peak, start + 0.003);
+  g.gain.exponentialRampToValueAtTime(0.0001, start + len);
+  src.connect(f).connect(g).connect(out);
+  src.start(start);
+  src.stop(start + len + 0.02);
+}
+
+/** One knock on a wooden door: a bright tick on top of a short hollow body. */
+function knock(ac: Ctx, out: AudioNode, start: number, peak: number) {
+  tap(ac, out, start, 1500, 0.05, peak);
+  tone(ac, out, 340, start, 0.09, "triangle", peak * 0.8, 200);
+  tone(ac, out, 165, start, 0.12, "sine", peak * 0.6, 120);
+}
+
 export type Voice = "bell" | "glass" | "pluck" | "flute";
 /** A note with a little character: a few partials over the fundamental. */
 function note(ac: Ctx, out: AudioNode, freq: number, start: number, len: number, voice: Voice, peak: number) {
@@ -136,14 +165,16 @@ function builtIn(ac: Ctx, out: AudioNode, kind: string, t: number): number {
       note(ac, out, st(7), t, 0.1, "bell", 0.28);
       note(ac, out, st(4), t + 0.09, 0.14, "bell", 0.24);
       return 0.18;
-    case "knock": // joined your world: two knocks
-      tone(ac, out, 230, t, 0.07, "sine", 0.6, 150);
-      tone(ac, out, 230, t + 0.1, 0.07, "sine", 0.5, 150);
-      return 0.19;
-    case "door": // left your world
-      tone(ac, out, 200, t, 0.1, "sine", 0.5, 120);
-      note(ac, out, st(-5), t + 0.06, 0.12, "flute", 0.2);
-      return 0.16;
+    case "knock": // asks for an invite: two clear knocks on wood
+      knock(ac, out, t, 0.7);
+      knock(ac, out, t + 0.16, 0.6);
+      return 0.3;
+    case "door": // left your world: the latch clicks, the door shuts
+      tap(ac, out, t, 3200, 0.03, 0.35);
+      tap(ac, out, t + 0.08, 700, 0.09, 0.6);
+      tone(ac, out, 170, t + 0.08, 0.2, "triangle", 0.55, 95);
+      note(ac, out, st(-5), t + 0.16, 0.14, "flute", 0.18);
+      return 0.32;
     case "blip":
       note(ac, out, st(12), t, 0.06, "glass", 0.2);
       return 0.07;
@@ -283,12 +314,12 @@ function decode(ac: Ctx, data: string): Promise<AudioBuffer | null> {
 
 export type SoundPart = { sound: string } | { tune: string } | { data: string };
 
-/** Seconds between the event sound and the person's tune. */
-const PAUSE = 0.1;
+/** Seconds between the event sound and the person's tune, unless set (Notifications → pause). */
+export const DEFAULT_PAUSE = 0.25;
 
 /** Schedules the parts one after another on `ac` (action sound, then the person's tune).
  *  Returns when the last note starts ringing out (seconds, in the context's time). */
-export async function scheduleParts(ac: Ctx, parts: SoundPart[], volume: number, start: number): Promise<number> {
+export async function scheduleParts(ac: Ctx, parts: SoundPart[], volume: number, start: number, pause = DEFAULT_PAUSE): Promise<number> {
   const out = ac.createGain();
   out.gain.value = Math.min(1, volume);
   // A touch of echo makes the synth notes sound less dry.
@@ -304,8 +335,8 @@ export async function scheduleParts(ac: Ctx, parts: SoundPart[], volume: number,
   let t = start;
   for (const [i, p] of parts.entries()) {
     if ("sound" in p) {
-      // A tiny pause before the person's tune, so the two read as separate sounds.
-      if (p.sound !== "none") t += builtIn(ac, out, p.sound, t) + (i < parts.length - 1 ? PAUSE : 0);
+      // A pause before the person's tune, so the two read as separate sounds.
+      if (p.sound !== "none") t += builtIn(ac, out, p.sound, t) + (i < parts.length - 1 ? pause : 0);
     } else if ("tune" in p) {
       t += playTune(ac, out, p.tune, t);
     } else {
@@ -323,10 +354,10 @@ export async function scheduleParts(ac: Ctx, parts: SoundPart[], volume: number,
 }
 
 /** Plays the parts one after another. Resolves when done. */
-export async function playParts(parts: SoundPart[], volume: number): Promise<void> {
+export async function playParts(parts: SoundPart[], volume: number, pause = DEFAULT_PAUSE): Promise<void> {
   const ac = ctx();
   if (!ac || volume <= 0 || !parts.length) return;
-  const end = await scheduleParts(ac, parts, volume, ac.currentTime + 0.03);
+  const end = await scheduleParts(ac, parts, volume, ac.currentTime + 0.03, pause);
   // The next queued notification may start while this one rings out.
   await new Promise((r) => setTimeout(r, Math.max(0, (end + 0.25 - ac.currentTime) * 1000)));
 }
