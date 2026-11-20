@@ -7,6 +7,7 @@ import { iconUrl, STATUS_LABEL, statusColor } from "../model";
 import { getState, setState, updateFilters, updateUi, useApp, type View } from "../store";
 import type { UiLayout } from "../types";
 import { useDismiss } from "./dismiss";
+import { ServerMenu } from "./ServerStatus";
 import { ActivityView } from "../components/ActivityView";
 import { CardsView } from "../components/CardsView";
 import { DetailPanel } from "../components/DetailPanel";
@@ -84,6 +85,16 @@ export const LAYOUTS: { value: UiLayout; label: string }[] = [
   { value: "hud", label: "HUD" },
   { value: "dashboard", label: "Dashboard" },
   { value: "deck", label: "Deck" },
+  { value: "radial", label: "Radial" },
+  { value: "spotlight", label: "Spotlight" },
+  { value: "timeline", label: "Timeline" },
+  { value: "split", label: "Split" },
+  { value: "magazine", label: "Magazine" },
+  { value: "windows", label: "Windows" },
+  { value: "explorer", label: "Explorer" },
+  { value: "board", label: "Board" },
+  { value: "zen", label: "Zen" },
+  { value: "lobby", label: "Lobby" },
 ];
 
 /** Try the layouts of the new interface (to pick what works). */
@@ -250,5 +261,46 @@ export function NotificationList({ max = 30 }: { max?: number }) {
         </li>
       ))}
     </ul>
+  );
+}
+
+/** The usual buttons: search everything, filters (Map and People), servers, bell, layout, settings. */
+export function ToolCluster({ onPalette, className = "", filters = true }: { onPalette?: () => void; className?: string; filters?: boolean }) {
+  const view = useApp((s) => s.view);
+  return (
+    <div className={`ui2-tools ${className}`}>
+      {onPalette && (
+        <button className="ui2-top-icon" title="Search everything (Ctrl+K)" aria-label="Search everything" onClick={onPalette}>
+          <Icon name="search" size={18} />
+        </button>
+      )}
+      {filters && (view === "graph" || view === "cards") && <FilterButton />}
+      <ServerMenu />
+      <Bell />
+      <LayoutPicker />
+      <button className="ui2-top-icon" title="Settings (Ctrl+,)" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
+        <Icon name="settings" size={18} />
+      </button>
+    </div>
+  );
+}
+
+/** A view in a big panel with its title and a close (or back) button. */
+export function ViewSheet({ view, onClose, closeLabel = "Close", className = "" }: { view: View; onClose: () => void; closeLabel?: string; className?: string }) {
+  const r = RAIL.find((x) => x.key === view) ?? RAIL[0];
+  return (
+    <div className={`ui2-sheet-panel ${className}`} key={view}>
+      <header className="ui2-sheet-head">
+        <Icon name={r.icon} size={20} />
+        <h1>{r.label}</h1>
+        <span className="ui2-grow" />
+        <button className="ui2-pill-btn" onClick={onClose}>
+          <Icon name="close" size={14} /> {closeLabel}
+        </button>
+      </header>
+      <div className="ui2-sheet-body">
+        <ViewBody view={view} />
+      </div>
+    </div>
   );
 }

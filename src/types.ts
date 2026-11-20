@@ -643,7 +643,7 @@ export interface UiSettings {
   layout: UiLayout;
 }
 
-export type UiLayout = "topbar" | "columns" | "hud" | "dashboard" | "deck";
+export type UiLayout = "topbar" | "columns" | "hud" | "dashboard" | "deck" | "radial" | "spotlight" | "timeline" | "split" | "magazine" | "windows" | "explorer" | "board" | "zen" | "lobby";
 
 /** People who aren't friends: whose profiles to load and keep. */
 export interface PeopleSettings {

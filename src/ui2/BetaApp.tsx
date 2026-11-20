@@ -30,11 +30,9 @@ import { FilterPopover } from "../components/TopBar";
 import { CommandPalette } from "./CommandPalette";
 import "./ui2.css";
 import "./layouts.css";
+import "./layouts2.css";
 import { Avatar, Bell, FilterButton, LayoutPicker, MeButton, ProfilePopup, RAIL, ViewBody, WorldOpener, useOpenWorld, useViewKeys } from "./parts";
-import { ColumnsLayout } from "./layouts/Columns";
-import { HudLayout } from "./layouts/Hud";
-import { DashboardLayout } from "./layouts/Dashboard";
-import { DeckLayout } from "./layouts/Deck";
+import { LAYOUT_COMPONENTS } from "./layouts";
 
 
 
@@ -66,23 +64,14 @@ export function BetaApp({ children }: { children: React.ReactNode }) {
 /** Computers: the chosen layout, plus the world and profile popups every layout shares. */
 function Desktop({ onPalette }: { onPalette: () => void }) {
   const layout = useApp((s) => s.settings.ui.layout);
+  const Layout = LAYOUT_COMPONENTS[layout];
   const selectedId = useApp((s) => s.selectedId);
   const [world, setWorld] = useState<string | null>(null);
   const closeWorld = useCallback(() => setWorld(null), []);
   useViewKeys();
   return (
     <WorldOpener.Provider value={setWorld}>
-      {layout === "columns" ? (
-        <ColumnsLayout onPalette={onPalette} />
-      ) : layout === "hud" ? (
-        <HudLayout onPalette={onPalette} />
-      ) : layout === "dashboard" ? (
-        <DashboardLayout onPalette={onPalette} />
-      ) : layout === "deck" ? (
-        <DeckLayout onPalette={onPalette} />
-      ) : (
-        <DesktopShell onPalette={onPalette} />
-      )}
+      {Layout ? <Layout onPalette={onPalette} /> : <DesktopShell onPalette={onPalette} />}
       {world && <WorldPopup spotKey={world} onClose={closeWorld} />}
       {selectedId && <ProfilePopup id={selectedId} />}
     </WorldOpener.Provider>

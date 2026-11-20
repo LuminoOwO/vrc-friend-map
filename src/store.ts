@@ -801,7 +801,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       ...u,
       textScale: num(u.textScale, 1, 0.8, 1.6),
       reducedMotion: oneOf(u.reducedMotion, ["system", "on", "off"] as const, "system"),
-      layout: oneOf(u.layout, ["topbar", "columns", "hud", "dashboard", "deck"] as const, "topbar"),
+      layout: oneOf(u.layout, ["topbar", "columns", "hud", "dashboard", "deck", "radial", "spotlight", "timeline", "split", "magazine", "windows", "explorer", "board", "zen", "lobby"] as const, "topbar"),
     })),
   };
   // Format 2 (0.4.0) defaulted to no turning and ring gravity; 0.5.0 changed

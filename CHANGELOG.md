@@ -73,6 +73,14 @@ minor releases can change behavior.
     views slide up as a sheet); *Dashboard* (a home screen of cards: greeting, live map, where
     you are, numbers, Online now, Activity, notifications, popular worlds; tabs open every view);
     *Deck* (like TweetDeck: columns side by side that you add, remove and move).
+    Ten more: *Radial* (just the map; a round hub opens a ring of views, like VRChat's action
+    menu), *Spotlight* (a big search bar over a dimmed map, suggestions under it), *Timeline*
+    (a time river of the last hours along the bottom), *Split* (two views side by side with a
+    divider), *Magazine* (a front page: the busiest world as the hero, headlines), *Windows* (a
+    desktop: the map as wallpaper, windows you drag and resize, a taskbar and start menu),
+    *Explorer* (like VS Code: a friends tree, views and profiles as tabs, a status bar), *Board*
+    (friends as cards in lanes by status), *Zen* (only the map, a ticker line, a drawer from the
+    left edge) and *Lobby* (a game's main menu with a party panel and a news line).
   - **Smoother and more modern**: popups and menus fade and pop in, views and settings pages
     slide in, the line under the active tab slides, tiles and cards lift on hover, buttons react
     when pressed, new Activity entries slide in. Settings → Animations → *Reduce* turns it off.
