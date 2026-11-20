@@ -72,7 +72,7 @@ export function SidePanel({ prefs, update, onWorld }: { prefs: PanelPrefs; updat
           <Icon name={prefs.side === "left" ? "chevron-right" : "chevron-left"} size={14} />
         </button>
         <span className="ui2-grow" />
-        <button className="icon-btn small" title="Fold the panel away" aria-label="Fold the panel away" onClick={() => update({ collapsed: true })}>
+        <button className="icon-btn small" title="Fold the panel away (Ctrl+B)" aria-label="Fold the panel away" onClick={() => update({ collapsed: true })}>
           <Icon name={prefs.side === "left" ? "chevron-left" : "chevron-right"} size={16} />
         </button>
       </div>
@@ -119,7 +119,7 @@ export function SidePanel({ prefs, update, onWorld }: { prefs: PanelPrefs; updat
 /** The folded panel: a small tab on the window's edge that brings it back. */
 export function PanelWing({ side, onOpen }: { side: "left" | "right"; onOpen: () => void }) {
   return (
-    <button className={`ui2-wing ${side}`} title="Show the side panel" aria-label="Show the side panel" onClick={onOpen}>
+    <button className={`ui2-wing ${side}`} title="Show the side panel (Ctrl+B)" aria-label="Show the side panel" onClick={onOpen}>
       <Icon name={side === "left" ? "chevron-right" : "chevron-left"} size={16} />
     </button>
   );

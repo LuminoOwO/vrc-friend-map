@@ -17,6 +17,9 @@ minor releases can change behavior.
 - A profile has one close button instead of two.
 
 ### Added
+- **Keyboard shortcuts in the new interface** (computers): Ctrl+1–7 switch views, `/` jumps to
+  search, Ctrl+, opens settings, Ctrl+B folds the side panel; arrow keys move along the tabs.
+  Shown in the tooltips.
 - **Your own colors** (Settings → Appearance): pick the accent, background, panels and text on
   top of any theme; the other shades follow. Each goes back to the theme's with *Reset*. They
   sync with the rest of your look when you sync settings.

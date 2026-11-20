@@ -16,7 +16,7 @@ import { imgSrc, isMobile } from "../backend";
 import { useDerived } from "../derived";
 import { iconUrl } from "../model";
 import { shownName } from "../personal";
-import { setState, updateFilters, updateUi, useApp, type View } from "../store";
+import { getState, setState, updateFilters, updateUi, useApp, type View } from "../store";
 import { openServers } from "../components/ServersModal";
 import { ServerMenu, useServersSummary } from "./ServerStatus";
 import { OnlineNow, WorldPopup } from "./OnlineNow";
@@ -109,6 +109,40 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
   const [prefs, updatePrefs] = usePanelPrefs();
   const [world, setWorld] = useState<string | null>(null);
   const closeWorld = useCallback(() => setWorld(null), []);
+  const searchRef = useRef<HTMLInputElement>(null);
+  // Keyboard: Ctrl+1…7 views, "/" search, Ctrl+, settings, Ctrl+B side panel.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const typing = e.target instanceof HTMLElement && (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName));
+      const s = getState();
+      if (s.settingsOpen || s.viewer) return;
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (ctrl && !e.shiftKey && !e.altKey && /^[1-7]$/.test(e.key)) {
+        e.preventDefault();
+        setState({ view: RAIL[Number(e.key) - 1].key });
+      } else if (ctrl && e.key === ",") {
+        e.preventDefault();
+        setState({ settingsOpen: true });
+      } else if (ctrl && e.key.toLowerCase() === "b") {
+        e.preventDefault();
+        updatePrefs({ collapsed: !prefs.collapsed });
+      } else if (!typing && !ctrl && e.key === "/") {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [prefs.collapsed, updatePrefs]);
+  // Arrow keys move between the tabs (the focused tab opens with Enter or Space).
+  const onTabsKey = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight" && e.key !== "Home" && e.key !== "End") return;
+    const tabs = [...e.currentTarget.querySelectorAll<HTMLButtonElement>("button")];
+    const i = tabs.indexOf(document.activeElement as HTMLButtonElement);
+    const next = e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : (i + (e.key === "ArrowRight" ? 1 : -1) + tabs.length) % tabs.length;
+    e.preventDefault();
+    tabs[next]?.focus();
+  };
   const panel = prefs.collapsed ? <PanelWing side={prefs.side} onOpen={() => updatePrefs({ collapsed: false })} /> : <SidePanel prefs={prefs} update={updatePrefs} onWorld={setWorld} />;
   return (
     <div className="ui2-desk">
@@ -116,9 +150,9 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
         <button className="ui2-top-me" title="Your profile" aria-label="Your profile" onClick={() => me && setState({ selectedId: me.id })}>
           {me ? <Avatar id={me.id} size={32} /> : <Icon name="user" />}
         </button>
-        <nav className="ui2-tabs-top" aria-label="Views">
-          {RAIL.map((r) => (
-            <button key={r.key} className={`ui2-ttab ${view === r.key ? "on" : ""}`} aria-current={view === r.key} onClick={() => setState({ view: r.key })}>
+        <nav className="ui2-tabs-top" aria-label="Views" onKeyDown={onTabsKey}>
+          {RAIL.map((r, i) => (
+            <button key={r.key} className={`ui2-ttab ${view === r.key ? "on" : ""}`} aria-current={view === r.key} title={`${r.label} (Ctrl+${i + 1})`} onClick={() => setState({ view: r.key })}>
               <Icon name={r.icon} size={17} />
               <span>{r.label}</span>
             </button>
@@ -130,12 +164,12 @@ function DesktopShell({ onPalette }: { onPalette: () => void }) {
         <Bell />
         <div className="ui2-search top">
           <Icon name="search" size={15} />
-          <input value={search} placeholder="Search friends…" onChange={(e) => updateFilters({ search: e.target.value })} />
+          <input ref={searchRef} value={search} placeholder="Search friends… ( / )" aria-label="Search friends" onChange={(e) => updateFilters({ search: e.target.value })} />
           <kbd title="Search everything" onClick={onPalette}>
             Ctrl K
           </kbd>
         </div>
-        <button className="ui2-top-icon" title="Settings" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
+        <button className="ui2-top-icon" title="Settings (Ctrl+,)" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
           <Icon name="settings" size={19} />
         </button>
       </header>
