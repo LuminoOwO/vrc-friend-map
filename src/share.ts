@@ -226,7 +226,7 @@ export async function pairLogger(id: string, code: string) {
   const s = getState().settings.sharing.servers.find((x) => x.id === id);
   if (!s) return;
   await backend.share.loggerPair(s.url, code.replace(/\s/g, ""));
-  updateServer(id, { loggerOwner: true });
+  updateServer(id, { loggerOwner: true, loggerExpired: false });
   await refreshServer(id);
   await fetchLogger(s.id).catch(() => {});
 }
@@ -235,7 +235,7 @@ export async function unpairLogger(id: string, forget: boolean) {
   const s = getState().settings.sharing.servers.find((x) => x.id === id);
   if (!s) return;
   await backend.share.loggerUnpair(s.url, forget);
-  updateServer(id, { loggerOwner: false });
+  updateServer(id, { loggerOwner: false, loggerExpired: false });
   if (forget) {
     const data = getShared();
     delete data.logger[id];
@@ -247,6 +247,13 @@ export async function unpairLogger(id: string, forget: boolean) {
 async function fetchLogger(id: string) {
   const s = getState().settings.sharing.servers.find((x) => x.id === id);
   if (!s?.loggerOwner) return;
+  // Its VRChat login can run out: say so once, and show it until you log in again.
+  const status = await backend.share.loggerStatus(s.url).catch(() => null);
+  if (status) {
+    const expired = status.expired === true;
+    if (expired && !s.loggerExpired) showToast(`${serverName(s)}: the server's VRChat login expired. Log in again under Servers.`);
+    if (expired !== !!s.loggerExpired) updateServer(id, { loggerExpired: expired });
+  }
   const st = await backend.share.loggerStats(s.url);
   const offset = new Date().getTimezoneOffset() * 60;
   const data = getShared();

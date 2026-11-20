@@ -18,6 +18,7 @@ export function serverStatus(s: ShareServer, live: boolean): { text: string; ton
   if (!s.info) return { text: s.lastError ? "Can't reach it" : "Checking…", tone: s.lastError ? "bad" : "" };
   const mismatch = mismatchOf(s);
   if (mismatch) return { text: mismatch.short, tone: "bad" };
+  if (s.loggerOwner && s.loggerExpired) return { text: "Server login expired", tone: "bad" };
   if (!s.registered) return { text: "Not joined yet", tone: "warn" };
   if (s.lastError) return { text: "Last sync failed", tone: "bad" };
   if (live) return { text: "Connected · live", tone: "ok" };

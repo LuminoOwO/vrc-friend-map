@@ -247,6 +247,20 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
             <Section icon="clock" title="24/7 logger" help="The server watches where your friends are, around the clock, so time together keeps counting while your PC is off.">
               {s.loggerOwner ? (
                 <>
+                  {(s.loggerExpired || logger?.expired) && (
+                    <div className="ui2-expired">
+                      <p className="small warn-text">
+                        <Icon name="warn" size={14} /> The server's VRChat login expired, so it isn't logging. Log in again: make a pairing code on the server (its window or
+                        admin page) and enter it here. The server gets this app's current login, sealed so only it can open it.
+                      </p>
+                      <div className="row">
+                        <input className="code-input" inputMode="numeric" maxLength={7} value={code} placeholder="123456" aria-label="Pairing code" onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ""))} />
+                        <button className="btn small primary" disabled={code.length !== 6 || working !== ""} onClick={() => run("pair", () => pairLogger(s.id, code))}>
+                          {working === "pair" ? "Logging in…" : "Log in again"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <p className="small">
                     {logger ? (
                       <>

@@ -16,7 +16,7 @@ Work through these in this order, one at a time; the rest of the file is the det
 4. ~~App and server versions that don't fit together~~ (done)
 5. ~~The UI release~~ (done on main, 2026-11-20; goes out as 0.13.0)
 6. ~~Sharing choices per account, not per device~~ (done)
-7. Notice when the server's VRChat login expires (and renew from the app)
+7. ~~Notice when the server's VRChat login expires~~ (done; renew from the app with a password: not started, owner to decide)
 8. Use the app without logging in to VRChat in it
 9. In gaps: Door / Knock sounds, the pause before a person's tune
 
@@ -286,7 +286,7 @@ tray. On hold: Discord rich presence.
   through their own server's VRChat login (friends, live updates, profiles, writes), so the app
   itself never holds a VRChat session. Only for the owner of that server (the account paired as
   its logger); everyone else logs in as before.
-- [ ] **Tell the owner when the server's VRChat login expires:** push to their devices and a
+- [x] **Tell the owner when the server's VRChat login expires:** (done 2026-11-20 in the app and as a push; the admin page shows the logger's message) push to their devices and a
   notice in the app and on the admin page ("Your server's VRChat login expired: log in again").
   - [ ] **Renew it from the app** (a server setting, off by default for the security-conscious):
     the owner enters username, password and 2FA code in their own app, sent sealed to the

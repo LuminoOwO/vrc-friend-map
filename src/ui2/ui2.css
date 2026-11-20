@@ -269,3 +269,4 @@
 .ui2-phone-cards { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
 .ui2-phone .ui2-world-wrap { padding: 0; align-items: stretch; }
 .ui2-phone .ui2-world { width: 100%; max-height: none; border-radius: 0; border: 0; padding-top: env(safe-area-inset-top, 0px); }
+.ui2-expired { display: grid; gap: 6px; padding: 10px; margin-bottom: 8px; border: 1px solid var(--danger); border-radius: 8px; }

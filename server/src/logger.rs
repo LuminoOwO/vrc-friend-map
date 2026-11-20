@@ -100,6 +100,8 @@ struct Inner {
     session: Option<Session>,
     connected: bool,
     message: String,
+    /// VRChat no longer accepts the session: the owner has to log in again.
+    expired: bool,
     connected_since: i64,
     last_event: i64,
     events: u64,
@@ -288,6 +290,7 @@ impl Logger {
             }
             g.owner = owner;
             g.session = Some(session);
+            g.expired = false;
             g.message = "Paired, connecting…".into();
         }
         eprintln!("logger paired with {name} ({user})");
@@ -470,11 +473,34 @@ impl Logger {
             "friendRequest" => ("Friend request", format!("{from} sent you a friend request")),
             _ => return,
         };
+        self.push_all(json!({ "title": title, "body": body, "tag": format!("{kind}:{from}"), "kind": kind }));
+    }
+
+    /// The VRChat session stopped working: remember it (the app shows "log in again") and tell
+    /// the owner's phones once.
+    fn session_expired(&self) {
+        {
+            let mut g = self.inner.lock().unwrap();
+            if g.expired {
+                return;
+            }
+            g.expired = true;
+        }
+        self.push_all(json!({
+            "title": "Server login expired",
+            "body": "Your vfm-server's VRChat login expired. Log in again: in the app under Servers, or on the admin page.",
+            "tag": "login-expired",
+            "kind": "loginExpired",
+        }));
+    }
+
+    /// Send one notification to every phone of the owner that's in push mode.
+    fn push_all(&self, msg: Value) {
         let targets: Vec<PushTarget> = self.inner.lock().unwrap().push.targets.values().cloned().collect();
         if targets.is_empty() {
             return;
         }
-        let msg = json!({ "title": title, "body": body, "tag": format!("{kind}:{from}"), "kind": kind }).to_string();
+        let msg = msg.to_string();
         let http = self.http.clone();
         tokio::spawn(async move {
             for t in targets {
@@ -516,6 +542,7 @@ impl Logger {
             "pcHeartbeat": g.pc_heartbeat,
             "pushTargets": g.push.targets.len(),
             "waitingFor2fa": g.pending.is_some(),
+            "expired": g.expired,
         })
     }
 
@@ -590,6 +617,7 @@ impl Logger {
                 Ok(()) => {}
                 Err(Fatal(msg)) => {
                     self.set_status(false, &msg);
+                    self.session_expired();
                     return;
                 }
             }
@@ -598,6 +626,7 @@ impl Logger {
                 Ok(Outcome::Rejected(msg)) => {
                     self.set_status(false, &msg);
                     eprintln!("logger: {msg}");
+                    self.session_expired();
                     return;
                 }
                 Ok(Outcome::Closed) => {

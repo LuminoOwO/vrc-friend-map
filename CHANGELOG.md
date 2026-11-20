@@ -17,6 +17,10 @@ minor releases can change behavior.
 - A profile has one close button instead of two.
 
 ### Added
+- **You hear about it when your server's VRChat login expires** (the 24/7 logger stops then):
+  a push to your phones once, a message in the app, the server shown red with *Server login
+  expired*, and a *Log in again* box in its 24/7 logger section (with a pairing code from the
+  server). Needs the updated vfm-server.
 - **Sharing choices follow your account.** What you share on a server, which friends it covers
   and who may get it now sync between your devices (encrypted, with your circles and notes), so
   your phone and PC no longer disagree. The newest change wins; a device that just added a

@@ -150,6 +150,8 @@ export interface LoggerStatus {
   since: number;
   pairs: number;
   lastResync: number;
+  /** VRChat no longer accepts the server's login: pair again (newer servers). */
+  expired?: boolean;
 }
 
 export interface LoggerStats {

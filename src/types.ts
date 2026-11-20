@@ -470,6 +470,8 @@ export interface ShareServer {
   download: boolean;
   /** You paired this server's logger. */
   loggerOwner: boolean;
+  /** The server's VRChat login (for the logger) expired: log in again. */
+  loggerExpired?: boolean;
   /** You confirmed uploading unencrypted to this server ("don't ask again"). */
   ackUnencrypted: boolean;
   /** When you last changed this server's sharing choices (they sync with your account; the newer wins). */
