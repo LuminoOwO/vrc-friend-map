@@ -7,6 +7,7 @@ import { CAT_ACCENTS } from "./catppuccin";
 import type {
   Cache,
   Circle,
+  ExtrasSettings,
   Filters,
   GroupSettings,
   LocalData,
@@ -309,7 +310,6 @@ export const defaultSettings = (): Settings => ({
   phone: { background: "off", refreshRate: 0, widget: true, rootLogs: false },
   accounts: { actAs: false, list: [] },
   extras: {
-    osc: { enabled: false, host: "127.0.0.1", port: 9000, template: "", everySecs: 30, starredOnline: true, onlyInGame: true, listen: false, listenPort: 9001 },
     nowPlaying: { status: false, template: "🎵 {title}" },
     playtime: { bio: false, template: "⏱ {hours} h in VRChat" },
   },
@@ -778,15 +778,8 @@ export function normalizeSettings(raw: Raw | null): Settings {
             .map((a: any) => ({ id: a.id, name: String(a.name ?? ""), show: a.show !== false, live: a.live === true, notify: a.notify === true }))
         : [],
     },
-    extras: shaped(raw.extras, d.extras, (x) => ({
-      ...x,
-      osc: {
-        ...x.osc,
-        port: Math.min(65535, Math.max(1, Math.round(x.osc.port))),
-        listenPort: Math.min(65535, Math.max(1, Math.round(x.osc.listenPort))),
-        everySecs: Math.max(10, x.osc.everySecs),
-      },
-    })),
+    // The OSC chatbox settings were taken out (0.13.0); drop them from older saves.
+    extras: shaped(raw.extras, d.extras, ({ osc: _osc, ...x }: ExtrasSettings & { osc?: unknown }) => x),
     phone: shaped(raw.phone, d.phone, (p) => ({ ...p, background: oneOf(p.background, ["off", "visible", "quiet", "push"] as const, "off") })),
     notesLine: shaped(raw.notesLine, d.notesLine, (n) => ({ ...n, mode: oneOf(n.mode, ["off", "mine", "friends", "full"] as const, "off") })),
     bios: shaped(raw.bios, d.bios, (b) => ({ ...b, everySecs: num(b.everySecs, 45, 10, 3600) })),

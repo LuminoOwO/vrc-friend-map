@@ -21,7 +21,6 @@ export const SECTION_INFO: Record<string, { icon: string; about: string }> = {
   close: { icon: "close", about: "What closing the window does: tray, quit, or ask." },
   logs: { icon: "folder", about: "VRChat's log files: who you met, where, and when." },
   groups: { icon: "users", about: "How circles are suggested from time spent together." },
-  osc: { icon: "headset", about: "Lines in VRChat's chatbox, and your avatar's toggles." },
   nowplaying: { icon: "sound", about: "The song you're listening to in your VRChat status." },
   playtime: { icon: "clock", about: "Your VRChat hours from Steam, in your bio." },
   accounts: { icon: "users", about: "Your other VRChat accounts on the same map." },

@@ -43,6 +43,9 @@ minor releases can change behavior.
 - **Beta UI: the sync status was cut off** in the top bar on narrower windows. It shortens with
   "…" now, and on narrow windows shows just its buttons (the text is in the tooltip and the log).
 
+### Removed
+- **Chatbox (OSC)** is gone for now: the chatbox lines, the avatar toggles panel and their settings. Other tools do this better.
+
 ## 0.12.4 (2026-11-20)
 
 Fixes switching between the classic and the beta UI, which flipped back and forth with

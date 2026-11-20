@@ -13,7 +13,6 @@ pub mod graphics;
 mod images;
 mod linkfetch;
 mod livelog;
-mod osclisten;
 mod peers;
 mod pictures;
 mod pipeline;
@@ -909,13 +908,8 @@ pub fn run() {
             logs_timeline,
             pictures_detect,
             start_args,
-            extras::osc_chatbox,
             extras::now_playing,
             extras::steam_playtime,
-            osclisten::osc_listen_start,
-            osclisten::osc_listen_stop,
-            osclisten::osc_avatar_config,
-            osclisten::osc_set_param,
             android_call,
             android_root_logs,
             pictures_list,

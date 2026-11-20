@@ -3,7 +3,7 @@
 // gallery pictures (with uploading and cropping), world notes, and opening
 // any VRChat link.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { imgSrc, isMobile, isTauri } from "../backend";
+import { imgSrc } from "../backend";
 import { setState, showToast, updateFilters, useApp } from "../store";
 import {
   avatarNameFromImage,
@@ -32,7 +32,6 @@ import {
 import { openVrchatLink } from "../vrclinks";
 import { EventList } from "./ContentDialogs";
 import { Icon } from "./Icon";
-import { OscLivePanel } from "./OscLivePanel";
 import { openImage } from "./ImageViewer";
 
 type Tab = "groups" | "favorites" | "avatars" | "files" | "worlds";
@@ -263,7 +262,6 @@ function Avatars() {
   return (
     <>
       {current && <p className="small">You're wearing: <b>{current}</b></p>}
-      {isTauri && !isMobile && <OscLivePanel />}
       {(err1 || err2) && <p className="small warn">{err1 || err2}</p>}
       <h3>Your uploaded avatars ({mine?.length ?? "…"})</h3>
       <div className="avatar-grid">

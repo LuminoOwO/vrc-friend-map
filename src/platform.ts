@@ -20,7 +20,6 @@ export type Feature =
   | "installUpdates"
   | "silentSystemNotify"
   | "vrOverlay"
-  | "osc"
   | "steam"
   | "mpris"
   | "discord"
@@ -46,7 +45,6 @@ export function unavailable(f: Feature): string | null {
     case "silentSystemNotify":
       return web ?? (isLinux ? null : "Only on Linux.");
     case "vrOverlay":
-    case "osc":
     case "steam":
     case "launchGame":
       return web ?? (isMobile ? "Only on computers (where VRChat runs on PC)." : null);

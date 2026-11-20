@@ -1,6 +1,4 @@
 // Desktop extras (Settings → Extras), all off by default:
-//  - OSC: lines in VRChat's chatbox: a template every so often ({song},
-//    {time}, {online}, {here}, {playtime}) and "★ Lumi came online";
 //  - now playing: the song from your music player in your VRChat status text,
 //    put back to what it was when the music stops or you switch it off;
 //  - Steam play time: one line in your bio ("⏱ 2,431 h in VRChat"), updated
@@ -9,10 +7,8 @@
 // cooldown), and only when the text really changes.
 import { invoke } from "@tauri-apps/api/core";
 import { backend, isMobile, isTauri } from "./backend";
-import { presenceOf } from "./model";
-import { startOscLive, stopOscLive } from "./osclive";
 import { recordSteamTotal } from "./steamdays";
-import { getState, subscribeState } from "./store";
+import { getState } from "./store";
 import { fetchProfile } from "./sync";
 
 export const extrasHere = isTauri && !isMobile;
@@ -64,11 +60,6 @@ export function songText(n: NowPlaying | null): string {
 
 export const nowPlaying = () => invoke<NowPlaying | null>("now_playing");
 export const steamPlaytime = () => invoke<Playtime | null>("steam_playtime");
-export function chatbox(text: string) {
-  const o = getState().settings.extras.osc;
-  return invoke("osc_chatbox", { text, host: o.host, port: o.port, quiet: true });
-}
-
 /** The bio with the play time line put in (replacing an earlier one), or null when it wouldn't fit. */
 export function bioWithLine(bio: string, template: string, hours: number): string | null {
   const line = fill(template, { hours: hours.toLocaleString("en-US") });
@@ -79,22 +70,14 @@ export function bioWithLine(bio: string, template: string, hours: number): strin
 }
 
 let timers: ReturnType<typeof setInterval>[] = [];
-let unsub: (() => void) | null = null;
 let song: NowPlaying | null = null;
 let songSince = 0;
 let lastStatusWrite = 0;
-let lastLine = "";
-let lastLineAt = 0;
-let onlineBefore = new Set<string>();
 let playtime: Playtime | null = null;
-
-function inGame(): boolean {
-  return !!getState().here?.active;
-}
 
 async function pollSong() {
   const x = getState().settings.extras;
-  if (!x.nowPlaying.status && !(x.osc.enabled && x.osc.template.includes("{song}"))) return;
+  if (!x.nowPlaying.status) return;
   const n = await nowPlaying().catch(() => null);
   const prev = songText(song);
   song = n && n.playing ? n : null;
@@ -129,56 +112,6 @@ async function statusFromSong() {
   void fetchProfile(me.id).catch(() => {});
 }
 
-function oscVars(): Record<string, string> {
-  const st = getState();
-  const online = Object.values(st.cache.friends).filter((f) => presenceOf(f, st.cache.presence) === "online").length;
-  const d = new Date();
-  return {
-    song: songText(song),
-    time: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
-    online: String(online),
-    here: String(st.here?.players.length ?? 0),
-    playtime: playtime ? Math.round(playtime.minutes / 60).toLocaleString("en-US") : "",
-  };
-}
-
-function oscOk(): boolean {
-  const o = getState().settings.extras.osc;
-  if (!o.enabled) return false;
-  const local = o.host === "127.0.0.1" || o.host === "::1" || o.host === "localhost";
-  return !(o.onlyInGame && local) || inGame();
-}
-
-async function oscTick() {
-  const o = getState().settings.extras.osc;
-  if (!oscOk() || !o.template.trim()) return;
-  const line = fill(o.template, oscVars());
-  // A line with an empty song etc. is skipped; the same line only every 5 minutes again.
-  if (!line || /\{\w+\}/.test(line)) return;
-  if (line === lastLine && Date.now() - lastLineAt < 300_000) return;
-  if (Date.now() - lastLineAt < o.everySecs * 1000) return;
-  lastLine = line;
-  lastLineAt = Date.now();
-  await chatbox(line).catch(() => {});
-}
-
-/** "★ Lumi came online" for starred friends. */
-function watchOnline() {
-  const st = getState();
-  const now = new Set(Object.values(st.cache.friends).filter((f) => presenceOf(f, st.cache.presence) !== "offline").map((f) => f.id));
-  const o = st.settings.extras.osc;
-  if (onlineBefore.size && o.enabled && o.starredOnline && oscOk()) {
-    const starred = new Set(st.local.starred ?? []);
-    const came = [...now].filter((id) => !onlineBefore.has(id) && starred.has(id));
-    if (came.length && came.length <= 3) {
-      const names = came.map((id) => st.local.nicknames?.[id] || st.cache.friends[id]?.displayName || "someone");
-      void chatbox(`★ ${names.join(", ")} came online`).catch(() => {});
-      lastLineAt = Date.now();
-    }
-  }
-  onlineBefore = now;
-}
-
 async function bioTick() {
   const st = getState();
   const x = st.settings.extras.playtime;
@@ -200,9 +133,7 @@ async function bioTick() {
 
 export function startExtras() {
   if (!extrasHere || timers.length) return;
-  startOscLive();
   timers.push(setInterval(() => void pollSong(), 15_000));
-  timers.push(setInterval(() => void oscTick(), 5_000));
   timers.push(setInterval(() => void bioTick(), 30 * 60_000));
   setTimeout(() => void bioTick(), 60_000);
   const steamTick = () =>
@@ -214,24 +145,9 @@ export function startExtras() {
       .catch(() => {});
   timers.push(setInterval(steamTick, 30 * 60_000));
   steamTick();
-  let lastFriends: unknown = null;
-  let lastPresence: unknown = null;
-  let t: ReturnType<typeof setTimeout> | undefined;
-  unsub = subscribeState(() => {
-    const c = getState().cache;
-    if (c.friends === lastFriends && c.presence === lastPresence) return;
-    lastFriends = c.friends;
-    lastPresence = c.presence;
-    clearTimeout(t);
-    t = setTimeout(watchOnline, 2000);
-  });
 }
 
 export function stopExtras() {
-  stopOscLive();
   timers.forEach(clearInterval);
   timers = [];
-  unsub?.();
-  unsub = null;
-  onlineBefore = new Set();
 }

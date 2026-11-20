@@ -1,72 +1,10 @@
 //! Small desktop extras, all opt-in (Settings → Extras):
-//! - OSC: a line in VRChat's chatbox (`/chatbox/input`), sent to VRChat on
-//!   this PC or a Quest on your own network, never anywhere else;
 //! - now playing: the song from your music player (MPRIS through `playerctl`
 //!   on Linux);
 //! - Steam play time: VRChat's minutes from Steam's own `localconfig.vdf`.
 
 use serde::Serialize;
-use std::net::{IpAddr, SocketAddr, UdpSocket};
 use std::path::PathBuf;
-
-// ---------------------------------------------------------------- OSC
-
-/// OSC string: bytes, a 0, padded to a multiple of 4.
-fn osc_string(out: &mut Vec<u8>, s: &str) {
-    out.extend_from_slice(s.as_bytes());
-    out.push(0);
-    while out.len() % 4 != 0 {
-        out.push(0);
-    }
-}
-
-/// `/chatbox/input ,sTF text`: send right away, without the notification sound
-/// when `quiet`.
-pub fn chatbox_packet(text: &str, quiet: bool) -> Vec<u8> {
-    // VRChat shows at most 144 characters.
-    let text: String = text
-        .chars()
-        .filter(|c| !c.is_control() || *c == '\n')
-        .take(144)
-        .collect();
-    let mut out = Vec::with_capacity(32 + text.len());
-    osc_string(&mut out, "/chatbox/input");
-    osc_string(&mut out, if quiet { ",sTF" } else { ",sTT" });
-    osc_string(&mut out, &text);
-    out
-}
-
-/// Only this machine or a device on your own network (a Quest).
-fn allowed_host(ip: &IpAddr) -> bool {
-    match ip {
-        IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local(),
-        IpAddr::V6(v6) => v6.is_loopback(),
-    }
-}
-
-#[tauri::command]
-pub fn osc_chatbox(
-    text: String,
-    host: Option<String>,
-    port: Option<u16>,
-    quiet: Option<bool>,
-) -> Result<(), String> {
-    let ip: IpAddr = host
-        .as_deref()
-        .unwrap_or("127.0.0.1")
-        .trim()
-        .parse()
-        .map_err(|_| "not an IP address".to_string())?;
-    if !allowed_host(&ip) {
-        return Err("only this computer or your own network".into());
-    }
-    let addr = SocketAddr::new(ip, port.unwrap_or(9000));
-    let sock = UdpSocket::bind(if ip.is_ipv6() { "[::1]:0" } else { "0.0.0.0:0" })
-        .map_err(|e| e.to_string())?;
-    sock.send_to(&chatbox_packet(&text, quiet.unwrap_or(true)), addr)
-        .map_err(|e| e.to_string())?;
-    Ok(())
-}
 
 // ---------------------------------------------------------------- now playing
 
@@ -248,24 +186,6 @@ pub async fn steam_playtime() -> Result<Option<Playtime>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn chatbox_packet_layout() {
-        let p = chatbox_packet("hi", true);
-        assert_eq!(&p[..16], b"/chatbox/input\0\0");
-        assert_eq!(&p[16..20], b",sTF");
-        assert_eq!(&p[20..24], b"\0\0\0\0");
-        assert_eq!(&p[24..28], b"hi\0\0");
-        assert_eq!(p.len() % 4, 0);
-        assert_eq!(chatbox_packet(&"x".repeat(300), false).len(), 16 + 8 + 148);
-    }
-
-    #[test]
-    fn hosts() {
-        assert!(allowed_host(&"127.0.0.1".parse().unwrap()));
-        assert!(allowed_host(&"192.168.1.20".parse().unwrap()));
-        assert!(!allowed_host(&"8.8.8.8".parse().unwrap()));
-    }
 
     #[test]
     fn playerctl() {

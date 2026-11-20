@@ -562,7 +562,7 @@ export interface Settings {
   insights: { drifting: boolean };
   /** Android: background mode, refresh rate, widget, root log reading (src/phone.ts). */
   phone: PhoneSettings;
-  /** Chatbox over OSC, now playing in your status, Steam play time in your bio (src/extras.ts). */
+  /** Now playing in your status, Steam play time in your bio (src/extras.ts). */
   extras: ExtrasSettings;
   /** Your other VRChat accounts on this device (src/accounts.ts). */
   accounts: AccountsSettings;
@@ -597,23 +597,6 @@ export interface PhoneSettings {
 
 /** Desktop extras, all off by default and kept on this device. */
 export interface ExtrasSettings {
-  osc: {
-    enabled: boolean;
-    /** VRChat on this PC (127.0.0.1) or a Quest on your network. */
-    host: string;
-    port: number;
-    /** A line every so often from this template: {song} {time} {online} {here} {playtime}. Empty: none. */
-    template: string;
-    everySecs: number;
-    /** "★ Lumi came online" when a starred friend comes online. */
-    starredOnline: boolean;
-    /** Only while VRChat runs here (the live game log says so); off for a Quest. */
-    onlyInGame: boolean;
-    /** Listen to what VRChat sends: your avatar, its toggles, AFK and muted. */
-    listen: boolean;
-    /** VRChat's OSC output port (9001 unless changed in VRChat). */
-    listenPort: number;
-  };
   nowPlaying: {
     /** Put the song into your VRChat status text (32 characters). */
     status: boolean;

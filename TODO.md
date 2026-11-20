@@ -357,7 +357,7 @@ tray. On hold: Discord rich presence.
   the Overview tiles (hover says what a click does, click filters the map), Online now with each
   world collapsed (hover peeks at who's there, click keeps it open), and recent Activity. Each
   part can be folded.
-- [ ] Put the OSC chatbox features aside: take them out of the app for now.
+- [x] Put the OSC chatbox features aside: taken out of the app (may be scrapped for good; the owner's other programs do the same).
 
 ## Parked
 

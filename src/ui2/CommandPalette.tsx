@@ -39,7 +39,6 @@ const SETTINGS: [string, string][] = [
   ["notify", "Notifications, quiet hours, rules per circle"],
   ["phone", "Phone in the background"],
   ["logs", "Game logs and picture folders"],
-  ["osc", "Chatbox (OSC)"],
   ["nowplaying", "Now playing in your status"],
   ["playtime", "Steam play time in your bio"],
   ["backup", "Backup to another device"],

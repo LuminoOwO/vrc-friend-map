@@ -40,7 +40,7 @@ import { unavailable } from "../platform";
 import { haptic } from "../haptics";
 import { bioProgress } from "../biocache";
 import { PhoneSection } from "./PhoneSection";
-import { BackupSection, NowPlayingSection, OscSection, PlaytimeSection } from "./ExtrasSection";
+import { BackupSection, NowPlayingSection, PlaytimeSection } from "./ExtrasSection";
 import { AccountsSection } from "./AccountsSection";
 import { ServersPage } from "../ui2/ServersPage";
 import { betaActive } from "../ui2/active";
@@ -620,9 +620,6 @@ export function SettingsModal() {
           <GroupSection />
         </Sec>
 
-        <Sec id="osc" cat="sounds" title="Chatbox (OSC)" keys="osc chatbox vrchat game message came online song quest" unavailable={unavailable("osc")}>
-          <OscSection />
-        </Sec>
         <Sec id="nowplaying" cat="account" title="Now playing in your status" keys="music song spotify mpris playerctl status text" unavailable={unavailable("mpris")}>
           <NowPlayingSection />
         </Sec>
