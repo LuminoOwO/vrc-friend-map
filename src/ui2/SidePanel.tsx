@@ -68,11 +68,6 @@ export function SidePanel({ prefs, update, onWorld }: { prefs: PanelPrefs; updat
   const start = useRef<{ x: number; w: number } | null>(null);
   const width = drag ?? prefs.width;
   const left = prefs.side === "left";
-  const fold = (p: Part) => update({ folded: prefs.folded.includes(p) ? prefs.folded.filter((x) => x !== p) : [...prefs.folded, p] });
-  const open = (p: Part) => !prefs.folded.includes(p);
-  const spots = useSpots();
-  const inGame = spots.filter((s) => s.key !== "web");
-  const friendsInGame = inGame.reduce((n, s) => n + s.people.length, 0);
   return (
     <aside className={`ui2-side ${prefs.side} ${drag !== null ? "dragging" : ""}`} style={{ width }} aria-label="Side panel">
       <div
@@ -116,26 +111,40 @@ export function SidePanel({ prefs, update, onWorld }: { prefs: PanelPrefs; updat
       </div>
 
       <div className="ui2-side-body">
-        <WhereCard />
-
-        <section className="ui2-part">
-          <PartHead title="Overview" open={open("overview")} onFold={() => fold("overview")} />
-          {open("overview") && <Overview />}
-        </section>
-
-        <section className={`ui2-part ${open("online") ? "grow" : ""}`} style={{ flexGrow: open("online") ? 1 : 0 }}>
-          <PartHead
-            title="Online now"
-            extra={friendsInGame ? `· ${friendsInGame} ${friendsInGame === 1 ? "friend" : "friends"} in ${inGame.length} ${inGame.length === 1 ? "world" : "worlds"}` : undefined}
-            open={open("online")}
-            onFold={() => fold("online")}
-          />
-          {open("online") && <OnlineNow onOpen={onWorld} side={prefs.side} />}
-        </section>
-
-        <SideActivity open={open("activity")} onFold={() => fold("activity")} />
+        <PanelSections prefs={prefs} update={update} onWorld={onWorld} />
       </div>
     </aside>
+  );
+}
+
+/** What the side panel holds: where you are, overview, Online now, Activity (each foldable). */
+export function PanelSections({ prefs, update, onWorld }: { prefs: PanelPrefs; update: (p: Partial<PanelPrefs>) => void; onWorld: (key: string) => void }) {
+  const fold = (p: Part) => update({ folded: prefs.folded.includes(p) ? prefs.folded.filter((x) => x !== p) : [...prefs.folded, p] });
+  const open = (p: Part) => !prefs.folded.includes(p);
+  const spots = useSpots();
+  const inGame = spots.filter((s) => s.key !== "web");
+  const friendsInGame = inGame.reduce((n, s) => n + s.people.length, 0);
+  return (
+    <>
+      <WhereCard />
+
+      <section className="ui2-part">
+        <PartHead title="Overview" open={open("overview")} onFold={() => fold("overview")} />
+        {open("overview") && <Overview />}
+      </section>
+
+      <section className={`ui2-part ${open("online") ? "grow" : ""}`} style={{ flexGrow: open("online") ? 1 : 0 }}>
+        <PartHead
+          title="Online now"
+          extra={friendsInGame ? `· ${friendsInGame} ${friendsInGame === 1 ? "friend" : "friends"} in ${inGame.length} ${inGame.length === 1 ? "world" : "worlds"}` : undefined}
+          open={open("online")}
+          onFold={() => fold("online")}
+        />
+        {open("online") && <OnlineNow onOpen={onWorld} side={prefs.side} />}
+      </section>
+
+      <SideActivity open={open("activity")} onFold={() => fold("activity")} />
+    </>
   );
 }
 

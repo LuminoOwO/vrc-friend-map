@@ -1,19 +1,20 @@
-// Layout "Lobby" (a video game's main menu): huge menu items on the left over the map, your
-// party on the right (you, the people in your instance, friends online), and a news ticker at
-// the bottom. Picking a view opens it in a big framed panel; the menu shrinks to the side.
+// Layout "Lobby" (a video game's main menu): a menu on the left over the map (icons only; the
+// names slide out on hover), your party on the right (you, where you are, the overview, Online
+// now and Activity, like the Top bar layout's side panel), and a news line at the bottom.
+// Picking a view opens it in a big framed panel between the two.
 import { useEffect, useMemo, useState } from "react";
 import { setState, useApp, type View } from "../../store";
 import { ActivityText, friendLogEntries, useActivityLoaded } from "../../components/ActivityView";
 import { GraphView } from "../../components/GraphView";
 import { Icon } from "../../components/Icon";
 import { MeButton, RAIL, ToolCluster, ViewBody, useOpenWorld } from "../parts";
-import { WhereCard } from "../SidePanel";
-import { OnlineNow } from "../OnlineNow";
+import { PanelSections, usePanelPrefs } from "../SidePanel";
 
 export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
   const view = useApp((s) => s.view);
   const [open, setOpen] = useState<View | null>(null);
   const openWorld = useOpenWorld();
+  const [prefs, updatePrefs] = usePanelPrefs();
   const [lastView, setLastView] = useState(view);
   useEffect(() => {
     if (view !== lastView) {
@@ -38,23 +39,26 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
       <div className="lob-shade" />
       <div className="lob-left">
         <div className="lob-logo">
-          <span>VRC</span>
-          <b>FRIEND MAP</b>
+          <span className="lob-mark">FM</span>
+          <span className="lob-logo-text">
+            <span>VRC</span>
+            <b>FRIEND MAP</b>
+          </span>
         </div>
         <nav className="lob-menu" aria-label="Menu">
           {RAIL.map((r) => (
-            <button key={r.key} className={`lob-item ${(open ?? "graph") === r.key ? "on" : ""}`} onClick={() => pick(r.key)}>
-              <Icon name={r.icon} size={open ? 20 : 26} />
+            <button key={r.key} className={`lob-item ${(open ?? "graph") === r.key ? "on" : ""}`} title={r.label} onClick={() => pick(r.key)}>
+              <Icon name={r.icon} size={26} />
               <span>{r.key === "graph" ? "Map" : r.label}</span>
             </button>
           ))}
-          <button className="lob-item small" onClick={() => setState({ settingsOpen: true })}>
-            <Icon name="settings" size={open ? 20 : 22} />
+          <button className="lob-item small" title="Settings" onClick={() => setState({ settingsOpen: true })}>
+            <Icon name="settings" size={22} />
             <span>Settings</span>
           </button>
         </nav>
       </div>
-      {open ? (
+      {open && (
         <div className="lob-frame" key={open}>
           <header>
             <h1>{RAIL.find((r) => r.key === open)?.label}</h1>
@@ -67,17 +71,16 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
             <ViewBody view={open} />
           </div>
         </div>
-      ) : (
-        <aside className="lob-party">
-          <h2>Party</h2>
-          <div className="lob-me">
-            <MeButton />
-          </div>
-          <WhereCard />
-          <h2>Friends online</h2>
-          <OnlineNow onOpen={openWorld} />
-        </aside>
       )}
+      <aside className="lob-party">
+        <h2>Party</h2>
+        <div className="lob-me">
+          <MeButton />
+        </div>
+        <div className="lob-party-body">
+          <PanelSections prefs={{ ...prefs, side: "right" }} update={updatePrefs} onWorld={openWorld} />
+        </div>
+      </aside>
       <ToolCluster onPalette={onPalette} className="lob-tools" filters={false} />
       <News />
     </div>

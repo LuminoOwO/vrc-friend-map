@@ -66,6 +66,11 @@ minor releases can change behavior.
   - **Profiles redesigned**: the banner across the top, a big picture with your status ring
     overlapping it, name, status and details beside it, then the cards. The close button is round
     and sits outside the window (with *ESC*) when there's room; the same for the world overview.
+  - **Lobby is the new interface's layout on computers** (others to try in the Layout
+    dropdown): the map fills the window like a game's main menu. On the left a menu of big
+    icons that slides out with the names when you point at it; on the right your *Party*: you,
+    where you are, the overview tiles, Online now and Activity (each folds); a news line at the
+    bottom. Views open in a large frame between the two.
   - **Layouts to try** (Layout dropdown, test; computers): *Top bar* (the one above);
     *Columns* (like Steam or Discord: a labeled nav sidebar with you at the bottom, the view in
     the middle, a friends list grouped by world on the right); *HUD* (like VRChat's quick menu:

@@ -285,28 +285,46 @@
 /* ============================== Lobby ============================== */
 .lay-lobby { position: relative; flex: 1; min-height: 0; overflow: hidden; background: #000; }
 .lob-bg { position: absolute; inset: 0; display: flex; flex-direction: column; }
-.lob-shade { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0.55) 35%, rgba(0, 0, 0, 0.1) 65%, rgba(0, 0, 0, 0.55)); transition: background 0.4s; }
+.lob-shade { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(90deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.15) 22%, rgba(0, 0, 0, 0.05) 55%, rgba(0, 0, 0, 0.6)); transition: background 0.4s; }
 .lay-lobby.in-view .lob-shade { background: rgba(0, 0, 0, 0.7); }
-.lob-left { position: absolute; z-index: 5; left: 0; top: 0; bottom: 48px; width: 440px; display: flex; flex-direction: column; justify-content: center; gap: 30px; padding: 0 56px; transition: width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1), padding 0.35s; }
-.lay-lobby.in-view .lob-left { width: 230px; padding: 0 22px; }
-.lob-logo { display: flex; flex-direction: column; line-height: 1; color: #fff; }
-.lob-logo span { font-size: 14px; font-weight: 800; letter-spacing: 0.5em; color: var(--accent); }
-.lob-logo b { font-size: 44px; font-weight: 900; letter-spacing: -0.02em; font-style: italic; transition: font-size 0.35s; }
-.lay-lobby.in-view .lob-logo b { font-size: 24px; }
+/* The menu: icons only; on hover (or keyboard focus) it slides out with the names over the map. */
+.lob-left { position: absolute; z-index: 9; left: 0; top: 0; bottom: 48px; width: 92px; display: flex; flex-direction: column; justify-content: center; gap: 28px; padding: 0 22px; box-sizing: border-box; overflow: hidden; transition: width 0.32s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.32s, box-shadow 0.32s; }
+.lob-left:hover, .lob-left:focus-within { width: 380px; background: linear-gradient(90deg, rgba(0, 0, 0, 0.92), rgba(0, 0, 0, 0.75) 70%, transparent); box-shadow: 30px 0 60px -30px rgba(0, 0, 0, 0.9); }
+.lob-logo { display: flex; align-items: center; gap: 14px; color: #fff; white-space: nowrap; }
+.lob-mark { flex: none; width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; background: var(--accent); color: var(--on-accent); font-size: 18px; font-weight: 900; font-style: italic; letter-spacing: -0.04em; box-shadow: 0 0 30px -6px var(--accent); }
+.lob-logo-text { display: flex; flex-direction: column; line-height: 1; opacity: 0; transform: translateX(-10px); transition: opacity 0.2s, transform 0.3s; }
+.lob-logo-text span { font-size: 12px; font-weight: 800; letter-spacing: 0.5em; color: var(--accent); }
+.lob-logo-text b { font-size: 30px; font-weight: 900; letter-spacing: -0.02em; font-style: italic; }
 .lob-menu { display: flex; flex-direction: column; gap: 4px; }
-.lob-item { position: relative; display: flex; align-items: center; gap: 16px; padding: 8px 0; border: 0; background: none; color: rgba(255, 255, 255, 0.55); font: inherit; font-size: 30px; font-weight: 900; letter-spacing: 0.02em; text-transform: uppercase; text-align: left; cursor: pointer; transition: color 0.2s, transform 0.25s cubic-bezier(0.3, 1.3, 0.5, 1), font-size 0.35s; }
-.lob-item.small { font-size: 18px; margin-top: 10px; }
-.lay-lobby.in-view .lob-item { font-size: 16px; gap: 10px; padding: 6px 0; }
-.lob-item::before { content: ""; position: absolute; left: -22px; top: 50%; width: 6px; height: 0; border-radius: 3px; background: var(--accent); transform: translateY(-50%); transition: height 0.2s; }
-.lob-item:hover, .lob-item.on { color: #fff; transform: translateX(10px); }
+.lob-item { position: relative; display: flex; align-items: center; gap: 20px; height: 52px; padding: 0 0 0 11px; border: 0; background: none; color: rgba(255, 255, 255, 0.6); font: inherit; font-size: 28px; font-weight: 900; letter-spacing: 0.02em; text-transform: uppercase; text-align: left; white-space: nowrap; cursor: pointer; transition: color 0.2s, transform 0.25s cubic-bezier(0.3, 1.3, 0.5, 1); }
+.lob-item svg { flex: none; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8)); }
+.lob-item > span { opacity: 0; transform: translateX(-12px); transition: opacity 0.18s, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.lob-item.small { height: 44px; font-size: 18px; margin-top: 12px; }
+.lob-left:hover .lob-logo-text, .lob-left:focus-within .lob-logo-text, .lob-left:hover .lob-item > span, .lob-left:focus-within .lob-item > span { opacity: 1; transform: none; }
+.lob-left:hover .lob-item:nth-child(2) > span { transition-delay: 0.02s; }
+.lob-left:hover .lob-item:nth-child(3) > span { transition-delay: 0.04s; }
+.lob-left:hover .lob-item:nth-child(4) > span { transition-delay: 0.06s; }
+.lob-left:hover .lob-item:nth-child(5) > span { transition-delay: 0.08s; }
+.lob-left:hover .lob-item:nth-child(6) > span { transition-delay: 0.1s; }
+.lob-left:hover .lob-item:nth-child(7) > span { transition-delay: 0.12s; }
+.lob-left:hover .lob-item:nth-child(8) > span { transition-delay: 0.14s; }
+.lob-item::before { content: ""; position: absolute; left: -22px; top: 50%; width: 6px; height: 0; border-radius: 0 3px 3px 0; background: var(--accent); transform: translateY(-50%); transition: height 0.2s; }
+.lob-item:hover, .lob-item.on { color: #fff; }
+.lob-left:hover .lob-item:hover { transform: translateX(8px); }
 .lob-item:hover::before, .lob-item.on::before { height: 70%; }
 .lob-item.on { color: var(--accent); }
-.lob-party { position: absolute; z-index: 5; right: 28px; top: 84px; bottom: 72px; width: 340px; display: flex; flex-direction: column; gap: 10px; padding: 18px; border-radius: 6px; background: rgba(10, 14, 18, 0.72); backdrop-filter: blur(14px); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; animation: ui2-rise 0.4s; }
-.lob-party h2 { margin: 4px 0 0; font-size: 13px; font-weight: 900; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); }
-.lob-me .ui2-top-me { width: 100%; height: 58px; border: 0; padding: 0 6px; border-radius: 6px; }
-.lob-party .ui2-where { flex: none; }
-.lob-frame { position: absolute; z-index: 6; left: 250px; right: 24px; top: 72px; bottom: 64px; display: flex; flex-direction: column; overflow: hidden; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12); background: var(--bg); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7); animation: lob-in 0.35s cubic-bezier(0.2, 0.9, 0.25, 1); }
-@keyframes lob-in { from { opacity: 0; transform: translateX(40px); } }
+.lob-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+/* Party: everything the Top bar layout's side panel has. */
+.lob-party { position: absolute; z-index: 5; right: 24px; top: 76px; bottom: 64px; width: 360px; display: flex; flex-direction: column; gap: 10px; padding: 16px 14px 14px; box-sizing: border-box; border-radius: 8px; background: rgba(10, 14, 18, 0.78); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text); animation: lob-in-r 0.4s cubic-bezier(0.2, 0.9, 0.25, 1); }
+@keyframes lob-in-r { from { opacity: 0; transform: translateX(30px); } }
+.lob-party h2 { flex: none; margin: 0 2px; font-size: 13px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; font-style: italic; color: var(--accent); }
+.lob-me { flex: none; border-radius: 8px; background: rgba(255, 255, 255, 0.05); }
+.lob-me .ui2-top-me { width: 100%; height: 58px; border: 0; padding: 0 10px; border-radius: 8px; background: none; }
+.lob-party-body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; }
+.lob-party .ui2-where { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); }
+.lob-party .ui2-tiles .filter-chip, .lob-party .ui2-tiles .stat-static { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); }
+.lob-frame { position: absolute; z-index: 6; left: 112px; right: 408px; top: 76px; bottom: 64px; display: flex; flex-direction: column; overflow: hidden; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); background: var(--bg); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7); animation: lob-in 0.35s cubic-bezier(0.2, 0.9, 0.25, 1); }
+@keyframes lob-in { from { opacity: 0; transform: translateX(-30px); } }
 .lob-frame > header { flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 14px 12px 22px; border-bottom: 2px solid var(--accent); background: var(--panel); }
 .lob-frame > header h1 { margin: 0; font-size: 20px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; }
 .lob-frame-body { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
@@ -315,4 +333,6 @@
 .lob-news-tag { flex: none; padding: 3px 10px; border-radius: 3px; background: var(--accent); color: var(--on-accent); font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 0.08em; }
 .lob-news-item { overflow: hidden; text-overflow: ellipsis; }
 .lob-news-item .act-name { color: #fff; }
-.lay-lobby .graph-controls, .lay-lobby .legend, .lay-lobby .here-now { display: none; }
+.lay-lobby .graph-controls { top: auto; bottom: 64px; right: 400px; }
+.lay-lobby .legend, .lay-lobby .here-now { display: none; }
+@media (max-width: 1100px) { .lob-party { width: 300px; } .lob-frame { right: 340px; } .lay-lobby .graph-controls { right: 340px; } }
