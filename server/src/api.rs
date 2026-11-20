@@ -24,7 +24,6 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub const MIN_APP: &str = "0.12.0";
 const MAX_RECIPIENTS: usize = 5000;
 /// Requests per user (or address, before sign-up) per 10 minutes.
-const RATE_LIMIT: u32 = 600;
 const REGISTER_LIMIT: u32 = 20;
 
 pub struct App {
@@ -205,7 +204,7 @@ fn auth_header(headers: &HeaderMap) -> Result<auth::AuthHeader, ApiError> {
 /// Check a signed request from a registered user; returns their ID.
 fn authed(app: &App, headers: &HeaderMap, method: &Method, uri: &Uri, body: &[u8]) -> Result<String, ApiError> {
     let h = auth_header(headers)?;
-    if !app.allow(&h.user, RATE_LIMIT) {
+    if !app.allow(&h.user, app.cfg().access.requests_per_10min.max(100)) {
         return Err(err(StatusCode::TOO_MANY_REQUESTS, "slow down"));
     }
     let mut store = app.store.lock().unwrap();

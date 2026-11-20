@@ -324,7 +324,7 @@ async fn status(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<Sock
         "settings": {
             "name": cfg.server.name, "motd": cfg.server.motd,
             "registration": cfg.access.registration, "encryption": cfg.access.encryption,
-            "maxItemKb": cfg.access.max_item_kb, "maxUsers": cfg.access.max_users,
+            "maxItemKb": cfg.access.max_item_kb, "maxUsers": cfg.access.max_users, "requestLimit": cfg.access.requests_per_10min,
             "loggerEnabled": cfg.logger.enabled, "listen": cfg.server.listen,
             "handOff": cfg.logger.hand_off, "appealContact": cfg.server.appeal_contact, "trustedProxy": cfg.server.trusted_proxy,
             "cacheWorlds": cfg.access.cache_worlds, "cacheGroups": cfg.access.cache_groups, "cacheAvatars": cfg.access.cache_avatars,
@@ -358,6 +358,7 @@ struct SettingsBody {
     encryption: Option<EncryptionPolicy>,
     max_item_kb: Option<usize>,
     max_users: Option<usize>,
+    request_limit: Option<u32>,
     logger_enabled: Option<bool>,
     hand_off: Option<bool>,
     appeal_contact: Option<String>,
@@ -386,6 +387,7 @@ async fn settings(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<So
     if locked("VFM_ENCRYPTION") { b.encryption = None; }
     if locked("VFM_MAX_ITEM_KB") { b.max_item_kb = None; }
     if locked("VFM_MAX_USERS") { b.max_users = None; }
+    if locked("VFM_REQUEST_LIMIT") { b.request_limit = None; }
     if locked("VFM_LOGGER") { b.logger_enabled = None; }
     let (was_enabled, now_enabled) = {
         let mut c = app.cfg.write().unwrap();
@@ -407,6 +409,9 @@ async fn settings(State(app): State<Arc<App>>, ConnectInfo(addr): ConnectInfo<So
         }
         if let Some(v) = b.max_users {
             c.access.max_users = v.clamp(1, 100_000);
+        }
+        if let Some(v) = b.request_limit {
+            c.access.requests_per_10min = v.clamp(100, 100_000);
         }
         if let Some(v) = b.logger_enabled {
             c.logger.enabled = v;

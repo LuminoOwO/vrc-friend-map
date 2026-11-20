@@ -185,7 +185,7 @@ admin page shows them as fixed. Leave them out to manage everything on the admin
 | `VFM_CONTACT` | added to the User-Agent VRChat sees |
 | `VFM_ADMIN_ALLOW` | `off`, `local`, `lan`, `any` |
 | `VFM_ADMIN_TOKEN` | at least 16 characters (otherwise one is generated) |
-| `VFM_MAX_ITEM_KB`, `VFM_MAX_USERS`, `VFM_RESYNC_MINUTES`, `VFM_KEEP_HOPS_MONTHS` | numbers |
+| `VFM_MAX_ITEM_KB`, `VFM_MAX_USERS`, `VFM_REQUEST_LIMIT` (requests per account per 10 minutes, default 2000), `VFM_RESYNC_MINUTES`, `VFM_KEEP_HOPS_MONTHS` | numbers |
 | `VFM_PUBLIC_URL` | only changes what the startup message tells you to enter in the app |
 
 **Binding a folder instead of a volume:** the server runs as user 65532, so give it the

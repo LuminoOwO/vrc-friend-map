@@ -36,6 +36,9 @@ pub struct AccessSection {
     pub encryption: EncryptionPolicy,
     pub max_item_kb: usize,
     pub max_users: usize,
+    /// Requests each account may make per 10 minutes ("slow down" after that). A first sync with
+    /// many friends needs a lot; the default leaves room for it.
+    pub requests_per_10min: u32,
     /// Shared cache of public VRChat info, per kind.
     pub cache_worlds: bool,
     pub cache_groups: bool,
@@ -99,6 +102,7 @@ impl Default for AccessSection {
             encryption: EncryptionPolicy::Recommended,
             max_item_kb: 1024,
             max_users: 500,
+            requests_per_10min: 2000,
             cache_worlds: true,
             cache_groups: true,
             cache_avatars: true,
@@ -184,6 +188,7 @@ impl Config {
                 }
                 "VFM_MAX_ITEM_KB" => self.access.max_item_kb = parse_num(key, &v)?.clamp(16, 16 * 1024) as usize,
                 "VFM_MAX_USERS" => self.access.max_users = parse_num(key, &v)?.clamp(1, 100_000) as usize,
+                "VFM_REQUEST_LIMIT" => self.access.requests_per_10min = parse_num(key, &v)?.clamp(100, 100_000) as u32,
                 "VFM_LOGGER" => self.logger.enabled = parse_bool(key, &v)?,
                 "VFM_RESYNC_MINUTES" => self.logger.resync_minutes = parse_num(key, &v)?.max(10),
                 "VFM_CONTACT" => self.logger.contact = v,
@@ -246,6 +251,9 @@ encryption = {enc}
 # Largest single upload (friend list / activity), in KB.
 max_item_kb = {kb}
 max_users = {users}
+# Requests each account may make per 10 minutes before the server says "slow down". A first
+# sync with many friends needs a lot.
+requests_per_10min = {reqs}
 # Shared cache of public VRChat info: apps put worlds / groups / avatars they loaded here and
 # read them from here first, so VRChat gets fewer requests. Only public data; a week at most.
 cache_worlds = {cw}
@@ -301,6 +309,7 @@ update_check = {upcheck}
             enc = q(a.encryption.as_str()),
             kb = a.max_item_kb,
             users = a.max_users,
+            reqs = a.requests_per_10min,
             lenabled = l.enabled,
             resync = l.resync_minutes,
             contact = q(&l.contact),

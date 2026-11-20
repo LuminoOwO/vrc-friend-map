@@ -329,7 +329,7 @@ tray. On hold: Discord rich presence.
   reads, and import them there, so a new device doesn't need setting up by hand. With a QR code
   for phones: every platform can show one, and scanning works wherever there's a camera (phones,
   and PCs that have one), else paste or open the file.
-- [ ] **First setup with a server is too slow:** a new device's first sync can hit the server's
+- [x] **First setup with a server is too slow:** (done 2026-11-20: default 2000, `requests_per_10min` / `VFM_REQUEST_LIMIT` / admin page) a new device's first sync can hit the server's
   request limit (600 per account per 10 minutes; "slow down"). Raise the default and make it a
   server setting; maybe a higher allowance in the first minutes after joining.
 - [ ] **A better admin page for vfm-server**, in the spirit of the beta UI.

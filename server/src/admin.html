@@ -121,6 +121,7 @@
             <option value="force-on">Force on: encrypted only</option></select></div>
           <div><label>Largest upload (KB)</label><input name="maxItemKb" type="number" min="16" max="16384"></div>
           <div><label>Max accounts</label><input name="maxUsers" type="number" min="1"></div>
+          <div><label>Requests per account per 10 min</label><input name="requestLimit" type="number" min="100" max="100000" title="After this the server says &quot;slow down&quot;. A first sync with many friends needs a lot."></div>
         </div>
         <label><input type="checkbox" name="loggerEnabled" style="width:auto"> Logger enabled</label>
         <label>Appeal contact (shown to people you ban: email, Discord name…)</label><input name="appealContact" maxlength="200">
@@ -265,7 +266,7 @@ async function load() {
   $("#forgetBtn").classList.toggle("hidden", !L.paired);
 
   const f = $("#settings");
-  for (const k of ["name", "motd", "registration", "encryption", "maxItemKb", "maxUsers", "appealContact"]) f[k].value = s.settings[k] ?? "";
+  for (const k of ["name", "motd", "registration", "encryption", "maxItemKb", "maxUsers", "requestLimit", "appealContact"]) f[k].value = s.settings[k] ?? "";
   for (const k of ["loggerEnabled", "trustedProxy", "cacheWorlds", "cacheGroups", "cacheAvatars", "relay", "totp", "updateCheck"]) f[k].checked = !!s.settings[k];
   $("#updateOffWarn").classList.toggle("hidden", !!s.settings.updateCheck);
   f.updateCheck.onchange = () => $("#updateOffWarn").classList.toggle("hidden", f.updateCheck.checked);
@@ -280,7 +281,7 @@ async function load() {
     $("#admins").innerHTML = a.admins.map((x) => `<tr><td>${esc(x.name)}${x.name === a.me ? ' <span class="pill">you</span>' : ""}</td><td>${x.totp ? '<span class="ok">set up</span>' : '<span class="warn">none</span>'}</td><td>${ago(x.lastLogin)}</td><td>${x.name === a.me ? "" : `<button class="danger" data-admin="${esc(x.name)}">Remove</button>`}</td></tr>`).join("") || `<tr><td colspan=4 class="dim">No admin accounts yet (you're using the admin token).</td></tr>`;
   }).catch(() => {});
   // Fields fixed by VFM_* environment variables (container setups).
-  const ENV = { name: "VFM_NAME", motd: "VFM_MOTD", registration: "VFM_REGISTRATION", encryption: "VFM_ENCRYPTION", maxItemKb: "VFM_MAX_ITEM_KB", maxUsers: "VFM_MAX_USERS", loggerEnabled: "VFM_LOGGER" };
+  const ENV = { name: "VFM_NAME", motd: "VFM_MOTD", registration: "VFM_REGISTRATION", encryption: "VFM_ENCRYPTION", maxItemKb: "VFM_MAX_ITEM_KB", maxUsers: "VFM_MAX_USERS", requestLimit: "VFM_REQUEST_LIMIT", loggerEnabled: "VFM_LOGGER" };
   for (const [k, v] of Object.entries(ENV)) {
     const locked = (s.envLocked || []).includes(v);
     f[k].disabled = locked;
@@ -303,7 +304,7 @@ $("#settings").onsubmit = async (e) => {
   e.preventDefault();
   const f = e.target;
   await api("/admin/api/settings", { method: "POST", body: JSON.stringify({
-    name: f.name.value, motd: f.motd.value, registration: f.registration.value, encryption: f.encryption.value, maxItemKb: +f.maxItemKb.value, maxUsers: +f.maxUsers.value,
+    name: f.name.value, motd: f.motd.value, registration: f.registration.value, encryption: f.encryption.value, maxItemKb: +f.maxItemKb.value, maxUsers: +f.maxUsers.value, requestLimit: +f.requestLimit.value,
     loggerEnabled: f.loggerEnabled.checked, appealContact: f.appealContact.value, trustedProxy: f.trustedProxy.checked,
     cacheWorlds: f.cacheWorlds.checked, cacheGroups: f.cacheGroups.checked, cacheAvatars: f.cacheAvatars.checked, relay: f.relay.checked, totp: f.totp.checked, updateCheck: f.updateCheck.checked,
   }) });

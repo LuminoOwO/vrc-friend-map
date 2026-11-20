@@ -34,6 +34,9 @@ minor releases can change behavior.
 - Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
 
 ### Changed
+- **vfm-server: the first sync is no longer cut short by "slow down".** Each account may now make
+  2000 requests per 10 minutes (was 600), and the server's owner can change it:
+  `requests_per_10min` in the config, `VFM_REQUEST_LIMIT`, or on the admin page.
 - **Door and Knock are easier to hear**: each now starts with a short, bright tap, so they come
   through on phone and laptop speakers (before, they were low thumps that mostly vanished).
 - **A longer pause before a person's own tune** (0.25 s instead of 0.1 s), and you can set it:
