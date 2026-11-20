@@ -263,6 +263,13 @@ pub fn chromium_runtime() -> tauri_runtime_cef::Cef {
             None => cef.command_line_arg(switch.to_string(), None::<String>),
         };
     }
+    // For live profiling only: `VFM_REMOTE_DEBUG_PORT=9222` opens Chromium's
+    // DevTools port on 127.0.0.1 (never set in normal use).
+    if let Some(port) = std::env::var("VFM_REMOTE_DEBUG_PORT").ok().and_then(|p| p.trim().parse::<u16>().ok()) {
+        eprintln!("VRC Friend Map: DevTools port {port} on 127.0.0.1 (VFM_REMOTE_DEBUG_PORT)");
+        cef = cef.command_line_arg("--remote-debugging-port", Some(port.to_string()));
+        cef = cef.command_line_arg("--remote-debugging-address", Some("127.0.0.1".to_string()));
+    }
     if load_unlocked() {
         // No vsync and no frame cap: requestAnimationFrame runs as fast as it can;
         // the map's own limit (Settings → Frame rate) decides the actual rate.
