@@ -31,6 +31,7 @@ import { loadSteamDays, steamDay } from "../steamdays";
 import { setState, showToast, useApp } from "../store";
 import { Icon } from "./Icon";
 import { Range } from "./Range";
+import { SkelBlock } from "../ui2/smooth";
 
 type Tab = "day" | "stats" | "videos" | "pictures" | "year";
 
@@ -61,7 +62,7 @@ export function LogbookView() {
       </div>
       {err && <p className="warn small">{err}</p>}
       {!visits ? (
-        <p className="muted">Loading your game logs…</p>
+        <SkelBlock lines={4} label="Loading your game logs…" />
       ) : !visits.length ? (
         <p className="muted">
           Nothing yet. The logbook comes from VRChat's log files on this computer (Settings → Game logs). Phones: later through your PC or Shizuku.

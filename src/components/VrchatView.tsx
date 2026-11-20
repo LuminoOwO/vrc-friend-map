@@ -34,6 +34,7 @@ import { EventList } from "./ContentDialogs";
 import { Icon } from "./Icon";
 import { openImage } from "./ImageViewer";
 import { Range } from "./Range";
+import { SkelBlock } from "../ui2/smooth";
 
 type Tab = "groups" | "favorites" | "avatars" | "files" | "worlds";
 
@@ -139,7 +140,7 @@ function MyGroups() {
           <Icon name="calendar" size={16} /> Upcoming events
         </h3>
         {err && <p className="small warn">{err}</p>}
-        {events ? <EventList events={events} /> : <p className="small muted">Loading…</p>}
+        {events ? <EventList events={events} /> : <SkelBlock lines={2} />}
       </section>
     </div>
   );

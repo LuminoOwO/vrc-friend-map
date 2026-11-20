@@ -13,6 +13,7 @@ import { concernAbout } from "../age";
 import { PERSON_MODES, setPersonMode } from "./NotificationsSection";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useDismiss } from "../ui2/dismiss";
+import { Skel, useSmooth } from "../ui2/smooth";
 import { backend, imgSrc } from "../backend";
 import { listMemberIds } from "../derived";
 import { playIntoProfile } from "../flip";
@@ -111,6 +112,9 @@ function statusCard(f: Friend, p: Presence, now: number): { icon: string; text: 
 }
 
 export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean }) {
+  // Cards that appear once their data has loaded slide in, and the rest move smoothly.
+  const smoothMain = useSmooth();
+  const smoothSide = useSmooth();
   const cache = useApp((s) => s.cache);
   const local = useApp((s) => s.local);
   const [editing, setEditing] = useState(false);
@@ -328,7 +332,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
         </header>
       )}
       <div className="profile-cols">
-        <div className="profile-col">
+        <div className="profile-col" ref={smoothMain}>
           <section className="pcard profile-main">
             {!hero && bannerEl}
             {!hero && idEl}
@@ -402,8 +406,14 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                       </button>
                     )}
                   </>
+                ) : detail && (detail.profileFetchedAt || demo) ? (
+                  <p className="muted small">Nothing written.</p>
                 ) : (
-                  <p className="muted small">{detail && (detail.profileFetchedAt || demo) ? "Nothing written." : "Loading…"}</p>
+                  <p className="skel-lines">
+                    <Skel w="92%" block />
+                    <Skel w="78%" block />
+                    <Skel w="55%" block />
+                  </p>
                 )}
                 <BioKey bio={detail?.bio} userId={f.id} />
                 {links.length > 0 && (
@@ -449,13 +459,13 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   <dt data-flip-fade>
                     <Icon name="calendar" size={15} /> Joined VRChat
                   </dt>
-                  <dd data-flip-fade>{detail?.date_joined ? fmtDate(detail.date_joined) : "loading…"}</dd>
+                  <dd data-flip-fade>{detail?.date_joined ? fmtDate(detail.date_joined) : <Skel w="7em" />}</dd>
                   {relation !== "me" && (
                     <>
                       <dt data-flip-fade>
                         <Icon name="users" size={15} /> Mutual friends
                       </dt>
-                      <dd data-flip-fade>{mutual ? (mutual.hidden ? "hidden by them" : mutual.count) : "loading…"}</dd>
+                      <dd data-flip-fade>{mutual ? (mutual.hidden ? "hidden by them" : mutual.count) : <Skel w="2.5em" />}</dd>
                     </>
                   )}
                   {cache.favorites[id]?.length ? (
@@ -480,7 +490,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
           </section>
         </div>
 
-        <div className="profile-col" data-flip-fade>
+        <div className="profile-col" data-flip-fade ref={smoothSide}>
           {loc ? (
             <section className="pcard world-card">
               <div
@@ -509,7 +519,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               <div className="world-info">
                 <h3 className="world-name">
                   <button className="link-btn" onClick={() => setState({ openWorld: loc.world })} title="World details, your notes">
-                    {world?.name ?? (demo ? "Demo World" : "Loading world…")}
+                    {world?.name ?? (demo ? "Demo World" : <Skel w="11em" h="1em" />)}
                   </button>
                 </h3>
                 <div className="world-line">

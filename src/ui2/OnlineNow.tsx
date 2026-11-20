@@ -10,6 +10,7 @@ import { setWorldNote } from "../worldnotes";
 import type { Friend } from "../types";
 import { parseLocation } from "../components/DetailPanel";
 import { Icon } from "../components/Icon";
+import { useSmooth } from "./smooth";
 
 export interface Spot {
   /** The full location ("wrld_…:123~…"), or "private", "traveling" or "web". */
@@ -67,13 +68,14 @@ function StatusDot({ f }: { f: Friend }) {
 
 export function OnlineNow({ onOpen, side = "right" }: { onOpen: (key: string) => void; side?: "left" | "right" }) {
   const spots = useSpots();
+  const smooth = useSmooth();
   // World names and pictures for the first rows (cached for a week, so this is cheap).
   useEffect(() => {
     for (const s of spots.slice(0, 15)) if (s.key.startsWith("wrld_")) loadWorld(parseLocation(s.key).world);
   }, [spots]);
   if (!spots.length) return <p className="small muted ui2-side-empty">Nobody is online right now.</p>;
   return (
-    <div className="ui2-spots">
+    <div className="ui2-spots" ref={smooth}>
       {spots.map((s) => (
         <SpotRow key={s.key} spot={s} side={side} onOpen={() => onOpen(s.key)} />
       ))}

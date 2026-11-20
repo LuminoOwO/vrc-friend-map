@@ -13,6 +13,7 @@ import { Icon } from "../../components/Icon";
 import { AppLogo } from "../AppLogo";
 import { MeButton, RAIL, ToolCluster, ViewBody, useOpenWorld } from "../parts";
 import { PanelSections, usePanelPrefs } from "../SidePanel";
+import { useSmooth } from "../smooth";
 
 export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
   const view = useApp((s) => s.view);
@@ -133,6 +134,7 @@ function MeCard() {
 /** The latest few things that happened, along the bottom. */
 function News() {
   useActivityLoaded();
+  const smooth = useSmooth(400);
   const activity = useApp((s) => s.activity);
   const friendLog = useApp((s) => s.local.friendLog);
   const items = useMemo(
@@ -146,7 +148,7 @@ function News() {
     <footer className="lob-news" aria-label="Latest activity">
       <span className="lob-news-live" aria-hidden="true" />
       {/* Items that don't fit wrap onto a hidden second line: never cut off mid-word. */}
-      <div className="lob-news-items">
+      <div className="lob-news-items" ref={smooth}>
         {items.map((e) => (
           <span key={e.key} className="lob-news-item">
             <span className="lob-news-time">{new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>

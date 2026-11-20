@@ -16,6 +16,7 @@ import { FilterChip, clearAll, statusToggle } from "../components/FilterChip";
 import { since, useInstanceSlots } from "../components/HereNow";
 import { Icon } from "../components/Icon";
 import { OnlineNow, useSpots } from "./OnlineNow";
+import { useSmooth } from "./smooth";
 
 const LS = "vfm-ui2-panel";
 export const PANEL_DEFAULT = 360;
@@ -120,6 +121,8 @@ function PartHead({ title, extra, open, onFold, action, dot }: { title: string; 
 
 /** Your instance as a card: the world's picture, its name, the instance, and everyone there. */
 export function WhereCard() {
+  const smooth = useSmooth<HTMLUListElement>();
+  const smoothCard = useSmooth();
   const here = useApp((s) => s.here);
   const friends = useApp((s) => s.cache.friends);
   const others = useApp((s) => s.cache.others);
@@ -160,7 +163,7 @@ export function WhereCard() {
       <div className="ui2-where-pic" style={pic ? { backgroundImage: `url("${pic}")` } : undefined}>
         <span className="ui2-tag">You are here</span>
       </div>
-      <div className="ui2-where-body">
+      <div className="ui2-where-body" ref={smoothCard}>
         <div className="ui2-where-name">{here.worldName || world?.name || "A world"}</div>
         <div className="ui2-where-sub">
           <span className="ui2-type-dot" />
@@ -189,7 +192,7 @@ export function WhereCard() {
           </button>
         </div>
         {list && (
-          <ul className="ui2-where-list">
+          <ul className="ui2-where-list" ref={smooth}>
             {sorted.map((p) => (
               <li key={p.id}>
                 <button onClick={() => setState({ selectedId: p.id })}>
@@ -212,6 +215,7 @@ export function WhereCard() {
 
 /** Online friends who aren't in your instance, each with an Invite button. */
 function InviteHere({ location, here }: { location: string; here: Set<string> }) {
+  const smooth = useSmooth<HTMLUListElement>();
   const friends = useApp((s) => s.cache.friends);
   const presence = useApp((s) => s.cache.presence);
   const [sent, setSent] = useState<Set<string>>(new Set());
@@ -224,7 +228,7 @@ function InviteHere({ location, here }: { location: string; here: Set<string> })
   );
   if (!location.startsWith("wrld_")) return <p className="small muted">Invites need a world instance.</p>;
   return (
-    <ul className="ui2-where-list">
+    <ul className="ui2-where-list" ref={smooth}>
       {list.map((f) => (
         <li key={f.id}>
           <div className="ui2-where-invite">
@@ -381,6 +385,7 @@ export function ActivityFeed({ onFresh, max = 80 }: { onFresh?: (n: number) => v
     [activity, friendLog, max],
   );
   const box = useRef<HTMLDivElement>(null);
+  const smoothRows = useSmooth();
   const [scrolled, setScrolled] = useState(false);
   // Everything up to this time has been seen (shown while you were at the top).
   const [seenUntil, setSeenUntil] = useState(() => Date.now());
@@ -396,6 +401,7 @@ export function ActivityFeed({ onFresh, max = 80 }: { onFresh?: (n: number) => v
   return (
     <div className="ui2-act-wrap">
       <div className="ui2-scroll" ref={box} onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 8)}>
+        <div ref={smoothRows}>
         {list.length === 0 && <p className="muted small ui2-side-empty">Nothing yet. Friends coming online, joining your world, being added or removed show up here.</p>}
         {list.map((e) => (
           <div key={e.key} className={`ui2-act-row ${e.t > seenUntil ? "fresh" : ""}`} title={new Date(e.t).toLocaleString()}>
@@ -408,6 +414,7 @@ export function ActivityFeed({ onFresh, max = 80 }: { onFresh?: (n: number) => v
             </span>
           </div>
         ))}
+        </div>
       </div>
       {scrolled && (
         <button className="ui2-jump" onClick={() => box.current?.scrollTo({ top: 0, behavior: "smooth" })}>

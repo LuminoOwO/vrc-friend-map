@@ -20,6 +20,9 @@ export function serverStatus(s: ShareServer, live: boolean): { text: string; ton
   if (mismatch) return { text: mismatch.short, tone: "bad" };
   if (s.loggerOwner && s.loggerExpired) return { text: "Server login expired", tone: "bad" };
   if (!s.registered) return { text: "Not joined yet", tone: "warn" };
+  // One failed sync is usually a hiccup (a timeout, the server's request limit): say so calmly
+  // and only turn red when it keeps failing.
+  if (s.lastError && (s.failedSyncs ?? 2) < 2) return { text: live ? "Connected · live (retrying a sync)" : "Retrying…", tone: live ? "ok" : "" };
   if (s.lastError) return { text: "Last sync failed", tone: "bad" };
   if (live) return { text: "Connected · live", tone: "ok" };
   return { text: s.lastSync ? "Connected" : "Joined, not synced yet", tone: s.lastSync ? "ok" : "" };

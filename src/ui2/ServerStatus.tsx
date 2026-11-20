@@ -10,6 +10,7 @@ import { useApp } from "../store";
 import { openServers } from "../components/ServersModal";
 import { Icon } from "../components/Icon";
 import { serverStatus } from "./ServersPage";
+import { useSmooth } from "./smooth";
 
 export function useServersSummary(): { tone: "ok" | "warn" | "bad" | ""; text: string } | null {
   const servers = useApp((s) => s.settings.sharing.servers);
@@ -56,6 +57,7 @@ export function ServerMenu() {
   const ref = useDismiss(open, close);
   const [peers, setPeers] = useState<Peer[]>(() => knownPeers());
   useEffect(() => onPeers(() => setPeers(knownPeers())), []);
+  const smoothDevices = useSmooth<HTMLUListElement>();
   if (!sum)
     return (
       <div className="ui2-drop-wrap">
@@ -108,7 +110,7 @@ export function ServerMenu() {
           <div className="ui2-drop-head sub">
             <b>Your devices</b>
           </div>
-          <ul className="ui2-devices-list">
+          <ul className="ui2-devices-list" ref={smoothDevices}>
             <li>
               <span className="ui2-dev-icon on">
                 <Icon name="desktop" size={17} />

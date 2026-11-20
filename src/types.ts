@@ -482,6 +482,8 @@ export interface ShareServer {
   published: string[];
   lastSync: number;
   lastError: string;
+  /** Failed syncs in a row (one is usually a hiccup and shows as "Retrying…", not red). */
+  failedSyncs?: number;
   lastNote: string;
 }
 

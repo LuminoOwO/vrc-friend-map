@@ -14,6 +14,7 @@ import { startUpdateChecks } from "./updates";
 import { installHaptics } from "./haptics";
 import { installLinkPaste } from "./vrclinks";
 import { startPhone } from "./phone";
+import { watchImageLoads } from "./ui2/smooth";
 
 applySafeArea();
 startAppVisibility();
@@ -28,6 +29,7 @@ startUpdateChecks();
 installHaptics();
 installLinkPaste();
 startPhone();
+watchImageLoads();
 
 // Dev server only: lets UI test scripts set up state (stripped from builds).
 if (import.meta.env.DEV) {

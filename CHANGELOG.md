@@ -6,6 +6,8 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Fixed (new interface)
+- One failed sync no longer turns a server red at once: it shows as retrying, and only turns red
+  when syncing keeps failing.
 - Views, Party and Settings no longer look blurry after sliding in.
 - The activity line at the bottom no longer cuts entries off mid-word.
 - The menu over an open view is a solid drawer instead of a dark shade across the view.
@@ -47,6 +49,11 @@ minor releases can change behavior.
 - Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
 
 ### Changed
+- **Loading looks like loading:** text that's still on its way shows as shimmering bars
+  (profiles, worlds, groups, events, the logbook), pictures fade in once loaded with a
+  shimmering frame until then, and lists (Online now, Activity, notifications, your devices,
+  the bottom line, profile cards) slide new things in and move the rest smoothly instead of
+  jumping.
 - **Filters fade:** people who don't match a filter (or an overview tile) fade out and back in on
   the map instead of switching at once.
 - **Smoother map:** names and circle names are drawn once and reused instead of being outlined

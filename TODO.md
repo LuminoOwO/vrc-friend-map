@@ -345,15 +345,15 @@ tray. On hold: Discord rich presence.
 
 ## Open after the Lobby redesign (2026-11-20, evening)
 
-- [ ] **Map still not smooth on the owner's PC** (RTX 3080 Ti, GPU mode, 2560x1440 at 60 Hz). Ask for
+- [x] **Map still not smooth on the owner's PC** (RTX 3080 Ti, GPU mode, 2560x1440 at 60 Hz). Ask for (2026-11-21: solved; the slow one was the WebKit dev build, the real Chromium app runs at 60 fps; test with `npm run chromium`)
   Map options → Show frame rate (fps, draw ms, slowest) to see whether drawing or the browser is slow.
-- [ ] **Views inside Lobby still look like the classic ones** (People, Activity, Insights, Logbook,
+- [x] **Views inside Lobby still look like the classic ones** (People, Activity, Insights, Logbook, (2026-11-21: restyled)
   VRChat, Lists); the mockup (`../mockup-redesign/App2.dc.html`) redesigns them too.
 - [ ] Owner to check: Lobby menu, settings in the frame, party banner/fold, the new logo, the
   picture flying into the profile, device sync on phone + PC, Door/Knock sounds.
 - [ ] Decide: minimum versions (both 0.12.0); renewing the server login from the app with a password;
   QR setup move; better admin page; splitting the server's sync part.
-- [ ] Before 0.13.0: the "New beta UI" texts in Settings still call it beta/classic default.
+- [x] Before 0.13.0: the "New beta UI" texts in Settings still call it beta/classic default. (2026-11-21: done, it's now a "Classic interface" switch)
 
 ## Redesign notes (owner, 2026-11-20, from the mockups)
 

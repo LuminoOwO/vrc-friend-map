@@ -269,6 +269,7 @@ export const newServer = (url: string): ShareServer => ({
   published: [],
   lastSync: 0,
   lastError: "",
+  failedSyncs: 0,
   lastNote: "",
 });
 

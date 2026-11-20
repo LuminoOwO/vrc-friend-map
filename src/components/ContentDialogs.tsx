@@ -32,6 +32,7 @@ import { parseLocation } from "./DetailPanel";
 import { Icon } from "./Icon";
 import { openImage } from "./ImageViewer";
 import { setWorldNote } from "../worldnotes";
+import { SkelBlock } from "../ui2/smooth";
 
 function Modal({ title, onClose, children, wide }: { title: React.ReactNode; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   return (
@@ -156,7 +157,7 @@ export function WorldDialog() {
   const friendsHere = Object.values(friends).filter((f) => f.location.startsWith(`${id}:`));
   return (
     <Modal title={w?.name ?? "World"} onClose={close} wide>
-      {w === undefined && <p className="muted">Loading…</p>}
+      {w === undefined && <SkelBlock />}
       {w === null && <p className="muted">Couldn't load this world.</p>}
       {w && (
         <>
@@ -246,7 +247,7 @@ export function GroupDialog() {
       onClose={close}
       wide
     >
-      {g === undefined && <p className="muted">Loading…</p>}
+      {g === undefined && <SkelBlock />}
       {g === null && <p className="muted">Couldn't load this group (it may be private).</p>}
       {g && (
         <>
@@ -433,7 +434,7 @@ function GroupEvents({ id }: { id: string }) {
   return (
     <>
       {err && <p className="small warn">{err}</p>}
-      {events ? <EventList events={events} /> : <p className="muted small">Loading…</p>}
+      {events ? <EventList events={events} /> : <SkelBlock lines={2} />}
     </>
   );
 }

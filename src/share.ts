@@ -656,7 +656,7 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
         notes.push(`Logger: ${msg}`);
       }
     }
-    updateServer(id, { lastSync: Date.now(), lastError: "", lastNote: notes.join(" ") });
+    updateServer(id, { lastSync: Date.now(), lastError: "", failedSyncs: 0, lastNote: notes.join(" ") });
     logSync({ area: serverName(s), step: "Sync", result: "ok", detail: notes.join(" ") });
   } catch (e) {
     const msg = errText(e);
@@ -666,7 +666,8 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
       updateServer(id, { lastNote: "Interrupted (the app went to the background); tries again next sync." });
       return;
     }
-    updateServer(id, { lastSync: Date.now(), lastError: msg, lastNote: notes.join(" ") });
+    const before = getState().settings.sharing.servers.find((x) => x.id === id)?.failedSyncs ?? 0;
+    updateServer(id, { lastSync: Date.now(), lastError: msg, failedSyncs: before + 1, lastNote: notes.join(" ") });
     if (/not registered/.test(msg)) updateServer(id, { registered: false });
     if (opts.manual) showToast(`${serverName(s)}: ${msg}`);
   }

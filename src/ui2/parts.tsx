@@ -19,6 +19,7 @@ import { LogbookView } from "../components/LogbookView";
 import { SharedLists } from "../components/SharedLists";
 import { FilterPopover } from "../components/TopBar";
 import { VrchatView } from "../components/VrchatView";
+import { useSmooth } from "./smooth";
 
 export const RAIL: { key: View; label: string; icon: string }[] = [
   { key: "graph", label: "Map", icon: "graph" },
@@ -81,6 +82,7 @@ export function useViewKeys() {
 
 /** Notifications bell: what you missed (muted, quiet hours) and the latest ones shown. */
 export function Bell() {
+  const smooth = useSmooth<HTMLUListElement>();
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
   const ref = useDismiss(open, close);
@@ -107,7 +109,7 @@ export function Bell() {
           {list.length === 0 ? (
             <p className="small muted ui2-drop-empty">Nothing yet.</p>
           ) : (
-            <ul className="ui2-drop-list">
+            <ul className="ui2-drop-list" ref={smooth}>
               {list.map((m, i) => (
                 <li key={`${m.t}-${i}`}>
                   <button
