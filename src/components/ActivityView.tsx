@@ -1,4 +1,4 @@
-import { t as tr, lazy, tx } from "../i18n";
+import { t as tr, lazy, tx, language } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { clearActivity, demoActivity, loadActivity, type ActivityEntry, type ActivityKind } from "../activity";
 import { fmtDate } from "../model";
@@ -34,7 +34,7 @@ export const KIND_ICON: Record<ActivityKind, string> = {
 };
 
 export function timeOf(t: number) {
-  return new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return new Date(t).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" });
 }
 
 function dayOf(t: number) {
@@ -43,7 +43,7 @@ function dayOf(t: number) {
   const yest = new Date(Date.now() - 86400_000);
   if (d.toDateString() === today.toDateString()) return "Today";
   if (d.toDateString() === yest.toDateString()) return "Yesterday";
-  return d.toLocaleDateString([], { weekday: "long", day: "numeric", month: "long" });
+  return d.toLocaleDateString(language(), { weekday: "long", day: "numeric", month: "long" });
 }
 
 /** One line of the activity log: "Lumi came online", "You joined Some World"… */

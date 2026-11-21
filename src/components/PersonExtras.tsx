@@ -220,7 +220,7 @@ export function OnlineHistory({ id, name, online }: { id: string; name: string; 
         {!online && (
           <>
             <dt>{tr("personExtras.lastSeen")}</dt>
-            <dd>{last ? tr("personExtras.valueValue2", { value: ago(last), value2: new Date(last).toLocaleString() }) : tr("personExtras.notSeenOnlineYet")}</dd>
+            <dd>{last ? tr("personExtras.valueValue2", { value: ago(last), value2: new Date(last).toLocaleString(language()) }) : tr("personExtras.notSeenOnlineYet")}</dd>
           </>
         )}
         <dt>{tr("personExtras.friendsSince")}</dt>

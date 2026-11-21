@@ -1,4 +1,4 @@
-import { t as tr } from "../i18n";
+import { t as tr, language } from "../i18n";
 import { useMemo, useState } from "react";
 import { shareCircle } from "../sharedcircles";
 import { duplicateColorIds, pickCircleColor } from "../colors";
@@ -242,7 +242,7 @@ function RecentActivity() {
       ) : (
         <ul className="log side-activity">
           {recent.map((e) => (
-            <li key={e.key} className={`act-${e.kind}`} title={new Date(e.t).toLocaleString()}>
+            <li key={e.key} className={`act-${e.kind}`} title={new Date(e.t).toLocaleString(language())}>
               <Icon name={KIND_ICON[e.kind]} size={13} />
               <span className="act-text">
                 <ActivityText e={e} />

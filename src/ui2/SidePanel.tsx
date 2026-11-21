@@ -2,7 +2,7 @@
 // overview tiles, Online now and Activity. Right or left (swap button), resizable (snaps back to
 // its default width, dragged very narrow it folds away), folds to a small "wing" on the edge.
 // Overview, Online now and Activity fold too. The layout is remembered on this device.
-import { t as tr } from "../i18n";
+import { t as tr, language } from "../i18n";
 import { t } from "../i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
@@ -349,7 +349,7 @@ const KIND_ICONS: Record<string, string> = {
   crash: "close",
 };
 
-const hhmm = (t: number) => new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+const hhmm = (t: number) => new Date(t).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" });
 
 /** Recent activity in its own scroll area: new entries light up and get counted, "back to top" says how many. */
 function SideActivity({ open, onFold }: { open: boolean; onFold: () => void }) {
@@ -406,7 +406,7 @@ export function ActivityFeed({ onFresh, max = 80 }: { onFresh?: (n: number) => v
         <div ref={smoothRows}>
         {list.length === 0 && <p className="muted small ui2-side-empty">{t("party.activityEmpty")}</p>}
         {list.map((e) => (
-          <div key={e.key} className={`ui2-act-row ${e.t > seenUntil ? "fresh" : ""}`} title={new Date(e.t).toLocaleString()}>
+          <div key={e.key} className={`ui2-act-row ${e.t > seenUntil ? "fresh" : ""}`} title={new Date(e.t).toLocaleString(language())}>
             <span className="ui2-act-time">{hhmm(e.t)}</span>
             <span className="ui2-act-icon" style={{ ["--k" as string]: KIND_COLOR[e.kind] ?? "var(--muted)" }}>
               <Icon name={KIND_ICONS[e.kind] ?? "info"} size={13} />

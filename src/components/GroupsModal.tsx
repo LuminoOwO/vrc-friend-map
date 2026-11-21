@@ -1,5 +1,5 @@
 // All of someone's groups as cards, like the "<name>'s Groups" dialog on vrchat.com.
-import { t as tr } from "../i18n";
+import { t as tr, language } from "../i18n";
 import { openImage } from "./ImageViewer";
 import { useEffect } from "react";
 import { imgSrc } from "../backend";
@@ -54,7 +54,7 @@ export function GroupsModal({ name, groups, onClose }: { name: string; groups: U
                 {g.description && <span className="group-card-desc">{g.description}</span>}
                 <span className="group-card-foot">
                   <span>
-                    <Icon name="users" size={13} /> {g.memberCount?.toLocaleString() ?? "?"}
+                    <Icon name="users" size={13} /> {g.memberCount?.toLocaleString(language()) ?? "?"}
                   </span>
                   {g.shortCode && <span>{`${g.shortCode}.${g.discriminator ?? ""}`}</span>}
                   {g.mutual && <span className="mutual-tag">{tr("groupsModal.youReInIt")}</span>}

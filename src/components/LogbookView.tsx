@@ -2,7 +2,7 @@
 // video links, pictures and avatars, your diary note, "on this day a year
 // ago" and an instance replay; rankings and stats; all video links; the
 // picture gallery tagged with world and people; a year in review.
-import { t as tr, weekdayNames } from "../i18n";
+import { t as tr, weekdayNames, language } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { backend, isTauri } from "../backend";
 import { popularWorlds, setDiary, useHistory } from "../history";
@@ -132,7 +132,7 @@ function DayView({ visits }: { visits: TimelineVisit[] }) {
         </button>
       </div>
       <section className="insight-card">
-        <h3>{naiveToDate(dayStart(day)).toLocaleDateString([], { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</h3>
+        <h3>{naiveToDate(dayStart(day)).toLocaleDateString(language(), { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</h3>
         {list.length ? (
           <p className="small">
             Played {fmtDuration(total)} in {sess.length} session{sess.length === 1 ? "" : "s"} ({sess.map((s) => `${fmtClock(s.start)}–${fmtClock(s.end)}`).join(", ")}), {list.length} instance
@@ -144,7 +144,7 @@ function DayView({ visits }: { visits: TimelineVisit[] }) {
         {steam && steam.minutes > 0 && (
           <p className="small muted" title={tr("logbook.fromSteamSOwnPlay")}>
             {tr("logbook.steamCountedValue", { value: fmtDuration(steam.minutes * 60) })}
-            {steam.spans ? ` since ${naiveToDate(dayStart(steam.since)).toLocaleDateString([], { month: "short", day: "numeric" })}` : tr("logbook.thisDay")}.
+            {steam.spans ? ` since ${naiveToDate(dayStart(steam.since)).toLocaleDateString(language(), { month: "short", day: "numeric" })}` : tr("logbook.thisDay")}.
           </p>
         )}
         <label className="field">
@@ -322,7 +322,7 @@ function Stats({ visits }: { visits: TimelineVisit[] }) {
               <li key={p.id}>
                 <Person id={p.id} name={p.name} />{" "}
                 <span className="muted small">
-                  {fmtDuration(p.secs)} · {p.days} day{p.days === 1 ? "" : "s"} · first met {naiveToDate(p.first).toLocaleDateString()}
+                  {fmtDuration(p.secs)} · {p.days} day{p.days === 1 ? "" : "s"} · first met {naiveToDate(p.first).toLocaleDateString(language())}
                 </span>
               </li>
             ))}
@@ -346,7 +346,7 @@ function Stats({ visits }: { visits: TimelineVisit[] }) {
           <ul className="missed-list">
             {r.longest.map((s) => (
               <li key={s.start}>
-                {naiveToDate(s.start).toLocaleDateString()} {fmtClock(s.start)}–{fmtClock(s.end)} <span className="muted small">{fmtDuration(s.end - s.start)}</span>
+                {naiveToDate(s.start).toLocaleDateString(language())} {fmtClock(s.start)}–{fmtClock(s.end)} <span className="muted small">{fmtDuration(s.end - s.start)}</span>
               </li>
             ))}
           </ul>
@@ -405,7 +405,7 @@ function Videos({ visits }: { visits: TimelineVisit[] }) {
       <ul className="video-list">
         {list.slice(0, 500).map((v, i) => (
           <li key={`${v.t}-${i}`}>
-            <span className="muted small">{naiveToDate(v.t).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}</span>
+            <span className="muted small">{naiveToDate(v.t).toLocaleString(language(), { dateStyle: "short", timeStyle: "short" })}</span>
             <VideoLink url={v.url} />
             <button className="icon-btn tiny" title={tr("logbook.copyLink")} onClick={() => navigator.clipboard?.writeText(v.url).then(() => showToast(tr("logbook.linkCopied")))}>
               <Icon name="copy" size={13} />
@@ -458,7 +458,7 @@ function Pictures({ visits }: { visits: TimelineVisit[] }) {
       </div>
       <div className="pic-grid">
         {list.slice(0, 400).map((p) => (
-          <button key={p.path} className="pic" onClick={() => setOpen(p)} title={`${p.worldName ?? ""} ${naiveToDate(p.t).toLocaleString()}`}>
+          <button key={p.path} className="pic" onClick={() => setOpen(p)} title={`${p.worldName ?? ""} ${naiveToDate(p.t).toLocaleString(language())}`}>
             <img src={pictureSrc(p.path)} alt="" loading="lazy" />
             <span className="pic-meta small">
               {p.worldName ?? "?"} · {p.people.length} people
@@ -483,7 +483,7 @@ function PictureViewer({ p, onClose }: { p: TaggedPicture; onClose: () => void }
         </div>
         <img className="pic-full" src={pictureSrc(p.path)} alt="" />
         <p className="small muted">
-          {naiveToDate(p.t).toLocaleString()} · {p.width && p.height ? tr("logbook.widthHeight", { width: p.width, height: p.height }) : ""}
+          {naiveToDate(p.t).toLocaleString(language())} · {p.width && p.height ? tr("logbook.widthHeight", { width: p.width, height: p.height }) : ""}
           {(p.size / 1024 / 1024).toFixed(1)} MB
         </p>
         {p.people.length > 0 && (

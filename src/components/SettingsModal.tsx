@@ -1,4 +1,4 @@
-import { t as tr, lazy, tx } from "../i18n";
+import { t as tr, lazy, tx, language } from "../i18n";
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LANGUAGES, MACHINE_TRANSLATED, languageName, resolveLanguage, useT } from "../i18n";
 import { NO_OWN_COLORS, type OwnColors } from "../owncolors";
@@ -1184,7 +1184,7 @@ function GameLogSection() {
       </div>
       <p className="small">
         {r && r.visits > 0
-          ? tr("settings.historyVisitsInstanceVisitsFrom", { visits: r.visits, files_stored: r.files_stored, value: naiveToDate(r.first).toLocaleDateString(), value2: naiveToDate(r.last).toLocaleDateString(), value3: (r.bytes / 1024).toFixed(0) })
+          ? tr("settings.historyVisitsInstanceVisitsFrom", { visits: r.visits, files_stored: r.files_stored, value: naiveToDate(r.first).toLocaleDateString(language()), value2: naiveToDate(r.last).toLocaleDateString(language()), value3: (r.bytes / 1024).toFixed(0) })
           : tr("settings.noLogHistoryYet")}
       </p>
       {logs.error && <p className="small warn">{logs.error}</p>}

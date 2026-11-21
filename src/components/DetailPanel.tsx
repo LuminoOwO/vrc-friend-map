@@ -4,7 +4,7 @@
 // the current world (who's there, open or launch it), badges and groups, plus
 // this app's circles, time together and shared friends. One column on narrow
 // screens.
-import { listJoin, t as tr } from "../i18n";
+import { listJoin, t as tr, language } from "../i18n";
 import { openImage, type ViewerItem } from "./ImageViewer";
 import { betaActive } from "../ui2/active";
 import { removedByMe } from "../notifications";
@@ -456,7 +456,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   <dt data-flip-fade>
                     <Icon name="clock" size={15} /> {tr("profile.lastLogin")}
                   </dt>
-                  <dd data-flip-fade>{toTime(f.last_login) ? new Date(toTime(f.last_login)).toLocaleString() : "unknown"}</dd>
+                  <dd data-flip-fade>{toTime(f.last_login) ? new Date(toTime(f.last_login)).toLocaleString(language()) : "unknown"}</dd>
                   <dt data-flip-fade>
                     <Icon name="calendar" size={15} /> {tr("profile.joinedVrchat")}
                   </dt>
@@ -679,7 +679,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               {time && (
                 <p className="small">
                   {fmtHours(time.secs)} on {time.days} day{time.days === 1 ? "" : "s"}
-                  <span className="muted"> {tr("profile.lastValue", { value: naiveToDate(time.last).toLocaleDateString() })}</span>
+                  <span className="muted"> {tr("profile.lastValue", { value: naiveToDate(time.last).toLocaleDateString(language()) })}</span>
                 </p>
               )}
               {oftenWith.length > 0 && (

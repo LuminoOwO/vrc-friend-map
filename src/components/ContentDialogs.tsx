@@ -1,7 +1,7 @@
 // Dialogs for VRChat content: an instance (from a world card's player
 // pictures), a world, and a group (about, posts, events, instances, gallery,
 // members and management as far as your roles allow).
-import { t as tr } from "../i18n";
+import { t as tr, language } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { backend, imgSrc } from "../backend";
 import { iconUrl } from "../model";
@@ -164,7 +164,7 @@ export function WorldDialog() {
         <>
           {w.imageUrl && <img className="content-banner" src={imgSrc(w.imageUrl)} alt="" />}
           <p className="small">
-            {tr("content.byAuthornameOccupantsInIt", { authorName: w.authorName, occupants: w.occupants, value: w.favorites.toLocaleString(), value2: w.visits.toLocaleString(), capacity: w.capacity })}
+            {tr("content.byAuthornameOccupantsInIt", { authorName: w.authorName, occupants: w.occupants, value: w.favorites.toLocaleString(language()), value2: w.visits.toLocaleString(language()), capacity: w.capacity })}
           </p>
           {w.description && <p className="bio">{w.description}</p>}
           {friendsHere.length > 0 && (
@@ -282,7 +282,7 @@ function GroupAbout({ g, onChange }: { g: GroupFull; onChange: () => void }) {
   return (
     <>
       <p className="small">
-        {g.memberCount.toLocaleString()} members · {g.onlineMemberCount} online · {g.privacy} · joining: {g.joinState}
+        {g.memberCount.toLocaleString(language())} members · {g.onlineMemberCount} online · {g.privacy} · joining: {g.joinState}
         {g.languages.length ? ` · ${g.languages.join(", ")}` : ""}
       </p>
       {g.description && <p className="bio">{g.description}</p>}
@@ -387,7 +387,7 @@ function GroupPosts({ g }: { g: GroupFull }) {
       {posts?.map((p) => (
         <article key={p.id} className="group-post">
           <h4>{p.title}</h4>
-          <p className="small muted">{p.createdAt ? new Date(p.createdAt).toLocaleString() : ""} · {p.visibility}</p>
+          <p className="small muted">{p.createdAt ? new Date(p.createdAt).toLocaleString(language()) : ""} · {p.visibility}</p>
           {p.imageUrl && <img className="post-img" src={imgSrc(p.imageUrl)} alt="" />}
           <p className="bio small">{p.text}</p>
           {canPost && (
@@ -411,7 +411,7 @@ export function EventList({ events }: { events: GroupEvent[] }) {
         <b>{e.title}</b> <span className="muted small">{e.category}</span>
       </div>
       <div className="small">
-        {new Date(e.startsAt).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} – {new Date(e.endsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        {new Date(e.startsAt).toLocaleString(language(), { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} – {new Date(e.endsAt).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" })}
         {e.interested ? tr("content.interestedInterested", { interested: e.interested }) : ""} · {e.accessType}
       </div>
       {e.description && <p className="small muted clamp-3">{e.description}</p>}
@@ -694,7 +694,7 @@ function GroupManage({ g, onChange }: { g: GroupFull; onChange: () => void }) {
           <ul className="missed-list">
             {logs?.slice(0, 100).map((l, i) => (
               <li key={i}>
-                <span className="muted small">{l.t ? new Date(l.t).toLocaleString() : ""}</span> <b>{l.actor}</b> <span className="small">{l.description || l.type}</span>
+                <span className="muted small">{l.t ? new Date(l.t).toLocaleString(language()) : ""}</span> <b>{l.actor}</b> <span className="small">{l.description || l.type}</span>
               </li>
             ))}
           </ul>

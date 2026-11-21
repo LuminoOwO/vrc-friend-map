@@ -3,7 +3,7 @@
 // rules, per person, circles, mute), then plays the action's sound followed by
 // the person's own tune, and shows a system notification when the app is in
 // the background (or always, as chosen).
-import { t as tr, lazy } from "./i18n";
+import { t as tr, lazy, language } from "./i18n";
 import { backend, isTauri } from "./backend";
 import { playParts, type SoundPart } from "./notify";
 import { getState, showToast, updateNotify } from "./store";
@@ -336,8 +336,8 @@ export function muteLabel(n: NotifySettings = getState().settings.notify): strin
   if (n.muteUntil === -1) return tr("notifyMsg.mutedUntilYouUnmute");
   if (n.muteUntil > Date.now()) {
     const d = new Date(n.muteUntil);
-    const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-    return `Muted until ${d.toDateString() === new Date().toDateString() ? time : `${d.toLocaleDateString([], { weekday: "short" })} ${time}`}`;
+    const time = d.toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" });
+    return `Muted until ${d.toDateString() === new Date().toDateString() ? time : `${d.toLocaleDateString(language(), { weekday: "short" })} ${time}`}`;
   }
   return "";
 }

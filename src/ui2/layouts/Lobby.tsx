@@ -3,7 +3,7 @@
 // on the right (you with your banner, where you are, the overview, Online now and Activity; it
 // folds away to a tab on the edge); the latest activity along the bottom. A view (or Settings)
 // opens in a big frame; the map fades out and stops drawing behind it.
-import { t as tr } from "../../i18n";
+import { t as tr, language } from "../../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { useT } from "../../i18n";
 import { imgSrc } from "../../backend";
@@ -157,7 +157,7 @@ function News() {
       <div className="lob-news-items" ref={smooth}>
         {items.map((e) => (
           <span key={e.key} className="lob-news-item">
-            <span className="lob-news-time">{new Date(e.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+            <span className="lob-news-time">{new Date(e.t).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" })}</span>
             <ActivityText e={e} />
           </span>
         ))}

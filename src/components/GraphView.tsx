@@ -3,7 +3,7 @@
 // logs), and soft "circle" outlines around the groups you create. Circles can
 // overlap. Drag a person into a circle outline (or onto a circle in the
 // sidebar) to add them. Map options change how people and lines are drawn.
-import { t as tr, lazy } from "../i18n";
+import { t as tr, lazy, language } from "../i18n";
 import { mapStats, noteFrame } from "../diag";
 import * as d3 from "d3";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -2153,7 +2153,7 @@ export function GraphView() {
       )}
       {travelAt && (
         <div className="time-travel-banner">
-          <Icon name="clock" size={14} /> The map as of {new Date(travelAt).toLocaleDateString()} ({travel?.size ?? 0} friends then)
+          <Icon name="clock" size={14} /> The map as of {new Date(travelAt).toLocaleDateString(language())} ({travel?.size ?? 0} friends then)
           <button className="btn small" onClick={() => setState({ timeTravel: null })}>
             {tr("map.backToNow")}
           </button>

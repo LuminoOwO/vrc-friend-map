@@ -4,7 +4,7 @@
 // encrypted with a password you choose (PBKDF2-SHA-256 + AES-GCM), to move
 // to another device without a server. Your VRChat login, server keys and the
 // friend cache aren't in it: sign in again on the new device and it syncs.
-import { t as tr } from "./i18n";
+import { t as tr, language } from "./i18n";
 import { customSounds, loadCustomSounds, restoreCustomSounds } from "./notifications";
 import { flushSaves, getState, normalizeLocal, normalizeSettings, setState, updateLocal, updateSettings } from "./store";
 import type { CustomSound } from "./types";
@@ -97,7 +97,7 @@ export function describeBackup(p: Plain): string {
     `${(l.starred ?? []).length} starred`,
     `${p.sounds.length} sound${p.sounds.length === 1 ? "" : "s"}`,
   ];
-  return tr("backupMsg.fromValueValue2AndSettings", { value: new Date(p.t).toLocaleString(), value2: parts.join(", ") });
+  return tr("backupMsg.fromValueValue2AndSettings", { value: new Date(p.t).toLocaleString(language()), value2: parts.join(", ") });
 }
 
 /** Replace this device's notes, circles, settings and sounds with the backup's. */

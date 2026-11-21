@@ -2,7 +2,7 @@
 // pending friend requests, friend groups from the map (→ circles), bridges,
 // drifting apart, a path between two people, comparing two friends, and the
 // friend list over time.
-import { t as tr } from "../i18n";
+import { t as tr, language } from "../i18n";
 import { useMemo, useState } from "react";
 import { backend, imgSrc } from "../backend";
 import { clearMissed, dismissPreviousVisit, markAllRead, previousVisit, useHistory } from "../history";
@@ -65,7 +65,7 @@ function SinceLastHere() {
     <section className="insight-card">
       <div className="row between">
         <h3>
-          <Icon name="clock" size={16} /> Since you were last here ({new Date(v.since).toLocaleString()})
+          <Icon name="clock" size={16} /> Since you were last here ({new Date(v.since).toLocaleString(language())})
         </h3>
         <button className="icon-btn small" title={tr("insights.dismiss")} onClick={dismissPreviousVisit}>
           <Icon name="close" size={14} />
@@ -121,7 +121,7 @@ function Missed() {
         <ul className="missed-list">
           {list.slice(0, 100).map((m, i) => (
             <li key={`${m.t}-${i}`} className={m.read || !m.why ? "read" : ""}>
-              <span className="muted small">{new Date(m.t).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}</span>
+              <span className="muted small">{new Date(m.t).toLocaleString(language(), { weekday: "short", hour: "2-digit", minute: "2-digit" })}</span>
               <button className="link-btn" onClick={() => setState({ selectedId: m.userId })}>
                 {m.text}
               </button>
@@ -174,7 +174,7 @@ function PendingRequests() {
             .map((r) => (
               <li key={r.id}>
                 <Face id={r.id} />
-                <span className="muted small">{r.t ? tr("insights.sentValue", { value: new Date(r.t).toLocaleDateString() }) : ""}</span>
+                <span className="muted small">{r.t ? tr("insights.sentValue", { value: new Date(r.t).toLocaleDateString(language()) }) : ""}</span>
                 <button
                   className="btn small"
                   onClick={async () => {
@@ -371,7 +371,7 @@ function Drifting() {
             <li key={d.id}>
               <Face id={d.id} />
               <span className="small muted">
-                {Math.round(d.hours)} h together, last {new Date(d.last).toLocaleDateString()}
+                {Math.round(d.hours)} h together, last {new Date(d.last).toLocaleDateString(language())}
               </span>
             </li>
           ))}
@@ -409,7 +409,7 @@ function ListOverTime() {
           </div>
         ))}
       </div>
-      <p className="small muted">Bars: friends at the end of each month. Green / red: added / removed that month. Since the app started keeping the log ({new Date(since).toLocaleDateString()}).</p>
+      <p className="small muted">Bars: friends at the end of each month. Green / red: added / removed that month. Since the app started keeping the log ({new Date(since).toLocaleDateString(language())}).</p>
     </section>
   );
 }

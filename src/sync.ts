@@ -1,7 +1,7 @@
 // Sync engine: pulls data from the VRChat API through the Rust client, which
 // spaces requests out (>= 1 s apart) and backs off on 429. Profiles and mutuals
 // are cached and only refetched when older than the configured age.
-import { t as tr } from "./i18n";
+import { t as tr, language } from "./i18n";
 import { addActivity, noteFriend } from "./activity";
 import { addNewFriendsToPicks } from "./selection";
 import { notifyEvent, removedByMe } from "./notifications";
@@ -416,7 +416,7 @@ export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
     }
     if (gen === generation) {
       resetSync();
-      setSync({ message: tr("syncMsg.updatedValue", { value: new Date().toLocaleTimeString() }) });
+      setSync({ message: tr("syncMsg.updatedValue", { value: new Date().toLocaleTimeString(language()) }) });
       logSync({ area: "VRChat", step: opts.friendsOnly ? "Friends" : "Sync", result: "ok", detail: tr("syncMsg.valueFriends", { value: Object.keys(getState().cache.friends).length }) });
     }
   } catch (e) {

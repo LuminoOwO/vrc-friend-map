@@ -1,6 +1,6 @@
 // The sync log: every sync step with time, result and the exact error.
 // Opened by clicking the sync status in the top bar.
-import { t as tr, lazy } from "../i18n";
+import { t as tr, lazy, language } from "../i18n";
 import { useState } from "react";
 import { clearSyncLog, type SyncLogEntry, useSyncLog } from "../synclog";
 import { showToast } from "../store";
@@ -53,7 +53,7 @@ export function SyncLogDialog({ onClose }: { onClose: () => void }) {
           <ul className="synclog-list">
             {list.map((e, i) => (
               <li key={`${e.t}-${i}`} className={e.result}>
-                <span className="synclog-time">{new Date(e.t).toLocaleString()}</span>
+                <span className="synclog-time">{new Date(e.t).toLocaleString(language())}</span>
                 <span className={`synclog-result ${e.result}`}>{LABEL[e.result]}</span>
                 <span className="synclog-where">
                   {e.area} · {e.step}

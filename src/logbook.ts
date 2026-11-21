@@ -2,6 +2,7 @@
 // was there and when, video links, pictures you took (tagged with the world
 // and the people there at that minute), avatars people switched to, your own
 // diary notes, rankings and a year in review. All on this device.
+import { language } from "./i18n";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { backend, isTauri } from "./backend";
 import { naiveToDate, nowNaive } from "./logs";
@@ -265,7 +266,7 @@ export function fmtDuration(secs: number): string {
 }
 
 export function fmtClock(naive: number): string {
-  return naiveToDate(naive).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return naiveToDate(naive).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" });
 }
 
 // ---------- demo ----------

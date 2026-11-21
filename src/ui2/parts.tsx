@@ -1,6 +1,6 @@
 // Pieces every desktop layout of the new interface uses: the views, the bell, filters, you,
 // the profile popup, the layout picker, and the keys that work everywhere.
-import { t as tr } from "../i18n";
+import { t as tr, language } from "../i18n";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { t } from "../i18n";
 import { imgSrc } from "../backend";
@@ -131,7 +131,7 @@ export function Bell() {
                   >
                     <span>{m.text}</span>
                     <span className="small muted">
-                      {new Date(m.t).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}
+                      {new Date(m.t).toLocaleString(language(), { weekday: "short", hour: "2-digit", minute: "2-digit" })}
                       {m.why === "quiet" ? tr("parts.duringQuietHours") : m.why === "muted" ? tr("parts.whileMuted") : ""}
                     </span>
                   </button>
