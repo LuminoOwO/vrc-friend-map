@@ -5,42 +5,108 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>vfm-server admin</title>
 <style>
-  :root { color-scheme: dark; --bg:#14151b; --panel:#1d1f28; --line:#2c2f3b; --text:#e6e6ee; --dim:#9a9cab; --accent:#7aa2ff; --ok:#5fd38d; --warn:#f2b84b; --bad:#ff6b6b; }
+  /* In the app's look (the new interface): its dark colours and teal accent, a menu on the left
+     with uppercase names and an accent bar on the active one, one page at a time, italic
+     uppercase page titles with an accent line. Phones: the menu becomes a row of tabs. */
+  :root { color-scheme: dark; --bg:#070b0f; --panel:#0b1116; --panel2:#10181f; --card:#131c24; --hover:#18242e; --line:#1b2733; --line2:#273748; --text:#e6edf3; --dim:#8a9aa8; --accent:#19c3b1; --on-accent:#04211e; --ok:#51e57e; --warn:#ffcf7a; --bad:#ef5b5b; --bad-text:#ff9a9a; }
   * { box-sizing: border-box; }
-  body { margin:0; font:15px/1.45 system-ui, sans-serif; background:var(--bg); color:var(--text); }
-  main { max-width: 880px; margin: 0 auto; padding: 20px 16px 60px; }
+  html, body { height: 100%; }
+  body { margin:0; font:15px/1.45 "Segoe UI", system-ui, -apple-system, Roboto, Ubuntu, "Noto Sans", sans-serif; background:var(--bg); color:var(--text); }
+  a { color: var(--accent); }
   h1 { font-size: 20px; margin: 0 0 4px; }
-  h2 { font-size: 15px; margin: 0 0 12px; color: var(--dim); text-transform: uppercase; letter-spacing: .06em; }
-  section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-top: 16px; }
-  .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
-  .stat { background: #23263200; border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
-  .stat b { display:block; font-size: 22px; }
+  h2 { font-size: 12px; margin: 0 0 12px; color: var(--dim); text-transform: uppercase; letter-spacing: .1em; font-weight: 800; }
+  section { background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; margin-top: 14px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px; }
+  .stat { background: rgba(255,255,255,.035); border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
+  .stat b { display:block; font-size: 22px; font-weight: 800; }
   .stat span { color: var(--dim); font-size: 13px; }
-  label { display:block; font-size: 13px; color: var(--dim); margin: 10px 0 4px; }
-  input, select, textarea { width:100%; background:#12131a; color:var(--text); border:1px solid var(--line); border-radius:8px; padding:8px 10px; font:inherit; }
-  textarea { min-height: 60px; resize: vertical; }
-  button { background: var(--accent); color:#0c1020; border:0; border-radius:8px; padding:8px 14px; font:inherit; font-weight:600; cursor:pointer; }
-  button.ghost { background: transparent; color: var(--text); border:1px solid var(--line); }
-  button.danger { background: transparent; color: var(--bad); border:1px solid #5a2a30; }
+  label { display:block; font-size: 13px; color: var(--dim); margin: 12px 0 5px; }
+  input, select, textarea { width:100%; background:var(--bg); color:var(--text); border:1px solid var(--line2); border-radius:6px; padding:9px 11px; font:inherit; outline: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  input[type=checkbox] { width:auto; accent-color: var(--accent); margin-right: 6px; vertical-align: -2px; }
+  textarea { min-height: 64px; resize: vertical; }
+  button { background: var(--accent); color:var(--on-accent); border:0; border-radius:6px; padding:9px 16px; font:inherit; font-weight:700; cursor:pointer; transition: filter .15s, transform .1s, background .15s, border-color .15s; }
+  button:hover { filter: brightness(1.1); }
+  button:active { transform: scale(.97); }
+  button.ghost { background: transparent; color: var(--text); border:1px solid var(--line2); }
+  button.ghost:hover { border-color: var(--accent); filter: none; }
+  button.danger { background: transparent; color: var(--bad-text); border:1px solid #4a2328; }
+  button.danger:hover { border-color: var(--bad); filter: none; }
   table { width:100%; border-collapse: collapse; font-size: 14px; }
-  td, th { text-align:left; padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { color: var(--dim); font-weight: 500; }
+  td, th { text-align:left; padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr:last-child td { border-bottom: 0; }
+  th { color: var(--dim); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  td button { padding: 5px 10px; font-size: 13px; margin: 2px 2px 2px 0; }
   code, .mono { font-family: ui-monospace, monospace; font-size: 13px; }
-  .pill { display:inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; border:1px solid var(--line); }
-  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); } .dim { color: var(--dim); }
-  .big { font-size: 34px; letter-spacing: .15em; font-family: ui-monospace, monospace; }
-  .hint { color: var(--dim); font-size: 13px; margin-top: 6px; }
-  #login { max-width: 420px; margin: 12vh auto; }
+  .pill { display:inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; border:1px solid var(--line2); }
+  .pill.ok { border-color: color-mix(in srgb, var(--ok) 40%, transparent); } .pill.warn { border-color: color-mix(in srgb, var(--warn) 40%, transparent); } .pill.bad { border-color: color-mix(in srgb, var(--bad) 50%, transparent); }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad-text); } .dim { color: var(--dim); }
+  .big { font-size: 34px; letter-spacing: .15em; font-family: ui-monospace, monospace; color: var(--accent); }
+  .hint { color: var(--dim); font-size: 13px; margin: 8px 0 0; }
   .hidden { display:none !important; }
-  .update { border:1px solid var(--warn); border-radius:10px; padding:10px 12px; margin:12px 0; }
-  .update a { color: var(--accent); }
+  .update { border:1px solid var(--warn); background: color-mix(in srgb, var(--warn) 8%, transparent); border-radius:8px; padding:12px 14px; margin:14px 0 0; }
+  .table-wrap { overflow-x: auto; }
+
+  /* Login: a card in the middle. */
+  #login { max-width: 420px; margin: 10vh auto; padding: 22px; }
+  .brand { display:flex; flex-direction: column; line-height: 1; margin-bottom: 16px; }
+  .brand span { font-size: 12px; font-weight: 800; letter-spacing: .5em; color: var(--accent); }
+  .brand b { font-size: 28px; font-weight: 900; font-style: italic; letter-spacing: -.01em; text-transform: uppercase; }
+
+  /* The app: menu left, page right. */
+  #app { display: flex; min-height: 100%; }
+  #side { position: sticky; top: 0; height: 100vh; flex: none; width: 250px; display: flex; flex-direction: column; gap: 4px; padding: 26px 0 18px 22px; background: var(--panel); border-right: 1px solid var(--line); overflow-y: auto; }
+  #side .brand { margin: 0 0 22px 2px; }
+  #nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav { position: relative; display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px 10px 8px; border-radius: 0; background: none; color: var(--dim); font-size: 15px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; text-align: left; }
+  .nav:hover { color: var(--text); filter: none; }
+  .nav:active { transform: none; }
+  .nav::before { content: ""; position: absolute; left: -22px; top: 50%; width: 5px; height: 0; border-radius: 0 3px 3px 0; background: var(--accent); transform: translateY(-50%); transition: height .2s; }
+  .nav.on { color: var(--accent); }
+  .nav.on::before { height: 70%; }
+  .nav .count { margin-left: auto; min-width: 22px; padding: 0 7px; border-radius: 99px; background: var(--card); color: var(--dim); font-size: 12px; text-align: center; letter-spacing: 0; }
+  .nav .dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--dim); }
+  .nav .dot.ok { background: var(--ok); } .nav .dot.warn { background: var(--warn); } .nav .dot.bad { background: var(--bad); }
+  #side .tools { margin-top: auto; display: flex; gap: 8px; padding: 18px 18px 0 0; }
+  #side .tools button { flex: 1; }
+  #page { flex: 1; min-width: 0; }
+  #pageHead { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 12px; padding: 16px 28px; background: var(--panel); border-bottom: 2px solid var(--accent); }
+  #pageHead h1 { margin: 0; font-size: 22px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: .04em; }
+  #pageHead .dim { margin-left: auto; font-size: 13px; text-align: right; }
+  #content { max-width: 900px; padding: 6px 28px 60px; }
+  #content > section:first-of-type { margin-top: 20px; }
+  @media (max-width: 760px) {
+    #app { flex-direction: column; }
+    #side { position: sticky; top: 0; z-index: 5; height: auto; width: auto; flex-direction: row; align-items: center; gap: 0; padding: 0 8px; border-right: 0; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+    #side .brand, #side .tools { display: none; }
+    #nav { flex-direction: row; }
+    .nav { width: auto; padding: 14px 12px; font-size: 13px; white-space: nowrap; }
+    .nav::before { left: 50%; top: auto; bottom: 0; width: 0; height: 3px; border-radius: 3px 3px 0 0; transform: translateX(-50%); transition: width .2s; }
+    .nav.on::before { width: 60%; height: 3px; }
+    .nav .count, .nav .dot { margin-left: 6px; }
+    #pageHead { position: static; padding: 14px 16px; flex-wrap: wrap; }
+    #pageHead .dim { margin-left: 0; text-align: left; flex-basis: 100%; }
+    #content { padding: 4px 14px 40px; }
+    .mobile-tools { display: flex !important; }
+  }
+  .mobile-tools { display: none !important; gap: 8px; margin-top: 18px; }
+  .mobile-tools button { flex: 1; }
+  /* A page's single section doesn't repeat the page's title. */
+  section[data-page]:not([data-page=overview]) > h2:first-child { display: none; }
+  #side .brand b { font-size: 22px; overflow-wrap: anywhere; }
+  .stat b { overflow-wrap: break-word; }
+  @media (max-width: 760px) {
+    #login { margin: 8vh 14px; }
+    .stat b { font-size: 17px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 <main>
   <section id="login">
-    <h1>vfm-server admin</h1>
+    <div class="brand"><span>VFM</span><b>Server admin</b></div>
     <form id="accountForm" class="hidden">
       <label>Name</label><input id="aName" autocomplete="username">
       <label>Password</label><input id="aPass" type="password" autocomplete="current-password">
@@ -66,19 +132,37 @@
   </section>
 
   <div id="app" class="hidden">
-    <div class="row" style="justify-content:space-between">
-      <div><h1 id="name">…</h1><div class="dim" id="sub"></div></div>
-      <div class="row"><button class="ghost" id="refresh">Refresh</button><button class="ghost" id="logout">Lock</button></div>
-    </div>
+    <nav id="side" aria-label="Admin pages">
+      <div class="brand"><span>VFM</span><b id="name">…</b></div>
+      <div id="nav">
+        <button class="nav" data-go="overview">Overview</button>
+        <button class="nav" data-go="logger">Logger <span class="dot" id="navLogger"></span></button>
+        <button class="nav" data-go="vrchat">VRChat login</button>
+        <button class="nav" data-go="people">People <span class="count" id="navPeople"></span></button>
+        <button class="nav" data-go="invites">Invites <span class="count" id="navInvites"></span></button>
+        <button class="nav" data-go="bans">Bans <span class="count" id="navBans"></span></button>
+        <button class="nav" data-go="admins">Admins</button>
+        <button class="nav" data-go="settings">Settings</button>
+      </div>
+      <div class="tools"><button class="ghost" id="refresh">Refresh</button><button class="ghost" id="logout">Lock</button></div>
+    </nav>
+    <div id="page">
+    <header id="pageHead"><h1 id="pageTitle">Overview</h1><span class="dim" id="sub"></span></header>
+    <div id="content">
     <div id="updateBanner" class="update hidden"></div>
 
-    <section>
+    <section data-page="overview">
       <h2>Overview</h2>
       <div class="grid" id="stats"></div>
       <p class="hint">In the app: Settings → Servers → Add server, then enter <code id="addr"></code></p>
+      <div class="row mobile-tools"><button class="ghost" id="refresh2">Refresh</button><button class="ghost" id="logout2">Lock</button></div>
+    </section>
+    <section data-page="overview">
+      <h2>At a glance</h2>
+      <div class="grid" id="glance"></div>
     </section>
 
-    <section>
+    <section data-page="logger">
       <h2>Logger</h2>
       <div id="logger"></div>
       <div class="row" style="margin-top:12px">
@@ -89,7 +173,7 @@
       <div id="pairOut" class="hidden" style="margin-top:12px"><div class="big" id="pairCode"></div><div class="hint">Enter this in the app (Settings → Servers → this server → Pair logger). Valid 15 minutes, works once.</div></div>
     </section>
 
-    <section>
+    <section data-page="vrchat">
       <h2>This server's own VRChat login</h2>
       <p class="hint">Your own account only. The server keeps VRChat's live connection around the clock: invites go to your phone (UnifiedPush) and friends' locations are logged with your PC off. VRChat may end the session now and then; log in here again then. Logging in from a server's address can make VRChat ask for an email code.</p>
       <form id="vrcLogin" class="grid">
@@ -107,7 +191,7 @@
       <p class="hint" id="pushHint"></p>
     </section>
 
-    <section>
+    <section data-page="settings">
       <h2>Settings</h2>
       <form id="settings">
         <label>Server name</label><input name="name" maxlength="80">
@@ -143,7 +227,7 @@
       </form>
     </section>
 
-    <section>
+    <section data-page="invites">
       <h2>Invite codes</h2>
       <form id="inviteForm" class="row">
         <input name="note" placeholder="Note (who it's for)" style="flex:2;min-width:160px">
@@ -155,13 +239,13 @@
       <table style="margin-top:10px"><thead><tr><th>Code</th><th>Uses left</th><th>Expires</th><th>Note</th><th></th></tr></thead><tbody id="invites"></tbody></table>
     </section>
 
-    <section>
+    <section data-page="people">
       <h2>People</h2>
       <p class="hint">Only public keys are stored. Encrypted items can't be read here; you see who shares with how many people, and the size.</p>
-      <table><thead><tr><th>Who</th><th>Shared</th><th>Joined</th><th>Last seen</th><th></th></tr></thead><tbody id="users"></tbody></table>
+      <div class="table-wrap"><table><thead><tr><th>Who</th><th>Shared</th><th>Joined</th><th>Last seen</th><th></th></tr></thead><tbody id="users"></tbody></table></div>
     </section>
 
-    <section>
+    <section data-page="bans">
       <h2>Bans</h2>
       <p class="hint">Banned people see the reason (if you give one) and your appeal contact in the app. IP bans are rough: home addresses change and mobile carriers share one address between many people.</p>
       <form id="banForm" class="row">
@@ -173,7 +257,7 @@
       <table style="margin-top:10px"><thead><tr><th>Banned</th><th>Reason</th><th>When</th><th></th></tr></thead><tbody id="bans"></tbody></table>
     </section>
 
-    <section>
+    <section data-page="admins">
       <h2>Admins</h2>
       <table><thead><tr><th>Name</th><th>Authenticator</th><th>Last login</th><th></th></tr></thead><tbody id="admins"></tbody></table>
       <form id="adminForm" class="row" style="margin-top:10px">
@@ -183,6 +267,8 @@
       </form>
       <div id="adminTotp" class="hidden hint" style="margin-top:8px"></div>
     </section>
+    </div>
+    </div>
   </div>
 </main>
 <script>
@@ -233,11 +319,28 @@ $("#setupForm").onsubmit = async (e) => {
 $("#loginForm").onsubmit = async (e) => { e.preventDefault(); token = $("#token").value.trim(); try { await load(); sessionStorage.setItem("vfm-admin", token); } catch {} };
 $("#logout").onclick = () => lock("");
 $("#refresh").onclick = () => load();
+$("#logout2").onclick = () => lock("");
+$("#refresh2").onclick = () => load();
+
+// One page at a time; the address remembers which (#people …), so reloading stays there.
+const PAGES = { overview: "Overview", logger: "Logger", vrchat: "VRChat login", people: "People", invites: "Invite codes", bans: "Bans", admins: "Admins", settings: "Settings" };
+function show(page) {
+  if (!PAGES[page]) page = "overview";
+  document.querySelectorAll("section[data-page]").forEach((el) => el.classList.toggle("hidden", el.dataset.page !== page));
+  document.querySelectorAll(".nav").forEach((b) => { b.classList.toggle("on", b.dataset.go === page); b.setAttribute("aria-current", b.dataset.go === page ? "page" : "false"); });
+  $("#pageTitle").textContent = PAGES[page];
+  if (location.hash.slice(1) !== page) history.replaceState(null, "", "#" + page);
+  window.scrollTo({ top: 0 });
+}
+$("#nav").onclick = (e) => { const b = e.target.closest("[data-go]"); if (b) show(b.dataset.go); };
+window.addEventListener("hashchange", () => show(location.hash.slice(1)));
+show(location.hash.slice(1));
 
 async function load() {
   const s = await api("/admin/api/status");
   $("#login").classList.add("hidden"); $("#app").classList.remove("hidden");
   $("#name").textContent = s.info.name;
+  document.title = `${s.info.name} · vfm-server admin`;
   $("#sub").textContent = `vfm-server ${s.info.version} · listening on ${s.settings.listen}`;
   $("#addr").textContent = location.origin;
   const up = s.update, ub = $("#updateBanner");
@@ -261,6 +364,21 @@ async function load() {
       <div class="stat"><b>${L.events}</b><span>live events since start (last ${ago(L.lastEvent)})</span></div>
     </div><p class="hint">Counting since ${when(L.since)}.</p>`;
   $("#logger").innerHTML = lh;
+  // Menu badges and the overview's "at a glance".
+  const logTone = !s.settings.loggerEnabled || !L.paired ? "" : L.connected ? "ok" : "warn";
+  $("#navLogger").className = "dot " + logTone;
+  $("#navPeople").textContent = s.counts.users;
+  $("#navInvites").textContent = Object.keys(s.invites || {}).length || "";
+  const bb = s.bans || { users: {}, ips: {} };
+  $("#navBans").textContent = Object.keys(bb.users || {}).length + Object.keys(bb.ips || {}).length || "";
+  const lastSeen = Math.max(0, ...s.users.map((u) => u.lastSeen || 0));
+  $("#glance").innerHTML = [
+    [!s.settings.loggerEnabled ? "Off" : !L.paired ? "Not paired" : L.connected ? "Logging" : "Not connected", "logger", logTone],
+    [L.paired ? `${L.online} / ${L.friends}` : "–", "friends online (logger)", ""],
+    [s.users.filter((u) => u.lastSeen && Date.now() / 1000 - u.lastSeen < 86400).length, "accounts seen today", ""],
+    [ago(lastSeen || 0), "last sync from anyone", ""],
+    [up && up.newer ? up.latest : "Up to date", up && up.newer ? "update available" : "vfm-server " + s.info.version, up && up.newer ? "warn" : "ok"],
+  ].map(([v, l, t]) => `<div class="stat"><b class="${t}">${esc(v)}</b><span>${esc(l)}</span></div>`).join("");
   $("#pairBtn").classList.toggle("hidden", !s.settings.loggerEnabled || L.paired);
   $("#unpairBtn").classList.toggle("hidden", !L.paired);
   $("#forgetBtn").classList.toggle("hidden", !L.paired);

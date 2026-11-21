@@ -292,7 +292,7 @@ tray. On hold: Discord rich presence.
   - [ ] **Renew it from the app** (a server setting, off by default for the security-conscious):
     the owner enters username, password and 2FA code in their own app, sent sealed to the
     server. Off: renewing stays on the admin page only.
-- [x] **Log out everywhere** (2026-11-22: done for every device where the app syncs; VRChat's API has no "end all sessions" (only PUT /logout for one session), so the app points to a password change on vrchat.com) (in case an account was hacked): end every VRChat session of your
+- [x] **Log out everywhere** (2026-11-21: done for every device where the app syncs; VRChat's API has no "end all sessions" (only PUT /logout for one session), so the app points to a password change on vrchat.com) (in case an account was hacked): end every VRChat session of your
   account, not just this device's. To research first: whether VRChat's API offers this at all
   (changing the password may be the only way); if not, say so and link to VRChat's own page.
 
@@ -333,7 +333,7 @@ tray. On hold: Discord rich presence.
 - [x] **First setup with a server is too slow:** (done 2026-11-20: default 2000, `requests_per_10min` / `VFM_REQUEST_LIMIT` / admin page) a new device's first sync can hit the server's
   request limit (600 per account per 10 minutes; "slow down"). Raise the default and make it a
   server setting; maybe a higher allowance in the first minutes after joining.
-- [ ] **A better admin page for vfm-server**, in the spirit of the beta UI.
+- [x] **A better admin page for vfm-server**, in the spirit of the beta UI. (2026-11-21: the app's look, a menu with one page at a time, "At a glance", tabs on phones.)
 - [x] **Invites in the Activity log:** when someone invites you (or asks for an invite), it shows
   there too, not only as a notification.
 - [x] **More themes, and your own colors** (pick the main colors yourself). (8 themes + own colors done 2026-11-20)

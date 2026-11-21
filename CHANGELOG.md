@@ -11,6 +11,13 @@ minor releases can change behavior.
   off log out at their next sync. VRChat has no way to end all sessions, so it also says what to
   do on vrchat.com if your account may be hacked (change the password, turn on two-factor).
 
+### Changed
+- **vfm-server's admin page in the app's look:** its dark colours and teal accent, a menu on the
+  left (Overview, Logger, VRChat login, People, Invites, Bans, Admins, Settings) with counts and
+  the logger's state, one page at a time (the address remembers which), and "At a glance" on the
+  overview (logger, friends online, accounts seen today, last sync, updates). On phones the menu is
+  a row of tabs. Everything it can do stays the same.
+
 ### Fixed
 - **Even less CPU in the tray:** the slowly turning map now sleeps until the window is back
   (it checked twice a second), and the list animations stop checking positions meanwhile. While
