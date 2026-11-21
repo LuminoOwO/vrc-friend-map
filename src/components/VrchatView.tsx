@@ -50,11 +50,11 @@ export function VrchatView() {
         <div className="seg logbook-tabs" role="tablist">
           {(
             [
-              ["groups", "Groups & events"],
-              ["favorites", "Favorites"],
-              ["avatars", "Avatars"],
-              ["files", "Prints, stickers, emojis"],
-              ["worlds", "World notes"],
+              ["groups", tr("vrchat.groupsEvents")],
+              ["favorites", tr("vrchat.favorites")],
+              ["avatars", tr("vrchat.avatars")],
+              ["files", tr("vrchat.printsStickersEmojis")],
+              ["worlds", tr("vrchat.worldNotes")],
             ] as [Tab, string][]
           ).map(([k, l]) => (
             <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>

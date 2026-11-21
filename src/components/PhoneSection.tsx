@@ -1,16 +1,16 @@
 // Settings → Notifications → Phone in the background (Android).
-import { t as tr } from "../i18n";
+import { t as tr, lazy } from "../i18n";
 import { useEffect, useState } from "react";
 import { askBatteryExemption, pushDistributors, pushRegister, pushUnregister, refreshRates, rootLogs } from "../phone";
 import { showToast, updateSettings, useApp } from "../store";
 import type { PhoneSettings } from "../types";
 
-const MODES: { value: PhoneSettings["background"]; label: string; text: string }[] = [
-  { value: "off", label: "Off", text: tr("phoneSettings.notificationsOnlyWhileTheApp") },
+const MODES: { value: PhoneSettings["background"]; label: string; text: string }[] = lazy(() => [
+  { value: "off", label: tr("phoneSettings.off"), text: tr("phoneSettings.notificationsOnlyWhileTheApp") },
   { value: "visible", label: tr("phoneSettings.stayConnectedWithANotification"), text: tr("phoneSettings.theAppKeepsItsLive") },
   { value: "quiet", label: tr("phoneSettings.stayConnectedQuietly"), text: tr("phoneSettings.theSameButTheNotification") },
   { value: "push", label: tr("phoneSettings.pushThroughUnifiedpush"), text: tr("phoneSettings.noConnectionOnThePhone") },
-];
+]);
 
 export function PhoneSection() {
   const p = useApp((s) => s.settings.phone);

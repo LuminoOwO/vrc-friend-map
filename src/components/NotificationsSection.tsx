@@ -1,4 +1,4 @@
-import { t as tr } from "../i18n";
+import { t as tr, lazy, weekdayNames } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isMobile } from "../backend";
 import {
@@ -21,12 +21,12 @@ import type { NotifyEvent, NotifyPerson } from "../types";
 import { Icon } from "./Icon";
 import { Range } from "./Range";
 
-export const PERSON_MODES: { value: NotifyPerson["mode"] | "default"; label: string }[] = [
+export const PERSON_MODES: { value: NotifyPerson["mode"] | "default"; label: string }[] = lazy(() => [
   { value: "default", label: tr("notify.generalRules") },
   { value: "always", label: tr("notify.alwaysNotify") },
   { value: "once", label: tr("notify.nextTimeTheyComeOnline2") },
   { value: "never", label: tr("notify.neverNotify") },
-];
+]);
 
 export function setPersonMode(id: string, mode: NotifyPerson["mode"] | "default") {
   const people = { ...getState().settings.notify.people };
@@ -360,7 +360,7 @@ export function CloseSection() {
   );
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_NAMES = lazy(() => weekdayNames("short"));
 const RULE_EVENTS: NotifyEvent[] = ["online", "offline", "joined", "left"];
 
 /** Quiet hours, rules per circle, gathering alerts. */

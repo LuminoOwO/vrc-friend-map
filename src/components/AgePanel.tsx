@@ -1,7 +1,7 @@
 // Profile → Age: hints from their own profile, your note (this device only),
 // what you tell friends (adult vouches or "keep your distance", never "under
 // 18"), and what friends told you. See src/age.ts for the rules.
-import { t as tr } from "../i18n";
+import { t as tr, lazy } from "../i18n";
 import { useEffect, useState } from "react";
 import { friendNotesAbout, noteExpires, noteOf, RATINGS, refreshHints, setNote, setShareNote, SHARE_NOTES, summarize } from "../age";
 import { fmtDate } from "../model";
@@ -9,14 +9,14 @@ import { setState, useApp } from "../store";
 import type { AgeRating, ShareNote } from "../types";
 import { Icon } from "./Icon";
 
-const READ_LABEL: Record<string, string> = { read: "read", login: "login needed", unreachable: "unreachable", skipped: "skipped" };
+const READ_LABEL: Record<string, string> = lazy(() => ({ read: "read", login: tr("age.loginNeeded"), unreachable: "unreachable", skipped: "skipped" }));
 
-const VERDICT: Record<string, string> = {
-  adult: "Hints point to over 18",
-  minor: "Hints point to under 18",
-  mixed: "Mixed hints",
-  none: "No hints in their profile",
-};
+const VERDICT: Record<string, string> = lazy(() => ({
+  adult: tr("age.hintsPointToOver18"),
+  minor: tr("age.hintsPointToUnder18"),
+  mixed: tr("age.mixedHints"),
+  none: tr("age.noHintsInTheirProfile"),
+}));
 
 export function AgePanel({ id }: { id: string }) {
   const enabled = useApp((s) => s.settings.age.enabled);

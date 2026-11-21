@@ -2,7 +2,7 @@
 // languages, and the profile's look (theme, background, banner color) as far
 // as VRChat's API allows. Reads GET /profile/{me}?asSelf=true; saves only what
 // changed (PUT /users/{me} and PUT /profile/{me}).
-import { t as tr } from "../i18n";
+import { t as tr, lazy } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { backend } from "../backend";
 import { LANGUAGES } from "../model";
@@ -10,12 +10,12 @@ import { showToast, useApp } from "../store";
 import { fetchProfile } from "../sync";
 import { Icon } from "./Icon";
 
-const STATUSES = [
+const STATUSES = lazy(() => [
   { value: "join me", label: tr("profileEditor.joinMe") },
-  { value: "active", label: "Online" },
+  { value: "active", label: tr("profileEditor.online") },
   { value: "ask me", label: tr("profileEditor.askMe") },
   { value: "busy", label: tr("profileEditor.doNotDisturb") },
-];
+]);
 
 interface Theme {
   id: string;

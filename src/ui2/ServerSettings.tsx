@@ -183,12 +183,12 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
             />
             {s.upload && (
               <div className="indent ui2-stack">
-                <Check id={`fr-${s.id}`} checked={s.shareFriends} onChange={(v) => set({ shareFriends: v })} icon="users" label={tr("serverSettings.myFriendList")} hint="Names and IDs, so friends see connections VRChat hides." />
-                <Check id={`ac-${s.id}`} checked={s.shareActivity} onChange={(v) => set({ shareActivity: v })} icon="clock" label={tr("serverSettings.whoSpendsTimeWithWhom")} hint="Makes everyone's circle suggestions better." />
-                <Check id={`no-${s.id}`} checked={s.shareNotes} disabled={!s.shareFriends} onChange={(v) => set({ shareNotes: v })} icon="tag" label={tr("serverSettings.myNotesAboutPeople")} hint="Only what you chose to tell friends. Notes about age never leave your device." />
-                <Check id={`rm-${s.id}`} checked={s.shareRemovals} disabled={!s.shareFriends} onChange={(v) => set({ shareRemovals: v })} icon="flag" label={tr("serverSettings.whomIRemovedAsA")} hint="Friends see it as a note on that person's profile." />
-                <Check id={`bl-${s.id}`} checked={s.shareBlocks} disabled={!s.shareFriends} onChange={(v) => set({ shareBlocks: v })} icon="shield" label={tr("serverSettings.whyIBlockedPeople")} hint="The reasons you picked, never your own words." />
-                <Check id={`tz-${s.id}`} checked={s.shareTimezone} disabled={!s.shareFriends} onChange={(v) => set({ shareTimezone: v })} icon="clock" label={tr("serverSettings.myTimeZone")} hint="So friends see your local time." />
+                <Check id={`fr-${s.id}`} checked={s.shareFriends} onChange={(v) => set({ shareFriends: v })} icon="users" label={tr("serverSettings.myFriendList")} hint={tr("serverSettings.namesAndIdsSoFriends")} />
+                <Check id={`ac-${s.id}`} checked={s.shareActivity} onChange={(v) => set({ shareActivity: v })} icon="clock" label={tr("serverSettings.whoSpendsTimeWithWhom")} hint={tr("serverSettings.makesEveryoneSCircleSuggestions")} />
+                <Check id={`no-${s.id}`} checked={s.shareNotes} disabled={!s.shareFriends} onChange={(v) => set({ shareNotes: v })} icon="tag" label={tr("serverSettings.myNotesAboutPeople")} hint={tr("serverSettings.onlyWhatYouChoseTo")} />
+                <Check id={`rm-${s.id}`} checked={s.shareRemovals} disabled={!s.shareFriends} onChange={(v) => set({ shareRemovals: v })} icon="flag" label={tr("serverSettings.whomIRemovedAsA")} hint={tr("serverSettings.friendsSeeItAsA")} />
+                <Check id={`bl-${s.id}`} checked={s.shareBlocks} disabled={!s.shareFriends} onChange={(v) => set({ shareBlocks: v })} icon="shield" label={tr("serverSettings.whyIBlockedPeople")} hint={tr("serverSettings.theReasonsYouPickedNever")} />
+                <Check id={`tz-${s.id}`} checked={s.shareTimezone} disabled={!s.shareFriends} onChange={(v) => set({ shareTimezone: v })} icon="clock" label={tr("serverSettings.myTimeZone")} hint={tr("serverSettings.soFriendsSeeYourLocal")} />
                 <div className="ui2-sub">
                   <span className="small">
                     <Icon name="filter" size={14} /> {tr("serverSettings.whichFriendsItSAbout")}
@@ -213,7 +213,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
                     onChange={(v) => set({ hideAudience: v })}
                     icon="eye"
                     label={tr("serverSettings.hideFromTheServerWhom")}
-                    hint="Needs encryption. Friends need app 0.12.0 or newer to get it."
+                    hint={tr("serverSettings.needsEncryptionFriendsNeedApp")}
                   />
                 )}
                 {sw.warn && s.ackUnencrypted && (
@@ -229,13 +229,13 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
           </Section>
 
           <Section icon="download" title={tr("serverSettings.whatIReceiveHere")}>
-            <Check id={`dl-${s.id}`} checked={s.download} onChange={(v) => set({ download: v })} label={tr("serverSettings.whatFriendsShareWithMe")} hint="Their friend lists and time together show on your map." />
+            <Check id={`dl-${s.id}`} checked={s.download} onChange={(v) => set({ download: v })} label={tr("serverSettings.whatFriendsShareWithMe")} hint={tr("serverSettings.theirFriendListsAndTime")} />
             <Check
               id={`ca-${s.id}`}
               checked={s.useCache !== false}
               onChange={(v) => set({ useCache: v })}
               label={tr("serverSettings.publicVrchatInfoFromThis")}
-              hint="Worlds and avatars others already loaded, so VRChat gets fewer requests."
+              hint={tr("serverSettings.worldsAndAvatarsOthersAlready")}
             />
           </Section>
 

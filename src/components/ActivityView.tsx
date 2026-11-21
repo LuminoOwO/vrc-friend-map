@@ -1,4 +1,4 @@
-import { t as tr } from "../i18n";
+import { t as tr, lazy } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { clearActivity, demoActivity, loadActivity, type ActivityEntry, type ActivityKind } from "../activity";
 import { fmtDate } from "../model";
@@ -9,13 +9,13 @@ import { Icon } from "./Icon";
 
 type Group = "instance" | "online" | "moving" | "list" | "invites";
 
-const GROUPS: { key: Group; label: string; kinds: ActivityKind[] }[] = [
+const GROUPS: { key: Group; label: string; kinds: ActivityKind[] }[] = lazy(() => [
   { key: "instance", label: tr("activityView.myInstance"), kinds: ["world", "join", "leave", "left", "quit", "crash"] },
   { key: "online", label: tr("activityView.friendsOnlineOffline"), kinds: ["online", "offline"] },
   { key: "moving", label: tr("activityView.friendsChangingWorlds"), kinds: ["location"] },
   { key: "list", label: tr("activityView.friendsAddedRemoved"), kinds: ["friend-add", "friend-remove"] },
-  { key: "invites", label: "Invites", kinds: ["invite", "request-invite"] },
-];
+  { key: "invites", label: tr("activityView.invites"), kinds: ["invite", "request-invite"] },
+]);
 
 export const KIND_ICON: Record<ActivityKind, string> = {
   world: "pin",

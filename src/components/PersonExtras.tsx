@@ -1,7 +1,7 @@
 // Profile additions (0.12): star, nickname, snooze, local time, online
 // history and best time to catch someone, earlier names, friends since,
 // VRChat's own note (editable), block reasons and invite actions.
-import { t as tr } from "../i18n";
+import { t as tr, weekdayNames, lazy } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { describeHours, earlierNames, history, lastSeen, onlineShare, overlap, useHistory } from "../history";
 import { friendsSince } from "../insights";
@@ -201,7 +201,7 @@ function TzPicker({ value, onPick }: { value: string | null | undefined; onPick:
   );
 }
 
-const DAY_SHORT = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const DAY_SHORT = lazy(() => weekdayNames("short"));
 
 /** Last seen, usual online hours, best time to catch them, friends since, earlier names. */
 export function OnlineHistory({ id, name, online }: { id: string; name: string; online: boolean }) {

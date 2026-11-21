@@ -1,4 +1,4 @@
-import { t as tr } from "../i18n";
+import { t as tr, lazy } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { backend, type GraphicsInfo } from "../backend";
 import { benchmark, gpuInfo, mapDrawMs, mapFps, mapStats, type BenchResult } from "../diag";
@@ -6,13 +6,13 @@ import { getState, showToast } from "../store";
 import { wheelFixCounts, wheelFixHere } from "../wheelfix";
 import { layoutRestarts } from "../mapstate";
 
-const ENGINE_NAMES: Record<string, string> = {
-  chromium: "Chromium (CEF)",
-  webkitgtk: "WebKitGTK",
-  webview2: "WebView2 (Chromium)",
-  wkwebview: "WKWebView (Safari)",
-  "android-webview": "Android WebView (Chromium)",
-};
+const ENGINE_NAMES: Record<string, string> = lazy(() => ({
+  chromium: tr("diagnostics.chromiumCef"),
+  webkitgtk: tr("diagnostics.webkitgtk"),
+  webview2: tr("diagnostics.webview2Chromium"),
+  wkwebview: tr("diagnostics.wkwebviewSafari"),
+  "android-webview": tr("diagnostics.androidWebviewChromium"),
+}));
 
 /** Settings → Diagnostics: frame rate, GPU, web engine, and a quick benchmark. */
 export function Diagnostics() {

@@ -92,6 +92,36 @@ export function tx(key: string, vars: Record<string, ReactNode>): ReactNode {
   );
 }
 
+/** A constant list or map that holds translated text (built when a file loads, so it would stay
+ *  in the first language): rebuilt in the current language whenever it's read (cached per
+ *  language). Works like the plain value: indexing, .map/.find, spreading, Object.entries. */
+export function lazy<T extends object>(make: () => T): T {
+  let made: T | undefined;
+  let at = -1;
+  const now = (): T => {
+    if (at !== version || !made) {
+      made = make();
+      at = version;
+    }
+    return made;
+  };
+  const target = (Array.isArray(now()) ? [] : {}) as T;
+  return new Proxy(target, {
+    get: (_, k) => {
+      const v = now() as Record<PropertyKey, unknown>;
+      const r = v[k];
+      return typeof r === "function" ? (r as (...a: unknown[]) => unknown).bind(v) : r;
+    },
+    has: (_, k) => k in now(),
+    ownKeys: () => Reflect.ownKeys(now()),
+    getOwnPropertyDescriptor: (_, k) => {
+      const d = Reflect.getOwnPropertyDescriptor(now(), k);
+      if (d && k !== "length") d.configurable = true;
+      return d;
+    },
+  });
+}
+
 /** The current language's code. */
 export function language(): string {
   return lang;
@@ -153,6 +183,13 @@ export function useT(): typeof t {
 export function useLanguage(): string {
   useSyncExternalStore(subscribe, () => version, () => version);
   return lang;
+}
+
+/** Weekday names in the current language, Sunday first ("short": Sun/So…, "narrow": S/M…). */
+export function weekdayNames(style: "short" | "narrow" | "long" = "short"): string[] {
+  const f = new Intl.DateTimeFormat(lang, { weekday: style, timeZone: "UTC" });
+  // 2023-01-01 was a Sunday.
+  return Array.from({ length: 7 }, (_, i) => f.format(new Date(Date.UTC(2023, 0, 1 + i))));
 }
 
 /** "A, B and C" in the current language. */

@@ -1,6 +1,6 @@
 // Settings → Servers: vfm-servers you share through (exchange) and/or that
 // log your friends for you (logger). See share.ts for the rules.
-import { t as tr } from "../i18n";
+import { t as tr, lazy } from "../i18n";
 import { SETTING_GROUPS } from "../devicesync";
 import { useEffect, useState } from "react";
 import { backend, isTauri, type LoggerStatus, type MyIdentity } from "../backend";
@@ -30,12 +30,12 @@ import { knownPeers, onPeers, type Peer } from "../peers";
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-export const POLICY_LABEL: Record<EncPolicy, string> = {
-  "force-off": "Never encrypted",
-  optional: "Encryption optional",
-  recommended: "Encryption recommended",
-  "force-on": "Always encrypted",
-};
+export const POLICY_LABEL: Record<EncPolicy, string> = lazy(() => ({
+  "force-off": tr("serversModal.neverEncrypted"),
+  optional: tr("serversModal.encryptionOptional"),
+  recommended: tr("serversModal.encryptionRecommended"),
+  "force-on": tr("serversModal.alwaysEncrypted"),
+}));
 
 export function ago(t: number) {
   if (!t) return "never";
@@ -105,11 +105,11 @@ export function EncryptionSwitch({ server }: { server: ShareServer }) {
   );
 }
 
-export const DEFAULTS: { value: EncDefault; label: string; why: string }[] = [
-  { value: "server", label: "Server-based", why: "Each server's suggestion: on where it recommends encryption, off where it's optional." },
-  { value: "on", label: tr("serversModal.alwaysOn"), why: "Encrypt wherever the server lets you. Servers that never encrypt start with uploading turned off." },
-  { value: "off", label: tr("serversModal.alwaysOff"), why: "Don't encrypt where the server lets you choose (it can then read what you share). Servers that always encrypt still do." },
-];
+export const DEFAULTS: { value: EncDefault; label: string; why: string }[] = lazy(() => [
+  { value: "server", label: tr("serversModal.serverBased"), why: tr("serversModal.eachServerSSuggestionOn") },
+  { value: "on", label: tr("serversModal.alwaysOn"), why: tr("serversModal.encryptWhereverTheServerLets") },
+  { value: "off", label: tr("serversModal.alwaysOff"), why: tr("serversModal.donTEncryptWhereThe") },
+]);
 
 export function ServersModal() {
   const sharing = useApp((s) => s.settings.sharing);
@@ -330,7 +330,7 @@ export function KeySection({ me, setMe }: { me: MyIdentity | null; setMe: (m: My
       </h3>
       <p className="small">
         Fingerprint <code className="fp">{me.fingerprint}</code>
-        <Why text="Your key lives only on this device. Servers get the public half, friends' apps lock data for it. If a friend wants to be sure a server isn't faking your key, compare this fingerprint (or put the line below in your VRChat bio: their app then shows your key as confirmed)." />
+        <Why text={tr("serversModal.yourKeyLivesOnlyOn")} />
       </p>
       <div className="row">
         <code className="fp">{me.proof}</code>
@@ -544,12 +544,12 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
               </div>
               <div className="row">
                 <span className="small">{tr("serversModal.whichFriendsItCovers")}</span>
-                <Why text="Only these friends go into your shared friend list, and only time spent between them goes into your activity. Everyone else is left out." />
+                <Why text={tr("serversModal.onlyTheseFriendsGoInto")} />
               </div>
               <PeopleChooser value={s.include} onChange={(include) => set({ include })} />
               <div className="row">
                 <span className="small">{tr("serversModal.whoCanGetIt")}</span>
-                <Why text="Only these people can download what you share here, and only if they joined this server too. Friends who join later get it on your next sync." />
+                <Why text={tr("serversModal.onlyThesePeopleCanDownload")} />
               </div>
               <PeopleChooser
                 value={{ who: s.audience, circleIds: s.circleIds, picked: s.audiencePicked, autoAdd: s.audienceAutoAdd }}

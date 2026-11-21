@@ -1,12 +1,12 @@
 // The sync log: every sync step with time, result and the exact error.
 // Opened by clicking the sync status in the top bar.
-import { t as tr } from "../i18n";
+import { t as tr, lazy } from "../i18n";
 import { useState } from "react";
 import { clearSyncLog, type SyncLogEntry, useSyncLog } from "../synclog";
 import { showToast } from "../store";
 import { Icon } from "./Icon";
 
-const LABEL: Record<SyncLogEntry["result"], string> = { ok: "OK", failed: "Failed", interrupted: "Interrupted", info: "Note" };
+const LABEL: Record<SyncLogEntry["result"], string> = lazy(() => ({ ok: tr("syncLog.ok"), failed: tr("syncLog.failed"), interrupted: tr("syncLog.interrupted"), info: tr("syncLog.note") }));
 
 export function SyncLogDialog({ onClose }: { onClose: () => void }) {
   const all = useSyncLog();

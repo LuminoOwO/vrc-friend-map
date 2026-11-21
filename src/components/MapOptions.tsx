@@ -1,3 +1,4 @@
+import { t as tr } from "../i18n";
 import { language, t, tx } from "../i18n";
 import { defaultMap, setState, updateMap, updateSettings, useApp } from "../store";
 import type { Gravity, MapSettings, NodeStyle } from "../types";
@@ -201,7 +202,7 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
 
       <div className="row">
         <button className="btn small" onClick={onFit}>
-          <Icon name="fit" size={14} /> Fit to screen
+          <Icon name="fit" size={14} /> {tr("mapOptions.fitToScreen")}
         </button>
         <button className="btn small" onClick={() => updateMap(defaultMap())}>
           {t("mapOptions.resetMapOptions")}
@@ -261,7 +262,7 @@ function MePinned() {
   return (
     <div className="opt-group">
       <button className="btn small" onClick={unpinMe}>
-        <Icon name="pin" size={14} /> Put me back between my friends
+        <Icon name="pin" size={14} /> {tr("mapOptions.putMeBackBetweenMy")}
       </button>
     </div>
   );

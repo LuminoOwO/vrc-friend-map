@@ -126,7 +126,7 @@ function sampleExports(): string[] {
   const { cache } = getState();
   const ids = Object.keys(cache.friends);
   const pick = (n: number, seed: number) => ids.filter((_, i) => (i * 7 + seed) % 11 < n);
-  const strangers = ["MapleKite", "Orbit Crane", "Sable", "TinyGolem", "Wisp", "Rook99"].map((n, i) => ({ id: `usr_sample-${i}`, displayName: n }));
+  const strangers = ["MapleKite", "OrbitCrane", "Sable", "TinyGolem", "Wisp", "Rook99"].map((n, i) => ({ id: `usr_sample-${i}`, displayName: n }));
   const full: ExportFile = {
     format: FORMAT,
     exportedAt: new Date().toISOString(),

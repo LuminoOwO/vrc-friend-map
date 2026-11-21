@@ -2,7 +2,7 @@
 // video links, pictures and avatars, your diary note, "on this day a year
 // ago" and an instance replay; rankings and stats; all video links; the
 // picture gallery tagged with world and people; a year in review.
-import { t as tr } from "../i18n";
+import { t as tr, weekdayNames } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { backend, isTauri } from "../backend";
 import { popularWorlds, setDiary, useHistory } from "../history";
@@ -49,11 +49,11 @@ export function LogbookView() {
       <div className="seg logbook-tabs" role="tablist">
         {(
           [
-            ["day", "Day by day"],
-            ["stats", "Rankings"],
-            ["videos", "Video links"],
-            ["pictures", "Pictures"],
-            ["year", "Year in review"],
+            ["day", tr("logbook.dayByDay")],
+            ["stats", tr("logbook.rankings")],
+            ["videos", tr("logbook.videoLinks")],
+            ["pictures", tr("logbook.pictures")],
+            ["year", tr("logbook.yearInReview")],
           ] as [Tab, string][]
         ).map(([k, l]) => (
           <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
@@ -333,7 +333,7 @@ function Stats({ visits }: { visits: TimelineVisit[] }) {
             <Icon name="clock" size={16} /> {tr("logbook.whenYouPlay")}
           </h3>
           <div className="heatmap">
-            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d, day) => (
+            {weekdayNames("short").map((d, day) => (
               <div key={d} className="heat-row">
                 <span className="heat-day">{d}</span>
                 {Array.from({ length: 24 }, (_, h) => (

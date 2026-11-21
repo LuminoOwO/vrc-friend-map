@@ -321,7 +321,9 @@
     "timeTogetherNoData": "Time together (game logs) – no data yet",
     "showAsOf": "Show the map as of {{date}}",
     "now": "now",
-    "timeTravelNote": "Who was your friend then (since {{date}}). People you're no longer friends with aren't on the map."
+    "timeTravelNote": "Who was your friend then (since {{date}}). People you're no longer friends with aren't on the map.",
+    "fitToScreen": "Fit to screen",
+    "putMeBackBetweenMy": "Put me back between my friends"
   },
   "map": {
     "noFriendsLoadedYetThey": "No friends loaded yet. They'll appear here after the first sync.",
@@ -627,7 +629,14 @@
     "openOnVrchatCom": "Open on vrchat.com",
     "notifyMembers": "Notify members",
     "queueWhenFull": "Queue when full",
-    "onlyMyFriends": "Only my friends"
+    "onlyMyFriends": "Only my friends",
+    "about": "About",
+    "posts": "Posts",
+    "events": "Events",
+    "instances": "Instances",
+    "gallery": "Gallery",
+    "members": "Members",
+    "manage": "Manage"
   },
   "notify": {
     "noSound": "No sound",
@@ -696,7 +705,8 @@
     "notificationsKeepComingWhileThe": "Notifications keep coming while the app is in the tray (see “Closing the window”).",
     "play": "Play",
     "addASoundFile": "Add a sound file",
-    "allowNotifications": "Allow notifications"
+    "allowNotifications": "Allow notifications",
+    "joinMe": "join me"
   },
   "serversModal": {
     "notAvailableInDemoMode": "Not available in demo mode.",
@@ -788,7 +798,18 @@
     "getWhatFriendsShareWith": "Get what friends share with me here",
     "theServerSVrchatLogin": "The server's VRChat login expired, so it isn't logging. Log in again with a new pairing code from the server (its window or admin page).",
     "syncNow": "Sync now",
-    "uploadWithoutEncryption": "Upload without encryption?"
+    "uploadWithoutEncryption": "Upload without encryption?",
+    "yourKeyLivesOnlyOn": "Your key lives only on this device. Servers get the public half, friends' apps lock data for it. If a friend wants to be sure a server isn't faking your key, compare this fingerprint (or put the line below in your VRChat bio: their app then shows your key as confirmed).",
+    "onlyTheseFriendsGoInto": "Only these friends go into your shared friend list, and only time spent between them goes into your activity. Everyone else is left out.",
+    "onlyThesePeopleCanDownload": "Only these people can download what you share here, and only if they joined this server too. Friends who join later get it on your next sync.",
+    "neverEncrypted": "Never encrypted",
+    "encryptionOptional": "Encryption optional",
+    "encryptionRecommended": "Encryption recommended",
+    "alwaysEncrypted": "Always encrypted",
+    "serverBased": "Server-based",
+    "eachServerSSuggestionOn": "Each server's suggestion: on where it recommends encryption, off where it's optional.",
+    "encryptWhereverTheServerLets": "Encrypt wherever the server lets you. Servers that never encrypt start with uploading turned off.",
+    "donTEncryptWhereThe": "Don't encrypt where the server lets you choose (it can then read what you share). Servers that always encrypt still do."
   },
   "logbook": {
     "youDidnTPlayThis": "You didn't play this day.",
@@ -837,7 +858,12 @@
     "showInFolder": "Show in folder",
     "saveACopy": "Save a copy",
     "copyPath": "Copy path",
-    "saveAsPicture": "Save as picture"
+    "saveAsPicture": "Save as picture",
+    "dayByDay": "Day by day",
+    "rankings": "Rankings",
+    "videoLinks": "Video links",
+    "pictures": "Pictures",
+    "yearInReview": "Year in review"
   },
   "lists": {
     "orByHand": "Or by hand",
@@ -898,7 +924,12 @@
     "uploadFailedError": "Upload failed: {{error}}",
     "uploading": "Uploading…",
     "upcomingEvents": "Upcoming events",
-    "upload": "Upload"
+    "upload": "Upload",
+    "groupsEvents": "Groups & events",
+    "favorites": "Favorites",
+    "avatars": "Avatars",
+    "printsStickersEmojis": "Prints, stickers, emojis",
+    "worldNotes": "World notes"
   },
   "profileEditor": {
     "status": "Status",
@@ -925,7 +956,8 @@
     "askMe": "Ask me",
     "doNotDisturb": "Do not disturb",
     "profileSaved": "Profile saved",
-    "saving": "Saving…"
+    "saving": "Saving…",
+    "online": "Online"
   },
   "sidebar": {
     "overview": "Overview",
@@ -1000,7 +1032,12 @@
     "diagnosticsCopied": "Diagnostics copied",
     "couldnTCopy": "Couldn't copy",
     "measuring": "Measuring…",
-    "runAQuickDrawingBenchmark": "Run a quick drawing benchmark"
+    "runAQuickDrawingBenchmark": "Run a quick drawing benchmark",
+    "chromiumCef": "Chromium (CEF)",
+    "webkitgtk": "WebKitGTK",
+    "webview2Chromium": "WebView2 (Chromium)",
+    "wkwebviewSafari": "WKWebView (Safari)",
+    "androidWebviewChromium": "Android WebView (Chromium)"
   },
   "here": {
     "nobodyElseIsHereRight": "Nobody else is here right now.",
@@ -1130,7 +1167,8 @@
     "theAppIsLeftOut": "The app is left out of battery optimisation.",
     "allowItInTheDialog": "Allow it in the dialog so Android doesn't stop the app.",
     "registeringWithName": "Registering with {{name}}…",
-    "valueHz": " ({{value}} Hz)"
+    "valueHz": " ({{value}} Hz)",
+    "off": "Off"
   },
   "age": {
     "age": "Age",
@@ -1147,7 +1185,12 @@
     "under18": "under 18",
     "linksOrLinkedPages": ", links or linked pages",
     "orLinks": " or links",
-    "fadesOnValue": ", fades on {{value}}"
+    "fadesOnValue": ", fades on {{value}}",
+    "loginNeeded": "login needed",
+    "hintsPointToOver18": "Hints point to over 18",
+    "hintsPointToUnder18": "Hints point to under 18",
+    "mixedHints": "Mixed hints",
+    "noHintsInTheirProfile": "No hints in their profile"
   },
   "serversPanel": {
     "exchange": "Exchange:",
@@ -1219,7 +1262,8 @@
     "friendsChangingWorlds": "Friends changing worlds",
     "friendsAddedRemoved": "Friends added / removed",
     "wasHereWhenYouArrived": "was here when you arrived",
-    "clearTheActivityLogOn": "Clear the activity log on this device?"
+    "clearTheActivityLogOn": "Clear the activity log on this device?",
+    "invites": "Invites"
   },
   "groups": {
     "suggestedGroups": "Suggested groups",
@@ -1251,7 +1295,9 @@
     "pickThese": "Pick these",
     "pickAll": "Pick all",
     "unpickThese": "Unpick these",
-    "pickNone": "Pick none"
+    "pickNone": "Pick none",
+    "someCircles": "Some circles",
+    "peopleIPick": "People I pick"
   },
   "ageSettings": {
     "ageHints": "Age hints",
@@ -1277,7 +1323,10 @@
     "couldnTCopy": "Couldn't copy",
     "noProblemsLogged": "No problems logged.",
     "nothingLoggedYet": "Nothing logged yet.",
-    "copy": "Copy"
+    "copy": "Copy",
+    "ok": "OK",
+    "failed": "Failed",
+    "note": "Note"
   },
   "closeDialog": {
     "closeTheWindow": "Close the window",
@@ -1366,7 +1415,16 @@
     "whichFriendsItSAbout": "Which friends it's about",
     "whoMayGetIt": "Who may get it",
     "syncNow": "Sync now",
-    "remove": "Remove"
+    "remove": "Remove",
+    "namesAndIdsSoFriends": "Names and IDs, so friends see connections VRChat hides.",
+    "makesEveryoneSCircleSuggestions": "Makes everyone's circle suggestions better.",
+    "onlyWhatYouChoseTo": "Only what you chose to tell friends. Notes about age never leave your device.",
+    "friendsSeeItAsA": "Friends see it as a note on that person's profile.",
+    "theReasonsYouPickedNever": "The reasons you picked, never your own words.",
+    "soFriendsSeeYourLocal": "So friends see your local time.",
+    "needsEncryptionFriendsNeedApp": "Needs encryption. Friends need app 0.12.0 or newer to get it.",
+    "theirFriendListsAndTime": "Their friend lists and time together show on your map.",
+    "worldsAndAvatarsOthersAlready": "Worlds and avatars others already loaded, so VRChat gets fewer requests."
   },
   "serversPage": {
     "pasteTheInviteLinkThe": "Paste the invite link the server's owner gave you: it adds the server and joins it in one go.",
@@ -1426,7 +1484,36 @@
     "unmuteNotifications": "Unmute notifications",
     "muteNotificationsForAnHour": "Mute notifications for an hour",
     "backToTheClassicUi": "Back to the classic UI",
-    "myProfile": "My profile"
+    "myProfile": "My profile",
+    "friend": "Friend",
+    "view": "View",
+    "settings": "Settings",
+    "action": "Action",
+    "map": "Map",
+    "people": "People",
+    "activity": "Activity",
+    "insights": "Insights",
+    "logbook": "Logbook",
+    "vrchatGroupsFavoritesAvatars": "VRChat (groups, favorites, avatars…)",
+    "sharedLists": "Shared lists",
+    "interfaceBetaUiTextSize": "Interface (beta UI, text size, haptics)",
+    "themes": "Themes",
+    "mapAndProfiles": "Map and profiles",
+    "frameRate": "Frame rate",
+    "ageHintsAndLinkedPages": "Age hints and linked pages",
+    "redFlagsInVrchatNotes": "Red flags in VRChat notes",
+    "inviteMessages": "Invite messages",
+    "readingBiosInTheBackground": "Reading bios in the background",
+    "notificationsQuietHoursRulesPer": "Notifications, quiet hours, rules per circle",
+    "phoneInTheBackground": "Phone in the background",
+    "gameLogsAndPictureFolders": "Game logs and picture folders",
+    "nowPlayingInYourStatus": "Now playing in your status",
+    "steamPlayTimeInYour": "Steam play time in your bio",
+    "backupToAnotherDevice": "Backup to another device",
+    "friendGroupDetection": "Friend group detection",
+    "serversAndSharing": "Servers and sharing",
+    "updates": "Updates",
+    "localData": "Local data"
   },
   "parts": {
     "notifications": "Notifications",

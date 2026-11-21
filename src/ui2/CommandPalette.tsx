@@ -1,6 +1,6 @@
 // Ctrl+K: find anything. Friends (by name or your nickname), views, settings
 // sections and actions, keyboard first.
-import { t as tr } from "../i18n";
+import { t as tr, lazy } from "../i18n";
 import { useMemo, useState } from "react";
 import { isMuted, muteFor } from "../notifications";
 import { getState, setState, updateUi, useApp, type View } from "../store";
@@ -18,36 +18,36 @@ interface Item {
   run: () => void;
 }
 
-const VIEWS: [View, string, string][] = [
-  ["graph", "Map", "graph"],
-  ["cards", "People", "users"],
-  ["activity", "Activity", "clock"],
-  ["insights", "Insights", "bulb"],
-  ["logbook", "Logbook", "calendar"],
-  ["vrchat", "VRChat (groups, favorites, avatars…)", "world"],
-  ["lists", "Shared lists", "share"],
-];
+const VIEWS: [View, string, string][] = lazy(() => [
+  ["graph", tr("palette.map"), "graph"],
+  ["cards", tr("palette.people"), "users"],
+  ["activity", tr("palette.activity"), "clock"],
+  ["insights", tr("palette.insights"), "bulb"],
+  ["logbook", tr("palette.logbook"), "calendar"],
+  ["vrchat", tr("palette.vrchatGroupsFavoritesAvatars"), "world"],
+  ["lists", tr("palette.sharedLists"), "share"],
+]);
 
-const SETTINGS: [string, string][] = [
-  ["interface", "Interface (beta UI, text size, haptics)"],
-  ["display", "Themes"],
-  ["mapdisplay", "Map and profiles"],
-  ["framerate", "Frame rate"],
-  ["age", "Age hints and linked pages"],
-  ["redflags", "Red flags in VRChat notes"],
-  ["invites", "Invite messages"],
-  ["bios", "Reading bios in the background"],
-  ["notify", "Notifications, quiet hours, rules per circle"],
-  ["phone", "Phone in the background"],
-  ["logs", "Game logs and picture folders"],
-  ["nowplaying", "Now playing in your status"],
-  ["playtime", "Steam play time in your bio"],
-  ["backup", "Backup to another device"],
-  ["groups", "Friend group detection"],
-  ["servers", "Servers and sharing"],
-  ["updates", "Updates"],
-  ["data", "Local data"],
-];
+const SETTINGS: [string, string][] = lazy(() => [
+  ["interface", tr("palette.interfaceBetaUiTextSize")],
+  ["display", tr("palette.themes")],
+  ["mapdisplay", tr("palette.mapAndProfiles")],
+  ["framerate", tr("palette.frameRate")],
+  ["age", tr("palette.ageHintsAndLinkedPages")],
+  ["redflags", tr("palette.redFlagsInVrchatNotes")],
+  ["invites", tr("palette.inviteMessages")],
+  ["bios", tr("palette.readingBiosInTheBackground")],
+  ["notify", tr("palette.notificationsQuietHoursRulesPer")],
+  ["phone", tr("palette.phoneInTheBackground")],
+  ["logs", tr("palette.gameLogsAndPictureFolders")],
+  ["nowplaying", tr("palette.nowPlayingInYourStatus")],
+  ["playtime", tr("palette.steamPlayTimeInYour")],
+  ["backup", tr("palette.backupToAnotherDevice")],
+  ["groups", tr("palette.friendGroupDetection")],
+  ["servers", tr("palette.serversAndSharing")],
+  ["updates", tr("palette.updates")],
+  ["data", tr("palette.localData")],
+]);
 
 export function CommandPalette({ onClose }: { onClose: () => void }) {
   const [q, setQ] = useState("");
@@ -61,16 +61,16 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     const people = Object.values(friends)
       .filter((f) => ql && (match(f.displayName) || match(nicknames[f.id] ?? "")))
       .slice(0, 8)
-      .map((f) => ({ id: f.id, label: nicknames[f.id] ? tr("palette.valueName", { value: nicknames[f.id], name: f.displayName }) : f.displayName, hint: "Friend", icon: "user", run: () => setState({ selectedId: f.id }) }));
+      .map((f) => ({ id: f.id, label: nicknames[f.id] ? tr("palette.valueName", { value: nicknames[f.id], name: f.displayName }) : f.displayName, hint: tr("palette.friend"), icon: "user", run: () => setState({ selectedId: f.id }) }));
     out.push(...people);
-    for (const [v, l, i] of VIEWS) if (match(l, "view")) out.push({ id: `view:${v}`, label: l, hint: "View", icon: i, run: () => setState({ view: v }) });
-    for (const [id, l] of SETTINGS) if (match(l, "settings")) out.push({ id: `set:${id}`, label: l, hint: "Settings", icon: "settings", run: () => setState({ settingsOpen: true, settingsTab: id }) });
+    for (const [v, l, i] of VIEWS) if (match(l, "view")) out.push({ id: `view:${v}`, label: l, hint: tr("palette.view"), icon: i, run: () => setState({ view: v }) });
+    for (const [id, l] of SETTINGS) if (match(l, "settings")) out.push({ id: `set:${id}`, label: l, hint: tr("palette.settings"), icon: "settings", run: () => setState({ settingsOpen: true, settingsTab: id }) });
     const actions: Item[] = [
-      { id: "a:sync", label: tr("palette.syncWithVrchatNow"), hint: "Action", icon: "refresh", run: () => void syncAll() },
-      { id: "a:servers", label: tr("palette.syncWithMyServersNow"), hint: "Action", icon: "server", run: () => void syncAllServers({ manual: true }) },
-      { id: "a:mute", label: isMuted() ? tr("palette.unmuteNotifications") : tr("palette.muteNotificationsForAnHour"), hint: "Action", icon: "bell-off", run: () => muteFor(isMuted() ? 0 : 3600e3) },
-      { id: "a:classic", label: tr("palette.backToTheClassicUi"), hint: "Action", icon: "eye", run: () => updateUi({ beta: false }) },
-      { id: "a:me", label: tr("palette.myProfile"), hint: "Action", icon: "user", run: () => getState().cache.me && setState({ selectedId: getState().cache.me!.id }) },
+      { id: "a:sync", label: tr("palette.syncWithVrchatNow"), hint: tr("palette.action"), icon: "refresh", run: () => void syncAll() },
+      { id: "a:servers", label: tr("palette.syncWithMyServersNow"), hint: tr("palette.action"), icon: "server", run: () => void syncAllServers({ manual: true }) },
+      { id: "a:mute", label: isMuted() ? tr("palette.unmuteNotifications") : tr("palette.muteNotificationsForAnHour"), hint: tr("palette.action"), icon: "bell-off", run: () => muteFor(isMuted() ? 0 : 3600e3) },
+      { id: "a:classic", label: tr("palette.backToTheClassicUi"), hint: tr("palette.action"), icon: "eye", run: () => updateUi({ beta: false }) },
+      { id: "a:me", label: tr("palette.myProfile"), hint: tr("palette.action"), icon: "user", run: () => getState().cache.me && setState({ selectedId: getState().cache.me!.id }) },
     ];
     out.push(...actions.filter((a) => match(a.label, "action")));
     return out.slice(0, 30);

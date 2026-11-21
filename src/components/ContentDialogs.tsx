@@ -230,13 +230,13 @@ export function GroupDialog() {
   const close = () => setState({ openGroup: null });
   const manage = g && (can(g, "group-members-manage") || can(g, "group-bans-manage") || can(g, "group-invites-manage") || can(g, "group-data-manage") || can(g, "group-audit-view") || can(g, "group-announcement-manage"));
   const tabs: [GTab, string][] = [
-    ["about", "About"],
-    ["posts", "Posts"],
-    ["events", "Events"],
-    ["instances", "Instances"],
-    ["gallery", "Gallery"],
-    ["members", "Members"],
-    ...(manage ? ([["manage", "Manage"]] as [GTab, string][]) : []),
+    ["about", tr("content.about")],
+    ["posts", tr("content.posts")],
+    ["events", tr("content.events")],
+    ["instances", tr("content.instances")],
+    ["gallery", tr("content.gallery")],
+    ["members", tr("content.members")],
+    ...(manage ? ([["manage", tr("content.manage")]] as [GTab, string][]) : []),
   ];
   return (
     <Modal

@@ -40,8 +40,8 @@ export function PeopleChooser({
         {(
           [
             ["all", allLabel],
-            ["circles", "Some circles"],
-            ["picked", "People I pick"],
+            ["circles", tr("chooser.someCircles")],
+            ["picked", tr("chooser.peopleIPick")],
           ] as const
         ).map(([k, label]) => (
           <button key={k} role="radio" aria-checked={value.who === k} className={value.who === k ? "on" : ""} onClick={() => set({ who: k })}>

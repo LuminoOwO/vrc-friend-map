@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { language, LANGUAGES, resolveLanguage, setLanguage, t } from "../i18n";
+import { language, LANGUAGES, lazy, resolveLanguage, setLanguage, t } from "../i18n";
 
 type Dict = { [k: string]: string | Dict };
 const files = import.meta.glob<{ default: Dict }>("../i18n/locales/*.json", { eager: true });
@@ -36,6 +36,18 @@ describe("translations", () => {
     expect(t("common.friends", { count: 1 })).toBe("1 Freund");
     // Numbers in the language's own format.
     expect(t("common.friends", { count: 1500 })).toBe("1.500 Freunde");
+  });
+  it("lazy() constants follow the language", async () => {
+    const list = lazy(() => [{ k: "people", label: t("menu.people") }]);
+    const map = lazy(() => ({ people: t("menu.people") }));
+    expect(list.map((x) => x.label)).toEqual(["People"]);
+    expect(Array.isArray(list)).toBe(true);
+    expect(list.length).toBe(1);
+    expect(Object.entries(map)).toEqual([["people", "People"]]);
+    await setLanguage("de");
+    expect(list[0].label).toBe("Leute");
+    expect([...list].map((x) => x.label)).toEqual(["Leute"]);
+    expect(map.people).toBe("Leute");
   });
   it("picks the language from the setting or the system", () => {
     expect(resolveLanguage("de", [])).toBe("de");
