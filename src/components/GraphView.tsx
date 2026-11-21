@@ -25,6 +25,7 @@ import {
   trustRank,
 } from "../model";
 import { addToCircle, getState, setState, updateSettings, useApp } from "../store";
+import { nextInDirection, startPoint, type Dir } from "../mapkeys";
 import { betaActive } from "../ui2/active";
 import type { Cache, Circle, Filters, Friend, MapSettings, Presence } from "../types";
 import { captureCard, capturePicture } from "../flip";
@@ -402,6 +403,8 @@ export function GraphView() {
   const dragTargetRef = useRef<string | null>(null);
   const fittedRef = useRef(false);
   const [tooltip, setTooltip] = useState<{ id: string; x: number; y: number } | null>(null);
+  /** The person highlighted with the keyboard, read out by screen readers. */
+  const [kbName, setKbName] = useState("");
   const fresh = useApp((s) => s.fresh);
   const orbitRef = useRef({ angle: 0, last: 0 });
   const hoverCardRef = useRef<HTMLDivElement>(null);
@@ -1984,7 +1987,76 @@ export function GraphView() {
     canvas.addEventListener("pointermove", onMove);
     canvas.addEventListener("pointerleave", onLeave);
     canvas.addEventListener("click", onClick);
+
+    // Keyboard: the map takes focus with Tab; arrows move the highlight from person to person
+    // (starting from you), the hover card follows, Enter opens the profile, Esc lets go.
+    const shown = () => {
+      const { matched, settings } = viewRef.current;
+      return [...nodesRef.current.values()]
+        .filter((n) => n.x != null && n.y != null && (settings.dimMode !== "hide" || matched.has(n.id) || n.kind === "me"))
+        .map((n) => ({ id: n.id, x: n.x!, y: n.y! }));
+    };
+    const highlight = (id: string | null) => {
+      hoverRef.current = id;
+      tooltipIdRef.current = id;
+      const n = id ? nodesRef.current.get(id) : undefined;
+      if (!n || n.x == null || n.y == null) {
+        setTooltip(null);
+        setKbName("");
+        requestDraw();
+        return;
+      }
+      const t = transformRef.current;
+      const { w, h } = sizeRef.current;
+      let sx = t.applyX(n.x);
+      let sy = t.applyY(n.y);
+      // Off screen (or near the edge): bring the person into view.
+      if (sx < 60 || sy < 60 || sx > w - 60 || sy > h - 60) {
+        zoom.translateTo(sel, n.x, n.y);
+        sx = w / 2;
+        sy = h / 2;
+      }
+      setTooltip({ id, x: sx, y: sy } as { id: string; x: number; y: number });
+      const st = getState();
+      setKbName(st.cache.friends[n.id]?.displayName ?? (st.cache.me?.id === n.id ? "You" : (st.cache.others?.[n.id]?.displayName ?? "Someone")));
+      requestDraw();
+    };
+    const DIRS: Record<string, Dir> = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      const dir = DIRS[e.key];
+      if (dir) {
+        e.preventDefault();
+        const pts = shown();
+        const cur = hoverRef.current ? pts.find((p) => p.id === hoverRef.current) : undefined;
+        if (!cur) {
+          const t = transformRef.current;
+          const { w, h } = sizeRef.current;
+          highlight(startPoint(pts, getState().cache.me?.id, t.invertX(w / 2), t.invertY(h / 2)));
+        } else {
+          const next = nextInDirection(cur, dir, pts);
+          if (next) highlight(next);
+        }
+      } else if ((e.key === "Enter" || e.key === " ") && hoverRef.current) {
+        e.preventDefault();
+        const id = hoverRef.current;
+        if (hoverCardRef.current) captureCard(id, hoverCardRef.current.querySelector(".fcard"));
+        highlight(null);
+        setState({ selectedId: id });
+      } else if (e.key === "Escape" && hoverRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        highlight(null);
+      }
+    };
+    const onBlur = () => {
+      if (hoverRef.current && !canvas.matches(":hover")) highlight(null);
+    };
+    canvas.addEventListener("keydown", onKeyDown);
+    canvas.addEventListener("blur", onBlur);
     return () => {
+      canvas.removeEventListener("keydown", onKeyDown);
+      canvas.removeEventListener("blur", onBlur);
       for (const n of nodesRef.current.values()) if (n.x != null && n.y != null) savedPositions.set(n.id, { x: n.x, y: n.y });
       if (transformRef.current !== d3.zoomIdentity) savedTransform = transformRef.current;
       ro.disconnect();
@@ -2019,7 +2091,16 @@ export function GraphView() {
 
   return (
     <div className="graph" ref={containerRef}>
-      <canvas ref={canvasRef} className="graph-canvas" />
+      <canvas
+        ref={canvasRef}
+        className="graph-canvas"
+        tabIndex={0}
+        role="application"
+        aria-label="Friend map. Arrow keys move between people, Enter opens a profile, plus and minus zoom."
+      />
+      <div className="sr-only" aria-live="polite">
+        {kbName}
+      </div>
       {map.showFps && (
         <div ref={fpsRef} className="fps-readout" aria-live="off">
           measuring…

@@ -4,6 +4,8 @@
 //  - Tab and Shift+Tab stay inside the top-most one instead of wandering into the page behind;
 //  - when it closes, focus goes back to what had it before (the button that opened it), if that
 //    is still on the page.
+// Also: arrow keys move through menus marked data-arrows (the menu on computers, the phone's tabs,
+// the settings list).
 // The view frame on computers isn't modal (the menu and the party stay usable): focus moves into
 // it and back, but Tab isn't kept inside.
 
@@ -87,7 +89,29 @@ function closed(el: HTMLElement) {
   tryBack();
 }
 
+/** Arrow keys inside a menu marked data-arrows="v" (up/down) or "h" (left/right), plus Home/End. */
+function onArrows(e: KeyboardEvent): boolean {
+  const active = document.activeElement as HTMLElement | null;
+  const menu = active?.closest<HTMLElement>("[data-arrows]");
+  if (!menu || e.ctrlKey || e.metaKey || e.altKey) return false;
+  if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return false;
+  const v = menu.dataset.arrows === "v";
+  const prev = v ? "ArrowUp" : "ArrowLeft";
+  const next = v ? "ArrowDown" : "ArrowRight";
+  if (![prev, next, "Home", "End"].includes(e.key)) return false;
+  const items = focusables(menu).filter((x) => x.tagName === "BUTTON");
+  const i = items.indexOf(active as HTMLElement);
+  if (i < 0 || !items.length) return false;
+  const to = e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : e.key === next ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
+  items[to].focus();
+  return true;
+}
+
 function onKey(e: KeyboardEvent) {
+  if (onArrows(e)) {
+    e.preventDefault();
+    return;
+  }
   if (e.key !== "Tab") return;
   const top = topDialog();
   if (!top) return;

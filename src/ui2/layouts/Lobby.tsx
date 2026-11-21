@@ -55,7 +55,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
             <b>FRIEND MAP</b>
           </span>
         </div>
-        <nav className="lob-menu" aria-label="Menu">
+        <nav className="lob-menu" aria-label="Menu" data-arrows="v">
           {RAIL.map((r) => (
             <button key={r.key} className={`lob-item ${!settingsOpen && (open ?? "graph") === r.key ? "on" : ""}`} title={r.label} onClick={() => pick(r.key)}>
               <Icon name={r.icon} size={26} />

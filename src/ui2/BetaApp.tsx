@@ -139,7 +139,7 @@ function PhoneShell() {
             </div>
           )}
         </main>
-        <nav className="ui2-tabs" aria-label="Views">
+        <nav className="ui2-tabs" aria-label="Views" data-arrows="h">
           {PHONE_TABS.map(([k, l, i]) => (
             <button key={k} className={`ui2-tab ${tab === k ? "on" : ""}`} aria-current={tab === k} onClick={() => go(k)}>
               <Icon name={i} size={22} />

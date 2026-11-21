@@ -401,7 +401,7 @@ export function SettingsModal() {
         <div className="settings-layout">
           {beta ? (
             <div className="ui2-set-side">
-              <nav className="settings-nav" aria-label="Settings sections">
+              <nav className="settings-nav" aria-label="Settings sections" data-arrows="v">
                 {searchBox}
                 <AccountCard onOpen={() => pick("account")} />
                 {BETA_GROUPS.map((g) => (

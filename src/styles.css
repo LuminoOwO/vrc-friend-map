@@ -1205,3 +1205,8 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
 .own-color input[type="color"] { width: 34px; height: 28px; padding: 0; border: 1px solid var(--border-strong); border-radius: 6px; background: none; cursor: pointer; }
 /* Settings → Account → Log out everywhere: the vrchat.com link sits in the text. */
 .logout-everywhere .btn.link { display: inline; min-height: 0; height: auto; padding: 0; vertical-align: baseline; }
+/* Read out by screen readers, not shown. */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+/* The map takes keyboard focus (arrow keys move between people). */
+.graph-canvas:focus { outline: none; }
+.graph-canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
