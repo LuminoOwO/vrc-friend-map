@@ -131,7 +131,7 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
             const h = hourIn(tz.tz);
             if (h === null) return null;
             const part = dayPart(h);
-            return <span className={`small ${part === "night" ? "warn" : "muted"}`}> · it's {part} for {name}</span>;
+            return <span className={`small ${part === "night" ? "warn" : "muted"}`}> {tr("personExtras.itSPartForName", { part, name })}</span>;
           })()}
         </p>
       )}
@@ -195,7 +195,7 @@ function TzPicker({ value, onPick }: { value: string | null | undefined; onPick:
             </button>
           </li>
         ))}
-        {!shown.length && <li className="small muted tz-none">No time zone matches “{q}”.</li>}
+        {!shown.length && <li className="small muted tz-none">{tr("personExtras.noTimeZoneMatchesQ", { q })}</li>}
       </ul>
     </div>
   );
@@ -227,7 +227,7 @@ export function OnlineHistory({ id, name, online }: { id: string; name: string; 
         <dd>{since ? fmtDate(since) : logSince ? tr("personExtras.beforeValue", { value: fmtDate(logSince) }) : "unknown"}</dd>
         {best && best.length > 0 && (
           <>
-            <dt>Best time to catch {name}</dt>
+            <dt>{tr("personExtras.bestTimeToCatchName", { name })}</dt>
             <dd>you're both usually on {describeHours(best.map((b) => b.hour))}</dd>
           </>
         )}
@@ -394,8 +394,8 @@ export function BlockReasonDialog() {
         <div className="row">
           {person?.iconUrl || person?.currentAvatarThumbnailImageUrl ? <img className="block-pic" src={person.iconUrl || person.currentAvatarThumbnailImageUrl} alt="" /> : null}
           <div>
-            <h2 id="block-title">Why did you block {name}?</h2>
-            {ageText && <p className="small muted">Age: {ageText}</p>}
+            <h2 id="block-title">{tr("personExtras.whyDidYouBlockName", { name })}</h2>
+            {ageText && <p className="small muted">{tr("personExtras.ageAgetext", { ageText })}</p>}
           </div>
         </div>
         {(["annoying", "harmful", "technical"] as const).map((g) => (
@@ -505,7 +505,7 @@ export function PersonLog({ id, name }: { id: string; name: string }) {
       {data.pics.length > 0 && (
         <>
           <p className="small">
-            <b>Your pictures with {name}:</b> {data.pics.length}
+            <b>{tr("personExtras.yourPicturesWithName", { name })}</b> {data.pics.length}
           </p>
           <div className="pic-grid small-pics">
             {data.pics.slice(0, 12).map((p) => (

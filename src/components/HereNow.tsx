@@ -249,25 +249,25 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
           <div className="here-scroll">
             {friendsShown.length > 0 && (
               <>
-                <h4>Friends · {friendsShown.length}</h4>
+                <h4>{tr("here.friendsLength", { length: friendsShown.length })}</h4>
                 <ul>{friendsShown.map((p) => row(p, true))}</ul>
               </>
             )}
             {othersShown.length > 0 && (
               <>
-                <h4>Not friends yet · {othersShown.length}</h4>
+                <h4>{tr("here.notFriendsYetLength", { length: othersShown.length })}</h4>
                 <ul>{othersShown.map((p) => row(p, false))}</ul>
               </>
             )}
             {count === 0 && <p className="small muted here-empty">{tr("here.nobodyElseIsHereRight")}</p>}
-            {count > 0 && !friendsShown.length && !othersShown.length && <p className="small muted here-empty">Nobody here matches “{query}”.</p>}
+            {count > 0 && !friendsShown.length && !othersShown.length && <p className="small muted here-empty">{tr("here.nobodyHereMatchesQuery", { query })}</p>}
           </div>
           {people.others.length > 0 && (
             <div className="here-options">
               {!docked && (
                 <label className="check small" title={tr("here.showPeopleWhoArenT")}>
                   <input type="checkbox" checked={showOthers !== "off"} onChange={(e) => updateMap({ showOthers: e.target.checked ? "here" : "off" })} />
-                  Show the {people.others.length} who aren't friends on the map
+                  {tr("here.showTheLengthWhoAren", { length: people.others.length })}
                 </label>
               )}
               {people.others.length > PROFILE_LIMIT && (

@@ -79,7 +79,7 @@ export function SuggestedGroups() {
             <input type="checkbox" checked={g.auto} onChange={(e) => updateGroupSettings({ auto: e.target.checked })} />
             {tr("groups.makeAndUpdateCirclesAutomatically")}
           </label>
-          {logs.lastScan > 0 && <p className="muted tiny-text">Logs checked {relTime(logs.lastScan)}.</p>}
+          {logs.lastScan > 0 && <p className="muted tiny-text">{tr("groups.logsCheckedValue", { value: relTime(logs.lastScan) })}</p>}
         </>
       )}
     </section>

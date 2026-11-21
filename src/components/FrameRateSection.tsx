@@ -117,7 +117,7 @@ export function FrameRateSection({ gfx }: { gfx: GraphicsInfo | null }) {
         <span className="small muted">{meaning(perf.fps, `${tr("frameRate.sameAsScreen")}${hz ? tr("frameRate.hzHz2", { hz }) : ""}`, tr("frameRate.unlimited"))}</span>
       </label>
       <p className="small muted">
-        -1 = unlimited, 0 = same as the screen.
+        {tr("frameRate.n1Unlimited0SameAs")}
         {above && vsyncNow ? tr("frameRate.vsyncMost", { rate: hz ? tr("frameRate.fps", { count: hz }) : tr("frameRate.theScreenSRate") }) : ""}
       </p>
 

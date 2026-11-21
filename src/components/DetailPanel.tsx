@@ -679,7 +679,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               {time && (
                 <p className="small">
                   {fmtHours(time.secs)} on {time.days} day{time.days === 1 ? "" : "s"}
-                  <span className="muted"> · last {naiveToDate(time.last).toLocaleDateString()}</span>
+                  <span className="muted"> {tr("profile.lastValue", { value: naiveToDate(time.last).toLocaleDateString() })}</span>
                 </p>
               )}
               {oftenWith.length > 0 && (

@@ -188,9 +188,9 @@ export function ActivityView() {
           {tr("activityView.joinsLeavesAndWorldChanges")}
         </p>
       )}
-      {groups.has("list") && logSince ? <p className="small muted activity-note">Friends added and removed are kept since {fmtDate(logSince)}; everything else for {4} days.</p> : null}
+      {groups.has("list") && logSince ? <p className="small muted activity-note">{tr("activityView.friendsAddedAndRemovedAre", { value: fmtDate(logSince), value2: 4 })}</p> : null}
       {days.length === 0 ? (
-        <p className="muted activity-empty">Nothing yet. Things show up here as they happen, and stay for {4} days.</p>
+        <p className="muted activity-empty">{tr("activityView.nothingYetThingsShowUp", { value: 4 })}</p>
       ) : (
         days.map((d) => (
           <section key={d.day} className="activity-day">

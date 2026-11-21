@@ -2188,7 +2188,7 @@ export function GraphView() {
               updateSettings({ showLabels: next });
             }}
           >
-            Names: {settings.showLabels}
+            {tr("map.namesShowlabels", { showLabels: settings.showLabels })}
           </button>
         )}
         <button className={`btn small keep ${optionsOpen ? "active" : ""}`} title={tr("map.mapOptions")} onClick={() => setOptionsOpen(!optionsOpen)}>

@@ -96,7 +96,7 @@ export function PeopleChooser({
                 </label>
               </li>
             ))}
-            {list.length > 300 && <li className="small muted">…and {list.length - 300} more. Search to narrow it down.</li>}
+            {list.length > 300 && <li className="small muted">{tr("chooser.andValueMoreSearchTo", { value: list.length - 300 })}</li>}
             {list.length === 0 && <li className="small muted">{tr("chooser.nobodyHere")}</li>}
           </ul>
           <label className="check">

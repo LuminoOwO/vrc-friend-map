@@ -41,7 +41,7 @@ export function AccountsSection() {
             </label>
             {confirm === acc.id ? (
               <div className="row">
-                <span className="small">Remove {acc.name} from this device?</span>
+                <span className="small">{tr("accounts.removeNameFromThisDevice", { name: acc.name })}</span>
                 <button
                   className="btn small danger"
                   onClick={() => {

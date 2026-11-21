@@ -123,7 +123,7 @@ export function InstanceDialog() {
           </div>
         </>
       ) : (
-        others > 0 && <p className="small muted">and {others} others (VRChat only lists everyone for your own instance).</p>
+        others > 0 && <p className="small muted">{tr("content.andOthersOthersVrchatOnly", { others })}</p>
       )}
       <div className="row">
         <button className="btn" onClick={() => inviteMyself(location).then((e) => showToast(e ? tr("content.couldnTInviteYouError", { error: e }) : tr("content.inviteSentToYouAccept")))}>
@@ -164,7 +164,7 @@ export function WorldDialog() {
         <>
           {w.imageUrl && <img className="content-banner" src={imgSrc(w.imageUrl)} alt="" />}
           <p className="small">
-            by {w.authorName} · {w.occupants} in it now · {w.favorites.toLocaleString()} favorites · {w.visits.toLocaleString()} visits · up to {w.capacity}
+            {tr("content.byAuthornameOccupantsInIt", { authorName: w.authorName, occupants: w.occupants, value: w.favorites.toLocaleString(), value2: w.visits.toLocaleString(), capacity: w.capacity })}
           </p>
           {w.description && <p className="bio">{w.description}</p>}
           {friendsHere.length > 0 && (

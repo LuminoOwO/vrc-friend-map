@@ -59,8 +59,7 @@ export function PlaytimeSection() {
     <>
       <h3>{tr("extras.steamPlayTimeInYour")}</h3>
       <p className="small muted">
-        Reads VRChat's play time from Steam's own files on this PC and keeps one line in your VRChat bio up to date, once a day. The rest of your bio stays as
-        it is; the line is found again by its template.
+        {tr("extras.readsVrchatSPlayTime")}
       </p>
       <label className="check">
         <input type="checkbox" checked={x.playtime.bio} onChange={(e) => set("playtime", { bio: e.target.checked })} />

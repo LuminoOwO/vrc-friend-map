@@ -226,10 +226,10 @@ function FriendGroups() {
             <div key={i} className="group-item">
               <div className="row between">
                 <b>
-                  Group {i + 1} · {m.length} people
+                  {tr("insights.groupValueLengthPeople", { value: i + 1, length: m.length })}
                 </b>
                 {c ? (
-                  <span className="small muted">mostly your circle “{c.name}”</span>
+                  <span className="small muted">{tr("insights.mostlyYourCircleName", { name: c.name })}</span>
                 ) : (
                   <button
                     className="btn small"
@@ -328,15 +328,15 @@ function PathAndCompare() {
           )}
           {cmp && (
             <>
-              <h4>Friends in common: {cmp.both.length}</h4>
+              <h4>{tr("insights.friendsInCommonLength", { length: cmp.both.length })}</h4>
               <People ids={cmp.both} />
               <div className="compare-cols">
                 <div>
-                  <h4>Only {shownName(a)}: {cmp.onlyA.length}</h4>
+                  <h4>{tr("insights.onlyValueLength", { value: shownName(a), length: cmp.onlyA.length })}</h4>
                   <People ids={cmp.onlyA} max={8} />
                 </div>
                 <div>
-                  <h4>Only {shownName(b)}: {cmp.onlyB.length}</h4>
+                  <h4>{tr("insights.onlyValueLength", { value: shownName(b), length: cmp.onlyB.length })}</h4>
                   <People ids={cmp.onlyB} max={8} />
                 </div>
               </div>

@@ -152,7 +152,7 @@ function InviteMessagesSection() {
                 <>
                   <span className="grow">{sl.message || <i className="muted">empty</i>}</span>
                   {sl.cooldown > 0 ? (
-                    <span className="small muted">can change in {sl.cooldown} min</span>
+                    <span className="small muted">{tr("settings.canChangeInCooldownMin", { cooldown: sl.cooldown })}</span>
                   ) : (
                     <button className="btn small ghost" onClick={() => setEdit({ slot: sl.slot, text: sl.message })}>
                       {tr("settings.change")}
@@ -184,12 +184,12 @@ function BioSection() {
         {tr("settings.slowlyReadEveryoneSProfile")}
       </label>
       <label className="field narrow">
-        <span>One person every {b.everySecs} s</span>
+        <span>{tr("settings.onePersonEveryEverysecsS", { everySecs: b.everySecs })}</span>
         <Range min={10} max={300} step={5} value={b.everySecs} disabled={!b.background} onChange={(e) => updateSettings({ bios: { ...b, everySecs: Number(e.target.value) } })} />
       </label>
       <p className="small muted">
         So profiles open with their bio right away, and age hints and time zone guesses are ready. Friends first (online ones before offline),
-        then people you've met. Waits while a sync runs. {p.total > 0 && <b>{p.done} of {p.total} up to date.</b>}
+        then people you've met. Waits while a sync runs. {p.total > 0 && <b>{tr("settings.doneOfTotalUpTo", { done: p.done, total: p.total })}</b>}
       </p>
     </>
   );
@@ -239,7 +239,7 @@ function InterfaceSection() {
       )}
       <div className="row">
         <label className="field narrow">
-          <span>Text size: {Math.round(ui.textScale * 100)} %</span>
+          <span>{tr("settings.textSizeValue", { value: Math.round(ui.textScale * 100) })}</span>
           <Range min={0.8} max={1.6} step={0.05} value={ui.textScale} onChange={(e) => set({ textScale: Number(e.target.value) })} />
         </label>
         <label className="field narrow">
@@ -489,7 +489,7 @@ export function SettingsModal() {
                     ))}
                   </>
                 ) : (
-                  <span className="small muted">Nothing found for “{query}”. Try a different word, like “colors”, “fps”, “sound” or “servers”.</span>
+                  <span className="small muted">{tr("settings.nothingFoundForQueryTry", { query })}</span>
                 )}
               </div>
             )}
@@ -535,7 +535,7 @@ export function SettingsModal() {
             <small>{tr("settings.sentWithEachRequestSo")}</small>
           </label>
           <label className="field">
-            <span>Time between requests: {(settings.intervalMs / 1000).toFixed(1)} s</span>
+            <span>{tr("settings.timeBetweenRequestsValueS", { value: (settings.intervalMs / 1000).toFixed(1) })}</span>
             <Range min={1000} max={4000} step={100} value={settings.intervalMs} onChange={(e) => updateSettings({ intervalMs: Number(e.target.value) })} />
             <small>{tr("settings.neverFasterThanOnePer")}</small>
           </label>
@@ -667,8 +667,7 @@ export function SettingsModal() {
               </select>
             </label>
             <p className="small muted">
-              Choose “Prefer the graphics card” if the map is slow or your GPU sits idle; choose “Software” if the window is blank or flickers.
-              Turn on “Show frame rate” in Map options to compare.
+              {tr("settings.choosePreferTheGraphicsCard")}
             </p>
             {gfx.forced && (
               <p className="small">
@@ -757,7 +756,7 @@ export function SettingsModal() {
             <>
               <p className="small">
                 Stored in <code>{info.data_dir}</code>. Image cache: {(info.image_cache_bytes / 1024 / 1024).toFixed(1)} MB. Before an update
-                changes the format of your data, a copy is saved in <code>store/backups</code>.
+                changes the format of your data, a copy is saved in <code>{tr("settings.storeBackups")}</code>.
               </p>
               <div className="row">
                 <button className="btn" onClick={() => backend.clearImageCache().then(() => backend.storageInfo().then(setInfo))}>
@@ -783,7 +782,7 @@ export function SettingsModal() {
         </Sec>
         <Sec id="about" cat="account" title={tr("settings.about")} keys="version">
           <h3>{tr("settings.about")}</h3>
-          <p className="small muted">VRC Friend Map {__APP_VERSION__} (build {__APP_BUILD__}). Not affiliated with VRChat Inc.</p>
+          <p className="small muted">{tr("settings.vrcFriendMapAppVersion", { __APP_VERSION__, __APP_BUILD__ })}</p>
         </Sec>
             </SecContext.Provider>
             </div>
@@ -1111,8 +1110,7 @@ function GameLogSection() {
     <>
       <h3>{tr("settings.gameLogsThisPc")}</h3>
       <p className="small muted">
-        VRChat writes a log while it runs. The app reads who joined and left your instances to work out who spends time together. It only reads
-        files; nothing is sent anywhere. Logs from Quest or phone sessions aren't available.
+        {tr("settings.vrchatWritesALogWhile")}
       </p>
       {demo && <p className="small warn">{tr("settings.demoModeLogReadingIs")}</p>}
       <label className="check">
@@ -1227,15 +1225,13 @@ function GroupSection() {
       </label>
       <label className="check">
         <input type="checkbox" checked={g.useLive} onChange={(e) => set({ useLive: e.target.checked })} />
-        Use friends' live locations (time friends spend in the same instance, even without me; counted while this app is open, any
-        device; private instances can't be seen)
+        {tr("settings.useFriendsLiveLocationsTime")}
       </label>
       <button className="btn small" onClick={() => forgetObserved()}>
         {tr("settings.forgetFriendLocationHistory")}
       </button>
       <p className="small muted">
-        Suggestions come from who spends time in the same instance. Two people count as connected when they spent enough time together on
-        enough different days; then groups are found that are much more connected inside than outside.
+        {tr("settings.suggestionsComeFromWhoSpends")}
       </p>
       <div className="row">
         <label className="field narrow">
@@ -1305,7 +1301,7 @@ function GroupSection() {
       </label>
       <label className="check">
         <input type="checkbox" checked={g.auto} onChange={(e) => set({ auto: e.target.checked })} />
-        Make and update circles automatically (marked “auto”; renaming one or changing who's in it makes it yours)
+        {tr("settings.makeAndUpdateCirclesAutomatically")}
       </label>
       {dismissed > 0 && (
         <button className="btn small" onClick={() => updateLocal((l) => ({ ...l, dismissedGroups: [] }))}>
@@ -1354,8 +1350,7 @@ function PeopleSection() {
         </select>
       </label>
       <p className="small muted">
-        Potential friends: people who share friends with you or who you've spent time with (game logs). Kept profiles are refreshed after a
-        week; the others load again when you meet them.
+        {tr("settings.potentialFriendsPeopleWhoShare")}
       </p>
       <label className="check">
         <input type="checkbox" checked={people.showBlocked} onChange={(e) => updatePeople({ showBlocked: e.target.checked })} />
@@ -1373,7 +1368,7 @@ function UpdatesSection() {
       <h3>{tr("settings.updates")}</h3>
       <label className="check">
         <input type="checkbox" checked={u.check} onChange={(e) => updateSettings({ updates: { ...u, check: e.target.checked } })} />
-        Look for new versions automatically and ask me to update (every few hours, on GitHub; recommended)
+        {tr("settings.lookForNewVersionsAutomatically")}
       </label>
       {!u.check && (
         <p className="small warn">
@@ -1394,7 +1389,7 @@ function UpdatesSection() {
         </button>
         {u.skipped && (
           <button className="btn small ghost" onClick={() => updateSettings({ updates: { ...u, skipped: "" } })}>
-            Offer {u.skipped} again
+            {tr("settings.offerSkippedAgain", { skipped: u.skipped })}
           </button>
         )}
       </div>

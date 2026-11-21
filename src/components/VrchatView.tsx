@@ -435,7 +435,7 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
   return (
     <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && onClose(false)}>
       <div className="modal uploader" role="dialog">
-        <h2>Upload: {shape.label}</h2>
+        <h2>{tr("vrchat.uploadLabel", { label: shape.label })}</h2>
         <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" onChange={(e) => e.target.files?.[0] && void load(e.target.files[0])} />
         {source && (
           <>
@@ -458,10 +458,10 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
               <span>{tr("vrchat.zoomDragThePictureTo")}</span>
               <Range min={1} max={5} step={0.01} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} />
             </label>
-            {frames && <p className="small">Animated: {frames.length} frames (an animated emoji).</p>}
+            {frames && <p className="small">{tr("vrchat.animatedLengthFramesAnAnimated", { length: frames.length })}</p>}
             {frames && (
               <label className="field narrow">
-                <span>Frames per second: {fps}</span>
+                <span>{tr("vrchat.framesPerSecondFps", { fps })}</span>
                 <Range min={1} max={30} value={fps} onChange={(e) => setFps(Number(e.target.value))} />
               </label>
             )}

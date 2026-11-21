@@ -154,9 +154,7 @@ export function ServersModal() {
           </button>
         </div>
         <p className="small muted">
-          Share your friend list and time-together with friends through one or more vfm-servers (yours, a friend's, a public one), and get theirs
-          back. A server on a spare device can also log your friends' instance hopping around the clock. Using more than one server gives
-          redundancy; encrypted uploads keep each server from reading anything.
+          {tr("serversModal.shareYourFriendListAnd")}
         </p>
 
         {demo && <p className="notice-inline">{tr("serversModal.notAvailableInDemoMode")}</p>}
@@ -297,9 +295,7 @@ export function ChangedKeys() {
         <Icon name="warn" size={16} /> {tr("serversModal.changedKeys")}
       </h3>
       <p className="small">
-        A server gave a different key for these people than the one you first got. Usually they reinstalled the app or set up a new device
-        without copying their key; it could also be a server trying to read what you share with them. Until you accept, nothing is sent to or
-        accepted from the new key. Best: ask them for their fingerprint.
+        {tr("serversModal.aServerGaveADifferent")}
       </p>
       {changed.map(([id, p]) => (
         <div key={id} className="row">
@@ -642,7 +638,7 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
       {s.lastError && !error && <p className="error-text">{s.lastError}</p>}
       {s.lastNote && <p className="small muted">{s.lastNote}</p>}
       <div className="row server-foot">
-        <span className="small muted">Last sync {ago(s.lastSync)}</span>
+        <span className="small muted">{tr("serversModal.lastSyncValue", { value: ago(s.lastSync) })}</span>
         <span className="grow" />
         {s.registered && (
           <button className="btn small" disabled={busy || working !== ""} onClick={() => run("sync", () => syncServer(s.id, { manual: true }))}>

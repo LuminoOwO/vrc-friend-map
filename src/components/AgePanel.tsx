@@ -94,7 +94,7 @@ export function AgePanel({ id }: { id: string }) {
                 </details>
               )}
               <p className="small muted">
-                Hints are guesses from what they wrote; VRChat's 18+ badge isn't counted (verified accounts get sold). Only you see them.
+                {tr("age.hintsAreGuessesFromWhat")}
               </p>
             </>
           )}
@@ -111,7 +111,7 @@ export function AgePanel({ id }: { id: string }) {
           </label>
           {note && (
             <p className="small muted">
-              Set {fmtDate(note.t)}
+              {tr("age.setValue", { value: fmtDate(note.t) })}
               {Number.isFinite(noteExpires(note)) ? tr("age.fadesOnValue", { value: fmtDate(noteExpires(note)) }) : ""}.
             </p>
           )}

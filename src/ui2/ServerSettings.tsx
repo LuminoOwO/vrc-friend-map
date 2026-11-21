@@ -105,7 +105,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
       <div className="ui2-srvinfo small">
         {info && (
           <>
-            <span className="pill">vfm-server {info.version}</span>
+            <span className="pill">{tr("serverSettings.vfmServerVersion", { version: info.version })}</span>
             <span className={`pill ${info.encryption === "force-off" ? "warn" : info.encryption === "force-on" ? "ok" : ""}`}>
               <Icon name={info.encryption === "force-off" ? "unlock" : "lock"} size={12} /> {POLICY_LABEL[info.encryption]}
             </span>
@@ -301,7 +301,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
       {s.lastError && !error && <p className="error-text">{s.lastError}</p>}
       {s.lastNote && <p className="small muted">{s.lastNote}</p>}
       <div className="row ui2-srvfoot">
-        <span className="small muted">Last sync {ago(s.lastSync)}</span>
+        <span className="small muted">{tr("serverSettings.lastSyncValue", { value: ago(s.lastSync) })}</span>
         <span className="grow" />
         {s.registered && (
           <button className="btn small" disabled={busy || working !== ""} onClick={() => run("sync", () => syncServer(s.id, { manual: true }))}>

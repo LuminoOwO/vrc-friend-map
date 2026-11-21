@@ -241,11 +241,11 @@ export function NotificationsSection() {
       </label>
       <div className="row">
         <label className="field narrow">
-          <span>Volume {Math.round(n.volume * 100)}%</span>
+          <span>{tr("notify.volumeValue", { value: Math.round(n.volume * 100) })}</span>
           <Range pct min={0} max={1} step={0.05} value={n.volume} onChange={(e) => updateNotify({ volume: Number(e.target.value) })} />
         </label>
         <label className="field narrow">
-          <span>Pause before the person's tune: {n.pause.toFixed(2)} s</span>
+          <span>{tr("notify.pauseBeforeThePersonS", { value: n.pause.toFixed(2) })}</span>
           <Range pct={false} min={0} max={1} step={0.05} value={n.pause} disabled={!n.sound || !n.personTune} onChange={(e) => updateNotify({ pause: Number(e.target.value) })} />
         </label>
         <label className="field narrow">
@@ -353,8 +353,7 @@ export function CloseSection() {
         </select>
       </label>
       <p className="small muted">
-        In the tray the app keeps notifying and collecting (live updates, game logs, servers) without drawing anything. Click the tray icon to
-        open it again; its menu can also mute notifications or quit.
+        {tr("notify.inTheTrayTheApp")}
       </p>
     </>
   );

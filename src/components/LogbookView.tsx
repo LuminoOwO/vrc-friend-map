@@ -143,7 +143,7 @@ function DayView({ visits }: { visits: TimelineVisit[] }) {
         )}
         {steam && steam.minutes > 0 && (
           <p className="small muted" title={tr("logbook.fromSteamSOwnPlay")}>
-            Steam counted {fmtDuration(steam.minutes * 60)}
+            {tr("logbook.steamCountedValue", { value: fmtDuration(steam.minutes * 60) })}
             {steam.spans ? ` since ${naiveToDate(dayStart(steam.since)).toLocaleDateString([], { month: "short", day: "numeric" })}` : tr("logbook.thisDay")}.
           </p>
         )}
@@ -443,7 +443,7 @@ function Pictures({ visits }: { visits: TimelineVisit[] }) {
   if (!pics.length)
     return (
       <p className="muted">
-        No VRChat pictures found. They're looked for in Pictures/VRChat (Windows) and the Proton folder (Linux); add your own folder in Settings → Game logs.
+        {tr("logbook.noVrchatPicturesFoundThey")}
       </p>
     );
   const ql = q.toLowerCase();

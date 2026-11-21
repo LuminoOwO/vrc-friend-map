@@ -95,7 +95,7 @@ export function Sidebar() {
         </div>
         {friends.length > 0 && (stats.mutualsLoaded < friends.length || stats.profilesLoaded < friends.length) && (
           <p className="muted small">
-            Loaded {stats.profilesLoaded}/{friends.length} profiles and {stats.mutualsLoaded}/{friends.length} mutual lists.
+            {tr("sidebar.loadedProfilesloadedLengthProfilesAnd", { profilesLoaded: stats.profilesLoaded, length: friends.length, mutualsLoaded: stats.mutualsLoaded })}
           </p>
         )}
       </section>
@@ -273,11 +273,9 @@ function ShareCircleDialog({ circleId, onClose }: { circleId: string; onClose: (
   return (
     <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" role="dialog" aria-labelledby="share-circle-title">
-        <h2 id="share-circle-title">Edit “{circle.name}” together</h2>
+        <h2 id="share-circle-title">{tr("sidebar.editNameTogether", { name: circle.name })}</h2>
         <p className="small muted">
-          The circle goes along with the friend list you share through your servers, so the people you pick need the app and a server you both use. Any of
-          you can add or remove members and rename it; the newest change wins. Anyone you share your friend list with on that server could read its
-          name and members.
+          {tr("sidebar.theCircleGoesAlongWith")}
         </p>
         {!owner && <p className="small">Shared with you by {friends[info!.owner]?.displayName ?? "a friend"}.</p>}
         <input placeholder={tr("sidebar.findAFriend")} value={q} onChange={(e) => setQ(e.target.value)} />

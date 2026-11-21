@@ -55,7 +55,7 @@ export function LoginScreen({ canLogin }: { canLogin: boolean }) {
             )}
           </div>
         ) : (
-          <p className="note">{tx("login.plainBrowser", { command: <code>npm run tauri dev</code> })}</p>
+          <p className="note">{tx("login.plainBrowser", { command: <code>{tr("login.npmRunTauriDev")}</code> })}</p>
         )}
         {message && <p className="login-msg">{message}</p>}
         {busy && <p className="note">{tr("login.finishSigningInInThe")}</p>}

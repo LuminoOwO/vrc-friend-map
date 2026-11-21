@@ -49,9 +49,7 @@ export function AgeSection() {
             {tr("ageSettings.xTwitterThroughFxtwitter")}
           </label>
           <p className="small muted">
-            X shows profiles only to logged-in visitors, so the app asks fxtwitter.com (a free public service) for the bio; that sends them the
-            handle. Deeper reading only follows links to profile sites the app knows (about 50: link pages like Linktree and Carrd, social
-            networks, art sites).
+            {tr("ageSettings.xShowsProfilesOnlyTo")}
           </p>
         </div>
       )}
@@ -59,8 +57,7 @@ export function AgeSection() {
         {tr("ageSettings.linkedPagesOnlyPublicWebsites")}
       </p>
       <p className="small muted">
-        Your notes and the hints stay on this device. Notes saying someone is under 18 are never shared, synced or exported, so this can't turn
-        into a list of minors. Friends can only share “over 18”, “probably over 18” or a neutral “keep your distance”; no note means nothing.
+        {tr("ageSettings.yourNotesAndTheHints")}
       </p>
     </>
   );

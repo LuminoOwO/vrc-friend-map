@@ -106,8 +106,7 @@ export function PhoneSection() {
         </button>
       )}
       <p className="small muted">
-        Android keeps other apps' files private since Android 11; with root the app can copy VRChat's log files every few minutes. Shizuku (without
-        root) isn't supported yet.
+        {tr("phoneSettings.androidKeepsOtherAppsFiles")}
       </p>
     </>
   );

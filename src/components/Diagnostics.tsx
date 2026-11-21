@@ -111,8 +111,7 @@ export function Diagnostics() {
             </button>
           </div>
           <p className="small muted">
-            The benchmark draws a busy scene at full window size for 1.5 seconds. “fps shown” is what reached the screen; if it's low while
-            the JavaScript time is small, the web engine itself (not the map) is the slow part.
+            {tr("diagnostics.theBenchmarkDrawsABusy")}
           </p>
         </>
       )}
