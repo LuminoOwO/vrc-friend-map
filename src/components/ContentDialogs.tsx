@@ -391,7 +391,7 @@ function GroupPosts({ g }: { g: GroupFull }) {
           {p.imageUrl && <img className="post-img" src={imgSrc(p.imageUrl)} alt="" />}
           <p className="bio small">{p.text}</p>
           {canPost && (
-            <button className="btn small ghost" onClick={() => confirmDo("Delete this post?", async () => { const e = await groupActions.deletePost(g.id, p.id); if (!e) reload(); return e; }, "Deleted")}>
+            <button className="btn small ghost" onClick={() => confirmDo(tr("content.deletePost"), async () => { const e = await groupActions.deletePost(g.id, p.id); if (!e) reload(); return e; }, tr("content.deleted"))}>
               <Icon name="trash" size={13} /> {tr("content.delete")}
             </button>
           )}
@@ -490,11 +490,11 @@ function GroupInstances({ g }: { g: GroupFull }) {
               disabled={!/wrld_[0-9a-f-]{36}/i.test(make.world)}
               onClick={() => {
                 const w = make.world.match(/wrld_[0-9a-f-]{36}/i)![0];
-                confirmDo(`Open a ${make.access} instance of this world for ${g.name}?`, async () => {
+                confirmDo(tr("content.openInstance", { access: make.access, group: g.name }), async () => {
                   const e = await groupActions.createInstance(g.id, w, make.region, make.access, make.queue, make.age);
                   if (!e) reload();
                   return e;
-                }, "Instance opened");
+                }, tr("content.instanceOpened"));
               }}
             >
               {tr("content.open")}
@@ -526,7 +526,7 @@ function GroupGallery({ g }: { g: GroupFull }) {
           <div key={i.id} className="pic">
             <img src={imgSrc(i.imageUrl)} alt="" loading="lazy" onClick={() => openImage({ url: i.imageUrl, title: tr("content.nameGallery", { name: g.name }) })} />
             {canManage && (
-              <button className="icon-btn tiny pic-del" title={tr("content.delete")} onClick={() => confirmDo("Delete this picture from the gallery?", async () => { const e = await groupActions.deleteImage(g.id, gal, i.id); if (!e) reload(); return e; }, "Deleted")}>
+              <button className="icon-btn tiny pic-del" title={tr("content.delete")} onClick={() => confirmDo(tr("content.deletePicture"), async () => { const e = await groupActions.deleteImage(g.id, gal, i.id); if (!e) reload(); return e; }, tr("content.deleted"))}>
                 <Icon name="trash" size={12} />
               </button>
             )}
@@ -683,7 +683,7 @@ function GroupManage({ g, onChange }: { g: GroupFull; onChange: () => void }) {
               <option value="closed">{tr("content.closed")}</option>
             </select>
           </label>
-          <button className="btn small primary" onClick={() => confirmDo(`Save these settings for ${g.name}?`, async () => { const e = await groupActions.update(g.id, edit); if (!e) onChange(); return e; }, "Saved")}>
+          <button className="btn small primary" onClick={() => confirmDo(tr("content.saveSettingsFor", { group: g.name }), async () => { const e = await groupActions.update(g.id, edit); if (!e) onChange(); return e; }, tr("content.saved"))}>
             {tr("content.saveSettings")}
           </button>
         </section>

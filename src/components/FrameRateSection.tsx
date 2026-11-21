@@ -114,11 +114,11 @@ export function FrameRateSection({ gfx }: { gfx: GraphicsInfo | null }) {
       <label className="fps-row">
         <span>{tr("frameRate.frameRateLimit")}</span>
         <FpsInput value={perf.fps} onChange={(fps) => updatePerf({ fps })} />
-        <span className="small muted">{meaning(perf.fps, `same as the screen${hz ? tr("frameRate.hzHz2", { hz }) : ""}`, "unlimited")}</span>
+        <span className="small muted">{meaning(perf.fps, `${tr("frameRate.sameAsScreen")}${hz ? tr("frameRate.hzHz2", { hz }) : ""}`, tr("frameRate.unlimited"))}</span>
       </label>
       <p className="small muted">
         -1 = unlimited, 0 = same as the screen.
-        {above && vsyncNow ? ` With vsync on, ${hz ? `${hz} fps` : tr("frameRate.theScreenSRate")} is the most you get.` : ""}
+        {above && vsyncNow ? tr("frameRate.vsyncMost", { rate: hz ? tr("frameRate.fps", { count: hz }) : tr("frameRate.theScreenSRate") }) : ""}
       </p>
 
       <h4 className="sub-h">{tr("frameRate.savingPower")}</h4>

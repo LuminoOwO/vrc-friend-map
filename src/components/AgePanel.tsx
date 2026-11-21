@@ -76,9 +76,9 @@ export function AgePanel({ id }: { id: string }) {
               {readLinks && reads && reads.length > 0 && (
                 <details className="link-reads">
                   <summary className="small">
-                    Linked pages: {reads.filter((r) => r.status === "read").length} read
-                    {reads.some((r) => r.status === "login") && `, ${reads.filter((r) => r.status === "login").length} need a login`}
-                    {reads.some((r) => r.status === "unreachable") && `, ${reads.filter((r) => r.status === "unreachable").length} unreachable`}
+                    {tr("age.linkedPages", { count: reads.filter((r) => r.status === "read").length })}
+                    {reads.some((r) => r.status === "login") && tr("age.needLogin", { count: reads.filter((r) => r.status === "login").length })}
+                    {reads.some((r) => r.status === "unreachable") && tr("age.unreachable", { count: reads.filter((r) => r.status === "unreachable").length })}
                     {reads.some((r) => r.status === "skipped") && `, ${reads.filter((r) => r.status === "skipped").length} skipped`}
                   </summary>
                   <ul>

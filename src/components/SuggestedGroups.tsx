@@ -55,8 +55,8 @@ export function SuggestedGroups() {
         <>
           <p className="muted small">
             {tr("groups.fromTimeSpentInThe")}
-            {logsHere && enabled ? `: with you (game logs${report && report.visits > 0 ? `, ${report.visits} visits over ${spanDays} day${spanDays === 1 ? "" : "s"}` : ""})` : ""}
-            {useLive ? `${logsHere && enabled ? " and" : ":"} between friends (their live locations while this app is open${observedPairs ? `, ${observedPairs} pairs so far` : ""})` : ""}.
+            {logsHere && enabled ? (report && report.visits > 0 ? tr("groups.withYouVisits", { visits: report.visits, count: spanDays }) : tr("groups.withYou")) : ""}
+            {useLive ? tr(observedPairs ? "groups.betweenFriendsPairs" : "groups.betweenFriends", { lead: logsHere && enabled ? tr("groups.and") : tr("groups.colon"), pairs: observedPairs }) : ""}.
           </p>
           {logs.error && <p className="small warn">{logs.error}</p>}
           {suggestions.length === 0 ? (

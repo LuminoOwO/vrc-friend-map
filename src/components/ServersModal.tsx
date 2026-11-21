@@ -204,7 +204,7 @@ export function ServersModal() {
               ))}
             </div>
             <Why
-              text={`${DEFAULTS.find((d) => d.value === sharing.encDefault)!.why} A server can still force encryption on or off; then the other side of its switch is greyed out. Changing this resets the switch on every server to the new default.`}
+              text={tr("serversModal.encDefaultWhy", { why: DEFAULTS.find((d) => d.value === sharing.encDefault)!.why })}
             />
           </div>
         </section>
@@ -725,7 +725,7 @@ function DevicesHere({ url }: { url: string }) {
   return (
     <p className="small muted indent">
       {here.length
-        ? `Live with ${here.map((p) => `${p.name} (${p.direct ? tr("serversModal.directlyAtHome") : tr("serversModal.throughThisServer")})`).join(", ")}: changes and your own notification sounds go across within seconds.`
+        ? tr("serversModal.liveWith", { devices: here.map((p) => `${p.name} (${p.direct ? tr("serversModal.directlyAtHome") : tr("serversModal.throughThisServer")})`).join(", ") })
         : tr("serversModal.yourOtherDevicesSyncLive")}
     </p>
   );

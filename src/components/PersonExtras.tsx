@@ -1,7 +1,7 @@
 // Profile additions (0.12): star, nickname, snooze, local time, online
 // history and best time to catch someone, earlier names, friends since,
 // VRChat's own note (editable), block reasons and invite actions.
-import { t as tr, weekdayNames, lazy } from "../i18n";
+import { t as tr, weekdayNames, lazy, language } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { describeHours, earlierNames, history, lastSeen, onlineShare, overlap, useHistory } from "../history";
 import { friendsSince } from "../insights";
@@ -71,7 +71,7 @@ export function NicknameAndSnooze({ id, name }: { id: string; name: string }) {
       )}
       <label className={`btn small ghost select-btn ${snoozed ? "on" : ""}`} title={tr("personExtras.pauseNotificationsAboutThem")}>
         <Icon name={snoozed ? "bell-off" : "clock"} size={14} />
-        {snoozed ? `Snoozed until ${new Date(until).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}` : "Snooze"}
+        {snoozed ? tr("personExtras.snoozedUntil", { when: new Date(until).toLocaleString(language(), { weekday: "short", hour: "2-digit", minute: "2-digit" }) }) : tr("personExtras.snooze")}
         <select
           value=""
           onChange={(e) => {
@@ -136,10 +136,10 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
         </p>
       )}
       <p className="small muted">
-        {tz.how === "set" && "You set this."}
-        {tz.how === "confirmed" && "You confirmed this suggestion."}
-        {tz.how === "shared" && `${name} shares their time zone through the app.`}
-        {tz.how === "suggested" && "A guess until you confirm it."}{" "}
+        {tz.how === "set" && tr("personExtras.tzSet")}
+        {tz.how === "confirmed" && tr("personExtras.tzConfirmed")}
+        {tz.how === "shared" && tr("personExtras.tzShared", { name })}
+        {tz.how === "suggested" && tr("personExtras.tzSuggested")}{" "}
         <button className="btn link small" onClick={() => setOpen(!open)}>
           {open ? "Close" : verified ? "Change" : tr("personExtras.whyAndOtherOptions")}
         </button>
@@ -452,7 +452,7 @@ export function InviteActions({ id, name, location, full, worldName }: { id: str
   };
   return (
     <div className="world-actions">
-      <button className="btn" disabled={busy || demo} onClick={() => send()} title={`Ask ${name} to invite you`}>
+      <button className="btn" disabled={busy || demo} onClick={() => send()} title={tr("personExtras.askToInvite", { name })}>
         <Icon name="user-plus" size={16} /> {tr("personExtras.requestInvite")}
       </button>
       {templates.length > 0 && (

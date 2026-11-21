@@ -1,4 +1,4 @@
-import { t as tr } from "../i18n";
+import { t as tr, tx } from "../i18n";
 import { enterDemo } from "../session";
 import { backend } from "../backend";
 import { setState, updateSettings, useApp } from "../store";
@@ -55,7 +55,7 @@ export function LoginScreen({ canLogin }: { canLogin: boolean }) {
             )}
           </div>
         ) : (
-          <p className="note">You're running the UI in a plain browser, so login isn't available. Start it with <code>{tr("login.npmRunTauriDev")}</code> {tr("login.toLogIn")}</p>
+          <p className="note">{tx("login.plainBrowser", { command: <code>npm run tauri dev</code> })}</p>
         )}
         {message && <p className="login-msg">{message}</p>}
         {busy && <p className="note">{tr("login.finishSigningInInThe")}</p>}

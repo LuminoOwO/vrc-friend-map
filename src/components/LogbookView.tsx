@@ -259,11 +259,11 @@ function VideoLink({ url }: { url: string }) {
 // ---------- rankings ----------
 
 const RANGES: [string, number][] = [
-  ["Last 7 days", 7],
-  ["Last 30 days", 30],
-  ["Last 90 days", 90],
-  ["Last year", 365],
-  ["All time", 0],
+  ["logbook.last7", 7],
+  ["logbook.last30", 30],
+  ["logbook.last90", 90],
+  ["logbook.lastYear", 365],
+  ["logbook.allTime", 0],
 ];
 
 function Stats({ visits }: { visits: TimelineVisit[] }) {
@@ -281,7 +281,7 @@ function Stats({ visits }: { visits: TimelineVisit[] }) {
         <select value={days} onChange={(e) => setDays(Number(e.target.value))}>
           {RANGES.map(([l, d]) => (
             <option key={d} value={d}>
-              {l}
+              {tr(l)}
             </option>
           ))}
         </select>
@@ -519,12 +519,12 @@ function YearInReview({ visits }: { visits: TimelineVisit[] }) {
   const added = log.filter((e) => e.type === "added" && new Date(e.t).getFullYear() === year).length;
   const canvas = useRef<HTMLCanvasElement>(null);
   const lines = [
-    `${fmtDuration(r.totalSecs)} in VRChat on ${r.days} days`,
-    `Top world: ${r.worlds[0]?.name ?? "–"}`,
-    `Most time with: ${r.people.slice(0, 3).map((p) => shownName(p.id, p.name)).join(", ") || "–"}`,
-    `${r.people.length} people met · ${added} new friends`,
-    `Longest session: ${r.longest[0] ? fmtDuration(r.longest[0].end - r.longest[0].start) : "–"} · best streak ${r.streak.best} days`,
-    `${r.shots} pictures · ${r.videos} videos`,
+    tr("logbook.yrTime", { time: fmtDuration(r.totalSecs), days: r.days }),
+    tr("logbook.yrWorld", { world: r.worlds[0]?.name ?? "–" }),
+    tr("logbook.yrPeople", { names: r.people.slice(0, 3).map((p) => shownName(p.id, p.name)).join(", ") || "–" }),
+    tr("logbook.yrMet", { people: r.people.length, added }),
+    tr("logbook.yrLongest", { time: r.longest[0] ? fmtDuration(r.longest[0].end - r.longest[0].start) : "–", days: r.streak.best }),
+    tr("logbook.yrPics", { shots: r.shots, videos: r.videos }),
   ];
   const save = () => {
     const c = canvas.current;

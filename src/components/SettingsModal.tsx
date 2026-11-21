@@ -1,4 +1,4 @@
-import { t as tr, lazy } from "../i18n";
+import { t as tr, lazy, tx } from "../i18n";
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LANGUAGES, MACHINE_TRANSLATED, languageName, resolveLanguage, useT } from "../i18n";
 import { NO_OWN_COLORS, type OwnColors } from "../owncolors";
@@ -506,7 +506,7 @@ export function SettingsModal() {
               </button>
             </p>
           ) : (
-            <p>Logged in as <b>{session?.display_name ?? "unknown"}</b>.</p>
+            <p>{tx("settings.loggedInAs", { name: <b>{session?.display_name ?? tr("settings.unknownName")}</b> })}</p>
           )}
           {!demo && (
             <div className="row">

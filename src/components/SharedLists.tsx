@@ -69,21 +69,21 @@ function parseImport(text: string): ExportFile {
   try {
     data = JSON.parse(text);
   } catch {
-    throw new Error("That isn't a valid export file (not JSON).");
+    throw new Error(tr("lists.notJson"));
   }
-  if (data?.format !== FORMAT) throw new Error("That file wasn't made by VRC Friend Map (unknown format).");
-  if (!data.owner || typeof data.owner.displayName !== "string") throw new Error("The file has no owner name.");
+  if (data?.format !== FORMAT) throw new Error(tr("lists.notOurs"));
+  if (!data.owner || typeof data.owner.displayName !== "string") throw new Error(tr("lists.noOwner"));
   if (data.mode === "full") {
-    if (!Array.isArray(data.friends) || data.friends.length > MAX_ENTRIES) throw new Error("The friend list in the file is missing or too large.");
+    if (!Array.isArray(data.friends) || data.friends.length > MAX_ENTRIES) throw new Error(tr("lists.badFriends"));
     data.friends = data.friends
       .filter((f) => f && typeof f.id === "string" && /^usr_[\w-]+$|^[A-Za-z0-9]{10}$/.test(f.id))
       .map((f) => ({ id: f.id, displayName: String(f.displayName ?? "").slice(0, 64) }));
   } else if (data.mode === "hashed") {
-    if (typeof data.salt !== "string" || data.salt.length < 16) throw new Error("The file's salt is missing.");
-    if (!Array.isArray(data.hashes) || data.hashes.length > MAX_ENTRIES) throw new Error("The hashed list is missing or too large.");
+    if (typeof data.salt !== "string" || data.salt.length < 16) throw new Error(tr("lists.noSalt"));
+    if (!Array.isArray(data.hashes) || data.hashes.length > MAX_ENTRIES) throw new Error(tr("lists.badHashes"));
     data.hashes = data.hashes.filter((h) => typeof h === "string" && /^[0-9a-f]{64}$/.test(h));
   } else {
-    throw new Error("Unknown export mode.");
+    throw new Error(tr("lists.unknownMode"));
   }
   data.owner = { id: typeof data.owner.id === "string" ? data.owner.id : undefined, displayName: data.owner.displayName.slice(0, 64) };
   return data;
@@ -112,7 +112,7 @@ async function importText(text: string) {
   };
   if (list.mode === "hashed") list.resolved = await resolveHashed(list);
   const me = getState().cache.me;
-  if (me && list.owner.id === me.id) throw new Error("That's your own export.");
+  if (me && list.owner.id === me.id) throw new Error(tr("lists.ownExport"));
   let replaced = false;
   updateLocal((l) => {
     const others = l.imports.filter((x) => !(list.owner.id && x.owner.id === list.owner.id));
@@ -258,7 +258,7 @@ export function SharedLists() {
                   const file = e.target.files?.[0];
                   e.target.value = "";
                   if (!file) return;
-                  if (file.size > 8 * 1024 * 1024) return setError("That file is too large.");
+                  if (file.size > 8 * 1024 * 1024) return setError(tr("lists.tooLarge"));
                   doImport(await file.text());
                 }}
               />

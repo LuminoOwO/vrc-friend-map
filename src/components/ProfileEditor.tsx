@@ -56,13 +56,13 @@ export function ProfileEditor({ id, onClose }: { id: string; onClose: () => void
     let stop = false;
     (async () => {
       if (demo) {
-        setError("Editing works with your own account (not in demo mode).");
+        setError(tr("profileEditor.notDemo"));
         return;
       }
       const r = await backend.vrcGet(`/profile/${encodeURIComponent(id)}`, { asSelf: true });
       if (stop) return;
       if (r.status !== 200 || !r.data) {
-        setError(`Couldn't load your profile (${r.status}).`);
+        setError(tr("profileEditor.couldntLoad", { status: r.status }));
         return;
       }
       const d = r.data;
@@ -116,7 +116,7 @@ export function ProfileEditor({ id, onClose }: { id: string; onClose: () => void
       const bad = res.find((r) => r.status < 200 || r.status >= 300);
       if (bad) {
         const msg = typeof bad.data === "object" && bad.data ? (bad.data.error?.message ?? bad.data.message) : "";
-        setError(`VRChat said no (${bad.status})${msg ? `: ${msg}` : ""}`);
+        setError(msg ? tr("profileEditor.saidNoMsg", { status: bad.status, message: msg }) : tr("profileEditor.saidNo", { status: bad.status }));
       } else {
         showToast(tr("profileEditor.profileSaved"));
         await fetchProfile(id).catch(() => {});

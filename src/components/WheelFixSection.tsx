@@ -28,10 +28,10 @@ export function WheelFixSection() {
       <p className="small muted">
         On some X11 systems (seen with XLibre) the web view never gets the wheel. This reads the wheel from the X server instead, only when
         the web view got nothing, so nothing scrolls twice. Also on with the start option <code>--wheel-fix</code>.
-        {st?.forced && " On now because the app was started with --wheel-fix."}
+        {st?.forced && tr("wheelFix.forced")}
         {st?.auto && !st.forced &&
-          " On by default in this build, since Chromium here can miss the wheel completely. Unticking turns it off until the app restarts; to keep it off, start the app with VRC_FRIEND_MAP_WHEEL_FIX=0."}
-        {st && st.enabled && !st.running && " It couldn't start here (no X11 display); see the terminal output."}
+          tr("wheelFix.auto")}
+        {st && st.enabled && !st.running && tr("wheelFix.noX11")}
       </p>
     </>
   );

@@ -78,8 +78,8 @@ export function PlaytimeSection() {
           : p === null
             ? tr("extras.noVrchatPlayTimeFound")
             : tr("extras.steamSaysValueHValue2", { value: hours!.toLocaleString("en-US"), value2: Math.round(p.two_weeks / 60) })}
-        {hours !== null && !x.playtime.template.includes("{hours}") && " The template needs {hours}."}
-        {hours !== null && preview === null && " Your bio would get longer than 512 characters, so it's left alone."}
+        {hours !== null && !x.playtime.template.includes("{hours}") && tr("extras.templateNeeds")}
+        {hours !== null && preview === null && tr("extras.bioTooLong")}
       </p>
     </>
   );

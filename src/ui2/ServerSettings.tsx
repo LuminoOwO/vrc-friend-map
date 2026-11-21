@@ -170,7 +170,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
 
       {s.registered && (
         <>
-          <Section icon="upload" title={tr("serverSettings.whatIShareHere")} help="Goes only to the friends you pick, and only if they joined this server too. These choices follow you to your other devices (when they sync your devices).">
+          <Section icon="upload" title={tr("serverSettings.whatIShareHere")} help={tr("serverSettings.goesOnlyToTheFriends")}>
             <Check
               id={`up-${s.id}`}
               checked={s.upload}
@@ -239,13 +239,13 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
             />
           </Section>
 
-          <Section icon="desktop" title={tr("serverSettings.myOtherDevices")} help="Your circles, notes, stars and nicknames, encrypted for you only; the server can't read them.">
+          <Section icon="desktop" title={tr("serverSettings.myOtherDevices")} help={tr("serverSettings.yourCirclesNotesStarsAnd")}>
             <Check id={`me-${s.id}`} checked={s.syncMine} onChange={(v) => set({ syncMine: v })} label={tr("serverSettings.syncMyDevicesThroughThis")} />
             {s.syncMine && s.info?.deviceRelay && <MyDevices url={s.url} />}
           </Section>
 
           {info?.loggerEnabled && (
-            <Section icon="clock" title={tr("serverSettings.n247Logger")} help="The server watches where your friends are, around the clock, so time together keeps counting while your PC is off.">
+            <Section icon="clock" title={tr("serverSettings.n247Logger")} help={tr("serverSettings.theServerWatchesWhereYour")}>
               {s.loggerOwner ? (
                 <>
                   {(s.loggerExpired || logger?.expired) && (
@@ -269,7 +269,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
                         {logger.friends} friends online · {logger.pairs} pairs seen together since {fmtDate(logger.since * 1000)}
                       </>
                     ) : (
-                      "Paired with you."
+                      tr("serverSettings.pairedWithYou")
                     )}
                   </p>
                   <div className="row">
