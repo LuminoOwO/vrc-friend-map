@@ -276,7 +276,7 @@ tray. On hold: Discord rich presence.
   keyboard navigation. (2026-11-21: every control has a name, focus rings show, dialogs take,
   keep and return the focus (`src/focustrap.ts`). Arrow keys in the menus and around the map (`src/mapkeys.ts`)
   done too. First screen-reader pass done (dialogs modal + named, pressed states,
-  landmarks). Still open: arrow keys inside long lists (cards, activity), testing with a real screen reader (Orca / NVDA / TalkBack).)
+  landmarks). Arrow keys in People cards, Activity and Online now done. Still open: testing with a real screen reader (Orca / NVDA / TalkBack).)
 - [x] **Easier server connections.** (Invite links done; the server settings are sorted by purpose in the beta UI.) (Owner, 2026-11-18: setting one up is confusing.) Joining
   should be one step: the admin page makes an invite link that holds the address and the invite
   code, and the app opens it (paste or share) and joins. In the app, the server settings start

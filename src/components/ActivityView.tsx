@@ -195,7 +195,7 @@ export function ActivityView() {
         days.map((d) => (
           <section key={d.day} className="activity-day">
             <h3>{d.day}</h3>
-            <ul>
+            <ul data-arrows="v">
               {d.items.map((e) => (
                 <li key={e.key} className={`act act-${e.kind} ${e.initial ? "initial" : ""}`}>
                   <span className="act-time">{timeOf(e.t)}</span>

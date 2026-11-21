@@ -75,7 +75,7 @@ export function OnlineNow({ onOpen, side = "right" }: { onOpen: (key: string) =>
   }, [spots]);
   if (!spots.length) return <p className="small muted ui2-side-empty">Nobody is online right now.</p>;
   return (
-    <div className="ui2-spots" ref={smooth}>
+    <div className="ui2-spots" ref={smooth} data-arrows="v">
       {spots.map((s) => (
         <SpotRow key={s.key} spot={s} side={side} onOpen={() => onOpen(s.key)} />
       ))}

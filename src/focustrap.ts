@@ -9,6 +9,8 @@
 // The view frame on computers isn't modal (the menu and the party stay usable): focus moves into
 // it and back, but Tab isn't kept inside.
 
+import { nextInDirection } from "./mapkeys";
+
 export const DIALOG_SELECTOR = ".profile-backdrop, .ui2-world-wrap, .modal-backdrop, .ui2-fullsheet";
 const FRAME_SELECTOR = ".lob-frame";
 const ANY_SELECTOR = `${DIALOG_SELECTOR}, ${FRAME_SELECTOR}`;
@@ -107,19 +109,42 @@ function closed(el: HTMLElement) {
   tryBack();
 }
 
-/** Arrow keys inside a menu marked data-arrows="v" (up/down) or "h" (left/right), plus Home/End. */
+/** Arrow keys inside a menu or list marked data-arrows="v" (up/down), "h" (left/right) or "2d"
+ *  (a grid: to the nearest item in that direction), plus Home/End. */
 function onArrows(e: KeyboardEvent): boolean {
   const active = document.activeElement as HTMLElement | null;
   const menu = active?.closest<HTMLElement>("[data-arrows]");
   if (!menu || e.ctrlKey || e.metaKey || e.altKey) return false;
   if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return false;
+  // The items: the menu's own buttons (or role=button cards), not buttons nested inside an item.
+  const items = focusables(menu).filter((x) => (x.tagName === "BUTTON" || x.getAttribute("role") === "button") && !x.parentElement?.closest("[role=button]"));
+  const i = items.indexOf(active as HTMLElement);
+  if (i < 0 || !items.length) return false;
+  if (menu.dataset.arrows === "2d") {
+    const dir = ({ ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" } as const)[e.key as "ArrowLeft"];
+    if (!dir && e.key !== "Home" && e.key !== "End") return false;
+    let to: HTMLElement | undefined;
+    if (e.key === "Home") to = items[0];
+    else if (e.key === "End") to = items[items.length - 1];
+    else {
+      const mid = (el: HTMLElement) => {
+        const r = el.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      };
+      const pts = items.map((el, k) => ({ id: String(k), ...mid(el) }));
+      const next = nextInDirection(pts[i], dir, pts);
+      to = next != null ? items[Number(next)] : undefined;
+    }
+    if (to) {
+      to.focus();
+      to.scrollIntoView({ block: "nearest" });
+    }
+    return true;
+  }
   const v = menu.dataset.arrows === "v";
   const prev = v ? "ArrowUp" : "ArrowLeft";
   const next = v ? "ArrowDown" : "ArrowRight";
   if (![prev, next, "Home", "End"].includes(e.key)) return false;
-  const items = focusables(menu).filter((x) => x.tagName === "BUTTON");
-  const i = items.indexOf(active as HTMLElement);
-  if (i < 0 || !items.length) return false;
   const to = e.key === "Home" ? 0 : e.key === "End" ? items.length - 1 : e.key === next ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
   items[to].focus();
   return true;

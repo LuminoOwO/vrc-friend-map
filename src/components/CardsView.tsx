@@ -112,7 +112,7 @@ export function CardsView() {
           <h3>
             {g.label} <span className="muted">{g.items.length}</span>
           </h3>
-          <div className="card-grid">
+          <div className="card-grid" data-arrows="2d">
             {g.items.slice(0, Math.max(0, shown - before[gi])).map((f) => (
               <FriendCard
                 key={f.id}

@@ -15,7 +15,8 @@ minor releases can change behavior.
 - **The map works with the keyboard:** Tab to it, then the arrow keys move from person to
   person (starting from you; the hover card follows and the map pans along), Enter opens the
   profile, Esc lets go. Screen readers hear the name. Arrow keys (and Home/End) also move through
-  the menu on computers, the Settings list and the phone's tabs.
+  the menu on computers, the Settings list and the phone's tabs, from card to card in People (to
+  the nearest card in that direction), and through Activity and Online now.
 - **Screen readers:** popups and dialogs say they're dialogs and that the page behind doesn't
   count (and get their heading as a name if they had none); choice rows (filters, VRChat tabs,
   invite messages) say which option is on; the computer layout has a main area and a page title.
