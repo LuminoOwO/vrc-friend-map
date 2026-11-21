@@ -5,6 +5,29 @@ minor releases can change behavior.
 
 ## Unreleased
 
+### Phones (new interface)
+- **Same look as on computers:** the title bar of a view's frame (big italic title, accent line),
+  flat panels, the computer's view styles. Bottom tabs: **Map, People, Party, Insights, Menu**,
+  flat with an accent bar on the active one and more room under the names.
+- **Party** tab: the computer's side panel (you, where you are, overview, online now, activity).
+- **Menu** tab: the computer's big menu (Activity, Logbook, VRChat, Shared lists, Servers,
+  Settings), with Sync now and the sync log.
+- **Profiles open full screen** (the computer's profile); the back gesture closes them.
+- **Settings** work like a phone's own: a list of pages first, then one page at a time with a
+  "‹ Settings" bar; the back gesture goes back to the list. Search shows its matches right under
+  the search box.
+- **People:** one friend per row (full name, status, rank, time online, mutuals, banner as a strip
+  on the right). No more "drag onto the sidebar" hint. Search and filters are in the title bar.
+- **Map:** "fit" and "Map options" as round buttons at the bottom right (pinch zooms); map options
+  open as a bottom sheet.
+- **Filters:** each label above its choices, bigger chips, Reset/Done stuck to the bottom.
+  The first "Status" filter is now called "Show" (All / Online / Offline).
+- **World popup:** title gets the full width, Join and World details below it; the close button
+  stays put while scrolling.
+- Activity, Logbook, VRChat and Shared lists have a back arrow in the title bar; the back gesture
+  works there too. Tab rows in views scroll sideways instead of wrapping.
+- Notification sounds: switch, sound and play button on one line.
+
 ### Fixed (new interface)
 - One failed sync no longer turns a server red at once: it shows as retrying, and only turns red
   when syncing keeps failing.

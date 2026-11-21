@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { NO_OWN_COLORS, type OwnColors } from "../owncolors";
 import { scoreSection } from "../settingsSearch";
-import { backend, imgSrc, type GraphicsInfo, type GraphicsMode } from "../backend";
+import { backend, imgSrc, isMobile, type GraphicsInfo, type GraphicsMode } from "../backend";
 import { iconUrl, STATUS_LABEL, statusColor } from "../model";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, wipeEverything } from "../session";
@@ -264,6 +264,9 @@ export function SettingsModal() {
   const sections = useRef(new Map<string, { cat: Cat; title: string; keys: string; el: HTMLElement | null }>());
   const bodyRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  // Phones (new interface): a list of pages first, like a phone's own settings; one page at a time.
+  const phone = betaActive() && isMobile;
+  const [phoneList, setPhoneList] = useState(true);
 
   useEffect(() => {
     backend.storageInfo().then(setInfo).catch(() => setInfo(null));
@@ -275,11 +278,32 @@ export function SettingsModal() {
     if (tab !== "general") {
       const id = tab;
       const c = betaActive() ? (BETA_OF[id] ?? null) : (sections.current.get(id)?.cat ?? (id === "groups" || id === "logs" ? "logs" : null));
-      if (c) setCat(c);
+      if (c) {
+        setCat(c);
+        setPhoneList(false);
+      }
       requestAnimationFrame(() => sections.current.get(id)?.el?.scrollIntoView({ block: "start" }));
       setState({ settingsTab: "general" });
     }
   }, [tab]);
+
+  // Phones: each page opens at its top (the body keeps its scroll while hidden behind the list).
+  useLayoutEffect(() => {
+    if (phone && !phoneList) bodyRef.current?.scrollTo({ top: 0 });
+  }, [phone, phoneList, cat]);
+
+  // Phones: the back gesture on a page goes back to the list (one history entry per open page;
+  // left another way, the entry stays but is neutralized, as with the person sheet).
+  useEffect(() => {
+    if (!phone || phoneList) return;
+    if (!history.state?.vfmSetPage) history.pushState({ vfmSetPage: true }, "");
+    const onPop = () => setPhoneList(true);
+    window.addEventListener("popstate", onPop);
+    return () => {
+      window.removeEventListener("popstate", onPop);
+      if (history.state?.vfmSetPage) history.replaceState(null, "");
+    };
+  }, [phone, phoneList]);
 
   // Search: each section's own text plus its keywords and synonyms.
   useLayoutEffect(() => {
@@ -298,6 +322,7 @@ export function SettingsModal() {
   const pick = (c: string) => {
     setQuery("");
     setCat(c);
+    setPhoneList(false);
     bodyRef.current?.scrollTo({ top: 0 });
   };
   const ranked = scores ? Object.entries(scores).sort((a, b) => b[1] - a[1]) : [];
@@ -306,6 +331,7 @@ export function SettingsModal() {
     if (!sec) return;
     setQuery("");
     setCat(betaActive() ? (BETA_OF[id] ?? "appearance") : sec.cat);
+    setPhoneList(false);
     requestAnimationFrame(() => sec.el?.scrollIntoView({ block: "start", behavior: "smooth" }));
   };
   const ctx: SecCtx = {
@@ -343,8 +369,25 @@ export function SettingsModal() {
   const page = BETA_PAGES.find((p) => p.id === cat) ?? BETA_PAGES[2];
 
   return (
-    <div className={`modal-backdrop ${beta ? "ui2-settings" : ""}`} onMouseDown={(e) => e.target === e.currentTarget && close()}>
+    <div
+      className={`modal-backdrop ${beta ? "ui2-settings" : ""} ${phone ? (phoneList ? `ph-list ${scores ? "searching" : ""}` : "ph-page") : ""}`}
+      onMouseDown={(e) => e.target === e.currentTarget && close()}
+    >
       <div className="modal settings-modal" role="dialog" aria-label="Settings">
+        {phone && (
+          <div className="ui2-set-bar">
+            {phoneList ? (
+              <h2>Settings</h2>
+            ) : (
+              <button className="ui2-set-back" onClick={() => setPhoneList(true)}>
+                <Icon name="chevron-left" size={20} /> Settings
+              </button>
+            )}
+            <button className="icon-btn" aria-label="Close settings" onClick={close}>
+              <Icon name="close" />
+            </button>
+          </div>
+        )}
         {!beta && (
         <div className="modal-head settings-head">
           <h2>Settings</h2>
@@ -374,6 +417,7 @@ export function SettingsModal() {
                           <Icon name={p.icon} size={18} />
                           <span>{p.label}</span>
                           {scores && hits > 0 && <span className="settings-hits">{hits}</span>}
+                          {phone && <Icon name="chevron-right" size={16} />}
                         </button>
                       );
                     })}
@@ -723,7 +767,7 @@ export function SettingsModal() {
         </Sec>
             </SecContext.Provider>
             </div>
-            {beta && (
+            {beta && !phone && (
               <div className="ui2-set-close">
                 <button onClick={close} title="Close (Esc)" aria-label="Close settings">
                   <Icon name="close" size={18} />

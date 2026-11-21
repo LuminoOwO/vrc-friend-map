@@ -105,7 +105,7 @@ export function CardsView() {
         <label className="check">
           <input type="checkbox" checked={grouped} onChange={(e) => setGrouped(e.target.checked)} /> Group by online status
         </label>
-        <span className="muted">Drag a card onto a circle in the sidebar to add them.</span>
+        <span className="muted cards-hint">Drag a card onto a circle in the sidebar to add them.</span>
       </div>
       {groups.map((g, gi) => (
         <section key={g.key} className="card-group">

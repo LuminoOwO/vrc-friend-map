@@ -121,7 +121,7 @@ function Frame({ view, onClose }: { view: View; onClose: () => void }) {
 }
 
 /** You at the top of the party, with your banner fading in from the right. */
-function MeCard() {
+export function MeCard() {
   const banner = useApp((s) => (s.cache.me?.profile ? imgSrc(bannerUrl(s.cache.me.profile)) : undefined));
   return (
     <div className="lob-me">

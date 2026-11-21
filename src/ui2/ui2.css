@@ -17,36 +17,15 @@
 
 /* ---------- phone ---------- */
 .ui2-phone-shell { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.ui2-phone-top { display: flex; gap: 8px; align-items: center; padding: calc(env(safe-area-inset-top, 0px) + 8px) 10px 8px; background: var(--panel); border-bottom: 1px solid var(--border); }
-.ui2-search.phone { flex: 1; min-width: 0; height: 42px; border-radius: 21px; padding-right: 4px; }
 .ui2-phone-main { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; overflow: hidden; }
-.ui2-tabs { display: flex; background: var(--panel); border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.ui2-tab { position: relative; flex: 1; min-height: 70px; border: 0; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font: inherit; font-size: 11px; }
-.ui2-tab.on { color: var(--accent-strong); }
-.ui2-tab.on::before { content: ""; position: absolute; top: 8px; width: 72px; height: 34px; border-radius: 17px; background: var(--accent-soft); z-index: -1; }
-.ui2-tab .ui2-dot { right: calc(50% - 22px); top: 4px; }
 .ui2-page { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
-.ui2-me-card { display: flex; gap: 14px; align-items: center; text-align: left; padding: 14px; border-radius: 16px; border: 1px solid var(--border); background: var(--card); color: var(--text); font: inherit; }
-.ui2-list { list-style: none; margin: 0; padding: 0; border-radius: 16px; border: 1px solid var(--border); background: var(--card); overflow: hidden; }
-.ui2-list li + li { border-top: 1px solid var(--border); }
-.ui2-list button { width: 100%; min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 0 14px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; }
 .ui2-fullsheet { position: fixed; inset: 0; z-index: 90; background: var(--bg); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); }
 .ui2-fullsheet-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--border); }
 .ui2-fullsheet-head h2 { margin: 0; font-size: 18px; }
 .ui2-filters-inline { flex: 1; overflow-y: auto; position: static; }
 .ui2-filters-inline > * { position: static !important; width: auto !important; max-width: none !important; max-height: none !important; box-shadow: none !important; border: 0 !important; transform: none !important; }
-.ui2-sheet-wrap { position: fixed; inset: 0; z-index: 60; background: rgba(0, 0, 0, 0.25); display: flex; align-items: flex-end; }
-.ui2-sheet { width: 100%; background: var(--panel); border-radius: 18px 18px 0 0; box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.3); display: flex; flex-direction: column; transition: height 0.22s ease; overflow: hidden; }
-.ui2-sheet.dragging { transition: none; }
-.ui2-handle { flex: none; height: 26px; display: grid; place-items: center; touch-action: none; cursor: grab; }
-.ui2-handle span { width: 40px; height: 5px; border-radius: 3px; background: var(--border-strong); }
-.ui2-sheet-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.ui2-sheet-body .profile { position: relative !important; inset: auto !important; width: auto; height: auto; max-height: none; flex: 1; min-height: 0; border: 0; border-radius: 0; z-index: auto; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 .ui2-phone button, .ui2-phone .icon-btn { min-height: 40px; }
 
-[data-motion="reduce"] .ui2-sheet { transition: none; }
-@media (prefers-reduced-motion: reduce) { :root:not([data-motion="full"]) .ui2-sheet { transition: none; } }
-.ui2-sheet-body .profile-close { position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; }
 
 /* Settings → Sharing & servers (src/ui2/ServersPage.tsx) */
 .ui2-servers { display: grid; gap: 18px; }
@@ -90,9 +69,58 @@
 .ui2-srvsettings .check span { display: inline; }
 
 /* ---------- phone: Online now in People ---------- */
-.ui2-phone-people { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.ui2-phone-people > .ui2-part.open .ui2-part-body { max-height: 34vh; display: flex; flex-direction: column; }
-.ui2-phone-cards { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; }
+/* Phone filters (full screen): each label above its controls, chips big enough to tap,
+   Reset/Done stuck to the bottom. */
+.ui2-filters-inline > .popover.filters { padding: 8px 16px 0 !important; }
+.ui2-filters-inline .frow { flex-direction: column; align-items: stretch; gap: 8px; margin: 0; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.ui2-filters-inline .flabel { width: auto; font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+.ui2-filters-inline .frow select { min-height: 44px; font-size: 15px; }
+.ui2-filters-inline .chips { gap: 8px; }
+.ui2-filters-inline .chip { min-height: 38px; padding: 0 14px; font-size: 14px; }
+.ui2-filters-inline .seg { align-self: stretch; display: flex; }
+.ui2-filters-inline .seg button { flex: 1; min-height: 40px; font-size: 14px; }
+.ui2-filters-inline .check { min-height: 48px; margin: 0; font-size: 15px; border-bottom: 1px solid var(--border); }
+.ui2-filters-inline .frow.end { position: sticky; bottom: 0; flex-direction: row; justify-content: stretch; gap: 10px; margin: 0 -16px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--bg); border-top: 1px solid var(--border); border-bottom: 0; }
+.ui2-filters-inline .frow.end .btn { flex: 1; min-height: 46px; justify-content: center; font-size: 15px; }
+.ui2-filters-inline .frow.end .btn:last-child { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+
+/* Phone world popup: the title gets the full width, Join and World details below it. */
+.ui2-phone .ui2-world-title { padding: 16px 16px 0; gap: 12px; }
+.ui2-phone .ui2-world-title .ui2-grow { flex: 1 1 100%; }
+.ui2-phone .ui2-world-title h2 { font-size: 24px; }
+.ui2-phone .ui2-world-actions { flex: 1 1 100%; }
+.ui2-phone .ui2-world-actions .btn { flex: 1; height: 46px; justify-content: center; font-size: 15px; }
+
+/* Phone map: pinch zooms, so only "fit" and the options stay, as round buttons bottom right
+   (thumb reach); map options open as a bottom sheet. */
+.ui2-phone .graph-controls { top: auto; right: 12px; bottom: 14px; flex-direction: column-reverse; gap: 10px; z-index: 6; }
+.ui2-phone .zoom-btns .icon-btn:not(:last-child) { display: none; }
+.ui2-phone .graph-controls .icon-btn, .ui2-phone .graph-controls .btn.small.keep { width: 48px; height: 48px; min-height: 0; padding: 0; justify-content: center; border-radius: 50% !important; border: 1px solid var(--border-strong); background: color-mix(in srgb, var(--panel) 94%, transparent); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); font-size: 0; gap: 0; }
+.ui2-phone .graph-controls .btn.small.keep svg { width: 20px; height: 20px; }
+.ui2-phone .graph-controls .btn.small.keep.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
+.ui2-phone .graph-controls :active { transform: scale(0.94); }
+.ui2-phone .map-options { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 72%; padding: 6px 16px calc(16px + env(safe-area-inset-bottom, 0px)); border-radius: 18px 18px 0 0; border-width: 1px 0 0; box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.45); font-size: 14px; background: var(--panel); animation: ui2-sheet-up 0.24s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ui2-phone .map-options-head { position: sticky; top: -6px; z-index: 1; margin: 0 -16px 8px; padding: 10px 10px 8px 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.ui2-phone .map-options-head b { font-size: 17px; }
+.ui2-phone .map-options-head .icon-btn { width: 40px; height: 40px; }
+@keyframes ui2-sheet-up { from { transform: translateY(40%); opacity: 0; } }
+
+.ui2-phone .cards-hint { display: none; }
+.ui2-phone .cards-toolbar select { min-height: 36px; }
+/* Phones: one friend per row; the banner as a faded strip on the right. */
+.ui2-phone .card-grid { grid-template-columns: 1fr; gap: 8px; }
+.ui2-phone .fcard { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "body foot" "meta meta"; contain-intrinsic-size: auto 96px; border-radius: 14px; }
+.ui2-phone .fcard:active { transform: scale(0.985); }
+.ui2-phone .fcard-banner { position: absolute; top: 0; right: 0; bottom: 0; width: 55%; height: auto; -webkit-mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.35) 55%, #000); mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.35) 55%, #000); }
+.ui2-phone .fcard-banner .fav { left: auto; right: 8px; top: auto; bottom: 6px; }
+.ui2-phone .fcard-body { grid-area: body; margin: 0; padding: 12px 0 0 12px; align-items: center; gap: 12px; min-width: 0; }
+.ui2-phone .fcard-icon { width: 52px; height: 52px; font-size: 18px; }
+.ui2-phone .fcard-text { margin-top: 0; }
+.ui2-phone .fcard-name { font-size: 16px; }
+.ui2-phone .fcard-status { font-size: 13px; }
+.ui2-phone .fcard-foot { grid-area: foot; position: relative; flex-direction: column; align-items: flex-end; justify-content: flex-end; gap: 4px; padding: 32px 12px 0 8px; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); }
+.ui2-phone .fcard-meta { grid-area: meta; position: relative; flex-direction: row; flex-wrap: wrap; justify-content: flex-start; gap: 0 10px; padding: 4px 12px 12px 76px; }
+.ui2-phone .fcard-meta > span + span::before { content: "·"; margin-right: 10px; color: var(--muted); }
 .ui2-phone .ui2-world-wrap { padding: 0; align-items: stretch; }
 .ui2-phone .ui2-world { width: 100%; max-height: none; border-radius: 0; border: 0; padding-top: env(safe-area-inset-top, 0px); }
 .ui2-expired { display: grid; gap: 6px; padding: 10px; margin-bottom: 8px; border: 1px solid var(--danger); border-radius: 8px; }
@@ -351,6 +379,48 @@
   .ui2-set-close { padding: 20px 12px 0 0; }
 }
 
+/* Phones: a list of pages first (.ph-list), then one page with a back bar (.ph-page). */
+.ui2-settings.ph-list .settings-modal, .ui2-settings.ph-page .settings-modal { display: flex; flex-direction: column; }
+.ui2-set-bar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; padding: env(safe-area-inset-top, 0px) 8px 0 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
+.ui2-set-bar h2 { margin: 0; font-size: 20px; font-weight: 800; }
+.ui2-set-back { display: inline-flex; align-items: center; gap: 2px; margin-left: -8px; padding: 0 10px 0 2px; border: 0; border-radius: 8px; background: none; color: var(--accent); font: inherit; font-size: 16px; font-weight: 700; }
+.ui2-set-back:active { background: var(--card-hover); }
+.ph-list .settings-layout, .ph-page .settings-layout { flex: 1; min-height: 0; flex-direction: column; height: auto; }
+.ph-list .ui2-set-side { flex: 1; max-height: none; min-height: 0; background: var(--bg); }
+.ph-list .settings-body { display: none; }
+.ph-page .ui2-set-side { display: none; }
+.ph-page .settings-body { flex: 1; min-height: 0; height: auto; }
+.ph-list .settings-nav { width: 100%; height: 100%; padding: 12px 12px calc(24px + env(safe-area-inset-bottom, 0px)); gap: 0; }
+.ph-list .settings-search { height: 44px; margin-bottom: 4px; background: var(--card); border-radius: 12px; padding: 0 12px; }
+.ph-list .settings-search input { font-size: 16px; }
+.ph-list .settings-account { margin: 8px 0 4px; padding: 12px; border-radius: 14px; background: var(--card); }
+.ph-list .settings-nav > * { flex-shrink: 0; }
+.ph-list .settings-search { order: 0; flex-basis: auto; }
+.ph-list .settings-group { gap: 0; margin-top: 4px; }
+.ph-list .settings-group-head { padding: 18px 0 8px 6px; }
+.ph-list .settings-cat { margin: 0; min-height: 52px; padding: 0 14px; border-radius: 0; font-size: 16px; color: var(--text); width: 100%; background: var(--card); border: 1px solid var(--border); white-space: normal; }
+.ph-list .settings-cat + .settings-cat { border-top: 0; box-shadow: inset 0 1px 0 var(--border); }
+.ph-list .settings-group > .settings-cat:first-child, .ph-list .settings-group-head + .settings-cat { border-radius: 14px 14px 0 0; }
+.ph-list .settings-group > .settings-cat:last-child { border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; }
+.ph-list .settings-group > .settings-cat:only-child, .ph-list .settings-group-head + .settings-cat:last-child { border-radius: 14px; }
+.ph-list .settings-cat.on { background: var(--card); font-weight: 600; }
+.ph-list .settings-cat > span { flex: 1; text-align: left; }
+.ph-list .settings-cat > svg:first-child { color: var(--accent); }
+.ph-list .settings-cat > svg:last-child { color: var(--muted); }
+.ph-list .settings-cat.on { background: none; }
+.ph-list .settings-cat:active { background: var(--card-hover); }
+/* Searching on the list: the matches show below the search box instead of the pages. */
+.ph-list.searching .ui2-set-side { flex: none; }
+.ph-list.searching .settings-group, .ph-list.searching .settings-account { display: none; }
+.ph-list.searching .settings-nav { padding-bottom: 0; }
+.ph-list.searching .settings-body { display: flex; flex: 1; min-height: 0; height: auto; }
+.ph-list .ui2-set-page, .ph-page .ui2-set-page { padding: 18px 16px calc(40px + env(safe-area-inset-bottom, 0px)); max-width: none; min-width: 0; }
+.ph-page .ui2-page-head h1 { font-size: 22px; }
+.ph-page .ui2-page-icon { width: 36px; height: 36px; }
+.ui2-phone .ui2-settings .row { flex-wrap: wrap; }
+.ui2-phone .ui2-settings .field.narrow { flex: 1 1 100%; max-width: none; }
+.ui2-phone .ui2-range { max-width: none; }
+
 /* ================= profile popup (src/components/DetailPanel.tsx, new interface) ================= */
 .profile.popup.ui2-profile { width: min(1040px, 94vw); padding: 0; border-radius: 18px; border: 1px solid var(--border); background: var(--profile-bg); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6); }
 .ui2-profile .profile-hero { position: relative; }
@@ -423,3 +493,82 @@
 @media (prefers-reduced-motion: reduce) { :root:not([data-motion="full"]) .ui2 *, :root:not([data-motion="full"]) .ui2 *::after { animation: none !important; transition: none !important; } }
 .ui2-world-wrap { overflow-y: auto; align-items: flex-start; }
 .ui2-world { margin: auto 0; max-height: none; }
+/* Phone world popup: the close button stays put while the page scrolls. */
+.ui2-phone .ui2-world .ui2-close { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; }
+/* Phone: tab rows inside views stay one row and scroll sideways instead of wrapping. */
+.ui2-phone .seg.logbook-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.ui2-phone .seg.logbook-tabs button { flex: none; white-space: nowrap; min-height: 40px; padding: 0 14px; }
+/* Phone settings → notifications: switch, sound and play button on one line. */
+.ui2-phone .notify-event { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; min-height: 52px; }
+.ui2-phone .notify-event .check { display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 12px; row-gap: 0; align-items: center; }
+.ui2-phone .notify-event .check .small { grid-column: 2; }
+.ui2-phone .notify-event select { max-width: 124px; min-height: 40px; }
+.ui2-phone .notify-event .icon-btn { width: 40px; height: 40px; }
+
+/* ================= phones, in the computer's look =================
+   Title bar like a view's frame, the party and the big menu as tabs, flat panels. */
+.ui2-phone-top { flex: none; display: flex; align-items: center; gap: 2px; min-height: 56px; padding: env(safe-area-inset-top, 0px) 6px 0 16px; background: var(--panel); border-bottom: 2px solid var(--accent); }
+.ui2-phone-top h1 { flex: 1; min-width: 0; margin: 0; font-size: 22px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui2-phone-top:has(.back) { padding-left: 4px; }
+.ui2-top-btn { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 8px; background: none; color: var(--muted); }
+.ui2-top-btn:active { background: var(--card-hover); color: var(--text); }
+.ui2-top-btn.back { color: var(--accent); }
+.ui2-phone-find { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; height: 40px; margin-right: 4px; padding: 0 4px 0 12px; border-radius: 8px; background: var(--bg); border: 1px solid var(--accent); color: var(--muted); animation: ui2-fade 0.15s ease-out; }
+.ui2-phone-find input { flex: 1; min-width: 0; border: 0; background: none; padding: 0; color: var(--text); font: inherit; font-size: 16px; outline: none; box-shadow: none; }
+.ui2-phone-find button { width: 34px; height: 34px; min-height: 0; display: grid; place-items: center; border: 0; background: none; color: var(--muted); }
+.ui2-phone-view { flex: 1; min-height: 0; position: relative; display: flex; flex-direction: column; animation: ui2-fade 0.2s ease-out; }
+.ui2-phone .ui2-page { animation: ui2-fade 0.2s ease-out; }
+
+/* Bottom tabs: flat like VRChat's menu; the active one in the accent colour with a bar on top. */
+.ui2-tabs { flex: none; display: flex; background: var(--panel); border-top: 1px solid var(--border); padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); }
+.ui2-tab { position: relative; flex: 1; min-height: 62px; padding-top: 6px; border: 0; background: none; color: var(--muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font: inherit; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; transition: color 0.15s; }
+.ui2-tab::before { content: ""; position: absolute; top: -1px; left: 50%; width: 0; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); transform: translateX(-50%); transition: width 0.22s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ui2-tab.on { color: var(--accent); }
+.ui2-tab.on::before { width: 44%; }
+.ui2-tab:active svg { transform: scale(0.9); }
+.ui2-tab svg { transition: transform 0.12s; }
+.ui2-tab .ui2-dot { right: calc(50% - 22px); top: 4px; }
+
+/* Views: the computer's frame padding is 26 px; phones use 14. */
+.ui2-phone .ui2-phone-main .activity-view, .ui2-phone .ui2-phone-main .cards-view, .ui2-phone .ui2-phone-main .lists-view { padding: 0 14px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.ui2-phone .ui2-phone-main .activity-bar, .ui2-phone .ui2-phone-main .cards-toolbar, .ui2-phone .ui2-phone-main .day-nav, .ui2-phone .ui2-phone-main .logbook-tabs, .ui2-phone .ui2-phone-main .vrc-bar { margin: 0 -14px; padding: 10px 14px; }
+.ui2-phone .ui2-phone-main .insights { padding: 14px; }
+
+/* People: one friend per row, flat like the computer's cards. */
+.ui2-phone .fcard { border-radius: 8px; border-color: var(--v-line); background: var(--v-panel); box-shadow: none; }
+
+/* Party: as on computers. Everything in one scrolling page. */
+.ui2-phone-party { gap: 14px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+.ui2-phone-party .lob-me { position: relative; overflow: hidden; }
+.ui2-phone-party .lob-me .ui2-top-me { height: 64px; padding: 0 14px; }
+.ui2-phone-party .ui2-where { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); border-radius: 8px; }
+.ui2-phone-party .ui2-tiles .filter-chip, .ui2-phone-party .ui2-tiles .stat-static { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); }
+.ui2-phone-party .ui2-part, .ui2-phone-party .ui2-part.growable { flex: none !important; min-height: 0; }
+.ui2-phone-party .ui2-part.growable > .ui2-part-content { overflow: visible; }
+.ui2-phone-party .ui2-part-title { font-size: 12px; padding: 4px 2px 10px; }
+
+/* Menu: the computer's big menu. */
+.ui2-phone-menu { gap: 0; padding: 26px 18px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.ui2-menu-logo { margin: 0 0 22px 2px; }
+.ui2-menu-logo .lob-logo-text { opacity: 1; transform: none; color: var(--text); }
+.ui2-menu-logo .lob-logo-text b { font-size: 26px; }
+.ui2-bigmenu { display: flex; flex-direction: column; }
+.ui2-big-item { position: relative; display: flex; align-items: center; gap: 18px; min-height: 58px; padding: 0 4px 0 12px; border: 0; background: none; color: color-mix(in srgb, var(--text) 70%, transparent); font: inherit; font-size: 24px; font-weight: 900; letter-spacing: 0.02em; text-transform: uppercase; text-align: left; transition: color 0.15s, transform 0.2s cubic-bezier(0.3, 1.3, 0.5, 1); }
+.ui2-big-item::before { content: ""; position: absolute; left: -18px; top: 50%; width: 6px; height: 0; border-radius: 0 3px 3px 0; background: var(--accent); transform: translateY(-50%); transition: height 0.2s; }
+.ui2-big-item:active { color: var(--accent); transform: translateX(6px); }
+.ui2-big-item:active::before { height: 60%; }
+.ui2-menu-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.ui2-menu-foot { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 26px; padding-top: 18px; border-top: 1px solid var(--border); }
+.ui2-menu-foot .ui2-pill-btn { height: 40px; }
+.ui2-menu-foot .ui2-link { flex-basis: 100%; margin-top: 4px; }
+
+/* Profiles: the computer's profile, full screen. */
+.ui2-phone .profile-backdrop { padding: 0; background: var(--profile-bg); align-items: stretch; z-index: 60; }
+.ui2-phone .profile.popup.ui2-profile { width: 100%; min-height: 100%; height: auto; border: 0; border-radius: 0; box-shadow: none; animation: ui2-rise 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.ui2-phone .ui2-profile .profile-hero .profile-banner { height: calc(170px + env(safe-area-inset-top, 0px)); border-radius: 0; }
+.ui2-phone .ui2-profile .profile-hero-row { column-gap: 14px; padding: 0 16px 6px; margin-top: -48px; grid-template-rows: 48px auto auto auto; }
+.ui2-phone .ui2-profile .profile-hero-row .profile-icon { width: 92px; height: 92px; }
+.ui2-phone .ui2-profile .profile-hero-row h2 { font-size: 22px; word-break: break-word; }
+.ui2-phone .ui2-profile .profile-cols { padding: 12px 12px calc(28px + env(safe-area-inset-bottom, 0px)); }
+.ui2-phone .ui2-profile .pcard { border-radius: 8px; }
+.ui2-phone .ui2-profile > .ui2-close { position: fixed; top: calc(env(safe-area-inset-top, 0px) + 12px); right: 12px; }

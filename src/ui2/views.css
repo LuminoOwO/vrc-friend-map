@@ -1,9 +1,9 @@
 /* The views (People, Activity, Insights, Logbook, VRChat, Lists) inside the Lobby frame,
    restyled to match the new interface: flat dark panels, 8 px corners, small uppercase
    section titles, a sticky toolbar under the frame's title, teal for what's active.
-   Scoped to .lob-frame, so the classic interface keeps its look. */
+   Scoped to .lob-frame (computers) and .ui2-phone-main (phones), so the classic interface keeps its look. */
 
-.lob-frame {
+:is(.lob-frame, .ui2-phone-main) {
   --v-panel: rgba(255, 255, 255, 0.035);
   --v-panel-hover: rgba(255, 255, 255, 0.06);
   --v-line: rgba(255, 255, 255, 0.09);
@@ -11,18 +11,18 @@
 }
 
 /* ---------- page and scrolling ---------- */
-.lob-frame .activity-view,
-.lob-frame .cards-view,
-.lob-frame .lists-view {
+:is(.lob-frame, .ui2-phone-main) .activity-view,
+:is(.lob-frame, .ui2-phone-main) .cards-view,
+:is(.lob-frame, .ui2-phone-main) .lists-view {
   padding: 0 26px 40px;
   scrollbar-gutter: stable;
 }
-.lob-frame .lists-view { gap: 18px; padding-top: 18px; }
+:is(.lob-frame, .ui2-phone-main) .lists-view { gap: 18px; padding-top: 18px; }
 
 /* ---------- section titles ---------- */
-.lob-frame .card-group h3,
-.lob-frame .activity-day h3,
-.lob-frame .lists-title {
+:is(.lob-frame, .ui2-phone-main) .card-group h3,
+:is(.lob-frame, .ui2-phone-main) .activity-day h3,
+:is(.lob-frame, .ui2-phone-main) .lists-title {
   margin: 22px 0 10px;
   font-size: 12px;
   font-weight: 800;
@@ -30,14 +30,14 @@
   text-transform: uppercase;
   color: var(--muted);
 }
-.lob-frame .card-group h3 .muted { margin-left: 4px; color: var(--accent); }
+:is(.lob-frame, .ui2-phone-main) .card-group h3 .muted { margin-left: 4px; color: var(--accent); }
 
 /* ---------- toolbars: sticky under the frame's title ---------- */
-.lob-frame .activity-bar,
-.lob-frame .cards-toolbar,
-.lob-frame .day-nav,
-.lob-frame .logbook-tabs,
-.lob-frame .vrc-bar {
+:is(.lob-frame, .ui2-phone-main) .activity-bar,
+:is(.lob-frame, .ui2-phone-main) .cards-toolbar,
+:is(.lob-frame, .ui2-phone-main) .day-nav,
+:is(.lob-frame, .ui2-phone-main) .logbook-tabs,
+:is(.lob-frame, .ui2-phone-main) .vrc-bar {
   position: sticky;
   top: 0;
   z-index: 3;
@@ -46,14 +46,14 @@
   background: var(--bg);
   border-bottom: 1px solid var(--v-line);
 }
-.lob-frame .activity-bar,
-.lob-frame .cards-toolbar { margin-bottom: 4px; gap: 8px 12px; font-size: 13px; color: var(--muted); }
+:is(.lob-frame, .ui2-phone-main) .activity-bar,
+:is(.lob-frame, .ui2-phone-main) .cards-toolbar { margin-bottom: 4px; gap: 8px 12px; font-size: 13px; color: var(--muted); }
 /* Two sticky rows in the Logbook: tabs, then the day picker under them. */
-.lob-frame .logbook-tabs + .day-nav,
-.lob-frame .logbook-tabs ~ .row.day-nav { top: 59px; z-index: 2; }
+:is(.lob-frame, .ui2-phone-main) .logbook-tabs + .day-nav,
+:is(.lob-frame, .ui2-phone-main) .logbook-tabs ~ .row.day-nav { top: 59px; z-index: 2; }
 
 /* ---------- chips, tabs, buttons, fields ---------- */
-.lob-frame .chip-btn {
+:is(.lob-frame, .ui2-phone-main) .chip-btn {
   height: 34px;
   padding: 0 14px;
   border-radius: 6px;
@@ -64,11 +64,11 @@
   font-weight: 600;
   transition: border-color 0.15s, background 0.15s, color 0.15s;
 }
-.lob-frame .chip-btn:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
-.lob-frame .chip-btn.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+:is(.lob-frame, .ui2-phone-main) .chip-btn:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.28); }
+:is(.lob-frame, .ui2-phone-main) .chip-btn.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
 
 /* Segmented controls become tabs with a teal underline, like the Lobby's own titles. */
-.lob-frame .seg {
+:is(.lob-frame, .ui2-phone-main) .seg {
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
@@ -76,7 +76,7 @@
   border-radius: 0;
   overflow: visible;
 }
-.lob-frame .seg button {
+:is(.lob-frame, .ui2-phone-main) .seg button {
   position: relative;
   height: 34px;
   padding: 0 12px;
@@ -86,86 +86,86 @@
   font-weight: 700;
   letter-spacing: 0.02em;
 }
-.lob-frame .seg button:hover { color: var(--text); background: var(--v-panel); }
-.lob-frame .seg button.on { background: transparent; color: var(--accent); }
-.lob-frame .seg button.on::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -15px; height: 2px; border-radius: 2px; background: var(--accent); }
+:is(.lob-frame, .ui2-phone-main) .seg button:hover { color: var(--text); background: var(--v-panel); }
+:is(.lob-frame, .ui2-phone-main) .seg button.on { background: transparent; color: var(--accent); }
+:is(.lob-frame, .ui2-phone-main) .seg button.on::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -15px; height: 2px; border-radius: 2px; background: var(--accent); }
 /* Inside panels a segmented control stays a compact switch (no underline under the toolbar line). */
-.lob-frame .panel .seg button.on::after,
-.lob-frame .insight-card .seg button.on::after { bottom: -2px; }
+:is(.lob-frame, .ui2-phone-main) .panel .seg button.on::after,
+:is(.lob-frame, .ui2-phone-main) .insight-card .seg button.on::after { bottom: -2px; }
 
-.lob-frame .btn { border-radius: 6px; }
-.lob-frame .btn.small { height: 32px; padding: 0 12px; }
+:is(.lob-frame, .ui2-phone-main) .btn { border-radius: 6px; }
+:is(.lob-frame, .ui2-phone-main) .btn.small { height: 32px; padding: 0 12px; }
 /* Only colours and corners for selects: their arrow and the in-page picker come from the base styles. */
-.lob-frame input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
-.lob-frame select,
-.lob-frame textarea {
+:is(.lob-frame, .ui2-phone-main) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+:is(.lob-frame, .ui2-phone-main) select,
+:is(.lob-frame, .ui2-phone-main) textarea {
   border-radius: 6px;
   border: 1px solid var(--v-line-strong);
   background-color: rgba(255, 255, 255, 0.04);
   color: var(--text);
 }
-.lob-frame input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) { height: 36px; padding: 0 10px; box-sizing: border-box; }
-.lob-frame input:focus-visible,
-.lob-frame select:focus-visible,
-.lob-frame textarea:focus-visible { outline: none; border-color: var(--accent); }
-.lob-frame .activity-search { flex: 1 1 160px; max-width: 280px; margin-left: auto; }
+:is(.lob-frame, .ui2-phone-main) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) { height: 36px; padding: 0 10px; box-sizing: border-box; }
+:is(.lob-frame, .ui2-phone-main) input:focus-visible,
+:is(.lob-frame, .ui2-phone-main) select:focus-visible,
+:is(.lob-frame, .ui2-phone-main) textarea:focus-visible { outline: none; border-color: var(--accent); }
+:is(.lob-frame, .ui2-phone-main) .activity-search { flex: 1 1 160px; max-width: 280px; margin-left: auto; }
 
 /* ---------- panels and cards ---------- */
-.lob-frame .insight-card,
-.lob-frame .panel {
+:is(.lob-frame, .ui2-phone-main) .insight-card,
+:is(.lob-frame, .ui2-phone-main) .panel {
   background: var(--v-panel);
   border: 1px solid var(--v-line);
   border-radius: 8px;
   padding: 16px 18px;
   box-shadow: none;
 }
-.lob-frame .insight-card h3,
-.lob-frame .panel h2,
-.lob-frame .panel h3 {
+:is(.lob-frame, .ui2-phone-main) .insight-card h3,
+:is(.lob-frame, .ui2-phone-main) .panel h2,
+:is(.lob-frame, .ui2-phone-main) .panel h3 {
   margin: 0 0 8px;
   font-size: 15px;
   font-weight: 800;
 }
-.lob-frame .insight-card h3 svg { color: var(--accent); }
-.lob-frame .insight-card h4 { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.lob-frame .insights { gap: 14px; padding-top: 18px; }
+:is(.lob-frame, .ui2-phone-main) .insight-card h3 svg { color: var(--accent); }
+:is(.lob-frame, .ui2-phone-main) .insight-card h4 { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+:is(.lob-frame, .ui2-phone-main) .insights { gap: 14px; padding-top: 18px; }
 
 /* Names as chips (Insights, Logbook): one quiet style. */
-.lob-frame .face-btn {
+:is(.lob-frame, .ui2-phone-main) .face-btn {
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid transparent;
   padding: 3px 10px 3px 3px;
   transition: border-color 0.15s, background 0.15s;
 }
-.lob-frame .face-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
-.lob-frame .group-item { border-radius: 8px; border-color: var(--v-line); background: rgba(0, 0, 0, 0.15); padding: 10px 12px; }
+:is(.lob-frame, .ui2-phone-main) .face-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+:is(.lob-frame, .ui2-phone-main) .group-item { border-radius: 8px; border-color: var(--v-line); background: rgba(0, 0, 0, 0.15); padding: 10px 12px; }
 
 /* ---------- People ---------- */
-.lob-frame .card-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-.lob-frame .fcard { border-radius: 8px; border-color: var(--v-line); background: var(--v-panel); box-shadow: none; }
-.lob-frame .fcard:hover { border-color: var(--accent); }
-.lob-frame .fcard-banner { opacity: 0.75; }
+:is(.lob-frame, .ui2-phone-main) .card-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+:is(.lob-frame, .ui2-phone-main) .fcard { border-radius: 8px; border-color: var(--v-line); background: var(--v-panel); box-shadow: none; }
+:is(.lob-frame, .ui2-phone-main) .fcard:hover { border-color: var(--accent); }
+:is(.lob-frame, .ui2-phone-main) .fcard-banner { opacity: 0.75; }
 
 /* ---------- Activity: one panel per day, rows like the party feed ---------- */
-.lob-frame .activity-note { margin: 12px 0 0; }
-.lob-frame .activity-day ul {
+:is(.lob-frame, .ui2-phone-main) .activity-note { margin: 12px 0 0; }
+:is(.lob-frame, .ui2-phone-main) .activity-day ul {
   border: 1px solid var(--v-line);
   border-radius: 8px;
   background: var(--v-panel);
   overflow: hidden;
 }
-.lob-frame .act {
+:is(.lob-frame, .ui2-phone-main) .act {
   gap: 12px;
   min-height: 42px;
   padding: 6px 14px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   font-size: 14px;
 }
-.lob-frame .act:last-child { border-bottom: 0; }
-.lob-frame .act:hover { background: rgba(255, 255, 255, 0.03); }
-.lob-frame .act-time { width: 72px; font-size: 13px; }
-.lob-frame .act > svg {
+:is(.lob-frame, .ui2-phone-main) .act:last-child { border-bottom: 0; }
+:is(.lob-frame, .ui2-phone-main) .act:hover { background: rgba(255, 255, 255, 0.03); }
+:is(.lob-frame, .ui2-phone-main) .act-time { width: 72px; font-size: 13px; }
+:is(.lob-frame, .ui2-phone-main) .act > svg {
   box-sizing: content-box;
   width: 14px;
   height: 14px;
@@ -173,30 +173,30 @@
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.06);
 }
-.lob-frame .act-join > svg, .lob-frame .act-online > svg, .lob-frame .act-friend-add > svg { background: color-mix(in srgb, var(--ok, #51e57e) 16%, transparent); }
-.lob-frame .act-leave > svg, .lob-frame .act-offline > svg, .lob-frame .act-friend-remove > svg, .lob-frame .act-crash > svg { background: color-mix(in srgb, var(--danger, #f87171) 16%, transparent); }
-.lob-frame .act-world > svg, .lob-frame .act-location > svg { background: var(--accent-soft); }
-.lob-frame .act.initial { opacity: 0.6; }
-.lob-frame .act-name { text-decoration: none; }
-.lob-frame .act-name:hover { text-decoration: underline; }
+:is(.lob-frame, .ui2-phone-main) .act-join > svg, :is(.lob-frame, .ui2-phone-main) .act-online > svg, :is(.lob-frame, .ui2-phone-main) .act-friend-add > svg { background: color-mix(in srgb, var(--ok, #51e57e) 16%, transparent); }
+:is(.lob-frame, .ui2-phone-main) .act-leave > svg, :is(.lob-frame, .ui2-phone-main) .act-offline > svg, :is(.lob-frame, .ui2-phone-main) .act-friend-remove > svg, :is(.lob-frame, .ui2-phone-main) .act-crash > svg { background: color-mix(in srgb, var(--danger, #f87171) 16%, transparent); }
+:is(.lob-frame, .ui2-phone-main) .act-world > svg, :is(.lob-frame, .ui2-phone-main) .act-location > svg { background: var(--accent-soft); }
+:is(.lob-frame, .ui2-phone-main) .act.initial { opacity: 0.6; }
+:is(.lob-frame, .ui2-phone-main) .act-name { text-decoration: none; }
+:is(.lob-frame, .ui2-phone-main) .act-name:hover { text-decoration: underline; }
 
 /* ---------- Logbook ---------- */
-.lob-frame .day-nav { gap: 8px; }
-.lob-frame .insight-card.visit h3 svg { color: var(--accent); }
-.lob-frame .visit-events { margin: 8px 0; }
-.lob-frame .heatmap { border-radius: 8px; }
+:is(.lob-frame, .ui2-phone-main) .day-nav { gap: 8px; }
+:is(.lob-frame, .ui2-phone-main) .insight-card.visit h3 svg { color: var(--accent); }
+:is(.lob-frame, .ui2-phone-main) .visit-events { margin: 8px 0; }
+:is(.lob-frame, .ui2-phone-main) .heatmap { border-radius: 8px; }
 
 /* ---------- VRChat ---------- */
-.lob-frame .open-link { gap: 8px; }
-.lob-frame .group-tile { border-radius: 8px; border-color: var(--v-line); background: var(--v-panel); padding: 8px; }
-.lob-frame .group-tile:hover { border-color: var(--accent); }
-.lob-frame .pic,
-.lob-frame .avatar-grid > * { border-radius: 8px; }
+:is(.lob-frame, .ui2-phone-main) .open-link { gap: 8px; }
+:is(.lob-frame, .ui2-phone-main) .group-tile { border-radius: 8px; border-color: var(--v-line); background: var(--v-panel); padding: 8px; }
+:is(.lob-frame, .ui2-phone-main) .group-tile:hover { border-color: var(--accent); }
+:is(.lob-frame, .ui2-phone-main) .pic,
+:is(.lob-frame, .ui2-phone-main) .avatar-grid > * { border-radius: 8px; }
 
 /* ---------- Lists ---------- */
-.lob-frame .lists-cols { gap: 14px; }
-.lob-frame .pill { border-radius: 6px; }
-.lob-frame .matrix-wrap { border-radius: 8px; border: 1px solid var(--v-line); }
+:is(.lob-frame, .ui2-phone-main) .lists-cols { gap: 14px; }
+:is(.lob-frame, .ui2-phone-main) .pill { border-radius: 6px; }
+:is(.lob-frame, .ui2-phone-main) .matrix-wrap { border-radius: 8px; border: 1px solid var(--v-line); }
 
 /* ---------- the same palette in the profile and world popups ---------- */
 /* Before, the popups used the older, bluer card colour; now cards match the views' panels. */

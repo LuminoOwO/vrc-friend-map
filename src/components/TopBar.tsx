@@ -233,7 +233,7 @@ export function FilterPopover({ onClose }: { onClose: () => void }) {
         </p>
       )}
       <div className="frow">
-        <span className="flabel">Status</span>
+        <span className="flabel">Show</span>
         <Toggle
           value={f.presence}
           options={[
