@@ -1,4 +1,4 @@
-import { t as tr, lazy } from "../i18n";
+import { t as tr, lazy, tx } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { clearActivity, demoActivity, loadActivity, type ActivityEntry, type ActivityKind } from "../activity";
 import { fmtDate } from "../model";
@@ -63,36 +63,36 @@ export function ActivityText({ e }: { e: ActivityEntry }) {
       </button>
     ) : null;
 
-  const world = (e: ActivityEntry) => <b>{e.worldName || e.worldId || "a world"}</b>;
+  const world = (e: ActivityEntry) => <b>{e.worldName || e.worldId || tr("act.aWorld")}</b>;
 
   const text = () => {
     switch (e.kind) {
       case "world":
-        return <>You joined {world(e)}</>;
+        return tx("act.youJoined", { world: world(e) });
       case "join":
-        return <>{who(e)} {e.initial ? tr("activityView.wasHereWhenYouArrived") : "joined"}</>;
+        return tx(e.initial ? "act.wasHere" : "act.joined", { name: who(e) });
       case "leave":
-        return <>{who(e)} left</>;
+        return tx("act.left", { name: who(e) });
       case "left":
-        return <>You left {world(e)}</>;
+        return tx("act.youLeft", { world: world(e) });
       case "quit":
         return <>{tr("activityView.vrchatClosed")}</>;
       case "crash":
         return <>{tr("activityView.vrchatStoppedWithoutClosingProperly")}</>;
       case "online":
-        return <>{who(e)} came online</>;
+        return tx("act.cameOnline", { name: who(e) });
       case "offline":
-        return <>{who(e)} went offline</>;
+        return tx("act.wentOffline", { name: who(e) });
       case "location":
-        return <>{who(e)} went to {world(e)}</>;
+        return tx("act.wentTo", { name: who(e), world: world(e) });
       case "friend-add":
-        return <>{who(e)} is now your friend</>;
+        return tx("act.nowFriend", { name: who(e) });
       case "friend-remove":
-        return <>{who(e)} is no longer your friend</>;
+        return tx("act.noLongerFriend", { name: who(e) });
       case "invite":
-        return <>{who(e)} invited you{e.worldName ? <> to {world(e)}</> : null}</>;
+        return e.worldName ? tx("act.invitedTo", { name: who(e), world: world(e) }) : tx("act.invited", { name: who(e) });
       case "request-invite":
-        return <>{who(e)} asked you for an invite</>;
+        return tx("act.askedInvite", { name: who(e) });
     }
   };
 

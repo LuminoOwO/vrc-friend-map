@@ -145,7 +145,7 @@ export function NotificationsSection() {
             >
               {soundOptions}
             </select>
-            <button className="icon-btn small" title={`Play: ${EVENT_LABEL[e]}, then ${exampleName}'s tune`} onClick={() => previewEvent(e, exampleName)}>
+            <button className="icon-btn small" title={tr("notify.playTitle", { event: EVENT_LABEL[e], name: exampleName })} onClick={() => previewEvent(e, exampleName)}>
               <Icon name="play" size={14} />
             </button>
           </div>

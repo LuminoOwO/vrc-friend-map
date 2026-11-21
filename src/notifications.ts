@@ -3,26 +3,26 @@
 // rules, per person, circles, mute), then plays the action's sound followed by
 // the person's own tune, and shows a system notification when the app is in
 // the background (or always, as chosen).
-import { t as tr } from "./i18n";
+import { t as tr, lazy } from "./i18n";
 import { backend, isTauri } from "./backend";
 import { playParts, type SoundPart } from "./notify";
 import { getState, showToast, updateNotify } from "./store";
 import { recordMissed } from "./history";
 import type { CustomSound, NotifyEvent, NotifySettings } from "./types";
 
-export const EVENT_LABEL: Record<NotifyEvent, string> = {
-  added: "Became your friend",
-  removed: "Removed you as a friend",
-  online: "Came online",
-  offline: "Went offline",
-  joined: "Joined your instance",
-  left: "Left your instance",
-  anniversary: "Friendiversary",
-  gathering: "Close friends gathering",
-  slotOpen: "A slot opened (watched instance)",
-  invite: "Invited you",
-  requestInvite: "Asks you for an invite",
-};
+export const EVENT_LABEL: Record<NotifyEvent, string> = lazy(() => ({
+  added: tr("events.added"),
+  removed: tr("events.removed"),
+  online: tr("events.online"),
+  offline: tr("events.offline"),
+  joined: tr("events.joined"),
+  left: tr("events.left"),
+  anniversary: tr("events.anniversary"),
+  gathering: tr("events.gathering"),
+  slotOpen: tr("events.slotOpen"),
+  invite: tr("events.invite"),
+  requestInvite: tr("events.requestInvite"),
+}));
 
 function message(event: NotifyEvent, name: string, world?: string): string {
   switch (event) {

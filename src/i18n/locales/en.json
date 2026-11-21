@@ -727,7 +727,8 @@
     "play": "Play",
     "addASoundFile": "Add a sound file",
     "allowNotifications": "Allow notifications",
-    "duringQuietHoursNothingPlays": "During quiet hours nothing plays or pops up; everything is kept under Insights → Notifications."
+    "duringQuietHoursNothingPlays": "During quiet hours nothing plays or pops up; everything is kept under Insights → Notifications.",
+    "playTitle": "Play: {{event}}, then {{name}}'s tune"
   },
   "serversModal": {
     "notAvailableInDemoMode": "Not available in demo mode.",
@@ -2083,5 +2084,63 @@
     "addedNameToName2": "Added {{name}} to {{name2}}",
     "removedNameFromName2": "Removed {{name}} from {{name2}}",
     "updatedFrom": "Updated from {{from}} to {{to}}."
+  },
+  "act": {
+    "aWorld": "a world",
+    "youJoined": "You joined {{world}}",
+    "joined": "{{name}} joined",
+    "wasHere": "{{name}} was here when you arrived",
+    "left": "{{name}} left",
+    "youLeft": "You left {{world}}",
+    "cameOnline": "{{name}} came online",
+    "wentOffline": "{{name}} went offline",
+    "wentTo": "{{name}} went to {{world}}",
+    "nowFriend": "{{name}} is now your friend",
+    "noLongerFriend": "{{name}} is no longer your friend",
+    "invited": "{{name}} invited you",
+    "invitedTo": "{{name}} invited you to {{world}}",
+    "askedInvite": "{{name}} asked you for an invite"
+  },
+  "events": {
+    "added": "Became your friend",
+    "removed": "Removed you as a friend",
+    "online": "Came online",
+    "offline": "Went offline",
+    "joined": "Joined your instance",
+    "left": "Left your instance",
+    "anniversary": "Friendiversary",
+    "gathering": "Close friends gathering",
+    "slotOpen": "A slot opened (watched instance)",
+    "invite": "Invited you",
+    "requestInvite": "Asks you for an invite"
+  },
+  "sections": {
+    "yourVrchatLoginOnThis": "Your VRChat login on this device.",
+    "shareWithFriendsSyncYour": "Share with friends, sync your devices, log around the clock.",
+    "howTheAppTalksTo": "How the app talks to VRChat: contact info and pace.",
+    "languageTextSizeAnimationsColors": "Language, text size, animations, colors for color blindness, classic or new interface.",
+    "lightDarkAndColorfulLooks": "Light, dark and colorful looks.",
+    "howPeopleAndLinesLook": "How people and lines look on the map and in profiles.",
+    "smoothnessAgainstBatteryAndFan": "Smoothness against battery and fan noise.",
+    "graphicsCardOrSoftwareDrawing": "Graphics card or software drawing, if the map is slow or blank.",
+    "hintsAboutWhoMightBe": "Hints about who might be under 18, only for you.",
+    "aShortWarningLineIn": "A short warning line in your VRChat notes, readable in game.",
+    "yourSavedInviteAndRequest": "Your saved invite and request-invite messages.",
+    "readsProfilesSlowlyInThe": "Reads profiles slowly in the background, so they're ready.",
+    "instanceMatesAndFriendsOf": "Instance mates and friends of friends: what to load and keep.",
+    "aFixForSystemsWhere": "A fix for systems where the mouse wheel doesn't scroll.",
+    "whatSGoingOnUnder": "What's going on under the hood, for bug reports.",
+    "whoAndWhatYouHear": "Who and what you hear about, with which sounds.",
+    "stayingConnectedWhileTheApp": "Staying connected while the app is in the background.",
+    "whatClosingTheWindowDoes": "What closing the window does: tray, quit, or ask.",
+    "vrchatSLogFilesWho": "VRChat's log files: who you met, where, and when.",
+    "howCirclesAreSuggestedFrom": "How circles are suggested from time spent together.",
+    "theSongYouReListening": "The song you're listening to in your VRChat status.",
+    "yourVrchatHoursFromSteam": "Your VRChat hours from Steam, in your bio.",
+    "yourOtherVrchatAccountsOn": "Your other VRChat accounts on the same map.",
+    "oneEncryptedFileWithYour": "One encrypted file with your notes, circles and settings.",
+    "whatTheAppKeepsOn": "What the app keeps on this device, and clearing it.",
+    "newVersionsCheckedEveryFew": "New versions, checked every few hours.",
+    "versionLicenseAndLinks": "Version, license and links."
   }
 }
