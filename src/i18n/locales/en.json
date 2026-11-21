@@ -1,0 +1,36 @@
+{
+  "common": {
+    "back": "Back",
+    "close": "Close",
+    "friends_one": "{{count}} friend",
+    "friends_other": "{{count}} friends"
+  },
+  "menu": {
+    "map": "Map",
+    "people": "People",
+    "activity": "Activity",
+    "insights": "Insights",
+    "logbook": "Logbook",
+    "vrchat": "VRChat",
+    "lists": "Shared lists",
+    "settings": "Settings",
+    "party": "Party",
+    "menu": "Menu",
+    "servers": "Servers",
+    "syncNow": "Sync now",
+    "syncLog": "Sync log",
+    "classic": "Back to the classic interface",
+    "views": "Views"
+  },
+  "phone": {
+    "searchFriends": "Search friends",
+    "closeSearch": "Close search",
+    "filters": "Filters"
+  },
+  "language": {
+    "title": "Language",
+    "system": "Like the system ({{name}})",
+    "help": "Only this device. Missing texts show in English.",
+    "machine": "{{name}} was translated by machine and still needs a check by someone who speaks it."
+  }
+}

@@ -4,7 +4,7 @@ export const SECTION_INFO: Record<string, { icon: string; about: string }> = {
   account: { icon: "user", about: "Your VRChat login on this device." },
   servers: { icon: "server", about: "Share with friends, sync your devices, log around the clock." },
   requests: { icon: "sliders", about: "How the app talks to VRChat: contact info and pace." },
-  interface: { icon: "eye", about: "Text size, animations, colors for color blindness, classic or new interface." },
+  interface: { icon: "eye", about: "Language, text size, animations, colors for color blindness, classic or new interface." },
   display: { icon: "image", about: "Light, dark and colorful looks." },
   mapdisplay: { icon: "graph", about: "How people and lines look on the map and in profiles." },
   framerate: { icon: "rocket", about: "Smoothness against battery and fan noise." },

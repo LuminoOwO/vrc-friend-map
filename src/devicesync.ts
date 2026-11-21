@@ -261,12 +261,12 @@ export function mergeSelf(base: SelfData | null, mine: SelfData, theirs: SelfDat
 
 /**
  * Values each device keeps for itself even when settings sync: which interface it shows
- * (classic or new). They never go into the shared copy, so two devices with different choices
- * don't overwrite each other's copy on every sync.
+ * (classic or new) and its language. They never go into the shared copy, so two devices with
+ * different choices don't overwrite each other's copy on every sync.
  */
 function withoutDeviceOnly(settings: SyncedSettings | undefined): SyncedSettings | undefined {
   if (!settings?.ui || typeof settings.ui !== "object") return settings;
-  const { beta: _beta, ...ui } = settings.ui as Settings["ui"];
+  const { beta: _beta, language: _language, ...ui } = settings.ui as Settings["ui"];
   return { ...settings, ui: ui as Settings["ui"] };
 }
 

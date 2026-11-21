@@ -6,6 +6,11 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Languages (start):** Settings → Appearance → Language, "Like the system" by default, per
+  device. So far the menus and tabs (computer and phone) are translated, into German as a first
+  language (machine-made, marked as needing a check); everything else follows step by step and
+  stays English until then. The texts live in `src/i18n/locales/` in a format Weblate and
+  Crowdin read directly; `docs/translating.md` says how to help.
 - **Log out everywhere** (Settings → My account): logs out this device and every other device of
   yours where the app syncs with it (through your servers, or directly at home); devices that are
   off log out at their next sync. VRChat has no way to end all sessions, so it also says what to

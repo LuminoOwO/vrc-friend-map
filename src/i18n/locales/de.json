@@ -1,0 +1,36 @@
+{
+  "common": {
+    "back": "Zurück",
+    "close": "Schließen",
+    "friends_one": "{{count}} Freund",
+    "friends_other": "{{count}} Freunde"
+  },
+  "menu": {
+    "map": "Karte",
+    "people": "Leute",
+    "activity": "Aktivität",
+    "insights": "Einblicke",
+    "logbook": "Logbuch",
+    "vrchat": "VRChat",
+    "lists": "Geteilte Listen",
+    "settings": "Einstellungen",
+    "party": "Party",
+    "menu": "Menü",
+    "servers": "Server",
+    "syncNow": "Jetzt synchronisieren",
+    "syncLog": "Sync-Protokoll",
+    "classic": "Zurück zur klassischen Oberfläche",
+    "views": "Ansichten"
+  },
+  "phone": {
+    "searchFriends": "Freunde suchen",
+    "closeSearch": "Suche schließen",
+    "filters": "Filter"
+  },
+  "language": {
+    "title": "Sprache",
+    "system": "Wie das System ({{name}})",
+    "help": "Nur dieses Gerät. Fehlende Texte erscheinen auf Englisch.",
+    "machine": "{{name}} wurde maschinell übersetzt und muss noch von jemandem geprüft werden, der die Sprache spricht."
+  }
+}

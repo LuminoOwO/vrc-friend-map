@@ -1,6 +1,7 @@
 // Pieces every desktop layout of the new interface uses: the views, the bell, filters, you,
 // the profile popup, the layout picker, and the keys that work everywhere.
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { t } from "../i18n";
 import { imgSrc } from "../backend";
 import { useDerived } from "../derived";
 import { iconUrl, STATUS_LABEL, statusColor } from "../model";
@@ -21,14 +22,22 @@ import { FilterPopover } from "../components/TopBar";
 import { VrchatView } from "../components/VrchatView";
 import { useSmooth } from "./smooth";
 
+// `label` is read in the current language each time (components re-render with useT()).
+const rail = (key: View, text: string, icon: string) => ({
+  key,
+  icon,
+  get label() {
+    return t(text);
+  },
+});
 export const RAIL: { key: View; label: string; icon: string }[] = [
-  { key: "graph", label: "Map", icon: "graph" },
-  { key: "cards", label: "People", icon: "users" },
-  { key: "activity", label: "Activity", icon: "clock" },
-  { key: "insights", label: "Insights", icon: "bulb" },
-  { key: "logbook", label: "Logbook", icon: "calendar" },
-  { key: "vrchat", label: "VRChat", icon: "world" },
-  { key: "lists", label: "Shared lists", icon: "share" },
+  rail("graph", "menu.map", "graph"),
+  rail("cards", "menu.people", "users"),
+  rail("activity", "menu.activity", "clock"),
+  rail("insights", "menu.insights", "bulb"),
+  rail("logbook", "menu.logbook", "calendar"),
+  rail("vrchat", "menu.vrchat", "world"),
+  rail("lists", "menu.lists", "share"),
 ];
 
 /** Opens the world overview popup (provided by the shell). */

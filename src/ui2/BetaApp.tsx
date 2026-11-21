@@ -8,6 +8,7 @@
 //  - phones: the same look in a bottom tab bar (Map, People, Party, Insights, Menu); profiles,
 //    settings and filters full screen.
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useT } from "../i18n";
 import { isMobile } from "../backend";
 import { setState, updateFilters, updateUi, useApp, type View } from "../store";
 import { openServers } from "../components/ServersModal";
@@ -74,14 +75,15 @@ function Desktop({ onPalette }: { onPalette: () => void }) {
 // party (you, where you are, overview, online now, activity) and the big menu, as tabs.
 
 type PhoneTab = "graph" | "cards" | "party" | "insights" | "menu";
+// Tab names and titles are text keys (src/i18n/locales).
 const PHONE_TABS: [PhoneTab, string, string][] = [
-  ["graph", "Map", "graph"],
-  ["cards", "People", "users"],
-  ["party", "Party", "pin"],
-  ["insights", "Insights", "bulb"],
-  ["menu", "Menu", "menu"],
+  ["graph", "menu.map", "graph"],
+  ["cards", "menu.people", "users"],
+  ["party", "menu.party", "pin"],
+  ["insights", "menu.insights", "bulb"],
+  ["menu", "menu.menu", "menu"],
 ];
-const SUB_TITLES: Partial<Record<View, string>> = { activity: "Activity", logbook: "Logbook", vrchat: "VRChat", lists: "Shared lists" };
+const SUB_TITLES: Partial<Record<View, string>> = { activity: "menu.activity", logbook: "menu.logbook", vrchat: "menu.vrchat", lists: "menu.lists" };
 
 /** The back gesture runs `onBack` while `active` (one history entry; left another way, the entry
  *  stays but is neutralized, which is safer than calling history.back() ourselves). */
@@ -101,6 +103,7 @@ function useBackGesture(active: boolean, onBack: () => void, key: string) {
 }
 
 function PhoneShell() {
+  const t = useT();
   const view = useApp((s) => s.view);
   const selectedId = useApp((s) => s.selectedId);
   const unread = useUnreadMissed();
@@ -123,7 +126,8 @@ function PhoneShell() {
     }
   };
   useBackGesture(!!sub, () => go("menu"), "vfmSub");
-  const title = sub ? (SUB_TITLES[sub] ?? "") : (PHONE_TABS.find(([k]) => k === tab)?.[1] ?? "");
+  const titleKey = sub ? SUB_TITLES[sub] : PHONE_TABS.find(([k]) => k === tab)?.[1];
+  const title = titleKey ? t(titleKey) : "";
   return (
     <WorldOpener.Provider value={setWorld}>
       <div className="ui2-phone-shell">
@@ -139,11 +143,11 @@ function PhoneShell() {
             </div>
           )}
         </main>
-        <nav className="ui2-tabs" aria-label="Views" data-arrows="h">
+        <nav className="ui2-tabs" aria-label={t("menu.views")} data-arrows="h">
           {PHONE_TABS.map(([k, l, i]) => (
             <button key={k} className={`ui2-tab ${tab === k ? "on" : ""}`} aria-current={tab === k} onClick={() => go(k)}>
               <Icon name={i} size={22} />
-              <span>{l}</span>
+              <span>{t(l)}</span>
               {k === "insights" && unread > 0 && <span className="ui2-dot">{unread}</span>}
             </button>
           ))}
@@ -157,6 +161,7 @@ function PhoneShell() {
 
 /** The title bar, like a view's frame on computers. Search and filters on Map and People. */
 function PhoneTop({ title, onBack, search }: { title: string; onBack?: () => void; search: boolean }) {
+  const t = useT();
   const text = useApp((s) => s.filters.search);
   const [searching, setSearching] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -165,16 +170,16 @@ function PhoneTop({ title, onBack, search }: { title: string; onBack?: () => voi
     <>
       <header className="ui2-phone-top">
         {onBack && (
-          <button className="ui2-top-btn back" aria-label="Back" onClick={onBack}>
+          <button className="ui2-top-btn back" aria-label={t("common.back")} onClick={onBack}>
             <Icon name="chevron-left" size={22} />
           </button>
         )}
         {finding ? (
           <div className="ui2-phone-find">
             <Icon name="search" size={16} />
-            <input autoFocus value={text} placeholder="Search friends" onChange={(e) => updateFilters({ search: e.target.value })} />
+            <input autoFocus value={text} placeholder={t("phone.searchFriends")} onChange={(e) => updateFilters({ search: e.target.value })} />
             <button
-              aria-label="Close search"
+              aria-label={t("phone.closeSearch")}
               onClick={() => {
                 updateFilters({ search: "" });
                 setSearching(false);
@@ -187,24 +192,24 @@ function PhoneTop({ title, onBack, search }: { title: string; onBack?: () => voi
           <h1>{title}</h1>
         )}
         {search && !finding && (
-          <button className="ui2-top-btn" aria-label="Search friends" onClick={() => setSearching(true)}>
+          <button className="ui2-top-btn" aria-label={t("phone.searchFriends")} onClick={() => setSearching(true)}>
             <Icon name="search" size={20} />
           </button>
         )}
         {search && (
-          <button className="ui2-top-btn" aria-label="Filters" onClick={() => setFiltersOpen(true)}>
+          <button className="ui2-top-btn" aria-label={t("phone.filters")} onClick={() => setFiltersOpen(true)}>
             <Icon name="filter" size={20} />
           </button>
         )}
-        <button className="ui2-top-btn" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
+        <button className="ui2-top-btn" aria-label={t("menu.settings")} onClick={() => setState({ settingsOpen: true })}>
           <Icon name="settings" size={20} />
         </button>
       </header>
       {filtersOpen && (
-        <div className="ui2-fullsheet" role="dialog" aria-label="Filters">
+        <div className="ui2-fullsheet" role="dialog" aria-label={t("phone.filters")}>
           <div className="ui2-fullsheet-head">
-            <h2>Filters</h2>
-            <button className="icon-btn" aria-label="Close" onClick={() => setFiltersOpen(false)}>
+            <h2>{t("phone.filters")}</h2>
+            <button className="icon-btn" aria-label={t("common.close")} onClick={() => setFiltersOpen(false)}>
               <Icon name="close" />
             </button>
           </div>
@@ -230,15 +235,16 @@ function PartyPage({ onWorld }: { onWorld: (key: string) => void }) {
 
 /** The big menu, as on computers (uppercase names, an accent bar on the left). */
 function MenuPage({ onOpen }: { onOpen: (v: View) => void }) {
+  const t = useT();
   const [logOpen, setLogOpen] = useState(false);
   const servers = useServersSummary();
   const items: [string, string, () => void, React.ReactNode?][] = [
-    ["Activity", "clock", () => onOpen("activity")],
-    ["Logbook", "calendar", () => onOpen("logbook")],
-    ["VRChat", "world", () => onOpen("vrchat")],
-    ["Shared lists", "share", () => onOpen("lists")],
+    [t("menu.activity"), "clock", () => onOpen("activity")],
+    [t("menu.logbook"), "calendar", () => onOpen("logbook")],
+    [t("menu.vrchat"), "world", () => onOpen("vrchat")],
+    [t("menu.lists"), "share", () => onOpen("lists")],
     [
-      "Servers",
+      t("menu.servers"),
       "server",
       openServers,
       servers && (
@@ -247,7 +253,7 @@ function MenuPage({ onOpen }: { onOpen: (v: View) => void }) {
         </span>
       ),
     ],
-    ["Settings", "settings", () => setState({ settingsOpen: true })],
+    [t("menu.settings"), "settings", () => setState({ settingsOpen: true })],
   ];
   return (
     <div className="ui2-page ui2-phone-menu">
@@ -269,13 +275,13 @@ function MenuPage({ onOpen }: { onOpen: (v: View) => void }) {
       </nav>
       <div className="ui2-menu-foot">
         <button className="ui2-pill-btn" onClick={() => syncAll()}>
-          <Icon name="refresh" size={15} /> Sync now
+          <Icon name="refresh" size={15} /> {t("menu.syncNow")}
         </button>
         <button className="ui2-pill-btn" onClick={() => setLogOpen(true)}>
-          <Icon name="info" size={15} /> Sync log
+          <Icon name="info" size={15} /> {t("menu.syncLog")}
         </button>
         <button className="ui2-link" onClick={() => updateUi({ beta: false })}>
-          Back to the classic interface
+          {t("menu.classic")}
         </button>
       </div>
       {logOpen && <SyncLogDialog onClose={() => setLogOpen(false)} />}

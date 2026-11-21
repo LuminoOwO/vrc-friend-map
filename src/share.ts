@@ -696,9 +696,10 @@ async function syncDevices(s: ShareServer): Promise<string> {
   return changedHere ? "Took over changes from your other devices." : "";
 }
 
-/** Synced interface settings, keeping this device's own choice of UI (classic or beta). */
-export function keepOwnUi<T extends { beta: boolean }>(incoming: T, mine: { beta: boolean }): T {
-  return { ...incoming, beta: mine.beta };
+/** Synced interface settings, keeping this device's own choices: which UI (classic or new) and
+ *  which language. */
+export function keepOwnUi<T extends { beta: boolean; language?: string }>(incoming: T, mine: { beta: boolean; language?: string }): T {
+  return { ...incoming, beta: mine.beta, language: mine.language ?? incoming.language };
 }
 
 /** Your circles, notes and settings, as your other devices get them directly. */

@@ -647,6 +647,8 @@ export interface UiSettings {
   reducedMotion: "system" | "on" | "off";
   /** Status colors that also differ for red/green color blindness. */
   colorblind: boolean;
+  /** The app's language: "system" (the device's) or a code from src/i18n/locales. Per device. */
+  language: string;
 }
 
 

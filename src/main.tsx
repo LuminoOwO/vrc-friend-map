@@ -16,6 +16,7 @@ import { installLinkPaste } from "./vrclinks";
 import { startPhone } from "./phone";
 import { watchImageLoads } from "./ui2/smooth";
 import { startFocusTrap } from "./focustrap";
+import { setLanguage } from "./i18n";
 
 applySafeArea();
 startAppVisibility();
@@ -32,6 +33,19 @@ installLinkPaste();
 startPhone();
 watchImageLoads();
 startFocusTrap();
+// The language: the saved choice (once settings are loaded), and again whenever it changes.
+{
+  let wanted: string | undefined;
+  const apply = () => {
+    const l = store.getState().settings.ui.language;
+    if (l !== wanted) {
+      wanted = l;
+      void setLanguage(l);
+    }
+  };
+  store.subscribeState(apply);
+  apply();
+}
 
 // Dev server only: lets UI test scripts set up state (stripped from builds).
 if (import.meta.env.DEV) {

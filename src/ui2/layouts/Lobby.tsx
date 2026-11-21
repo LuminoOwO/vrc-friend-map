@@ -4,6 +4,7 @@
 // folds away to a tab on the edge); the latest activity along the bottom. A view (or Settings)
 // opens in a big frame; the map fades out and stops drawing behind it.
 import { useEffect, useMemo, useState } from "react";
+import { useT } from "../../i18n";
 import { imgSrc } from "../../backend";
 import { bannerUrl } from "../../model";
 import { setState, useApp, type View } from "../../store";
@@ -16,6 +17,7 @@ import { PanelSections, usePanelPrefs } from "../SidePanel";
 import { useSmooth } from "../smooth";
 
 export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
+  const t = useT();
   const view = useApp((s) => s.view);
   const settingsOpen = useApp((s) => s.settingsOpen);
   const [open, setOpen] = useState<View | null>(null);
@@ -60,12 +62,12 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
           {RAIL.map((r) => (
             <button key={r.key} className={`lob-item ${!settingsOpen && (open ?? "graph") === r.key ? "on" : ""}`} title={r.label} onClick={() => pick(r.key)}>
               <Icon name={r.icon} size={26} />
-              <span>{r.key === "graph" ? "Map" : r.label}</span>
+              <span>{r.label}</span>
             </button>
           ))}
-          <button className={`lob-item lob-settings ${settingsOpen ? "on" : ""}`} title="Settings" onClick={() => setState({ settingsOpen: !settingsOpen })}>
+          <button className={`lob-item lob-settings ${settingsOpen ? "on" : ""}`} title={t("menu.settings")} onClick={() => setState({ settingsOpen: !settingsOpen })}>
             <Icon name="settings" size={26} />
-            <span>Settings</span>
+            <span>{t("menu.settings")}</span>
           </button>
         </nav>
       </div>
@@ -97,6 +99,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
 /** A view in the big frame. Its contents mount a moment after the frame starts sliding in, so
  *  building a heavy view doesn't hold up the animation. */
 function Frame({ view, onClose }: { view: View; onClose: () => void }) {
+  const t = useT();
   const [ready, setReady] = useState(false);
   useEffect(() => {
     setReady(false);
@@ -113,7 +116,7 @@ function Frame({ view, onClose }: { view: View; onClose: () => void }) {
         <h1>{RAIL.find((r) => r.key === view)?.label}</h1>
         <span className="ui2-grow" />
         <button className="ui2-pill-btn" onClick={onClose}>
-          <Icon name="chevron-left" size={14} /> Back <kbd>Esc</kbd>
+          <Icon name="chevron-left" size={14} /> {t("common.back")} <kbd>Esc</kbd>
         </button>
       </header>
       <div className="lob-frame-body">{ready && <ViewBody view={view} />}</div>

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { LANGUAGES, MACHINE_TRANSLATED, languageName, resolveLanguage, useT } from "../i18n";
 import { NO_OWN_COLORS, type OwnColors } from "../owncolors";
 import { scoreSection } from "../settingsSearch";
 import { backend, imgSrc, isMobile, type GraphicsInfo, type GraphicsMode } from "../backend";
@@ -197,9 +198,26 @@ function BioSection() {
 function InterfaceSection() {
   const ui = useApp((s) => s.settings.ui);
   const set = (patch: Partial<UiSettings>) => updateUi(patch);
+  const t = useT();
+  const shownLang = resolveLanguage(ui.language);
   return (
     <>
       <h3>Interface</h3>
+      <label className="field narrow">
+        <span>{t("language.title")}</span>
+        <select value={ui.language} onChange={(e) => set({ language: e.target.value })}>
+          <option value="system">{t("language.system", { name: languageName(resolveLanguage("system")) })}</option>
+          {LANGUAGES.map((c) => (
+            <option key={c} value={c}>
+              {languageName(c)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="small muted">
+        {t("language.help")}
+        {MACHINE_TRANSLATED.has(shownLang) ? ` ${t("language.machine", { name: languageName(shownLang) })}` : ""}
+      </p>
       <label className="check">
         <input type="checkbox" checked={ui.hideUnavailable} onChange={(e) => set({ hideUnavailable: e.target.checked })} />
         Hide features not available on this platform
@@ -537,7 +555,7 @@ export function SettingsModal() {
           </div>
         </Sec>
 
-        <Sec id="interface" cat="appearance" title="Interface" keys="hide unavailable platform haptics vibration beta new ui text size font motion animation color blind accessibility">
+        <Sec id="interface" cat="appearance" title="Interface" keys="language sprache idioma langue translation hide unavailable platform haptics vibration beta new ui text size font motion animation color blind accessibility">
           <InterfaceSection />
         </Sec>
 
