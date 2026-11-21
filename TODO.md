@@ -269,8 +269,9 @@ tray. On hold: Discord rich presence.
     full-window with a slim top bar (search, filter chips), person panel with tabs (Overview,
     Notes, Age, History, Sharing), who's here as a floating card, Ctrl+K command palette,
     calmer look.
-  - Phone: bottom tab bar (Map, People, Here, Me), a person as a bottom sheet (peek / half /
-    full), filters and settings as full-screen sheets, 44 px touch targets, haptics.
+  - Phone (redone 2026-11-21 in the computer's look): frame-style title bar, bottom tabs
+    Map · People · Party · Insights · Menu, profiles / settings (Discord style) / filters full
+    screen, 44 px touch targets, haptics.
 - [ ] **Accessibility:** text size, reduced motion, colorblind-safe status colors, full
   keyboard navigation.
 - [x] **Easier server connections.** (Invite links done; the server settings are sorted by purpose in the beta UI.) (Owner, 2026-11-18: setting one up is confusing.) Joining
@@ -385,6 +386,10 @@ tray. On hold: Discord rich presence.
 ## Parked
 
 - [ ] **"Liquid glass" theme** like Apple's, on every platform (put aside for now).
+
+## Bored tasks (owner, 2026-11-21)
+
+Only once everything else is done and total perfection is the task.
 
 - [ ] **Why Chromium in the app gets no XInput2 wheel / popup input on XLibre** (Gentoo + Xfce +
   XLibre; Chromium 146 on the same system is fine, and so is the app on Mint/X.Org). His mouse
