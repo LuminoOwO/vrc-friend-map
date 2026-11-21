@@ -1,3 +1,4 @@
+import { t as tr } from "../i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { backend, imgSrc, isTauri } from "../backend";
 import { setState, showToast, useApp } from "../store";
@@ -29,7 +30,7 @@ export function viewable(items: ViewerItem | ViewerItem[] | null | undefined, in
     role: "button",
     tabIndex: 0,
     className: "viewable",
-    title: "Click to view",
+    title: tr("viewer.clickToView"),
     onClick: (e: React.MouseEvent) => {
       e.stopPropagation();
       openImage(items, index);
@@ -165,10 +166,10 @@ function Viewer({ items, index }: { items: ViewerItem[]; index: number }) {
       } catch {
         path = await backend.saveImage(item.url, item.title); // the full size may not be public
       }
-      if (isTauri) showToast(`Saved to ${path}`);
+      if (isTauri) showToast(tr("viewer.savedToPath", { path }));
       setLastSaved(path);
     } catch (e) {
-      showToast(`Couldn't save: ${e instanceof Error ? e.message : String(e)}`);
+      showToast(tr("viewer.couldnTSaveValue", { value: e instanceof Error ? e.message : String(e) }));
     } finally {
       setSaving(false);
     }
@@ -185,28 +186,28 @@ function Viewer({ items, index }: { items: ViewerItem[]; index: number }) {
           {items.length > 1 && <span className="muted"> · {index + 1} / {items.length}</span>}
         </span>
         <div className="viewer-tools">
-          <button className="icon-btn" title="Zoom out (−)" onClick={() => zoomAt(0.8)}>
+          <button className="icon-btn" title={tr("viewer.zoomOut")} onClick={() => zoomAt(0.8)}>
             <Icon name="minus" size={18} />
           </button>
-          <button className="btn small viewer-pct" title="Fit to screen (0)" onClick={fitNow}>
+          <button className="btn small viewer-pct" title={tr("viewer.fitToScreen0")} onClick={fitNow}>
             {pct}%
           </button>
-          <button className="icon-btn" title="Zoom in (+)" onClick={() => zoomAt(1.25)}>
+          <button className="icon-btn" title={tr("viewer.zoomIn")} onClick={() => zoomAt(1.25)}>
             <Icon name="plus" size={18} />
           </button>
-          <button className="btn small" title="Actual size" onClick={() => setView({ s: 1, x: 0, y: 0 })}>
+          <button className="btn small" title={tr("viewer.actualSize")} onClick={() => setView({ s: 1, x: 0, y: 0 })}>
             1:1
           </button>
-          <button className="btn small primary" disabled={saving} onClick={download} title="Save to Downloads / VRC Friend Map">
-            <Icon name="download" size={16} /> <span className="hide-sm">{saving ? "Saving…" : "Download"}</span>
+          <button className="btn small primary" disabled={saving} onClick={download} title={tr("viewer.saveToDownloadsVrcFriend")}>
+            <Icon name="download" size={16} /> <span className="hide-sm">{saving ? tr("viewer.saving") : "Download"}</span>
           </button>
           {lastSaved && isTauri && !/android/i.test(navigator.userAgent) && (
-            <button className="btn small" onClick={() => backend.revealFile(lastSaved).catch(() => showToast("Couldn't open the folder"))}>
-              <span className="hide-sm">Show in folder</span>
+            <button className="btn small" onClick={() => backend.revealFile(lastSaved).catch(() => showToast(tr("viewer.couldnTOpenTheFolder")))}>
+              <span className="hide-sm">{tr("viewer.showInFolder")}</span>
               <Icon name="folder" size={16} />
             </button>
           )}
-          <button className="icon-btn viewer-close" title="Close (Esc)" onClick={close}>
+          <button className="icon-btn viewer-close" title={tr("viewer.closeEsc")} onClick={close}>
             <Icon name="close" size={20} />
           </button>
         </div>
@@ -235,13 +236,13 @@ function Viewer({ items, index }: { items: ViewerItem[]; index: number }) {
             if (src !== small) setSrc(small);
           }}
         />
-        {!natural && <div className="viewer-loading">Loading…</div>}
+        {!natural && <div className="viewer-loading">{tr("viewer.loading")}</div>}
         {items.length > 1 && (
           <>
-            <button className="viewer-nav prev" title="Previous (←)" onClick={() => go(-1)}>
+            <button className="viewer-nav prev" title={tr("viewer.previous")} onClick={() => go(-1)}>
               <Icon name="chevron-left" size={26} />
             </button>
-            <button className="viewer-nav next" title="Next (→)" onClick={() => go(1)}>
+            <button className="viewer-nav next" title={tr("viewer.next")} onClick={() => go(1)}>
               <Icon name="chevron-right" size={26} />
             </button>
           </>

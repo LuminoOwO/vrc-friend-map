@@ -1,6 +1,7 @@
 // "Who's here": everyone in your VRChat instance, from the live game log.
 // A readable list (friends first), one row of pictures, or just a button:
 // Map options' choice, switched with the buttons in its header.
+import { t as tr } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { backend, imgSrc } from "../backend";
 import { othersHere } from "../live";
@@ -18,7 +19,7 @@ const PROFILE_LIMIT = 25;
 export function since(ts: number, now: number): string {
   const mins = Math.max(0, Math.round((now - naiveToDate(ts).getTime()) / 60000));
   if (mins < 1) return "just joined";
-  if (mins < 60) return `${mins} min`;
+  if (mins < 60) return tr("here.minsMin", { mins });
   const h = Math.floor(mins / 60);
   return `${h} h ${mins % 60 ? `${mins % 60} min` : ""}`.trim();
 }
@@ -29,12 +30,12 @@ function detailLine(id: string, friend: boolean, cache: Cache): string {
     const mutual = cache.mutuals[id];
     const p = presenceOf(f, cache.presence);
     const bits = [f.statusDescription || presenceLabel(f, p)];
-    if (mutual && !mutual.hidden) bits.push(`${mutual.count} mutual${mutual.count === 1 ? "" : "s"}`);
+    if (mutual && !mutual.hidden) bits.push(tr("here.countMutualValue", { count: mutual.count, value: mutual.count === 1 ? "" : "s" }));
     return bits.filter(Boolean).join(" · ");
   }
   const mutual = cache.mutuals[id]?.count ?? 0;
   const bits = ["Not a friend yet"];
-  if (mutual) bits.push(`${mutual} friend${mutual === 1 ? "" : "s"} in common`);
+  if (mutual) bits.push(tr("here.mutualFriendValueInCommon", { mutual, value: mutual === 1 ? "" : "s" }));
   if (f?.statusDescription) bits.push(f.statusDescription);
   return bits.join(" · ");
 }
@@ -115,13 +116,13 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
           {loc.flag} {loc.type}
         </span>
       )}
-      <span title={capacity ? `${inside} of ${capacity} slots taken` : `${inside} in the instance`}>
+      <span title={capacity ? tr("here.insideOfCapacitySlotsTaken", { inside, capacity }) : tr("here.insideInTheInstance", { inside })}>
         <Icon name="users" size={12} /> {inside}
         {capacity ? ` / ${capacity}` : ""}
       </span>
       {here?.video && (
-        <button className="link-btn now-playing" title={`Now playing${here.video.by ? ` (by ${here.video.by})` : ""}: ${here.video.url}`} onClick={() => backend.openUrl(here.video!.url).catch(() => {})}>
-          <Icon name="video" size={12} /> now playing
+        <button className="link-btn now-playing" title={`Now playing${here.video.by ? tr("here.byBy", { by: here.video.by }) : ""}: ${here.video.url}`} onClick={() => backend.openUrl(here.video!.url).catch(() => {})}>
+          <Icon name="video" size={12} /> {tr("here.nowPlaying")}
         </button>
       )}
     </span>
@@ -129,7 +130,7 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
   const moveBtn = (
     <button
       className="icon-btn small"
-      title={inSidebar ? "Show over the map instead" : "Put it in the sidebar"}
+      title={inSidebar ? tr("here.showOverTheMapInstead") : tr("here.putItInTheSidebar")}
       onClick={() => updateMap({ herePlace: inSidebar ? "map" : "sidebar" })}
     >
       <Icon name={inSidebar ? "expand" : "compress"} size={15} />
@@ -141,15 +142,15 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
 
   const summary = (
     <span className="here-summary">
-      {count === 0 ? "just you" : `${count} with you`}
-      {people.friends.length > 0 && count > 0 ? ` · ${people.friends.length} friend${people.friends.length === 1 ? "" : "s"}` : ""}
-      {!showBlocked && people.blocked > 0 ? ` · ${people.blocked} blocked, hidden` : ""}
+      {count === 0 ? "just you" : tr("here.countWithYou", { count })}
+      {people.friends.length > 0 && count > 0 ? tr("here.lengthFriendValue", { length: people.friends.length, value: people.friends.length === 1 ? "" : "s" }) : ""}
+      {!showBlocked && people.blocked > 0 ? tr("here.blockedBlockedHidden", { blocked: people.blocked }) : ""}
     </span>
   );
 
   if (mode === "hidden" && !inSidebar) {
     return (
-      <button className={`here-pill ${docked ? "docked" : ""}`} onClick={() => setMode("list")} title="Show who's in your instance">
+      <button className={`here-pill ${docked ? "docked" : ""}`} onClick={() => setMode("list")} title={tr("here.showWhoSInYour")}>
         <span className="here-dot" />
         <b>{world}</b>
         <span className="here-count">{count + 1}</span>
@@ -165,7 +166,7 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
       <button
         key={p.id}
         className={`here-face ${friend ? "friend" : "other"} ${selectedId === p.id ? "on" : ""}`}
-        title={friend ? name : `${name} (not a friend yet)`}
+        title={friend ? name : tr("here.nameNotAFriendYet", { name })}
         onClick={() => setState({ selectedId: p.id })}
       >
         {pic ? <img src={pic} alt="" loading="lazy" /> : <span>{name.slice(0, 1).toUpperCase()}</span>}
@@ -189,7 +190,7 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
             <span className="here-name">{name}</span>
             <span className="here-sub">{blocked ? "Blocked" : detailLine(p.id, friend, cache)}</span>
           </span>
-          <span className="here-time" title="Time in this instance">
+          <span className="here-time" title={tr("here.timeInThisInstance")}>
             {since(p.since, now)}
           </span>
         </button>
@@ -201,7 +202,7 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
   const othersShown = people.others.filter(match);
 
   return (
-    <section className={`here-now ${mode} ${docked ? "docked" : ""} ${inSidebar ? "in-sidebar" : ""}`} aria-label="People in your instance">
+    <section className={`here-now ${mode} ${docked ? "docked" : ""} ${inSidebar ? "in-sidebar" : ""}`} aria-label={tr("here.peopleInYourInstance")}>
       {inSidebar && worldInfo?.imageUrl && mode !== "hidden" && (
         <div className="here-banner">
           <img src={imgSrc(worldInfo.thumbnailImageUrl || worldInfo.imageUrl)} alt="" />
@@ -215,15 +216,15 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
           {summary}
         </span>
         <span className="here-modes">
-          <button className={`icon-btn small ${mode === "list" ? "on" : ""}`} title="Full list" onClick={() => setMode("list")}>
+          <button className={`icon-btn small ${mode === "list" ? "on" : ""}`} title={tr("here.fullList")} onClick={() => setMode("list")}>
             <Icon name="menu" size={15} />
           </button>
-          <button className={`icon-btn small ${mode === "compact" ? "on" : ""}`} title="Pictures only" onClick={() => setMode("compact")}>
+          <button className={`icon-btn small ${mode === "compact" ? "on" : ""}`} title={tr("here.picturesOnly")} onClick={() => setMode("compact")}>
             <Icon name="users" size={15} />
           </button>
           <button
             className={`icon-btn small ${mode === "hidden" ? "on" : ""}`}
-            title={inSidebar ? "Only the heading" : "Hide (a button stays)"}
+            title={inSidebar ? tr("here.onlyTheHeading") : tr("here.hideAButtonStays")}
             onClick={() => setMode(mode === "hidden" && inSidebar ? "list" : "hidden")}
           >
             <Icon name="chevron-up" size={15} />
@@ -258,21 +259,21 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
                 <ul>{othersShown.map((p) => row(p, false))}</ul>
               </>
             )}
-            {count === 0 && <p className="small muted here-empty">Nobody else is here right now.</p>}
+            {count === 0 && <p className="small muted here-empty">{tr("here.nobodyElseIsHereRight")}</p>}
             {count > 0 && !friendsShown.length && !othersShown.length && <p className="small muted here-empty">Nobody here matches “{query}”.</p>}
           </div>
           {people.others.length > 0 && (
             <div className="here-options">
               {!docked && (
-                <label className="check small" title="Show people who aren't friends yet on the map">
+                <label className="check small" title={tr("here.showPeopleWhoArenT")}>
                   <input type="checkbox" checked={showOthers !== "off"} onChange={(e) => updateMap({ showOthers: e.target.checked ? "here" : "off" })} />
                   Show the {people.others.length} who aren't friends on the map
                 </label>
               )}
               {people.others.length > PROFILE_LIMIT && (
-                <label className="check small" title="Pictures and profiles load one by one, a few seconds apart, to go easy on VRChat">
+                <label className="check small" title={tr("here.picturesAndProfilesLoadOne")}>
                   <input type="checkbox" checked={loadEveryone} onChange={(e) => updatePeople({ loadEveryone: e.target.checked })} />
-                  Load everyone's profile{loadEveryone ? "" : ` (now: first ${PROFILE_LIMIT})`}
+                  Load everyone's profile{loadEveryone ? "" : tr("here.nowFirstProfileLimit", { PROFILE_LIMIT })}
                 </label>
               )}
             </div>

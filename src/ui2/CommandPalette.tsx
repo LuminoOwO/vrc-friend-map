@@ -1,5 +1,6 @@
 // Ctrl+K: find anything. Friends (by name or your nickname), views, settings
 // sections and actions, keyboard first.
+import { t as tr } from "../i18n";
 import { useMemo, useState } from "react";
 import { isMuted, muteFor } from "../notifications";
 import { getState, setState, updateUi, useApp, type View } from "../store";
@@ -60,16 +61,16 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     const people = Object.values(friends)
       .filter((f) => ql && (match(f.displayName) || match(nicknames[f.id] ?? "")))
       .slice(0, 8)
-      .map((f) => ({ id: f.id, label: nicknames[f.id] ? `${nicknames[f.id]} (${f.displayName})` : f.displayName, hint: "Friend", icon: "user", run: () => setState({ selectedId: f.id }) }));
+      .map((f) => ({ id: f.id, label: nicknames[f.id] ? tr("palette.valueName", { value: nicknames[f.id], name: f.displayName }) : f.displayName, hint: "Friend", icon: "user", run: () => setState({ selectedId: f.id }) }));
     out.push(...people);
     for (const [v, l, i] of VIEWS) if (match(l, "view")) out.push({ id: `view:${v}`, label: l, hint: "View", icon: i, run: () => setState({ view: v }) });
     for (const [id, l] of SETTINGS) if (match(l, "settings")) out.push({ id: `set:${id}`, label: l, hint: "Settings", icon: "settings", run: () => setState({ settingsOpen: true, settingsTab: id }) });
     const actions: Item[] = [
-      { id: "a:sync", label: "Sync with VRChat now", hint: "Action", icon: "refresh", run: () => void syncAll() },
-      { id: "a:servers", label: "Sync with my servers now", hint: "Action", icon: "server", run: () => void syncAllServers({ manual: true }) },
-      { id: "a:mute", label: isMuted() ? "Unmute notifications" : "Mute notifications for an hour", hint: "Action", icon: "bell-off", run: () => muteFor(isMuted() ? 0 : 3600e3) },
-      { id: "a:classic", label: "Back to the classic UI", hint: "Action", icon: "eye", run: () => updateUi({ beta: false }) },
-      { id: "a:me", label: "My profile", hint: "Action", icon: "user", run: () => getState().cache.me && setState({ selectedId: getState().cache.me!.id }) },
+      { id: "a:sync", label: tr("palette.syncWithVrchatNow"), hint: "Action", icon: "refresh", run: () => void syncAll() },
+      { id: "a:servers", label: tr("palette.syncWithMyServersNow"), hint: "Action", icon: "server", run: () => void syncAllServers({ manual: true }) },
+      { id: "a:mute", label: isMuted() ? tr("palette.unmuteNotifications") : tr("palette.muteNotificationsForAnHour"), hint: "Action", icon: "bell-off", run: () => muteFor(isMuted() ? 0 : 3600e3) },
+      { id: "a:classic", label: tr("palette.backToTheClassicUi"), hint: "Action", icon: "eye", run: () => updateUi({ beta: false }) },
+      { id: "a:me", label: tr("palette.myProfile"), hint: "Action", icon: "user", run: () => getState().cache.me && setState({ selectedId: getState().cache.me!.id }) },
     ];
     out.push(...actions.filter((a) => match(a.label, "action")));
     return out.slice(0, 30);
@@ -87,13 +88,13 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
       // Esc closes it wherever the focus is inside (not only in the search box).
       onKeyDown={(e) => e.key === "Escape" && onClose()}
     >
-      <div className="ui2-palette" role="dialog" aria-label="Search everything">
+      <div className="ui2-palette" role="dialog" aria-label={tr("palette.searchEverything")}>
         <div className="ui2-search">
           <Icon name="search" size={16} />
           <input
             autoFocus
             value={q}
-            placeholder="Friends, views, settings, actions…"
+            placeholder={tr("palette.friendsViewsSettingsActions")}
             onChange={(e) => {
               setQ(e.target.value);
               setSel(0);
@@ -118,7 +119,7 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
               </button>
             </li>
           ))}
-          {!items.length && <li className="muted small ui2-empty">Nothing found.</li>}
+          {!items.length && <li className="muted small ui2-empty">{tr("palette.nothingFound")}</li>}
         </ul>
       </div>
     </div>

@@ -1,5 +1,6 @@
 // Settings → Servers: vfm-servers you share through (exchange) and/or that
 // log your friends for you (logger). See share.ts for the rules.
+import { t as tr } from "../i18n";
 import { SETTING_GROUPS } from "../devicesync";
 import { useEffect, useState } from "react";
 import { backend, isTauri, type LoggerStatus, type MyIdentity } from "../backend";
@@ -40,8 +41,8 @@ export function ago(t: number) {
   if (!t) return "never";
   const s = (Date.now() - t) / 1000;
   if (s < 90) return "just now";
-  if (s < 5400) return `${Math.round(s / 60)} min ago`;
-  if (s < 129600) return `${Math.round(s / 3600)} h ago`;
+  if (s < 5400) return tr("serversModal.valueMinAgo", { value: Math.round(s / 60) });
+  if (s < 129600) return tr("serversModal.valueHAgo", { value: Math.round(s / 3600) });
   return fmtDate(t);
 }
 
@@ -50,7 +51,7 @@ async function copy(text: string) {
     await navigator.clipboard.writeText(text);
     showToast("Copied");
   } catch {
-    showToast("Couldn't copy; select the text instead");
+    showToast(tr("serversModal.couldnTCopySelectThe"));
   }
 }
 
@@ -79,20 +80,20 @@ export function EncryptionSwitch({ server }: { server: ShareServer }) {
   return (
     <div className="enc-row">
       <span className="enc-label">
-        <Icon name={sw.on ? "lock" : "unlock"} size={16} /> Encryption
+        <Icon name={sw.on ? "lock" : "unlock"} size={16} /> {tr("serversModal.encryption")}
       </span>
-      <div className="seg enc-seg" role="radiogroup" aria-label="Encryption">
+      <div className="seg enc-seg" role="radiogroup" aria-label={tr("serversModal.encryption")}>
         <button role="radio" aria-checked={!sw.on} className={!sw.on ? "on off-side" : ""} disabled={sw.locked === "off"} onClick={() => set(false)}>
-          Off
+          {tr("serversModal.off")}
         </button>
         <button role="radio" aria-checked={sw.on} className={sw.on ? "on" : ""} disabled={sw.locked === "on"} onClick={() => set(true)}>
-          On
+          {tr("serversModal.on")}
         </button>
       </div>
-      <Why text={sw.why} label="Why is it set like this?" />
+      <Why text={sw.why} label={tr("serversModal.whyIsItSetLike")} />
       {sw.source === "yours" && (
         <button className="btn link small" onClick={() => updateServer(server.id, { encrypt: null })}>
-          Use default
+          {tr("serversModal.useDefault")}
         </button>
       )}
       {sw.warn && (
@@ -106,8 +107,8 @@ export function EncryptionSwitch({ server }: { server: ShareServer }) {
 
 export const DEFAULTS: { value: EncDefault; label: string; why: string }[] = [
   { value: "server", label: "Server-based", why: "Each server's suggestion: on where it recommends encryption, off where it's optional." },
-  { value: "on", label: "Always on", why: "Encrypt wherever the server lets you. Servers that never encrypt start with uploading turned off." },
-  { value: "off", label: "Always off", why: "Don't encrypt where the server lets you choose (it can then read what you share). Servers that always encrypt still do." },
+  { value: "on", label: tr("serversModal.alwaysOn"), why: "Encrypt wherever the server lets you. Servers that never encrypt start with uploading turned off." },
+  { value: "off", label: tr("serversModal.alwaysOff"), why: "Don't encrypt where the server lets you choose (it can then read what you share). Servers that always encrypt still do." },
 ];
 
 export function ServersModal() {
@@ -143,12 +144,12 @@ export function ServersModal() {
 
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && close()}>
-      <div className="modal wide" role="dialog" aria-label="Servers">
+      <div className="modal wide" role="dialog" aria-label={tr("serversModal.servers")}>
         <div className="modal-head">
           <h2>
-            <Icon name="server" /> Servers
+            <Icon name="server" /> {tr("serversModal.servers")}
           </h2>
-          <button className="icon-btn" onClick={close} title="Close">
+          <button className="icon-btn" onClick={close} title={tr("serversModal.close")}>
             <Icon name="close" />
           </button>
         </div>
@@ -158,21 +159,21 @@ export function ServersModal() {
           redundancy; encrypted uploads keep each server from reading anything.
         </p>
 
-        {demo && <p className="notice-inline">Not available in demo mode.</p>}
+        {demo && <p className="notice-inline">{tr("serversModal.notAvailableInDemoMode")}</p>}
 
         <section>
-          <h3>Add a server</h3>
+          <h3>{tr("serversModal.addAServer")}</h3>
           <div className="row">
             <input
               className="grow"
               value={url}
-              placeholder="e.g. 192.168.1.20:8787 or vfm.example.com"
+              placeholder={tr("serversModal.eG1921681")}
               onChange={(e) => setUrl(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && url.trim() && add()}
               disabled={demo}
             />
             <button className="btn primary" onClick={add} disabled={!url.trim() || adding || demo}>
-              <Icon name="plus" size={16} /> {adding ? "Checking…" : "Add"}
+              <Icon name="plus" size={16} /> {adding ? tr("serversModal.checking") : "Add"}
             </button>
           </div>
           {addError && <p className="error-text">{addError}</p>}
@@ -184,9 +185,9 @@ export function ServersModal() {
         ))}
 
         <section>
-          <h3>Encryption default</h3>
+          <h3>{tr("serversModal.encryptionDefault")}</h3>
           <div className="row">
-            <div className="seg" role="radiogroup" aria-label="Encryption default">
+            <div className="seg" role="radiogroup" aria-label={tr("serversModal.encryptionDefault")}>
               {DEFAULTS.map((d) => (
                 <button
                   key={d.value}
@@ -209,21 +210,21 @@ export function ServersModal() {
         </section>
 
         <section>
-          <h3>Syncing</h3>
+          <h3>{tr("serversModal.syncing")}</h3>
           <label className="check">
             <input type="checkbox" checked={sharing.autoSync} onChange={(e) => updateSharing({ autoSync: e.target.checked })} />
-            Sync while the app is open, every
+            {tr("serversModal.syncWhileTheAppIs")}
             <select value={sharing.intervalMin} onChange={(e) => updateSharing({ intervalMin: Number(e.target.value) })} disabled={!sharing.autoSync}>
               {[15, 30, 60, 180, 720].map((m) => (
                 <option key={m} value={m}>
-                  {m < 60 ? `${m} min` : `${m / 60} h`}
+                  {m < 60 ? tr("serversModal.mMin", { m }) : tr("serversModal.valueH", { value: m / 60 })}
                 </option>
               ))}
             </select>
           </label>
           <label className="check">
             <input type="checkbox" checked={sharing.syncSettings} onChange={(e) => updateSharing({ syncSettings: e.target.checked })} />
-            Also sync settings between my devices (not frame rate, tray, graphics or phone settings)
+            {tr("serversModal.alsoSyncSettingsBetweenMy")}
           </label>
           {sharing.syncSettings && (
             <div className="indent">
@@ -247,7 +248,7 @@ export function ServersModal() {
                     {synced && (
                       <label className="check small muted">
                         <input type="checkbox" checked={local} onChange={(e) => updateSharing({ localOnly: e.target.checked ? [...sharing.localOnly, g.id] : sharing.localOnly.filter((x) => x !== g.id) })} />
-                        keep this device's own
+                        {tr("serversModal.keepThisDeviceSOwn")}
                       </label>
                     )}
                   </div>
@@ -257,22 +258,22 @@ export function ServersModal() {
           )}
           <label className="check">
             <input type="checkbox" checked={sharing.neverUnencrypted} onChange={(e) => updateSharing({ neverUnencrypted: e.target.checked })} />
-            Never send anything unencrypted (whatever a server allows)
+            {tr("serversModal.neverSendAnythingUnencryptedWhatever")}
           </label>
           <label className="check">
             <input type="checkbox" checked={sharing.useShared} onChange={(e) => updateSharing({ useShared: e.target.checked })} />
-            Use activity friends share with me for group suggestions
+            {tr("serversModal.useActivityFriendsShareWith")}
           </label>
           <label className="check">
             <input type="checkbox" checked={sharing.useLogger} onChange={(e) => updateSharing({ useLogger: e.target.checked })} />
-            Use my loggers' history for group suggestions
+            {tr("serversModal.useMyLoggersHistoryFor")}
           </label>
           <div className="row">
             <button className="btn" onClick={() => syncAllServers({ manual: true })} disabled={busy || !sharing.servers.length || demo}>
-              <Icon name="refresh" size={16} /> {busy ? "Syncing…" : "Sync all now"}
+              <Icon name="refresh" size={16} /> {busy ? tr("serversModal.syncing2") : tr("serversModal.syncAllNow")}
             </button>
             <span className="small muted">
-              {people ? `${people} ${people === 1 ? "person shares" : "people share"} with you (friend lists show under Shared lists).` : "Nothing shared with you yet."}
+              {people ? tr("serversModal.peopleValueWithYouFriend", { people, value: people === 1 ? "person shares" : "people share" }) : tr("serversModal.nothingSharedWithYouYet")}
             </span>
           </div>
         </section>
@@ -293,7 +294,7 @@ export function ChangedKeys() {
   return (
     <section>
       <h3>
-        <Icon name="warn" size={16} /> Changed keys
+        <Icon name="warn" size={16} /> {tr("serversModal.changedKeys")}
       </h3>
       <p className="small">
         A server gave a different key for these people than the one you first got. Usually they reinstalled the app or set up a new device
@@ -309,7 +310,7 @@ export function ChangedKeys() {
             </span>
           </span>
           <button className="btn small" onClick={() => acceptKey(id).catch((e) => showToast(errText(e)))}>
-            Accept new key
+            {tr("serversModal.acceptNewKey")}
           </button>
         </div>
       ))}
@@ -325,7 +326,7 @@ export function KeySection({ me, setMe }: { me: MyIdentity | null; setMe: (m: My
   return (
     <section>
       <h3>
-        <Icon name="key" size={16} /> Your key
+        <Icon name="key" size={16} /> {tr("serversModal.yourKey")}
       </h3>
       <p className="small">
         Fingerprint <code className="fp">{me.fingerprint}</code>
@@ -334,10 +335,10 @@ export function KeySection({ me, setMe }: { me: MyIdentity | null; setMe: (m: My
       <div className="row">
         <code className="fp">{me.proof}</code>
         <button className="btn small" onClick={() => copy(me.proof)}>
-          <Icon name="copy" size={14} /> Copy bio line
+          <Icon name="copy" size={14} /> {tr("serversModal.copyBioLine")}
         </button>
       </div>
-      <p className="small muted">Using the app on more than one device? Give the others the same key, or they can't read what's shared with you.</p>
+      <p className="small muted">{tr("serversModal.usingTheAppOnMore")}</p>
       <div className="row">
         <button
           className="btn small"
@@ -346,10 +347,10 @@ export function KeySection({ me, setMe }: { me: MyIdentity | null; setMe: (m: My
             setSecret(await backend.share.exportKey());
           }}
         >
-          {secret ? "Hide key" : "Copy key to another device"}
+          {secret ? tr("serversModal.hideKey") : tr("serversModal.copyKeyToAnotherDevice")}
         </button>
         <button className="btn small" onClick={() => setShowImport(!showImport)}>
-          Use key from another device
+          {tr("serversModal.useKeyFromAnotherDevice")}
         </button>
       </div>
       {secret && (
@@ -361,14 +362,14 @@ export function KeySection({ me, setMe }: { me: MyIdentity | null; setMe: (m: My
           <div className="row">
             <code className="secret">{secret}</code>
             <button className="btn small" onClick={() => copy(secret)}>
-              <Icon name="copy" size={14} /> Copy
+              <Icon name="copy" size={14} /> {tr("serversModal.copy")}
             </button>
           </div>
         </div>
       )}
       {showImport && (
         <div className="row">
-          <input className="grow" type="password" value={paste} placeholder="vfmkey1:usr_…" onChange={(e) => setPaste(e.target.value)} />
+          <input className="grow" type="password" value={paste} placeholder={tr("serversModal.vfmkey1Usr")} onChange={(e) => setPaste(e.target.value)} />
           <button
             className="btn small primary"
             disabled={!paste.trim()}
@@ -377,13 +378,13 @@ export function KeySection({ me, setMe }: { me: MyIdentity | null; setMe: (m: My
                 setMe(await backend.share.importKey(paste));
                 setPaste("");
                 setShowImport(false);
-                showToast("This device now uses that key");
+                showToast(tr("serversModal.thisDeviceNowUsesThat"));
               } catch (e) {
                 showToast(errText(e));
               }
             }}
           >
-            Use this key
+            {tr("serversModal.useThisKey")}
           </button>
         </div>
       )}
@@ -432,14 +433,14 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
             <div className="small warn-text">
               Older than this app ({__APP_VERSION__}); some things (like syncing your devices) need a newer server.{" "}
               <button className="link-btn" onClick={() => void backend.openUrl("https://github.com/LuminoOwO/vrc-friend-map/blob/main/docs/server-setup.md#9-updating-the-server")}>
-                How to update it
+                {tr("serversModal.howToUpdateIt")}
               </button>
             </div>
           )}
         </div>
         <div className="row tight">
           {info && <span className={`pill ${info.encryption === "force-off" ? "warn" : info.encryption === "force-on" ? "ok" : ""}`}>{POLICY_LABEL[info.encryption]}</span>}
-          <button className="icon-btn tiny" title="Check again" onClick={() => run("refresh", () => refreshServer(s.id))}>
+          <button className="icon-btn tiny" title={tr("serversModal.checkAgain")} onClick={() => run("refresh", () => refreshServer(s.id))}>
             <Icon name="refresh" size={15} />
           </button>
         </div>
@@ -459,7 +460,7 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
             someone may be pretending to be it. Nothing is sent to it until you decide.
           </p>
           <button className="btn small" onClick={() => run("trust", () => trustServerKey(s.id))}>
-            It was reinstalled: trust the new key
+            {tr("serversModal.itWasReinstalledTrustThe")}
           </button>
         </div>
       )}
@@ -467,11 +468,11 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
       {!s.registered && info && !s.keyChanged && (
         <div className="join">
           {info.registration === "closed" ? (
-            <p className="small muted">This server isn't taking new people.</p>
+            <p className="small muted">{tr("serversModal.thisServerIsnTTaking")}</p>
           ) : (
             <div className="row">
               {info.registration === "invite" && (
-                <input className="grow" value={invite} placeholder="Invite code from the server's owner" onChange={(e) => setInvite(e.target.value)} />
+                <input className="grow" value={invite} placeholder={tr("serversModal.inviteCodeFromTheServer")} onChange={(e) => setInvite(e.target.value)} />
               )}
               <button
                 className="btn primary small"
@@ -481,7 +482,7 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
                   await syncServer(s.id, { manual: true });
                 })}
               >
-                {working === "join" ? "Joining…" : "Join this server"}
+                {working === "join" ? tr("serversModal.joining") : tr("serversModal.joinThisServer")}
               </button>
             </div>
           )}
@@ -500,54 +501,54 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
                 if (e.target.checked && serverSwitch({ ...s, upload: true }).warn && !s.ackUnencrypted) setState({ confirmUnencrypted: s.id });
               }}
             />
-            <Icon name="upload" size={15} /> Share my data here
+            <Icon name="upload" size={15} /> {tr("serversModal.shareMyDataHere")}
           </label>
           {s.upload && (
             <div className="indent">
               <div className="row">
                 <label className="check">
                   <input type="checkbox" checked={s.shareFriends} onChange={(e) => set({ shareFriends: e.target.checked })} />
-                  Friend list
+                  {tr("serversModal.friendList")}
                 </label>
                 <label className="check">
                   <input type="checkbox" checked={s.shareActivity} onChange={(e) => set({ shareActivity: e.target.checked })} />
-                  Activity (who spends time with whom)
+                  {tr("serversModal.activityWhoSpendsTimeWith")}
                 </label>
                 <label className="check">
                   <input type="checkbox" checked={s.shareNotes} disabled={!s.shareFriends} onChange={(e) => set({ shareNotes: e.target.checked })} />
-                  My notes about people
+                  {tr("serversModal.myNotesAboutPeople")}
                 </label>
                 <label className="check">
                   <input type="checkbox" checked={s.syncMine} onChange={(e) => set({ syncMine: e.target.checked })} />
-                  Sync my circles and notes with my other devices
+                  {tr("serversModal.syncMyCirclesAndNotes")}
                 </label>
                 <Why text="Your circles, dismissed group suggestions, what you tell friends about people, and per-person notification rules (and settings, if that's on below) go to this server encrypted for your own key only, so the server can't read them. Your other devices pick them up when they sync; edits on both are merged. Your other devices need the same key: Copy key to another device. Age notes stay on each device." />
                 {s.syncMine && s.info?.deviceRelay && <DevicesHere url={s.url} />}
                 <label className="check">
                   <input type="checkbox" checked={s.shareRemovals} disabled={!s.shareFriends} onChange={(e) => set({ shareRemovals: e.target.checked })} />
-                  My friend removals
+                  {tr("serversModal.myFriendRemovals")}
                 </label>
                 <label className="check">
                   <input type="checkbox" checked={s.shareBlocks} disabled={!s.shareFriends} onChange={(e) => set({ shareBlocks: e.target.checked })} />
-                  Why I blocked people (the reasons I picked, not my own words)
+                  {tr("serversModal.whyIBlockedPeopleThe")}
                 </label>
                 <label className="check">
                   <input type="checkbox" checked={s.shareTimezone} disabled={!s.shareFriends} onChange={(e) => set({ shareTimezone: e.target.checked })} />
-                  My time zone (so friends see my local time)
+                  {tr("serversModal.myTimeZoneSoFriends")}
                 </label>
                 <label className="check">
                   <input type="checkbox" checked={s.useCache !== false} onChange={(e) => set({ useCache: e.target.checked })} />
-                  Use this server's shared cache of public VRChat info (worlds, avatars), so VRChat gets fewer requests
+                  {tr("serversModal.useThisServerSShared")}
                 </label>
                 <Why text="Friend list: your friends' names and IDs, so friends see your connections even when VRChat hides mutuals. Activity: how much time pairs of your friends spent in the same instance (from your game logs, live locations and loggers), which makes their group suggestions better. Friend removals: whom you stopped being friends with in the last year, and whether they were in your instance then; your friends see it as a note on that person's profile, so they can ask you about it. Notes about people: only what you chose to tell friends on someone's profile (over 18, probably over 18, or keep your distance); notes saying someone is under 18 never leave your device. Nothing else is sent." />
               </div>
               <div className="row">
-                <span className="small">Which friends it covers:</span>
+                <span className="small">{tr("serversModal.whichFriendsItCovers")}</span>
                 <Why text="Only these friends go into your shared friend list, and only time spent between them goes into your activity. Everyone else is left out." />
               </div>
               <PeopleChooser value={s.include} onChange={(include) => set({ include })} />
               <div className="row">
-                <span className="small">Who can get it:</span>
+                <span className="small">{tr("serversModal.whoCanGetIt")}</span>
                 <Why text="Only these people can download what you share here, and only if they joined this server too. Friends who join later get it on your next sync." />
               </div>
               <PeopleChooser
@@ -558,7 +559,7 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
               {s.info?.hiddenRecipients && (
                 <label className="check">
                   <input type="checkbox" checked={!!s.hideAudience} disabled={!serverSwitch(s).on} onChange={(e) => set({ hideAudience: e.target.checked })} />
-                  Hide who I share with from this server
+                  {tr("serversModal.hideWhoIShareWith")}
                   <Why text="What you upload then doesn't say who it's for: the server only sees that you shared something, not with whom, and your friends' apps find out themselves whether it's for them. The server can still see whose items each app downloads. Needs encryption. Friends need version 0.12.0 or newer of the app to get it; on older ones it disappears until they update." />
                 </label>
               )}
@@ -566,7 +567,7 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
                 <p className="small muted">
                   You chose not to be asked again.{" "}
                   <button className="btn link small" onClick={() => set({ ackUnencrypted: false })}>
-                    Ask me again
+                    {tr("serversModal.askMeAgain")}
                   </button>
                 </p>
               )}
@@ -574,7 +575,7 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
           )}
           <label className="check">
             <input type="checkbox" checked={s.download} onChange={(e) => set({ download: e.target.checked })} />
-            <Icon name="download" size={15} /> Get what friends share with me here
+            <Icon name="download" size={15} /> {tr("serversModal.getWhatFriendsShareWith")}
           </label>
 
           {info?.loggerEnabled && (
@@ -586,36 +587,36 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
                 <>
                   {logger ? (
                     <p className="small">
-                      <span className={logger.connected ? "ok-text" : "warn-text"}>{logger.connected ? "● Logging" : "○ Not connected"}</span> · {logger.message} ·{" "}
+                      <span className={logger.connected ? "ok-text" : "warn-text"}>{logger.connected ? tr("serversModal.logging") : tr("serversModal.notConnected")}</span> · {logger.message} ·{" "}
                       {logger.online}/{logger.friends} friends online · {logger.pairs} pairs seen together since {fmtDate(logger.since * 1000)}
                     </p>
                   ) : (
-                    <p className="small muted">Paired with you.</p>
+                    <p className="small muted">{tr("serversModal.pairedWithYou")}</p>
                   )}
                   {(s.loggerExpired || logger?.expired) && (
                     <>
                       <p className="small warn-text">
-                        <Icon name="warn" size={14} /> The server's VRChat login expired, so it isn't logging. Log in again with a new pairing code from the server (its window or admin page).
+                        <Icon name="warn" size={14} /> {tr("serversModal.theServerSVrchatLogin")}
                       </p>
                       <div className="row">
-                        <input className="code-input" inputMode="numeric" maxLength={7} value={code} placeholder="123456" aria-label="Pairing code" onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ""))} />
+                        <input className="code-input" inputMode="numeric" maxLength={7} value={code} placeholder="123456" aria-label={tr("serversModal.pairingCode")} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ""))} />
                         <button className="btn small primary" disabled={code.length !== 6 || working !== ""} onClick={() => run("pair", () => pairLogger(s.id, code))}>
-                          {working === "pair" ? "Logging in…" : "Log in again"}
+                          {working === "pair" ? tr("serversModal.loggingIn") : tr("serversModal.logInAgain")}
                         </button>
                       </div>
                     </>
                   )}
                   <div className="row">
                     <button className="btn small" onClick={() => run("unpair", () => unpairLogger(s.id, false))}>
-                      Unpair (keep history)
+                      {tr("serversModal.unpairKeepHistory")}
                     </button>
                     <button className="btn small danger" onClick={() => run("unpair", () => unpairLogger(s.id, true))}>
-                      Unpair and delete history
+                      {tr("serversModal.unpairAndDeleteHistory")}
                     </button>
                   </div>
                 </>
               ) : info.loggerPaired ? (
-                <p className="small muted">Paired with someone else's account.</p>
+                <p className="small muted">{tr("serversModal.pairedWithSomeoneElseS")}</p>
               ) : (
                 <div className="row">
                   <input
@@ -627,9 +628,9 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
                     onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ""))}
                   />
                   <button className="btn small primary" disabled={code.length !== 6 || working !== ""} onClick={() => run("pair", () => pairLogger(s.id, code))}>
-                    {working === "pair" ? "Pairing…" : "Pair logger"}
+                    {working === "pair" ? tr("serversModal.pairing") : tr("serversModal.pairLogger")}
                   </button>
-                  <span className="small muted">Code from the server's window or admin page.</span>
+                  <span className="small muted">{tr("serversModal.codeFromTheServerS")}</span>
                 </div>
               )}
             </div>
@@ -645,23 +646,23 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
         <span className="grow" />
         {s.registered && (
           <button className="btn small" disabled={busy || working !== ""} onClick={() => run("sync", () => syncServer(s.id, { manual: true }))}>
-            <Icon name="refresh" size={14} /> Sync now
+            <Icon name="refresh" size={14} /> {tr("serversModal.syncNow")}
           </button>
         )}
         {confirmRemove ? (
           <>
             <button className="btn small danger" onClick={() => run("remove", () => removeServer(s.id, true))} disabled={!s.registered}>
-              Delete my account there
+              {tr("serversModal.deleteMyAccountThere")}
             </button>
             <button className="btn small" onClick={() => run("remove", () => removeServer(s.id, false))}>
-              Just remove from list
+              {tr("serversModal.justRemoveFromList")}
             </button>
             <button className="btn small ghost" onClick={() => setConfirmRemove(false)}>
-              Cancel
+              {tr("serversModal.cancel")}
             </button>
           </>
         ) : (
-          <button className="btn small ghost" onClick={() => setConfirmRemove(true)} title="Remove this server">
+          <button className="btn small ghost" onClick={() => setConfirmRemove(true)} title={tr("serversModal.removeThisServer")}>
             <Icon name="trash" size={14} />
           </button>
         )}
@@ -681,25 +682,25 @@ export function ConfirmUnencrypted() {
     <div className="modal-backdrop top" role="presentation">
       <div className="modal confirm" role="alertdialog" aria-labelledby="unenc-title" aria-describedby="unenc-body">
         <h2 id="unenc-title">
-          <Icon name="warn" /> Upload without encryption?
+          <Icon name="warn" /> {tr("serversModal.uploadWithoutEncryption")}
         </h2>
         <div id="unenc-body">
           <p>
-            <b>{serverName(server)}</b> doesn't allow encryption. What you upload ({what}) is stored <b>readable on the server</b>: whoever runs it, or
+            <b>{serverName(server)}</b> doesn't allow encryption. What you upload ({what}) is stored <b>{tr("serversModal.readableOnTheServer")}</b>: whoever runs it, or
             gets its files, can read it.
           </p>
-          <p>This might be a risk. If you don't fully trust the people running this server, don't upload your data there.</p>
+          <p>{tr("serversModal.thisMightBeARisk")}</p>
         </div>
         <label className="check">
           <input type="checkbox" checked={again} onChange={(e) => setAgain(e.target.checked)} />
-          Don't ask again for this server
+          {tr("serversModal.donTAskAgainFor")}
         </label>
         <div className="row end">
           <button className="btn" onClick={() => confirmUnencrypted(server.id, false, false)} autoFocus>
-            Don't upload
+            {tr("serversModal.donTUpload")}
           </button>
           <button className="btn danger" onClick={() => confirmUnencrypted(server.id, again, true)}>
-            Upload anyway
+            {tr("serversModal.uploadAnyway")}
           </button>
         </div>
       </div>
@@ -724,8 +725,8 @@ function DevicesHere({ url }: { url: string }) {
   return (
     <p className="small muted indent">
       {here.length
-        ? `Live with ${here.map((p) => `${p.name} (${p.direct ? "directly, at home" : "through this server"})`).join(", ")}: changes and your own notification sounds go across within seconds.`
-        : "Your other devices sync live once they're online too (directly at home, else through this server). Sounds you added go along."}
+        ? `Live with ${here.map((p) => `${p.name} (${p.direct ? tr("serversModal.directlyAtHome") : tr("serversModal.throughThisServer")})`).join(", ")}: changes and your own notification sounds go across within seconds.`
+        : tr("serversModal.yourOtherDevicesSyncLive")}
     </p>
   );
 }

@@ -1,6 +1,7 @@
 // The servers at a glance (beta UI): one chip in the top bar, and a line on the phone's Me page.
 // Green: every server you joined is connected live. Grey: connected, checked now and then.
 // Amber: one isn't joined yet. Red: one can't be reached or its last sync failed.
+import { t as tr } from "../i18n";
 import { t } from "../i18n";
 import { useCallback, useEffect, useState } from "react";
 import { isLive, onLiveChange, serverName } from "../share";
@@ -152,7 +153,7 @@ export function ServerMenu() {
               openServers();
             }}
           >
-            Open Sharing & servers settings
+            {tr("servers2.openSharingServersSettings")}
           </button>
         </div>
       )}

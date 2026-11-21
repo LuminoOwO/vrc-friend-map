@@ -1,3 +1,4 @@
+import { t as tr } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isMobile } from "../backend";
 import {
@@ -21,10 +22,10 @@ import { Icon } from "./Icon";
 import { Range } from "./Range";
 
 export const PERSON_MODES: { value: NotifyPerson["mode"] | "default"; label: string }[] = [
-  { value: "default", label: "General rules" },
-  { value: "always", label: "Always notify" },
-  { value: "once", label: "Next time they come online (once)" },
-  { value: "never", label: "Never notify" },
+  { value: "default", label: tr("notify.generalRules") },
+  { value: "always", label: tr("notify.alwaysNotify") },
+  { value: "once", label: tr("notify.nextTimeTheyComeOnline2") },
+  { value: "never", label: tr("notify.neverNotify") },
 ];
 
 export function setPersonMode(id: string, mode: NotifyPerson["mode"] | "default") {
@@ -75,7 +76,7 @@ export function NotificationsSection() {
 
   const soundOptions = (
     <>
-      <option value="none">No sound</option>
+      <option value="none">{tr("notify.noSound")}</option>
       {SOUNDS.map((s) => (
         <option key={s.value} value={s.value}>
           {s.label}
@@ -92,10 +93,10 @@ export function NotificationsSection() {
   const muted = isMuted(n);
   return (
     <>
-      <h3>Notifications</h3>
+      <h3>{tr("notify.notifications")}</h3>
       <label className="check">
         <input type="checkbox" checked={n.enabled} onChange={(e) => updateNotify({ enabled: e.target.checked })} />
-        Notify me about friends
+        {tr("notify.notifyMeAboutFriends")}
       </label>
 
       <div className="row mute-row">
@@ -105,14 +106,14 @@ export function NotificationsSection() {
               <Icon name="pause" size={14} /> {muteLabel(n)}
             </span>
             <button className="btn small" onClick={() => muteFor(0)}>
-              Unmute
+              {tr("notify.unmute")}
             </button>
           </>
         ) : (
           <>
-            <span className="small muted">Mute:</span>
+            <span className="small muted">{tr("notify.mute")}</span>
             <button className="btn small" onClick={() => muteFor(30 * 60_000)}>
-              30 min
+              {tr("notify.n30Min")}
             </button>
             <button className="btn small" onClick={() => muteFor(60 * 60_000)}>
               1 h
@@ -121,25 +122,25 @@ export function NotificationsSection() {
               4 h
             </button>
             <button className="btn small" onClick={() => muteFor("forever")}>
-              Until I unmute
+              {tr("notify.untilIUnmute")}
             </button>
           </>
         )}
       </div>
 
-      <h4 className="sub-h">When</h4>
+      <h4 className="sub-h">{tr("notify.when")}</h4>
       <div className="notify-events">
         {NOTIFY_EVENTS.map((e: NotifyEvent) => (
           <div key={e} className="notify-event">
             <label className="check">
               <input type="checkbox" checked={n.events[e]} disabled={!n.enabled} onChange={(ev) => updateNotify({ events: { ...n.events, [e]: ev.target.checked } })} />
               {EVENT_LABEL[e]}
-              {(e === "joined" || e === "left") && <span className="small muted"> (game log, PC)</span>}
+              {(e === "joined" || e === "left") && <span className="small muted"> {tr("notify.gameLogPc")}</span>}
             </label>
             <select
               value={n.actionSounds[e]}
               disabled={!n.enabled || !n.sound}
-              title="Sound for this"
+              title={tr("notify.soundForThis")}
               onChange={(ev) => updateNotify({ actionSounds: { ...n.actionSounds, [e]: ev.target.value } })}
             >
               {soundOptions}
@@ -152,16 +153,16 @@ export function NotificationsSection() {
       </div>
 
       <label className="field narrow">
-        <span>"Came online" and "went offline" for</span>
+        <span>{tr("notify.cameOnlineAndWentOffline")}</span>
         <select value={n.scope} disabled={!n.enabled} onChange={(e) => updateNotify({ scope: e.target.value as typeof n.scope })}>
-          <option value="everyone">All friends</option>
-          <option value="circles">People in some circles</option>
-          <option value="picked">Only the people I pick below</option>
+          <option value="everyone">{tr("notify.allFriends")}</option>
+          <option value="circles">{tr("notify.peopleInSomeCircles")}</option>
+          <option value="picked">{tr("notify.onlyThePeopleIPick")}</option>
         </select>
       </label>
       {n.scope === "circles" && (
         <div className="chips">
-          {circles.length === 0 && <span className="small muted">Make circles first (on the map or in the sidebar).</span>}
+          {circles.length === 0 && <span className="small muted">{tr("notify.makeCirclesFirstOnThe")}</span>}
           {circles.map((c) => {
             const on = n.circleIds.includes(c.id);
             return (
@@ -180,10 +181,10 @@ export function NotificationsSection() {
 
       <QuietAndCircles />
 
-      <h4 className="sub-h">People</h4>
+      <h4 className="sub-h">{tr("notify.people")}</h4>
       <p className="small muted">
-        <b>Always</b>: when they come online or join your world, even if those are off above (other events follow the switches).{" "}
-        <b>Next time they come online</b>: once, then back to normal. Handy when you're waiting for someone. <b>Never</b>: nothing about
+        <b>{tr("notify.always")}</b>: when they come online or join your world, even if those are off above (other events follow the switches).{" "}
+        <b>{tr("notify.nextTimeTheyComeOnline")}</b>: once, then back to normal. Handy when you're waiting for someone. <b>{tr("notify.never")}</b>: nothing about
         them. Also from the bell on their profile.
       </p>
       {picked.length > 0 && (
@@ -200,7 +201,7 @@ export function NotificationsSection() {
                   </option>
                 ))}
               </select>
-              <button className="icon-btn small" title="Back to the general rules" onClick={() => setPersonMode(id, "default")}>
+              <button className="icon-btn small" title={tr("notify.backToTheGeneralRules")} onClick={() => setPersonMode(id, "default")}>
                 <Icon name="close" size={14} />
               </button>
             </li>
@@ -208,20 +209,20 @@ export function NotificationsSection() {
         </ul>
       )}
       <div className="notify-find">
-        <input value={find} placeholder="Add a friend…" onChange={(e) => setFind(e.target.value)} />
+        <input value={find} placeholder={tr("notify.addAFriend")} onChange={(e) => setFind(e.target.value)} />
         {matches.length > 0 && (
           <ul className="notify-matches">
             {matches.map((f) => (
               <li key={f.id}>
                 <span>{f.displayName}</span>
                 <button className="btn small" onClick={() => (setPersonMode(f.id, "always"), setFind(""))}>
-                  Always
+                  {tr("notify.always")}
                 </button>
                 <button className="btn small" onClick={() => (setPersonMode(f.id, "once"), setFind(""))}>
-                  Once
+                  {tr("notify.once")}
                 </button>
                 <button className="btn small" onClick={() => (setPersonMode(f.id, "never"), setFind(""))}>
-                  Never
+                  {tr("notify.never")}
                 </button>
               </li>
             ))}
@@ -229,14 +230,14 @@ export function NotificationsSection() {
         )}
       </div>
 
-      <h4 className="sub-h">Sounds</h4>
+      <h4 className="sub-h">{tr("notify.sounds")}</h4>
       <label className="check">
         <input type="checkbox" checked={n.sound} onChange={(e) => updateNotify({ sound: e.target.checked })} />
-        Play sounds
+        {tr("notify.playSounds")}
       </label>
       <label className="check">
         <input type="checkbox" checked={n.personTune} disabled={!n.sound} onChange={(e) => updateNotify({ personTune: e.target.checked })} />
-        After the sound, play the person's own tune (made from their name, always the same for them)
+        {tr("notify.afterTheSoundPlayThe")}
       </label>
       <div className="row">
         <label className="field narrow">
@@ -248,28 +249,28 @@ export function NotificationsSection() {
           <Range pct={false} min={0} max={1} step={0.05} value={n.pause} disabled={!n.sound || !n.personTune} onChange={(e) => updateNotify({ pause: Number(e.target.value) })} />
         </label>
         <label className="field narrow">
-          <span>Hear someone's tune</span>
+          <span>{tr("notify.hearSomeoneSTune")}</span>
           <div className="row tight">
-            <input value={sample} placeholder={myName ?? "A name"} onChange={(e) => setSample(e.target.value)} />
+            <input value={sample} placeholder={myName ?? tr("notify.aName")} onChange={(e) => setSample(e.target.value)} />
             <button className="btn small" onClick={() => previewEvent("online", exampleName)}>
-              <Icon name="play" size={14} /> Play
+              <Icon name="play" size={14} /> {tr("notify.play")}
             </button>
           </div>
         </label>
       </div>
       <div className="custom-sounds">
-        <span className="small">Your own sounds:</span>
-        {customs.length === 0 && <span className="small muted">none yet</span>}
+        <span className="small">{tr("notify.yourOwnSounds")}</span>
+        {customs.length === 0 && <span className="small muted">{tr("notify.noneYet")}</span>}
         {customs.map((c) => (
           <span key={c.id} className="pill custom-sound">
             ♪ {c.name}
-            <button className="icon-btn small" title="Remove" onClick={() => removeCustomSound(c.id)}>
+            <button className="icon-btn small" title={tr("notify.remove")} onClick={() => removeCustomSound(c.id)}>
               <Icon name="close" size={12} />
             </button>
           </span>
         ))}
         <button className="btn small" onClick={() => fileRef.current?.click()}>
-          <Icon name="plus" size={14} /> Add a sound file
+          <Icon name="plus" size={14} /> {tr("notify.addASoundFile")}
         </button>
         <input
           ref={fileRef}
@@ -282,7 +283,7 @@ export function NotificationsSection() {
             if (!f) return;
             try {
               await addCustomSound(f);
-              showToast(`Added ${f.name}. Pick it for any event above.`);
+              showToast(tr("notify.addedNamePickItFor", { name: f.name }));
             } catch (err) {
               showToast(err instanceof Error ? err.message : String(err));
             }
@@ -290,27 +291,27 @@ export function NotificationsSection() {
         />
       </div>
 
-      <h4 className="sub-h">Pop-up notifications</h4>
+      <h4 className="sub-h">{tr("notify.popUpNotifications")}</h4>
       <div className="row">
         <label className="field narrow">
-          <span>Show a system notification</span>
+          <span>{tr("notify.showASystemNotification")}</span>
           <select value={n.system} onChange={(e) => updateNotify({ system: e.target.value as typeof n.system })}>
-            <option value="background">When the app is in the background</option>
-            <option value="always">Always</option>
-            <option value="never">Never (sound and a note in the app only)</option>
+            <option value="background">{tr("notify.whenTheAppIsIn")}</option>
+            <option value="always">{tr("notify.always")}</option>
+            <option value="never">{tr("notify.neverSoundAndANote")}</option>
           </select>
         </label>
         <button
           className="btn small"
-          onClick={async () => showToast((await askNotificationPermission()) ? "Notifications are allowed" : "Notifications aren't allowed (check the system settings)")}
+          onClick={async () => showToast((await askNotificationPermission()) ? tr("notify.notificationsAreAllowed") : tr("notify.notificationsArenTAllowedCheck"))}
         >
-          <Icon name="info" size={14} /> Allow notifications
+          <Icon name="info" size={14} /> {tr("notify.allowNotifications")}
         </button>
       </div>
       <p className="small muted">
         {isMobile
-          ? "On phones, notifications come while the app runs, including in the background until the system pauses it. Phone notifications use the system's sound; your sounds play while the app is open."
-          : "Notifications keep coming while the app is in the tray (see “Closing the window”)."}
+          ? tr("notify.onPhonesNotificationsComeWhile")
+          : tr("notify.notificationsKeepComingWhileThe")}
       </p>
       {demo && (
         <button
@@ -330,7 +331,7 @@ export function NotificationsSection() {
             setState({ settingsOpen: false });
           }}
         >
-          Try it: add a demo friend
+          {tr("notify.tryItAddADemo")}
         </button>
       )}
     </>
@@ -342,13 +343,13 @@ export function CloseSection() {
   const closeAction = useApp((s) => s.settings.closeAction);
   return (
     <>
-      <h3>Closing the window</h3>
+      <h3>{tr("notify.closingTheWindow")}</h3>
       <label className="field narrow">
-        <span>When I close the window</span>
+        <span>{tr("notify.whenICloseTheWindow")}</span>
         <select value={closeAction} onChange={(e) => updateSettings({ closeAction: e.target.value as typeof closeAction })}>
-          <option value="ask">Ask me</option>
-          <option value="tray">Keep running in the tray</option>
-          <option value="quit">Quit the app</option>
+          <option value="ask">{tr("notify.askMe")}</option>
+          <option value="tray">{tr("notify.keepRunningInTheTray")}</option>
+          <option value="quit">{tr("notify.quitTheApp")}</option>
         </select>
       </label>
       <p className="small muted">
@@ -372,20 +373,20 @@ function QuietAndCircles() {
   const setG = (patch: Partial<typeof g>) => updateNotify({ gathering: { ...g, ...patch } });
   return (
     <>
-      <h4 className="sub-h">Quiet hours</h4>
+      <h4 className="sub-h">{tr("notify.quietHours")}</h4>
       <label className="check">
         <input type="checkbox" checked={q.enabled} disabled={!n.enabled} onChange={(e) => setQ({ enabled: e.target.checked })} />
-        Do not disturb on a schedule
+        {tr("notify.doNotDisturbOnA")}
       </label>
       {q.enabled && (
         <div className="indent">
           <div className="row">
             <label className="field narrow">
-              <span>From</span>
+              <span>{tr("notify.from")}</span>
               <input type="time" value={q.from} onChange={(e) => setQ({ from: e.target.value || q.from })} />
             </label>
             <label className="field narrow">
-              <span>To</span>
+              <span>{tr("notify.to")}</span>
               <input type="time" value={q.to} onChange={(e) => setQ({ to: e.target.value || q.to })} />
             </label>
           </div>
@@ -398,11 +399,11 @@ function QuietAndCircles() {
           </div>
           <label className="check">
             <input type="checkbox" checked={q.allowStarred} onChange={(e) => setQ({ allowStarred: e.target.checked })} />
-            Starred friends still get through
+            {tr("notify.starredFriendsStillGetThrough")}
           </label>
           {circles.length > 0 && (
             <div className="row">
-              <span className="small">Also get through:</span>
+              <span className="small">{tr("notify.alsoGetThrough")}</span>
               <div className="chips">
                 {circles.map((c) => {
                   const on = q.allowCircleIds.includes(c.id);
@@ -421,8 +422,8 @@ function QuietAndCircles() {
 
       {circles.length > 0 && (
         <>
-          <h4 className="sub-h">Rules per circle</h4>
-          <p className="small muted">For everyone in a circle, without a bell on each person. These always notify, even when the event is off above.</p>
+          <h4 className="sub-h">{tr("notify.rulesPerCircle")}</h4>
+          <p className="small muted">{tr("notify.forEveryoneInACircle")}</p>
           <div className="circle-rules">
             {circles.map((c) => {
               const evs = n.circleRules[c.id] ?? [];
@@ -452,19 +453,19 @@ function QuietAndCircles() {
         </>
       )}
 
-      <h4 className="sub-h">Gathering alerts</h4>
-      <p className="small muted">“Close friends gathering” above: when several of these people are in the same instance (and you're not there).</p>
+      <h4 className="sub-h">{tr("notify.gatheringAlerts")}</h4>
+      <p className="small muted">{tr("notify.closeFriendsGatheringAboveWhen")}</p>
       <div className="row">
         <label className="field narrow">
-          <span>At least</span>
+          <span>{tr("notify.atLeast")}</span>
           <input type="number" min={2} max={20} value={g.min} onChange={(e) => setG({ min: Math.max(2, Math.min(20, Number(e.target.value) || 3)) })} />
         </label>
         <label className="field narrow">
-          <span>Of</span>
+          <span>{tr("notify.of")}</span>
           <select value={g.who} onChange={(e) => setG({ who: e.target.value as typeof g.who })}>
-            <option value="starred">Starred friends</option>
-            <option value="circles">People in chosen circles</option>
-            <option value="both">Both</option>
+            <option value="starred">{tr("notify.starredFriends")}</option>
+            <option value="circles">{tr("notify.peopleInChosenCircles")}</option>
+            <option value="both">{tr("notify.both")}</option>
           </select>
         </label>
       </div>

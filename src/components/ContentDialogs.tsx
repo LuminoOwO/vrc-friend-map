@@ -1,6 +1,7 @@
 // Dialogs for VRChat content: an instance (from a world card's player
 // pictures), a world, and a group (about, posts, events, instances, gallery,
 // members and management as far as your roles allow).
+import { t as tr } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { backend, imgSrc } from "../backend";
 import { iconUrl } from "../model";
@@ -40,7 +41,7 @@ function Modal({ title, onClose, children, wide }: { title: React.ReactNode; onC
       <div className={`modal content-modal ${wide ? "wide" : ""}`} role="dialog" onKeyDown={(e) => e.key === "Escape" && onClose()}>
         <div className="row between">
           <h2>{title}</h2>
-          <button className="icon-btn" aria-label="Close" onClick={onClose} autoFocus>
+          <button className="icon-btn" aria-label={tr("content.close")} onClick={onClose} autoFocus>
             <Icon name="close" />
           </button>
         </div>
@@ -61,7 +62,7 @@ function PersonChip({ id, name }: { id: string; name: string }) {
   );
 }
 
-const open = (url: string) => backend.openUrl(url).catch(() => showToast("Couldn't open the link"));
+const open = (url: string) => backend.openUrl(url).catch(() => showToast(tr("content.couldnTOpenTheLink")));
 
 // ---------- instance ----------
 
@@ -89,8 +90,8 @@ export function InstanceDialog() {
       <p className="small">
         {loc.flag} {loc.type} · #{loc.instance} · {loc.region.toUpperCase()}
         {info && ` · ${info.users} / ${info.capacity || "?"} people`}
-        {info?.queue ? ` · ${info.queue} waiting` : ""}
-        {info?.ageGate ? " · 18+ only" : ""}
+        {info?.queue ? tr("content.queueWaiting", { queue: info.queue }) : ""}
+        {info?.ageGate ? tr("content.n18Only") : ""}
       </p>
       {info?.ownerId && (
         <p className="small">
@@ -99,7 +100,7 @@ export function InstanceDialog() {
             <PersonChip id={info.ownerId} name={friends[info.ownerId]?.displayName ?? "someone"} />
           ) : info.ownerId.startsWith("grp_") ? (
             <button className="link-btn" onClick={() => setState({ openGroup: info.ownerId!, openInstance: null })}>
-              a group
+              {tr("content.aGroup")}
             </button>
           ) : (
             info.ownerId
@@ -114,7 +115,7 @@ export function InstanceDialog() {
       </div>
       {everyone ? (
         <>
-          <h4>Everyone {mine ? "(from your game log)" : ""}</h4>
+          <h4>Everyone {mine ? tr("content.fromYourGameLog") : ""}</h4>
           <div className="people-row">
             {everyone.map((p) => (
               <PersonChip key={p.id} id={p.id} name={p.name} />
@@ -125,14 +126,14 @@ export function InstanceDialog() {
         others > 0 && <p className="small muted">and {others} others (VRChat only lists everyone for your own instance).</p>
       )}
       <div className="row">
-        <button className="btn" onClick={() => inviteMyself(location).then((e) => showToast(e ? `Couldn't invite you: ${e}` : "Invite sent to you: accept it in VRChat"))}>
-          <Icon name="user-check" size={16} /> Invite me
+        <button className="btn" onClick={() => inviteMyself(location).then((e) => showToast(e ? tr("content.couldnTInviteYouError", { error: e }) : tr("content.inviteSentToYouAccept")))}>
+          <Icon name="user-check" size={16} /> {tr("content.inviteMe")}
         </button>
         <button className="btn" onClick={() => open(`vrchat://launch?ref=vrchat.com&id=${location}`)}>
-          <Icon name="rocket" size={16} /> Launch in VRChat
+          <Icon name="rocket" size={16} /> {tr("content.launchInVrchat")}
         </button>
         <button className="btn" onClick={() => setState({ openWorld: loc.world, openInstance: null })}>
-          <Icon name="world" size={16} /> World
+          <Icon name="world" size={16} /> {tr("content.world")}
         </button>
       </div>
     </Modal>
@@ -158,7 +159,7 @@ export function WorldDialog() {
   return (
     <Modal title={w?.name ?? "World"} onClose={close} wide>
       {w === undefined && <SkelBlock />}
-      {w === null && <p className="muted">Couldn't load this world.</p>}
+      {w === null && <p className="muted">{tr("content.couldnTLoadThisWorld")}</p>}
       {w && (
         <>
           {w.imageUrl && <img className="content-banner" src={imgSrc(w.imageUrl)} alt="" />}
@@ -168,7 +169,7 @@ export function WorldDialog() {
           {w.description && <p className="bio">{w.description}</p>}
           {friendsHere.length > 0 && (
             <>
-              <h4>Friends there now</h4>
+              <h4>{tr("content.friendsThereNow")}</h4>
               <div className="people-row">
                 {friendsHere.map((f) => (
                   <PersonChip key={f.id} id={f.id} name={f.displayName} />
@@ -178,7 +179,7 @@ export function WorldDialog() {
           )}
           {w.instances.length > 0 && (
             <>
-              <h4>Open public instances</h4>
+              <h4>{tr("content.openPublicInstances")}</h4>
               <ul className="missed-list">
                 {w.instances.slice(0, 30).map(([inst, n]) => (
                   <li key={inst}>
@@ -193,17 +194,17 @@ export function WorldDialog() {
           )}
         </>
       )}
-      <h4>Your notes and tags</h4>
-      <textarea rows={2} value={draft.text} placeholder="e.g. good for chilling, Luna's favorite" onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
+      <h4>{tr("content.yourNotesAndTags")}</h4>
+      <textarea rows={2} value={draft.text} placeholder={tr("content.eGGoodForChilling")} onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
       <div className="row">
-        <input value={draft.tags} placeholder="tags, comma separated" onChange={(e) => setDraft({ ...draft, tags: e.target.value })} />
+        <input value={draft.tags} placeholder={tr("content.tagsCommaSeparated")} onChange={(e) => setDraft({ ...draft, tags: e.target.value })} />
         <button className="btn small primary" onClick={() => setWorldNote(id, draft.text, draft.tags)}>
-          Save
+          {tr("content.save")}
         </button>
       </div>
       <div className="row">
         <button className="btn" onClick={() => open(`https://vrchat.com/home/world/${id}`)}>
-          <Icon name="external" size={16} /> Open on vrchat.com
+          <Icon name="external" size={16} /> {tr("content.openOnVrchatCom")}
         </button>
       </div>
     </Modal>
@@ -248,7 +249,7 @@ export function GroupDialog() {
       wide
     >
       {g === undefined && <SkelBlock />}
-      {g === null && <p className="muted">Couldn't load this group (it may be private).</p>}
+      {g === null && <p className="muted">{tr("content.couldnTLoadThisGroup")}</p>}
       {g && (
         <>
           {g.bannerUrl && <img className="content-banner" src={imgSrc(g.bannerUrl)} alt="" />}
@@ -274,7 +275,7 @@ export function GroupDialog() {
 
 function confirmDo(question: string, f: () => Promise<string | null>, done?: string) {
   if (!window.confirm(question)) return;
-  void f().then((e) => showToast(e ? `VRChat said no: ${e}` : (done ?? "Done")));
+  void f().then((e) => showToast(e ? tr("content.vrchatSaidNoError", { error: e }) : (done ?? "Done")));
 }
 
 function GroupAbout({ g, onChange }: { g: GroupFull; onChange: () => void }) {
@@ -296,7 +297,7 @@ function GroupAbout({ g, onChange }: { g: GroupFull; onChange: () => void }) {
       )}
       {g.rules && (
         <>
-          <h4>Rules</h4>
+          <h4>{tr("content.rules")}</h4>
           <p className="bio small">{g.rules}</p>
         </>
       )}
@@ -305,18 +306,18 @@ function GroupAbout({ g, onChange }: { g: GroupFull; onChange: () => void }) {
           <button
             className="btn"
             onClick={() => {
-              if (!window.confirm(`Leave ${g.name}?`)) return;
+              if (!window.confirm(tr("content.leaveName", { name: g.name }))) return;
               void groupActions.leave(g.id).then((e) => {
-                showToast(e ? `VRChat said no: ${e}` : "Left the group");
+                showToast(e ? tr("content.vrchatSaidNoError", { error: e }) : tr("content.leftTheGroup"));
                 onChange();
               });
             }}
           >
-            Leave group
+            {tr("content.leaveGroup")}
           </button>
         ) : (
-          <button className="btn primary" onClick={() => void groupActions.join(g.id).then((e) => { showToast(e ? `VRChat said no: ${e}` : g.joinState === "request" ? "Join request sent" : "Joined"); onChange(); })}>
-            {g.joinState === "request" ? "Ask to join" : "Join"}
+          <button className="btn primary" onClick={() => void groupActions.join(g.id).then((e) => { showToast(e ? tr("content.vrchatSaidNoError", { error: e }) : g.joinState === "request" ? tr("content.joinRequestSent") : "Joined"); onChange(); })}>
+            {g.joinState === "request" ? tr("content.askToJoin") : "Join"}
           </button>
         )}
         <button className="btn" onClick={() => open(`https://vrchat.com/home/group/${g.id}`)}>
@@ -354,16 +355,16 @@ function GroupPosts({ g }: { g: GroupFull }) {
       {err && <p className="small warn">{err}</p>}
       {canPost && (
         <details className="new-post">
-          <summary className="small">New post</summary>
-          <input placeholder="Title" value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
-          <textarea rows={3} placeholder="Text" value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
+          <summary className="small">{tr("content.newPost")}</summary>
+          <input placeholder={tr("content.title")} value={draft.title} onChange={(e) => setDraft({ ...draft, title: e.target.value })} />
+          <textarea rows={3} placeholder={tr("content.text")} value={draft.text} onChange={(e) => setDraft({ ...draft, text: e.target.value })} />
           <div className="row">
             <label className="check small">
-              <input type="checkbox" checked={draft.notify} onChange={(e) => setDraft({ ...draft, notify: e.target.checked })} /> Notify members
+              <input type="checkbox" checked={draft.notify} onChange={(e) => setDraft({ ...draft, notify: e.target.checked })} /> {tr("content.notifyMembers")}
             </label>
             <select value={draft.visibility} onChange={(e) => setDraft({ ...draft, visibility: e.target.value as "group" | "public" })}>
-              <option value="group">Members only</option>
-              <option value="public">Public</option>
+              <option value="group">{tr("content.membersOnly")}</option>
+              <option value="public">{tr("content.public")}</option>
             </select>
             <button
               className="btn small primary"
@@ -377,12 +378,12 @@ function GroupPosts({ g }: { g: GroupFull }) {
                 return e;
               }, "Posted")}
             >
-              Post
+              {tr("content.post")}
             </button>
           </div>
         </details>
       )}
-      {posts?.length === 0 && <p className="small muted">No posts.</p>}
+      {posts?.length === 0 && <p className="small muted">{tr("content.noPosts")}</p>}
       {posts?.map((p) => (
         <article key={p.id} className="group-post">
           <h4>{p.title}</h4>
@@ -391,7 +392,7 @@ function GroupPosts({ g }: { g: GroupFull }) {
           <p className="bio small">{p.text}</p>
           {canPost && (
             <button className="btn small ghost" onClick={() => confirmDo("Delete this post?", async () => { const e = await groupActions.deletePost(g.id, p.id); if (!e) reload(); return e; }, "Deleted")}>
-              <Icon name="trash" size={13} /> Delete
+              <Icon name="trash" size={13} /> {tr("content.delete")}
             </button>
           )}
         </article>
@@ -411,17 +412,17 @@ export function EventList({ events }: { events: GroupEvent[] }) {
       </div>
       <div className="small">
         {new Date(e.startsAt).toLocaleString([], { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })} – {new Date(e.endsAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-        {e.interested ? ` · ${e.interested} interested` : ""} · {e.accessType}
+        {e.interested ? tr("content.interestedInterested", { interested: e.interested }) : ""} · {e.accessType}
       </div>
       {e.description && <p className="small muted clamp-3">{e.description}</p>}
     </li>
   );
   return (
     <>
-      {upcoming.length ? <ul className="event-list">{upcoming.map(row)}</ul> : <p className="small muted">No upcoming events.</p>}
+      {upcoming.length ? <ul className="event-list">{upcoming.map(row)}</ul> : <p className="small muted">{tr("content.noUpcomingEvents")}</p>}
       {past.length > 0 && (
         <details>
-          <summary className="small">Past events</summary>
+          <summary className="small">{tr("content.pastEvents")}</summary>
           <ul className="event-list past">{past.map(row)}</ul>
         </details>
       )}
@@ -445,7 +446,7 @@ function GroupInstances({ g }: { g: GroupFull }) {
   return (
     <>
       {err && <p className="small warn">{err}</p>}
-      {list?.length === 0 && <p className="small muted">No open group instances you can see.</p>}
+      {list?.length === 0 && <p className="small muted">{tr("content.noOpenGroupInstancesYou")}</p>}
       <ul className="missed-list">
         {list?.map((i) => (
           <li key={i.location}>
@@ -461,9 +462,9 @@ function GroupInstances({ g }: { g: GroupFull }) {
       </ul>
       {can(g, "group-instance-open-create") || can(g, "group-instance-public-create") || can(g, "group-instance-plus-create") ? (
         <details>
-          <summary className="small">Open a group instance</summary>
+          <summary className="small">{tr("content.openAGroupInstance")}</summary>
           <div className="row">
-            <input placeholder="World ID (wrld_…) or link" value={make.world} onChange={(e) => setMake({ ...make, world: e.target.value })} />
+            <input placeholder={tr("content.worldIdWrldOrLink")} value={make.world} onChange={(e) => setMake({ ...make, world: e.target.value })} />
             <select value={make.region} onChange={(e) => setMake({ ...make, region: e.target.value })}>
               {["us", "use", "eu", "jp"].map((r) => (
                 <option key={r} value={r}>
@@ -472,14 +473,14 @@ function GroupInstances({ g }: { g: GroupFull }) {
               ))}
             </select>
             <select value={make.access} onChange={(e) => setMake({ ...make, access: e.target.value as typeof make.access })}>
-              <option value="members">Members only</option>
-              <option value="plus">Group+</option>
-              <option value="public">Group public</option>
+              <option value="members">{tr("content.membersOnly")}</option>
+              <option value="plus">{tr("content.group")}</option>
+              <option value="public">{tr("content.groupPublic")}</option>
             </select>
           </div>
           <div className="row">
             <label className="check small">
-              <input type="checkbox" checked={make.queue} onChange={(e) => setMake({ ...make, queue: e.target.checked })} /> Queue when full
+              <input type="checkbox" checked={make.queue} onChange={(e) => setMake({ ...make, queue: e.target.checked })} /> {tr("content.queueWhenFull")}
             </label>
             <label className="check small">
               <input type="checkbox" checked={make.age} onChange={(e) => setMake({ ...make, age: e.target.checked })} /> 18+ only
@@ -496,7 +497,7 @@ function GroupInstances({ g }: { g: GroupFull }) {
                 }, "Instance opened");
               }}
             >
-              Open
+              {tr("content.open")}
             </button>
           </div>
         </details>
@@ -509,7 +510,7 @@ function GroupGallery({ g }: { g: GroupFull }) {
   const [gal, setGal] = useState(g.galleries[0]?.id ?? "");
   const [imgs, err, reload] = useLoad(() => (gal ? galleryImages(g.id, gal) : Promise.resolve([])), [g.id, gal]);
   const canManage = can(g, "group-galleries-manage");
-  if (!g.galleries.length) return <p className="small muted">This group has no gallery.</p>;
+  if (!g.galleries.length) return <p className="small muted">{tr("content.thisGroupHasNoGallery")}</p>;
   return (
     <>
       <select value={gal} onChange={(e) => setGal(e.target.value)}>
@@ -523,9 +524,9 @@ function GroupGallery({ g }: { g: GroupFull }) {
       <div className="pic-grid">
         {imgs?.map((i) => (
           <div key={i.id} className="pic">
-            <img src={imgSrc(i.imageUrl)} alt="" loading="lazy" onClick={() => openImage({ url: i.imageUrl, title: `${g.name} – gallery` })} />
+            <img src={imgSrc(i.imageUrl)} alt="" loading="lazy" onClick={() => openImage({ url: i.imageUrl, title: tr("content.nameGallery", { name: g.name }) })} />
             {canManage && (
-              <button className="icon-btn tiny pic-del" title="Delete" onClick={() => confirmDo("Delete this picture from the gallery?", async () => { const e = await groupActions.deleteImage(g.id, gal, i.id); if (!e) reload(); return e; }, "Deleted")}>
+              <button className="icon-btn tiny pic-del" title={tr("content.delete")} onClick={() => confirmDo("Delete this picture from the gallery?", async () => { const e = await groupActions.deleteImage(g.id, gal, i.id); if (!e) reload(); return e; }, "Deleted")}>
                 <Icon name="trash" size={12} />
               </button>
             )}
@@ -551,11 +552,11 @@ function GroupMembers({ g }: { g: GroupFull }) {
     <>
       {err && <p className="small warn">{err} (VRChat shows members only to members, for some groups only to moderators)</p>}
       <div className="row">
-        <input placeholder="Find a member" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input placeholder={tr("content.findAMember")} value={q} onChange={(e) => setQ(e.target.value)} />
         <label className="check small">
-          <input type="checkbox" checked={onlyFriends} onChange={(e) => setOnlyFriends(e.target.checked)} /> Only my friends
+          <input type="checkbox" checked={onlyFriends} onChange={(e) => setOnlyFriends(e.target.checked)} /> {tr("content.onlyMyFriends")}
         </label>
-        <span className="small muted">{list ? `${shown.length} of ${list.length}` : "Loading…"}</span>
+        <span className="small muted">{list ? tr("content.lengthOfLength2", { length: shown.length, length2: list.length }) : tr("content.loading")}</span>
       </div>
       <ul className="member-list">
         {shown.slice(0, 300).map((m) => (
@@ -565,7 +566,7 @@ function GroupMembers({ g }: { g: GroupFull }) {
             {roles.length > 0 && (
               <select
                 value=""
-                title="Add or remove a role"
+                title={tr("content.addOrRemoveARole")}
                 onChange={(e) => {
                   const r = e.target.value;
                   if (!r) return;
@@ -577,7 +578,7 @@ function GroupMembers({ g }: { g: GroupFull }) {
                   });
                 }}
               >
-                <option value="">Roles…</option>
+                <option value="">{tr("content.roles")}</option>
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>
                     {m.roleIds.includes(r.id) ? "✓ " : ""}
@@ -588,12 +589,12 @@ function GroupMembers({ g }: { g: GroupFull }) {
             )}
             {manage && m.userId !== g.ownerId && (
               <button className="btn small ghost" onClick={() => confirmDo(`Kick ${m.displayName} from ${g.name}?`, async () => { const e = await groupActions.kick(g.id, m.userId); if (!e) reload(); return e; }, "Kicked")}>
-                Kick
+                {tr("content.kick")}
               </button>
             )}
             {can(g, "group-bans-manage") && m.userId !== g.ownerId && (
               <button className="btn small ghost danger" onClick={() => confirmDo(`Ban ${m.displayName} from ${g.name}?`, async () => { const e = await groupActions.ban(g.id, m.userId); if (!e) reload(); return e; }, "Banned")}>
-                Ban
+                {tr("content.ban")}
               </button>
             )}
           </li>
@@ -618,11 +619,11 @@ function GroupManage({ g, onChange }: { g: GroupFull; onChange: () => void }) {
             {requests?.map((m) => (
               <li key={m.userId}>
                 <PersonChip id={m.userId} name={m.displayName} />
-                <button className="btn small" onClick={() => void groupActions.respond(g.id, m.userId, "accept").then((e) => { showToast(e ? `VRChat said no: ${e}` : `${m.displayName} accepted`); reloadReq(); })}>
-                  Accept
+                <button className="btn small" onClick={() => void groupActions.respond(g.id, m.userId, "accept").then((e) => { showToast(e ? tr("content.vrchatSaidNoError", { error: e }) : tr("content.nameAccepted", { name: m.displayName })); reloadReq(); })}>
+                  {tr("content.accept")}
                 </button>
                 <button className="btn small ghost" onClick={() => confirmDo(`Reject ${m.displayName}?`, async () => { const e = await groupActions.respond(g.id, m.userId, "reject"); reloadReq(); return e; }, "Rejected")}>
-                  Reject
+                  {tr("content.reject")}
                 </button>
               </li>
             ))}
@@ -631,18 +632,18 @@ function GroupManage({ g, onChange }: { g: GroupFull; onChange: () => void }) {
       )}
       {can(g, "group-invites-manage") && (
         <section>
-          <h4>Invite someone</h4>
+          <h4>{tr("content.inviteSomeone")}</h4>
           <div className="row">
-            <input placeholder="usr_… or a profile link" value={inviteId} onChange={(e) => setInviteId(e.target.value)} />
+            <input placeholder={tr("content.usrOrAProfileLink")} value={inviteId} onChange={(e) => setInviteId(e.target.value)} />
             <button
               className="btn small"
               disabled={!/usr_[0-9a-f-]{36}/i.test(inviteId)}
               onClick={() => {
                 const u = inviteId.match(/usr_[0-9a-f-]{36}/i)![0];
-                void groupActions.invite(g.id, u).then((e) => showToast(e ? `VRChat said no: ${e}` : "Invited"));
+                void groupActions.invite(g.id, u).then((e) => showToast(e ? tr("content.vrchatSaidNoError", { error: e }) : "Invited"));
               }}
             >
-              Invite
+              {tr("content.invite")}
             </button>
           </div>
         </section>
@@ -655,7 +656,7 @@ function GroupManage({ g, onChange }: { g: GroupFull; onChange: () => void }) {
               <li key={m.userId}>
                 <PersonChip id={m.userId} name={m.displayName} />
                 <button className="btn small ghost" onClick={() => confirmDo(`Unban ${m.displayName}?`, async () => { const e = await groupActions.unban(g.id, m.userId); reloadBans(); return e; }, "Unbanned")}>
-                  Unban
+                  {tr("content.unban")}
                 </button>
               </li>
             ))}
@@ -664,32 +665,32 @@ function GroupManage({ g, onChange }: { g: GroupFull; onChange: () => void }) {
       )}
       {can(g, "group-data-manage") && (
         <section>
-          <h4>Group settings</h4>
+          <h4>{tr("content.groupSettings")}</h4>
           <label className="field">
-            <span>Description</span>
+            <span>{tr("content.description")}</span>
             <textarea rows={3} value={edit.description} onChange={(e) => setEdit({ ...edit, description: e.target.value })} />
           </label>
           <label className="field">
-            <span>Rules</span>
+            <span>{tr("content.rules")}</span>
             <textarea rows={3} value={edit.rules} onChange={(e) => setEdit({ ...edit, rules: e.target.value })} />
           </label>
           <label className="field narrow">
-            <span>Who can join</span>
+            <span>{tr("content.whoCanJoin")}</span>
             <select value={edit.joinState} onChange={(e) => setEdit({ ...edit, joinState: e.target.value })}>
-              <option value="open">Anyone</option>
-              <option value="request">On request</option>
-              <option value="invite">Invite only</option>
-              <option value="closed">Closed</option>
+              <option value="open">{tr("content.anyone")}</option>
+              <option value="request">{tr("content.onRequest")}</option>
+              <option value="invite">{tr("content.inviteOnly")}</option>
+              <option value="closed">{tr("content.closed")}</option>
             </select>
           </label>
           <button className="btn small primary" onClick={() => confirmDo(`Save these settings for ${g.name}?`, async () => { const e = await groupActions.update(g.id, edit); if (!e) onChange(); return e; }, "Saved")}>
-            Save settings
+            {tr("content.saveSettings")}
           </button>
         </section>
       )}
       {can(g, "group-audit-view") && (
         <section>
-          <h4>Audit log</h4>
+          <h4>{tr("content.auditLog")}</h4>
           <ul className="missed-list">
             {logs?.slice(0, 100).map((l, i) => (
               <li key={i}>
@@ -699,7 +700,7 @@ function GroupManage({ g, onChange }: { g: GroupFull; onChange: () => void }) {
           </ul>
         </section>
       )}
-      <p className="small muted">Every change asks first and goes to VRChat one at a time, a few seconds apart.</p>
+      <p className="small muted">{tr("content.everyChangeAsksFirstAnd")}</p>
     </>
   );
 }

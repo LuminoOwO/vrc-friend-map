@@ -1,5 +1,6 @@
 // Settings: now playing in your status, Steam play time in
 // your bio (src/extras.ts), and encrypted backups (src/backup.ts).
+import { t as tr } from "../i18n";
 import { useEffect, useRef, useState } from "react";
 import { backend, isMobile, isTauri } from "../backend";
 import { describeBackup, makeBackup, openBackup, restoreBackup } from "../backup";
@@ -22,14 +23,14 @@ export function NowPlayingSection() {
   const sample = typeof n === "object" && n ? fill(x.nowPlaying.template, { title: n.title, artist: n.artist, song: songText(n) }).slice(0, 32) : "";
   return (
     <>
-      <h3>Now playing in your status</h3>
+      <h3>{tr("extras.nowPlayingInYourStatus")}</h3>
       <p className="small muted">
         The song from your music player (MPRIS, through <code>playerctl</code>) as your VRChat status text, at most one change every 90 seconds. When the music
         stops or you turn this off, your old status text comes back. Change your status yourself and it's left alone.
       </p>
       <label className="check">
         <input type="checkbox" checked={x.nowPlaying.status} onChange={(e) => set("nowPlaying", { status: e.target.checked })} />
-        <span>Put the song into my status</span>
+        <span>{tr("extras.putTheSongIntoMy")}</span>
       </label>
       <label className="field">
         <span>
@@ -38,7 +39,7 @@ export function NowPlayingSection() {
         <input value={x.nowPlaying.template} onChange={(e) => set("nowPlaying", { template: e.target.value.slice(0, 64) })} />
       </label>
       <p className="small muted">
-        {typeof n === "string" ? n : n ? `Playing now: ${songText(n)} → “${sample}”` : "Nothing is playing right now."}
+        {typeof n === "string" ? n : n ? tr("extras.playingNowValueSample", { value: songText(n), sample }) : tr("extras.nothingIsPlayingRightNow")}
       </p>
     </>
   );
@@ -56,14 +57,14 @@ export function PlaytimeSection() {
   const preview = hours !== null ? bioWithLine(bio, x.playtime.template, hours) : null;
   return (
     <>
-      <h3>Steam play time in your bio</h3>
+      <h3>{tr("extras.steamPlayTimeInYour")}</h3>
       <p className="small muted">
         Reads VRChat's play time from Steam's own files on this PC and keeps one line in your VRChat bio up to date, once a day. The rest of your bio stays as
         it is; the line is found again by its template.
       </p>
       <label className="check">
         <input type="checkbox" checked={x.playtime.bio} onChange={(e) => set("playtime", { bio: e.target.checked })} />
-        <span>Keep the line in my bio</span>
+        <span>{tr("extras.keepTheLineInMy")}</span>
       </label>
       <label className="field">
         <span>
@@ -75,8 +76,8 @@ export function PlaytimeSection() {
         {typeof p === "string"
           ? p
           : p === null
-            ? "No VRChat play time found in Steam's files (Steam on this PC, signed in once)."
-            : `Steam says ${hours!.toLocaleString("en-US")} h (${Math.round(p.two_weeks / 60)} h in the last two weeks).`}
+            ? tr("extras.noVrchatPlayTimeFound")
+            : tr("extras.steamSaysValueHValue2", { value: hours!.toLocaleString("en-US"), value2: Math.round(p.two_weeks / 60) })}
         {hours !== null && !x.playtime.template.includes("{hours}") && " The template needs {hours}."}
         {hours !== null && preview === null && " Your bio would get longer than 512 characters, so it's left alone."}
       </p>
@@ -105,10 +106,10 @@ export function BackupSection() {
     run(async () => {
       const data = await makeBackup(pw);
       const name = `vrc-friend-map-backup-${new Date().toISOString().slice(0, 10)}.vfmbackup`;
-      if (isTauri && !isMobile) showToast(`Saved to ${await backend.saveExport(name, data)}`);
+      if (isTauri && !isMobile) showToast(tr("extras.savedToValue", { value: await backend.saveExport(name, data) }));
       else {
         await navigator.clipboard.writeText(data);
-        showToast("Backup copied. Paste it into a note or file you keep.");
+        showToast(tr("extras.backupCopiedPasteItInto"));
       }
     });
   const open = (t: string) =>
@@ -118,25 +119,25 @@ export function BackupSection() {
     });
   return (
     <>
-      <h4 className="sub-h">Backup to another device</h4>
+      <h4 className="sub-h">{tr("extras.backupToAnotherDevice")}</h4>
       <p className="small muted">
         Circles, stars, nicknames, time zones, block reasons, invite messages, world notes, settings and your own sounds in one file, encrypted with a password
         you choose. Not in it: your VRChat login, server keys, and your age notes (those never leave this device).
       </p>
       <label className="field narrow">
-        <span>Password (8 characters or more)</span>
+        <span>{tr("extras.password8CharactersOrMore")}</span>
         <input type="password" value={pw} autoComplete="new-password" onChange={(e) => setPw(e.target.value)} />
       </label>
       <div className="row">
         <button className="btn small" disabled={busy || pw.length < 8} onClick={() => void save()}>
-          {isTauri && !isMobile ? "Save a backup to Downloads" : "Copy a backup"}
+          {isTauri && !isMobile ? tr("extras.saveABackupToDownloads") : tr("extras.copyABackup")}
         </button>
         <button className="btn small" disabled={busy || pw.length < 8} onClick={() => file.current?.click()}>
-          Restore from a file…
+          {tr("extras.restoreFromAFile")}
         </button>
         {isMobile && (
           <button className="btn small" disabled={busy || pw.length < 8} onClick={() => void navigator.clipboard.readText().then(open)}>
-            Restore from the clipboard
+            {tr("extras.restoreFromTheClipboard")}
           </button>
         )}
         <input
@@ -156,9 +157,9 @@ export function BackupSection() {
           <p className="small">{describeBackup(found)}</p>
           <label className="check">
             <input type="checkbox" checked={withSettings} onChange={(e) => setWithSettings(e.target.checked)} />
-            <span>Also take its settings</span>
+            <span>{tr("extras.alsoTakeItsSettings")}</span>
           </label>
-          <p className="small">This replaces the circles, stars, nicknames and the rest on this device.</p>
+          <p className="small">{tr("extras.thisReplacesTheCirclesStars")}</p>
           <div className="row">
             <button
               className="btn small danger"
@@ -168,19 +169,19 @@ export function BackupSection() {
                   await restoreBackup(found, { settings: withSettings });
                   setFound(null);
                   setText(null);
-                  showToast("Backup restored");
+                  showToast(tr("extras.backupRestored"));
                 })
               }
             >
-              Restore it
+              {tr("extras.restoreIt")}
             </button>
             <button className="btn small ghost" onClick={() => setFound(null)}>
-              Cancel
+              {tr("extras.cancel")}
             </button>
           </div>
         </div>
       )}
-      {text && !found && busy && <p className="small muted">Opening…</p>}
+      {text && !found && busy && <p className="small muted">{tr("extras.opening")}</p>}
     </>
   );
 }

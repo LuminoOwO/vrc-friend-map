@@ -1,3 +1,4 @@
+import { t as tr } from "../i18n";
 import { enterDemo } from "../session";
 import { backend } from "../backend";
 import { setState, updateSettings, useApp } from "../store";
@@ -22,48 +23,48 @@ export function LoginScreen({ canLogin }: { canLogin: boolean }) {
       <div className="login-card">
         <div className="brand">
           <span className="brand-mark" />
-          <h1>VRC Friend Map</h1>
+          <h1>{tr("login.vrcFriendMap")}</h1>
         </div>
-        <p className="lead">See your VRChat friends as a map: who knows whom, who's online, and your own circles.</p>
+        <p className="lead">{tr("login.seeYourVrchatFriendsAs")}</p>
 
         <ul className="login-points">
-          <li>You sign in on VRChat's own website, inside this app. Any login method the site offers works, including 2FA.</li>
-          <li>The app never sees your password. It keeps only the session cookie, stored on this device.</li>
-          <li>It only reads data, spaces requests at least a second apart, and caches everything locally.</li>
+          <li>{tr("login.youSignInOnVrchat")}</li>
+          <li>{tr("login.theAppNeverSeesYour")}</li>
+          <li>{tr("login.itOnlyReadsDataSpaces")}</li>
         </ul>
 
         <label className="field">
-          <span>Contact for VRChat (optional)</span>
+          <span>{tr("login.contactForVrchatOptional")}</span>
           <input
             value={contact}
-            placeholder="e.g. your Discord name or email"
+            placeholder={tr("login.eGYourDiscordName")}
             onChange={(e) => updateSettings({ contact: e.target.value })}
           />
-          <small>VRChat asks third-party tools to include contact info in their requests, in case something goes wrong.</small>
+          <small>{tr("login.vrchatAsksThirdPartyTools")}</small>
         </label>
 
         {canLogin ? (
           <div className="login-actions">
             <button className="btn primary big" disabled={busy} onClick={start}>
-              {busy ? "Waiting for VRChat login…" : "Log in with VRChat"}
+              {busy ? tr("login.waitingForVrchatLogin") : tr("login.logInWithVrchat")}
             </button>
             {busy && (
               <button className="btn ghost" onClick={() => backend.loginCancel().then(() => setState({ loginBusy: false }))}>
-                Cancel
+                {tr("login.cancel")}
               </button>
             )}
           </div>
         ) : (
-          <p className="note">You're running the UI in a plain browser, so login isn't available. Start it with <code>npm run tauri dev</code> to log in.</p>
+          <p className="note">You're running the UI in a plain browser, so login isn't available. Start it with <code>{tr("login.npmRunTauriDev")}</code> {tr("login.toLogIn")}</p>
         )}
         {message && <p className="login-msg">{message}</p>}
-        {busy && <p className="note">Finish signing in in the VRChat window. It closes by itself once you're in.</p>}
+        {busy && <p className="note">{tr("login.finishSigningInInThe")}</p>}
 
         <div className="login-footer">
           <button className="btn ghost" onClick={enterDemo}>
-            Try it with demo data
+            {tr("login.tryItWithDemoData")}
           </button>
-          {hasCache && <span className="note">Your last synced data is kept and will show again after login.</span>}
+          {hasCache && <span className="note">{tr("login.yourLastSyncedDataIs")}</span>}
           <span className="note version">v{__APP_VERSION__}</span>
         </div>
       </div>

@@ -1,3 +1,4 @@
+import { t as tr } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { backend, type GraphicsInfo } from "../backend";
 import { benchmark, gpuInfo, mapDrawMs, mapFps, mapStats, type BenchResult } from "../diag";
@@ -33,21 +34,21 @@ export function Diagnostics() {
     if (!open) return [];
     const fps = mapFps();
     const out: [string, string][] = [
-      ["Map frame rate", fps ? `${fps} fps` : "not drawing right now (open the map; it draws while it moves)"],
-      ["Map drawing time", fps ? `${mapDrawMs().toFixed(1)} ms per frame (JavaScript only)` : "–"],
-      ["Slowest recent frame", mapStats.worstGap ? `${Math.round(mapStats.worstGap)} ms` : "–"],
-      ["Map canvas", mapStats.canvasW ? `${mapStats.canvasW} × ${mapStats.canvasH} px (scale ${mapStats.dpr})` : "–"],
+      ["Map frame rate", fps ? tr("diagnostics.fpsFps", { fps }) : tr("diagnostics.notDrawingRightNowOpen")],
+      ["Map drawing time", fps ? tr("diagnostics.valueMsPerFrameJavascript", { value: mapDrawMs().toFixed(1) }) : "–"],
+      ["Slowest recent frame", mapStats.worstGap ? tr("diagnostics.valueMs", { value: Math.round(mapStats.worstGap) }) : "–"],
+      ["Map canvas", mapStats.canvasW ? tr("diagnostics.canvaswCanvashPxScaleDpr", { canvasW: mapStats.canvasW, canvasH: mapStats.canvasH, dpr: mapStats.dpr }) : "–"],
       ["Window", `${window.innerWidth} × ${window.innerHeight} (screen ${window.screen.width} × ${window.screen.height}, scale ${window.devicePixelRatio})`],
       ["Web engine", gfx?.engine ? ENGINE_NAMES[gfx.engine] ?? gfx.engine : "browser"],
       ["GPU", gpu ? `${gpu.renderer}${gpu.software ? "  ⚠ software (CPU) rendering" : ""}` : "–"],
       ["GPU vendor", gpu?.vendor ?? "–"],
       ["WebGL", gpu?.webgl ?? "–"],
-      ["Vsync", gfx ? (gfx.unlocked_now ? "off (faster than the screen allowed)" : gfx.unlocked ? "on (turns off on the next start)" : "on") : "–"],
-      ["Frame rate limit", (() => { const p = getState().settings.perf; return p.fps === -1 ? "unlimited" : p.fps === 0 ? `match the screen${p.screenHz ? ` (${p.screenHz} Hz)` : ""}` : `${p.fps} fps`; })()],
+      ["Vsync", gfx ? (gfx.unlocked_now ? tr("diagnostics.offFasterThanTheScreen") : gfx.unlocked ? tr("diagnostics.onTurnsOffOnThe") : "on") : "–"],
+      ["Frame rate limit", (() => { const p = getState().settings.perf; return p.fps === -1 ? "unlimited" : p.fps === 0 ? `match the screen${p.screenHz ? ` (${p.screenHz} Hz)` : ""}` : tr("diagnostics.fpsFps", { fps: p.fps }); })()],
       ["Graphics setting", gfx ? `${gfx.mode}${gfx.forced ? ` (forced to ${gfx.forced} by VRC_FRIEND_MAP_GPU)` : ""}` : "–"],
-      ["Map layout restarts", layoutRestarts.count ? `${layoutRestarts.count}, last: ${layoutRestarts.last} (${Math.round((Date.now() - layoutRestarts.at) / 1000)} s ago)` : "none"],
-      ["Mouse wheel", (() => { const c = wheelFixCounts(); return `${c.real} wheel events from the web engine${c.empty ? ` (+${c.empty} that moved nothing)` : ""}${wheelFixHere ? `, ${c.used} from the wheel fix (${c.skipped} not needed; ${c.matched} steps the engine also got, ${c.unmatched} it missed)` : ""}`; })()],
-      ["System", gfx?.os ? `${gfx.os} ${gfx.arch}` : navigator.platform],
+      ["Map layout restarts", layoutRestarts.count ? tr("diagnostics.countLastLastValueS", { count: layoutRestarts.count, last: layoutRestarts.last, value: Math.round((Date.now() - layoutRestarts.at) / 1000) }) : "none"],
+      ["Mouse wheel", (() => { const c = wheelFixCounts(); return `${c.real} wheel events from the web engine${c.empty ? ` (+${c.empty} that moved nothing)` : ""}${wheelFixHere ? tr("diagnostics.usedFromTheWheelFix", { used: c.used, skipped: c.skipped, matched: c.matched, unmatched: c.unmatched }) : ""}`; })()],
+      ["System", gfx?.os ? tr("diagnostics.osArch", { os: gfx.os, arch: gfx.arch }) : navigator.platform],
       ["CPU threads", String(navigator.hardwareConcurrency || "?")],
       ["User agent", navigator.userAgent],
     ];
@@ -65,8 +66,8 @@ export function Diagnostics() {
   const copy = () => {
     const text = `VRC Friend Map ${__APP_VERSION__} diagnostics\n` + rows.map(([k, v]) => `${k}: ${v}`).join("\n");
     navigator.clipboard?.writeText(text).then(
-      () => showToast("Diagnostics copied"),
-      () => showToast("Couldn't copy"),
+      () => showToast(tr("diagnostics.diagnosticsCopied")),
+      () => showToast(tr("diagnostics.couldnTCopy")),
     );
   };
 
@@ -81,10 +82,10 @@ export function Diagnostics() {
 
   return (
     <>
-      <h3>Diagnostics</h3>
+      <h3>{tr("diagnostics.diagnostics")}</h3>
       {!open ? (
         <button className="btn" onClick={() => setOpen(true)}>
-          Show frame rate, GPU and web engine details
+          {tr("diagnostics.showFrameRateGpuAnd")}
         </button>
       ) : (
         <>
@@ -104,10 +105,10 @@ export function Diagnostics() {
           )}
           <div className="row">
             <button className="btn" disabled={benching} onClick={run}>
-              {benching ? "Measuring…" : "Run a quick drawing benchmark"}
+              {benching ? tr("diagnostics.measuring") : tr("diagnostics.runAQuickDrawingBenchmark")}
             </button>
             <button className="btn" onClick={copy}>
-              Copy diagnostics
+              {tr("diagnostics.copyDiagnostics")}
             </button>
           </div>
           <p className="small muted">

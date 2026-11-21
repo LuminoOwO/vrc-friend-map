@@ -1,4 +1,5 @@
 // Settings → Account & data → Your other accounts (src/accounts.ts).
+import { t as tr } from "../i18n";
 import { useEffect, useState } from "react";
 import { accountLive, addAccount, onAccountLive, removeAccount, setAccount } from "../accounts";
 import { isMobile } from "../backend";
@@ -12,7 +13,7 @@ export function AccountsSection() {
   useEffect(() => onAccountLive(() => tick((n) => n + 1)), []);
   return (
     <>
-      <h3>Your other accounts</h3>
+      <h3>{tr("accounts.yourOtherAccounts")}</h3>
       <p className="small muted">
         Log in with your other VRChat accounts too: their friends join the map, cards and search, each with a small mark for which of your accounts knows
         them, and friends of more than one of your accounts stand out. Logins stay on this device.
@@ -24,12 +25,12 @@ export function AccountsSection() {
           <div key={acc.id} className="account-row">
             <div className="row">
               <b>{acc.name || acc.id}</b>
-              <span className="small muted">{n ? `${n} friends` : "not loaded yet"}</span>
+              <span className="small muted">{n ? tr("accounts.nFriends", { n }) : tr("accounts.notLoadedYet")}</span>
               {acc.live && acc.show && <span className={`chip ${live?.connected ? "ok" : ""}`}>{live?.connected ? "live" : live?.message || "connecting…"}</span>}
             </div>
             <label className="check">
               <input id={`acc-show-${acc.id}`} type="checkbox" checked={acc.show} onChange={(e) => setAccount(acc.id, { show: e.target.checked })} />
-              <span>Show its friends on the map</span>
+              <span>{tr("accounts.showItsFriendsOnThe")}</span>
             </label>
             <label className="check">
               <input id={`acc-live-${acc.id}`} type="checkbox" checked={acc.live} disabled={!acc.show} onChange={(e) => setAccount(acc.id, { live: e.target.checked })} />
@@ -49,25 +50,25 @@ export function AccountsSection() {
                     void removeAccount(acc.id);
                   }}
                 >
-                  Remove
+                  {tr("accounts.remove")}
                 </button>
                 <button className="btn small ghost" onClick={() => setConfirm(null)}>
-                  Keep
+                  {tr("accounts.keep")}
                 </button>
               </div>
             ) : (
               <button className="btn small ghost" onClick={() => setConfirm(acc.id)}>
-                Remove from this device
+                {tr("accounts.removeFromThisDevice")}
               </button>
             )}
           </div>
         );
       })}
       {isMobile ? (
-        <p className="small muted">Adding another account works in the app on a computer for now.</p>
+        <p className="small muted">{tr("accounts.addingAnotherAccountWorksIn")}</p>
       ) : (
         <button className="btn small" onClick={() => void addAccount()}>
-          Add another account
+          {tr("accounts.addAnotherAccount")}
         </button>
       )}
       <label className="check">

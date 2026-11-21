@@ -2,6 +2,7 @@
 // video links, pictures and avatars, your diary note, "on this day a year
 // ago" and an instance replay; rankings and stats; all video links; the
 // picture gallery tagged with world and people; a year in review.
+import { t as tr } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { backend, isTauri } from "../backend";
 import { popularWorlds, setDiary, useHistory } from "../history";
@@ -62,10 +63,10 @@ export function LogbookView() {
       </div>
       {err && <p className="warn small">{err}</p>}
       {!visits ? (
-        <SkelBlock lines={4} label="Loading your game logs…" />
+        <SkelBlock lines={4} label={tr("logbook.loadingYourGameLogs")} />
       ) : !visits.length ? (
         <p className="muted">
-          Nothing yet. The logbook comes from VRChat's log files on this computer (Settings → Game logs). Phones: later through your PC or Shizuku.
+          {tr("logbook.nothingYetTheLogbookComes")}
         </p>
       ) : (
         <>
@@ -83,7 +84,7 @@ export function LogbookView() {
 function Person({ id, name }: { id: string; name: string }) {
   const friend = useApp((s) => !!s.cache.friends[id]);
   return (
-    <button className={`mini ${friend ? "friend" : ""}`} onClick={() => setState({ selectedId: id })} title={friend ? "Friend" : "Not a friend"}>
+    <button className={`mini ${friend ? "friend" : ""}`} onClick={() => setState({ selectedId: id })} title={friend ? "Friend" : tr("logbook.notAFriend")}>
       {shownName(id, name || id)}
     </button>
   );
@@ -110,24 +111,24 @@ function DayView({ visits }: { visits: TimelineVisit[] }) {
   return (
     <>
       <div className="row day-nav">
-        <button className="icon-btn" title="Day before" onClick={() => setDay(shiftDay(day, -1))}>
+        <button className="icon-btn" title={tr("logbook.dayBefore")} onClick={() => setDay(shiftDay(day, -1))}>
           <Icon name="chevron-left" />
         </button>
         <input type="date" value={day} onChange={(e) => e.target.value && setDay(e.target.value)} />
-        <button className="icon-btn" title="Next day" onClick={() => setDay(shiftDay(day, 1))}>
+        <button className="icon-btn" title={tr("logbook.nextDay")} onClick={() => setDay(shiftDay(day, 1))}>
           <Icon name="chevron-right" />
         </button>
         <button className="btn small" onClick={() => setDay(todayKey())}>
-          Today
+          {tr("logbook.today")}
         </button>
         <button
           className="btn small ghost"
-          title="The last day you played before this one"
+          title={tr("logbook.theLastDayYouPlayed")}
           onClick={() => {
             for (let k = shiftDay(day, -1), i = 0; i < 3650; k = shiftDay(k, -1), i++) if (daysWithPlay.has(k)) return setDay(k);
           }}
         >
-          Previous play day
+          {tr("logbook.previousPlayDay")}
         </button>
       </div>
       <section className="insight-card">
@@ -138,23 +139,23 @@ function DayView({ visits }: { visits: TimelineVisit[] }) {
             {list.length === 1 ? "" : "s"}, {people.size} people.
           </p>
         ) : (
-          <p className="small muted">You didn't play this day.</p>
+          <p className="small muted">{tr("logbook.youDidnTPlayThis")}</p>
         )}
         {steam && steam.minutes > 0 && (
-          <p className="small muted" title="From Steam's own play time for VRChat (desktop and PC VR on this PC)">
+          <p className="small muted" title={tr("logbook.fromSteamSOwnPlay")}>
             Steam counted {fmtDuration(steam.minutes * 60)}
-            {steam.spans ? ` since ${naiveToDate(dayStart(steam.since)).toLocaleDateString([], { month: "short", day: "numeric" })}` : " this day"}.
+            {steam.spans ? ` since ${naiveToDate(dayStart(steam.since)).toLocaleDateString([], { month: "short", day: "numeric" })}` : tr("logbook.thisDay")}.
           </p>
         )}
         <label className="field">
-          <span>Diary (only on this device)</span>
-          <textarea rows={2} value={draft} placeholder="A few words about this day…" onChange={(e) => setDraft(e.target.value)} onBlur={() => draft !== diary && setDiary(day, draft)} />
+          <span>{tr("logbook.diaryOnlyOnThisDevice")}</span>
+          <textarea rows={2} value={draft} placeholder={tr("logbook.aFewWordsAboutThis")} onChange={(e) => setDraft(e.target.value)} onBlur={() => draft !== diary && setDiary(day, draft)} />
         </label>
         {yearAgo.length > 0 && (
           <p className="small">
             <Icon name="calendar" size={13} /> A year ago: {yearAgo.map((v) => v.world_name || v.world).filter((x, i, a) => a.indexOf(x) === i).slice(0, 4).join(", ")}{" "}
             <button className="btn link small" onClick={() => setDay(shiftDay(day, -365))}>
-              Go there
+              {tr("logbook.goThere")}
             </button>
           </p>
         )}
@@ -175,8 +176,8 @@ function VisitCard({ v }: { v: TimelineVisit }) {
       if (p.from > v.start + 30) out.push({ t: p.from, kind: "join", text: <><Person id={p.id} name={p.name} /> joined</> });
       if (p.to < v.end - 30) out.push({ t: p.to, kind: "leave", text: <><Person id={p.id} name={p.name} /> left</> });
     }
-    for (const x of v.videos) out.push({ t: x.t, kind: "video", text: <><Icon name="video" size={13} /> <VideoLink url={x.url} />{x.by ? ` (by ${x.by})` : ""}</> });
-    for (const x of v.shots) out.push({ t: x.t, kind: "shot", text: <><Icon name="image" size={13} /> picture taken</> });
+    for (const x of v.videos) out.push({ t: x.t, kind: "video", text: <><Icon name="video" size={13} /> <VideoLink url={x.url} />{x.by ? tr("logbook.byBy", { by: x.by }) : ""}</> });
+    for (const x of v.shots) out.push({ t: x.t, kind: "shot", text: <><Icon name="image" size={13} /> {tr("logbook.pictureTaken")}</> });
     return out.sort((a, b) => a.t - b.t);
   }, [v]);
   const atStart = v.players.filter((p) => p.from <= v.start + 30);
@@ -207,10 +208,10 @@ function VisitCard({ v }: { v: TimelineVisit }) {
       )}
       <div className="row">
         <button className="btn small ghost" onClick={() => setReplay(!replay)}>
-          <Icon name="play" size={13} /> {replay ? "Close replay" : "Replay"}
+          <Icon name="play" size={13} /> {replay ? tr("logbook.closeReplay") : "Replay"}
         </button>
         <button className="btn small ghost" onClick={() => setState({ openWorld: v.world })}>
-          <Icon name="external" size={13} /> World
+          <Icon name="external" size={13} /> {tr("logbook.world")}
         </button>
       </div>
       {replay && (
@@ -227,8 +228,8 @@ function VisitCard({ v }: { v: TimelineVisit }) {
               </span>
             ))}
           </div>
-          <button className="btn small" onClick={() => setState({ view: "graph", previewFilters: null, selectedId: null })} title="Back to the map">
-            Map
+          <button className="btn small" onClick={() => setState({ view: "graph", previewFilters: null, selectedId: null })} title={tr("logbook.backToTheMap")}>
+            {tr("logbook.map")}
           </button>
         </div>
       )}
@@ -240,7 +241,7 @@ function videoTitle(url: string): string {
   try {
     const u = new URL(url);
     const yt = u.searchParams.get("v") ?? (u.hostname === "youtu.be" ? u.pathname.slice(1) : "");
-    if (yt) return `YouTube ${yt}`;
+    if (yt) return tr("logbook.youtubeYt", { yt });
     return `${u.hostname.replace(/^www\./, "")}${u.pathname.length > 1 ? u.pathname.slice(0, 40) : ""}`;
   } catch {
     return url;
@@ -249,7 +250,7 @@ function videoTitle(url: string): string {
 
 function VideoLink({ url }: { url: string }) {
   return (
-    <button className="link-btn" title={url} onClick={() => backend.openUrl(url).catch(() => showToast("Couldn't open the link"))}>
+    <button className="link-btn" title={url} onClick={() => backend.openUrl(url).catch(() => showToast(tr("logbook.couldnTOpenTheLink")))}>
       {videoTitle(url)}
     </button>
   );
@@ -286,13 +287,13 @@ function Stats({ visits }: { visits: TimelineVisit[] }) {
         </select>
         <span className="small">
           {fmtDuration(r.totalSecs)} on {r.days} days · streak: {r.streak.current} day{r.streak.current === 1 ? "" : "s"} now, best {r.streak.best}
-          {r.busiestDay ? ` · busiest day ${r.busiestDay.key} (${fmtDuration(r.busiestDay.secs)})` : ""}
+          {r.busiestDay ? tr("logbook.busiestDayKeyValue", { key: r.busiestDay.key, value: fmtDuration(r.busiestDay.secs) }) : ""}
         </span>
       </div>
       <div className="insights">
         <section className="insight-card">
           <h3>
-            <Icon name="world" size={16} /> Worlds by time
+            <Icon name="world" size={16} /> {tr("logbook.worldsByTime")}
           </h3>
           <ol className="rank-list">
             {r.worlds.slice(0, 15).map((w) => (
@@ -314,7 +315,7 @@ function Stats({ visits }: { visits: TimelineVisit[] }) {
         </section>
         <section className="insight-card">
           <h3>
-            <Icon name="users" size={16} /> People by time together
+            <Icon name="users" size={16} /> {tr("logbook.peopleByTimeTogether")}
           </h3>
           <ol className="rank-list">
             {r.people.slice(0, 20).map((p) => (
@@ -329,7 +330,7 @@ function Stats({ visits }: { visits: TimelineVisit[] }) {
         </section>
         <section className="insight-card">
           <h3>
-            <Icon name="clock" size={16} /> When you play
+            <Icon name="clock" size={16} /> {tr("logbook.whenYouPlay")}
           </h3>
           <div className="heatmap">
             {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d, day) => (
@@ -341,7 +342,7 @@ function Stats({ visits }: { visits: TimelineVisit[] }) {
               </div>
             ))}
           </div>
-          <h4>Longest sessions</h4>
+          <h4>{tr("logbook.longestSessions")}</h4>
           <ul className="missed-list">
             {r.longest.map((s) => (
               <li key={s.start}>
@@ -352,7 +353,7 @@ function Stats({ visits }: { visits: TimelineVisit[] }) {
         </section>
         <section className="insight-card">
           <h3>
-            <Icon name="star" size={16} /> Popular among your friends (7 days)
+            <Icon name="star" size={16} /> {tr("logbook.popularAmongYourFriends7")}
           </h3>
           {popular.length ? (
             <ol className="rank-list">
@@ -366,7 +367,7 @@ function Stats({ visits }: { visits: TimelineVisit[] }) {
               ))}
             </ol>
           ) : (
-            <p className="small muted">Builds up while the app runs: where your friends spend their time (from their live locations).</p>
+            <p className="small muted">{tr("logbook.buildsUpWhileTheApp")}</p>
           )}
         </section>
       </div>
@@ -395,7 +396,7 @@ function Videos({ visits }: { visits: TimelineVisit[] }) {
           <Icon name="video" size={16} /> Video links ({all.length})
         </h3>
         <div className="row tight">
-          <input placeholder="Search links, worlds, people" value={q} onChange={(e) => setQ(e.target.value)} />
+          <input placeholder={tr("logbook.searchLinksWorldsPeople")} value={q} onChange={(e) => setQ(e.target.value)} />
           <button className="btn small" onClick={exportCsv} disabled={!list.length}>
             <Icon name="download" size={14} /> CSV
           </button>
@@ -406,12 +407,12 @@ function Videos({ visits }: { visits: TimelineVisit[] }) {
           <li key={`${v.t}-${i}`}>
             <span className="muted small">{naiveToDate(v.t).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}</span>
             <VideoLink url={v.url} />
-            <button className="icon-btn tiny" title="Copy link" onClick={() => navigator.clipboard?.writeText(v.url).then(() => showToast("Link copied"))}>
+            <button className="icon-btn tiny" title={tr("logbook.copyLink")} onClick={() => navigator.clipboard?.writeText(v.url).then(() => showToast(tr("logbook.linkCopied")))}>
               <Icon name="copy" size={13} />
             </button>
             <span className="muted small">
               {v.worldName}
-              {v.by ? ` · by ${v.by}` : ""}
+              {v.by ? tr("logbook.byBy2", { by: v.by }) : ""}
             </span>
           </li>
         ))}
@@ -434,11 +435,11 @@ function Pictures({ visits }: { visits: TimelineVisit[] }) {
       const list: Picture[] = await backend.picturesList([...found, ...extra]);
       setPics(tagPictures(list, visits));
     })().catch((e) => {
-      showToast(`Couldn't read the pictures: ${e}`);
+      showToast(tr("logbook.couldnTReadThePictures", { error: e }));
       setPics([]);
     });
   }, [extra, visits]);
-  if (!pics) return <p className="muted">Looking for your VRChat pictures…</p>;
+  if (!pics) return <p className="muted">{tr("logbook.lookingForYourVrchatPictures")}</p>;
   if (!pics.length)
     return (
       <p className="muted">
@@ -450,7 +451,7 @@ function Pictures({ visits }: { visits: TimelineVisit[] }) {
   return (
     <>
       <div className="row">
-        <input placeholder="Find a world or a person" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input placeholder={tr("logbook.findAWorldOrA")} value={q} onChange={(e) => setQ(e.target.value)} />
         <span className="small muted">
           {list.length} of {pics.length} pictures
         </span>
@@ -476,13 +477,13 @@ function PictureViewer({ p, onClose }: { p: TaggedPicture; onClose: () => void }
       <div className="modal pic-view" role="dialog" onKeyDown={(e) => e.key === "Escape" && onClose()}>
         <div className="row between">
           <h2>{p.worldName ?? "Picture"}</h2>
-          <button className="icon-btn" aria-label="Close" onClick={onClose} autoFocus>
+          <button className="icon-btn" aria-label={tr("logbook.close")} onClick={onClose} autoFocus>
             <Icon name="close" />
           </button>
         </div>
         <img className="pic-full" src={pictureSrc(p.path)} alt="" />
         <p className="small muted">
-          {naiveToDate(p.t).toLocaleString()} · {p.width && p.height ? `${p.width}×${p.height} · ` : ""}
+          {naiveToDate(p.t).toLocaleString()} · {p.width && p.height ? tr("logbook.widthHeight", { width: p.width, height: p.height }) : ""}
           {(p.size / 1024 / 1024).toFixed(1)} MB
         </p>
         {p.people.length > 0 && (
@@ -491,14 +492,14 @@ function PictureViewer({ p, onClose }: { p: TaggedPicture; onClose: () => void }
           </div>
         )}
         <div className="row">
-          <button className="btn small" onClick={() => backend.revealPath(p.path).catch(() => showToast("Couldn't open the folder"))}>
-            <Icon name="folder" size={14} /> Show in folder
+          <button className="btn small" onClick={() => backend.revealPath(p.path).catch(() => showToast(tr("logbook.couldnTOpenTheFolder")))}>
+            <Icon name="folder" size={14} /> {tr("logbook.showInFolder")}
           </button>
           <a className="btn small" href={pictureSrc(p.path)} download={p.name}>
-            <Icon name="download" size={14} /> Save a copy
+            <Icon name="download" size={14} /> {tr("logbook.saveACopy")}
           </a>
-          <button className="btn small" onClick={() => navigator.clipboard?.writeText(p.path).then(() => showToast("Path copied"))}>
-            <Icon name="copy" size={14} /> Copy path
+          <button className="btn small" onClick={() => navigator.clipboard?.writeText(p.path).then(() => showToast(tr("logbook.pathCopied")))}>
+            <Icon name="copy" size={14} /> {tr("logbook.copyPath")}
           </button>
         </div>
       </div>
@@ -564,7 +565,7 @@ function YearInReview({ visits }: { visits: TimelineVisit[] }) {
             ))}
           </select>
           <button className="btn small" onClick={save}>
-            <Icon name="download" size={14} /> Save as picture
+            <Icon name="download" size={14} /> {tr("logbook.saveAsPicture")}
           </button>
         </div>
       </div>
@@ -573,7 +574,7 @@ function YearInReview({ visits }: { visits: TimelineVisit[] }) {
           <li key={l}>{l}</li>
         ))}
       </ul>
-      <h4>Top worlds</h4>
+      <h4>{tr("logbook.topWorlds")}</h4>
       <ol className="rank-list">
         {r.worlds.slice(0, 5).map((w) => (
           <li key={w.world}>
@@ -581,7 +582,7 @@ function YearInReview({ visits }: { visits: TimelineVisit[] }) {
           </li>
         ))}
       </ol>
-      <h4>Top people</h4>
+      <h4>{tr("logbook.topPeople")}</h4>
       <ol className="rank-list">
         {r.people.slice(0, 5).map((p) => (
           <li key={p.id}>
@@ -589,7 +590,7 @@ function YearInReview({ visits }: { visits: TimelineVisit[] }) {
           </li>
         ))}
       </ol>
-      <p className="small muted">Private: only on this device, unless you save the picture and share it yourself.</p>
+      <p className="small muted">{tr("logbook.privateOnlyOnThisDevice")}</p>
       <canvas ref={canvas} hidden />
     </section>
   );

@@ -1,9 +1,10 @@
+import { t as tr } from "../i18n";
 import { useEffect, useState } from "react";
 import { backend, isMobile, isTauri, type GraphicsInfo } from "../backend";
 import { flushSaves, showToast, updatePerf, useApp } from "../store";
 
 const IDLE_AFTER = [0, 15, 30, 60, 120, 300, 600, 1800];
-const afterLabel = (s: number) => (s === 0 ? "Never" : s < 60 ? `${s} s` : `${s / 60} min`);
+const afterLabel = (s: number) => (s === 0 ? "Never" : s < 60 ? tr("frameRate.sS", { s }) : tr("frameRate.valueMin", { value: s / 60 }));
 
 /** A frame-rate field: whole numbers from -1 up; applied when it's a valid number. */
 function FpsInput({ value, onChange, min = -1 }: { value: number; onChange: (v: number) => void; min?: number }) {
@@ -33,7 +34,7 @@ function FpsInput({ value, onChange, min = -1 }: { value: number; onChange: (v: 
   );
 }
 
-const meaning = (v: number, zero: string, minus: string) => (v === -1 ? minus : v === 0 ? zero : `${v} fps`);
+const meaning = (v: number, zero: string, minus: string) => (v === -1 ? minus : v === 0 ? zero : tr("frameRate.vFps", { v }));
 
 /** The screen's refresh rate, measured with requestAnimationFrame (rounded to a common value). */
 function measureHz(): Promise<number> {
@@ -79,19 +80,19 @@ export function FrameRateSection({ gfx }: { gfx: GraphicsInfo | null }) {
     backend
       .graphicsSetUnlocked(!perf.vsync)
       .then(() => setSaved(!perf.vsync))
-      .catch((e) => showToast(`Couldn't save: ${e}`));
+      .catch((e) => showToast(tr("frameRate.couldnTSaveError", { error: e })));
   }, [perf.vsync, canUnlock, saved]);
   const restartNeeded = canUnlock && saved !== null && saved === vsyncNow;
   const above = perf.fps === -1 || (hz !== null && perf.fps > hz + 2);
 
   return (
     <>
-      <h3>Frame rate</h3>
+      <h3>{tr("frameRate.frameRate")}</h3>
       <label className="check">
         <input type="checkbox" checked={perf.vsync} disabled={!canUnlock && perf.vsync} onChange={(e) => updatePerf({ vsync: e.target.checked })} />
-        Vsync (wait for the screen{hz ? `, ${hz} Hz` : ""})
+        Vsync (wait for the screen{hz ? tr("frameRate.hzHz", { hz }) : ""})
       </label>
-      {!canUnlock && !isMobile && <p className="small muted">Turning vsync off needs the Chromium build (Linux) or Windows.</p>}
+      {!canUnlock && !isMobile && <p className="small muted">{tr("frameRate.turningVsyncOffNeedsThe")}</p>}
       {restartNeeded && (
         <div className="row">
           <span className="small">Restart the app to turn vsync {perf.vsync ? "on" : "off"}.</span>
@@ -102,32 +103,32 @@ export function FrameRateSection({ gfx }: { gfx: GraphicsInfo | null }) {
                 await flushSaves();
                 await backend.restartApp();
               } catch (err) {
-                showToast(`Couldn't restart: ${err}`);
+                showToast(tr("frameRate.couldnTRestartError", { error: err }));
               }
             }}
           >
-            Restart now
+            {tr("frameRate.restartNow")}
           </button>
         </div>
       )}
       <label className="fps-row">
-        <span>Frame rate limit</span>
+        <span>{tr("frameRate.frameRateLimit")}</span>
         <FpsInput value={perf.fps} onChange={(fps) => updatePerf({ fps })} />
-        <span className="small muted">{meaning(perf.fps, `same as the screen${hz ? ` (${hz} Hz)` : ""}`, "unlimited")}</span>
+        <span className="small muted">{meaning(perf.fps, `same as the screen${hz ? tr("frameRate.hzHz2", { hz }) : ""}`, "unlimited")}</span>
       </label>
       <p className="small muted">
         -1 = unlimited, 0 = same as the screen.
-        {above && vsyncNow ? ` With vsync on, ${hz ? `${hz} fps` : "the screen's rate"} is the most you get.` : ""}
+        {above && vsyncNow ? ` With vsync on, ${hz ? `${hz} fps` : tr("frameRate.theScreenSRate")} is the most you get.` : ""}
       </p>
 
-      <h4 className="sub-h">Saving power</h4>
+      <h4 className="sub-h">{tr("frameRate.savingPower")}</h4>
       <label className="fps-row">
-        <span>{isMobile ? "While the app isn't in front" : "While the window isn't focused"}</span>
+        <span>{isMobile ? tr("frameRate.whileTheAppIsnT") : tr("frameRate.whileTheWindowIsnT")}</span>
         <FpsInput value={perf.unfocusedFps} onChange={(unfocusedFps) => updatePerf({ unfocusedFps })} />
         <span className="small muted">{meaning(perf.unfocusedFps, "stop moving", "no change")}</span>
       </label>
       <label className="fps-row">
-        <span>{isMobile ? "After no touch for" : "After no input for"}</span>
+        <span>{isMobile ? tr("frameRate.afterNoTouchFor") : tr("frameRate.afterNoInputFor")}</span>
         <select value={IDLE_AFTER.indexOf(perf.idleAfter) >= 0 ? IDLE_AFTER.indexOf(perf.idleAfter) : 0} onChange={(e) => updatePerf({ idleAfter: IDLE_AFTER[Number(e.target.value)] })}>
           {IDLE_AFTER.map((s, i) => (
             <option key={s} value={i}>
@@ -137,7 +138,7 @@ export function FrameRateSection({ gfx }: { gfx: GraphicsInfo | null }) {
         </select>
         {perf.idleAfter > 0 && (
           <>
-            <span>go down to</span>
+            <span>{tr("frameRate.goDownTo")}</span>
             <FpsInput value={perf.idleFps} onChange={(idleFps) => updatePerf({ idleFps })} />
             <span className="small muted">{meaning(perf.idleFps, "stop moving", "no change")}</span>
           </>
@@ -146,8 +147,8 @@ export function FrameRateSection({ gfx }: { gfx: GraphicsInfo | null }) {
       <p className="small muted">For these: 0 = stop moving, -1 = no change.</p>
       <p className="small muted">
         {isMobile
-          ? "These only slow down the orbit and other animation; any touch brings the full rate back right away. In the background the map doesn't draw at all. "
-          : "These only slow down the orbit and other animation; anything you do (moving the mouse, a key, a click) brings the full rate back right away. A minimized window doesn't draw at all. "}
+          ? tr("frameRate.theseOnlySlowDownThe")
+          : tr("frameRate.theseOnlySlowDownThe2")}
         Turn on “Show frame rate” in Map options to see the effect.
       </p>
     </>

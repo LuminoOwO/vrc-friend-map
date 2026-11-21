@@ -1,14 +1,15 @@
 // Settings → Notifications → Phone in the background (Android).
+import { t as tr } from "../i18n";
 import { useEffect, useState } from "react";
 import { askBatteryExemption, pushDistributors, pushRegister, pushUnregister, refreshRates, rootLogs } from "../phone";
 import { showToast, updateSettings, useApp } from "../store";
 import type { PhoneSettings } from "../types";
 
 const MODES: { value: PhoneSettings["background"]; label: string; text: string }[] = [
-  { value: "off", label: "Off", text: "Notifications only while the app is open (Android may close it soon after you switch away)." },
-  { value: "visible", label: "Stay connected, with a notification", text: "The app keeps its live connection; a permanent notification shows that it runs. Uses some battery." },
-  { value: "quiet", label: "Stay connected, quietly", text: "The same, but the notification is silent and minimised; on Android 13+ it mostly shows under “Active apps” (like Sunup)." },
-  { value: "push", label: "Push through UnifiedPush", text: "No connection on the phone: your PC app sends notifications through a UnifiedPush distributor (Sunup, ntfy…). No extra battery. Needs the PC app running and a server for device sync." },
+  { value: "off", label: "Off", text: tr("phoneSettings.notificationsOnlyWhileTheApp") },
+  { value: "visible", label: tr("phoneSettings.stayConnectedWithANotification"), text: tr("phoneSettings.theAppKeepsItsLive") },
+  { value: "quiet", label: tr("phoneSettings.stayConnectedQuietly"), text: tr("phoneSettings.theSameButTheNotification") },
+  { value: "push", label: tr("phoneSettings.pushThroughUnifiedpush"), text: tr("phoneSettings.noConnectionOnThePhone") },
 ];
 
 export function PhoneSection() {
@@ -25,7 +26,7 @@ export function PhoneSection() {
   }, [p.background]);
   return (
     <>
-      <h3>Phone in the background</h3>
+      <h3>{tr("phoneSettings.phoneInTheBackground")}</h3>
       {MODES.map((m) => (
         <label key={m.value} className="check radio-card">
           <input type="radio" name="bgmode" checked={p.background === m.value} onChange={() => set({ background: m.value })} />
@@ -37,23 +38,23 @@ export function PhoneSection() {
         </label>
       ))}
       {(p.background === "visible" || p.background === "quiet") && (
-        <button className="btn small" onClick={() => void askBatteryExemption().then((ok) => showToast(ok ? "The app is left out of battery optimisation." : "Allow it in the dialog so Android doesn't stop the app."))}>
-          Leave the app out of battery optimisation
+        <button className="btn small" onClick={() => void askBatteryExemption().then((ok) => showToast(ok ? tr("phoneSettings.theAppIsLeftOut") : tr("phoneSettings.allowItInTheDialog")))}>
+          {tr("phoneSettings.leaveTheAppOutOf")}
         </button>
       )}
       {p.background === "push" && (
         <div className="indent">
           {dists === null ? (
-            <p className="small muted">Looking for push distributors…</p>
+            <p className="small muted">{tr("phoneSettings.lookingForPushDistributors")}</p>
           ) : dists.length === 0 ? (
             <p className="small">
-              No UnifiedPush distributor on this phone. Install one, e.g. Sunup or ntfy (both on F-Droid / IzzyOnDroid), then come back.
+              {tr("phoneSettings.noUnifiedpushDistributorOnThis")}
             </p>
           ) : (
             <div className="row">
-              <span className="small">Distributor:</span>
+              <span className="small">{tr("phoneSettings.distributor")}</span>
               {dists.map((d) => (
-                <button key={d.id} className={`btn small ${push?.distributor === d.id ? "on" : ""}`} onClick={() => void pushRegister(d.id).then(() => showToast(`Registering with ${d.name}…`))}>
+                <button key={d.id} className={`btn small ${push?.distributor === d.id ? "on" : ""}`} onClick={() => void pushRegister(d.id).then(() => showToast(tr("phoneSettings.registeringWithName", { name: d.name })))}>
                   {d.name}
                 </button>
               ))}
@@ -64,21 +65,21 @@ export function PhoneSection() {
               Registered. Your PC app learns about this phone through device sync and sends invites, friends coming online and the rest of your
               notification rules here, encrypted.{" "}
               <button className="btn link small" onClick={() => void pushUnregister()}>
-                Stop
+                {tr("phoneSettings.stop")}
               </button>
             </p>
           ) : push?.distributor ? (
-            <p className="small muted">Waiting for the distributor to answer…</p>
+            <p className="small muted">{tr("phoneSettings.waitingForTheDistributorTo")}</p>
           ) : null}
         </div>
       )}
 
-      <h4 className="sub-h">Smoothness</h4>
+      <h4 className="sub-h">{tr("phoneSettings.smoothness")}</h4>
       <label className="field narrow">
-        <span>Screen refresh rate</span>
+        <span>{tr("phoneSettings.screenRefreshRate")}</span>
         <select value={p.refreshRate} onChange={(e) => set({ refreshRate: Number(e.target.value) })}>
-          <option value={0}>The highest this screen can do{rates?.rates.length ? ` (${Math.round(Math.max(...rates.rates))} Hz)` : ""}</option>
-          <option value={-1}>Leave it to the system</option>
+          <option value={0}>The highest this screen can do{rates?.rates.length ? tr("phoneSettings.valueHz", { value: Math.round(Math.max(...rates.rates)) }) : ""}</option>
+          <option value={-1}>{tr("phoneSettings.leaveItToTheSystem")}</option>
           {rates?.rates.map((r) => (
             <option key={r} value={r}>
               {Math.round(r)} Hz
@@ -86,22 +87,22 @@ export function PhoneSection() {
           ))}
         </select>
       </label>
-      <p className="small muted">The map's own limit is under Performance → Frame rate.</p>
+      <p className="small muted">{tr("phoneSettings.theMapSOwnLimit")}</p>
 
-      <h4 className="sub-h">Home screen</h4>
+      <h4 className="sub-h">{tr("phoneSettings.homeScreen")}</h4>
       <label className="check">
         <input type="checkbox" checked={p.widget} onChange={(e) => set({ widget: e.target.checked })} />
-        Widget: starred friends online (long-press the home screen → Widgets → VRC Friend Map)
+        {tr("phoneSettings.widgetStarredFriendsOnlineLong")}
       </label>
 
-      <h4 className="sub-h">Game logs on this device</h4>
+      <h4 className="sub-h">{tr("phoneSettings.gameLogsOnThisDevice")}</h4>
       <label className="check">
         <input type="checkbox" checked={p.rootLogs} onChange={(e) => set({ rootLogs: e.target.checked })} />
-        Read VRChat's logs with root (rooted phones, or a rooted Quest such as with Singularity)
+        {tr("phoneSettings.readVrchatSLogsWith")}
       </label>
       {p.rootLogs && (
         <button className="btn small" onClick={() => void rootLogs().then(showToast, (e) => showToast(String(e)))}>
-          Copy the logs now
+          {tr("phoneSettings.copyTheLogsNow")}
         </button>
       )}
       <p className="small muted">

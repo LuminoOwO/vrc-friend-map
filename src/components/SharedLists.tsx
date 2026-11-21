@@ -1,6 +1,7 @@
 // Compare friend lists that other people share with you. Each person exports a
 // file from their own copy of the app (their own login, their own device) and
 // sends it to you; nobody hands over a login.
+import { t as tr } from "../i18n";
 import { ServersPanel } from "./ServersPanel";
 import { useEffect, useMemo, useState } from "react";
 import { backend, randomHex } from "../backend";
@@ -118,7 +119,7 @@ async function importText(text: string) {
     replaced = others.length !== l.imports.length;
     return { ...l, imports: [...others, list] };
   });
-  showToast(`${replaced ? "Updated" : "Imported"} ${list.owner.displayName}'s list`);
+  showToast(tr("lists.valueNameSList", { value: replaced ? "Updated" : "Imported", name: list.owner.displayName }));
 }
 
 function sampleExports(): string[] {
@@ -129,7 +130,7 @@ function sampleExports(): string[] {
   const full: ExportFile = {
     format: FORMAT,
     exportedAt: new Date().toISOString(),
-    owner: { id: ids[3], displayName: cache.friends[ids[3]]?.displayName ?? "Sample friend" },
+    owner: { id: ids[3], displayName: cache.friends[ids[3]]?.displayName ?? tr("lists.sampleFriend") },
     mode: "full",
     friends: [...pick(4, 1).map((id) => ({ id, displayName: cache.friends[id].displayName })), ...strangers],
   };
@@ -186,11 +187,11 @@ export function SharedLists() {
       const text = JSON.stringify(data, null, mode === "full" ? 1 : 0);
       if (how === "copy") {
         const ok = await copyText(text);
-        showToast(ok ? "Copied. Paste it into a message to your friend." : "Couldn't copy to the clipboard");
+        showToast(ok ? tr("lists.copiedPasteItIntoA") : tr("lists.couldnTCopyToThe"));
       } else {
         const name = `vrc-friends-${(data.owner.displayName || "me").replace(/[^\w-]/g, "_")}-${mode}.json`;
         const path = await backend.saveExport(name, text);
-        showToast(`Saved to ${path}`);
+        showToast(tr("lists.savedToPath", { path }));
       }
     } catch (e) {
       showToast(String(e));
@@ -212,40 +213,40 @@ export function SharedLists() {
   return (
     <div className="lists-view">
       <ServersPanel />
-      <h2 className="lists-title">Or by hand</h2>
+      <h2 className="lists-title">{tr("lists.orByHand")}</h2>
       <div className="lists-cols">
         <section className="panel">
-          <h2>Share your list</h2>
-          <p className="muted">Send this to a friend who also uses the app. They import it to see which people you have in common.</p>
+          <h2>{tr("lists.shareYourList")}</h2>
+          <p className="muted">{tr("lists.sendThisToAFriend")}</p>
           <label className={`radio-card ${mode === "hashed" ? "on" : ""}`}>
             <input type="radio" checked={mode === "hashed"} onChange={() => setMode("hashed")} />
             <div>
-              <b>Only people we both know</b> <span className="pill">recommended</span>
+              <b>{tr("lists.onlyPeopleWeBothKnow")}</b> <span className="pill">recommended</span>
               <p className="small muted">IDs are scrambled with a one-time key. Your friend can only match people they already have; everyone else stays unreadable.</p>
             </div>
           </label>
           <label className={`radio-card ${mode === "full" ? "on" : ""}`}>
             <input type="radio" checked={mode === "full"} onChange={() => setMode("full")} />
             <div>
-              <b>Full list with names</b>
-              <p className="small muted">Shows your whole friends list, including people who turned off "Show mutual connections" in VRChat. Only use this with people you trust.</p>
+              <b>{tr("lists.fullListWithNames")}</b>
+              <p className="small muted">{tr("lists.showsYourWholeFriendsList")}</p>
             </div>
           </label>
-          <p className="small">Who's in it:</p>
+          <p className="small">{tr("lists.whoSInIt")}</p>
           <PeopleChooser value={exportPick} onChange={(v) => updateSharing({ exportPick: v })} />
           <div className="row">
             <button className="btn primary" disabled={busy || demo} onClick={() => doExport("copy")}>
-              <Icon name="copy" size={16} /> Copy
+              <Icon name="copy" size={16} /> {tr("lists.copy")}
             </button>
             <button className="btn" disabled={busy || demo} onClick={() => doExport("save")}>
-              <Icon name="download" size={16} /> Save file
+              <Icon name="download" size={16} /> {tr("lists.saveFile")}
             </button>
           </div>
-          {demo && <p className="small muted">Exporting is off in demo mode.</p>}
+          {demo && <p className="small muted">{tr("lists.exportingIsOffInDemo")}</p>}
         </section>
 
         <section className="panel">
-          <h2>Import a friend's list</h2>
+          <h2>{tr("lists.importAFriendSList")}</h2>
           <div className="row">
             <label className="btn">
               <Icon name="upload" size={16} /> Choose file
@@ -264,13 +265,13 @@ export function SharedLists() {
             </label>
             {demo && (
               <button className="btn ghost" onClick={() => sampleExports().forEach((t) => doImport(t))}>
-                Add a sample list
+                {tr("lists.addASampleList")}
               </button>
             )}
           </div>
-          <textarea value={paste} placeholder="…or paste the copied text here" rows={4} onChange={(e) => setPaste(e.target.value)} />
+          <textarea value={paste} placeholder={tr("lists.orPasteTheCopiedText")} rows={4} onChange={(e) => setPaste(e.target.value)} />
           <button className="btn" disabled={!paste.trim()} onClick={() => doImport(paste)}>
-            Import pasted text
+            {tr("lists.importPastedText")}
           </button>
           {error && <p className="error-text">{error}</p>}
         </section>
@@ -278,7 +279,7 @@ export function SharedLists() {
 
       {sets.lists.length > 0 && (
         <>
-          <h2 className="lists-title">Imported lists</h2>
+          <h2 className="lists-title">{tr("lists.importedLists")}</h2>
           <div className="import-grid">
             {sets.lists.map(({ list, known, includesMe, strangers, size }) => (
               <div key={list.id} className="panel import-card">
@@ -295,7 +296,7 @@ export function SharedLists() {
                   <span className="pill">{list.mode === "full" ? "full list" : "overlap only"}</span>
                 </div>
                 <p className="small muted">
-                  {size} friends · {list.via ? "shared" : "exported"} {fmtDate(list.exportedAt)} {includesMe ? "· includes you" : ""}
+                  {size} friends · {list.via ? "shared" : "exported"} {fmtDate(list.exportedAt)} {includesMe ? tr("lists.includesYou") : ""}
                 </p>
                 {list.via && (
                   <p className="via">
@@ -328,7 +329,7 @@ export function SharedLists() {
                       setState({ view: "graph" });
                     }}
                   >
-                    Show on map
+                    {tr("lists.showOnMap")}
                   </button>
                   <button
                     className="btn small"
@@ -337,7 +338,7 @@ export function SharedLists() {
                       setState({ view: "cards" });
                     }}
                   >
-                    Show cards
+                    {tr("lists.showCards")}
                   </button>
                   <button
                     className="btn small danger"
@@ -345,10 +346,10 @@ export function SharedLists() {
                       const prev = getState().local.imports;
                       updateLocal((l) => ({ ...l, imports: l.imports.filter((x) => x.id !== list.id) }));
                       if (getState().filters.listId === list.id) updateFilters({ listId: null });
-                      showToast(`Removed ${list.owner.displayName}'s list`, () => updateLocal((l) => ({ ...l, imports: prev })));
+                      showToast(tr("lists.removedNameSList", { name: list.owner.displayName }), () => updateLocal((l) => ({ ...l, imports: prev })));
                     }}
                   >
-                    Remove
+                    {tr("lists.remove")}
                   </button>
                 </div>
               </div>
@@ -357,8 +358,8 @@ export function SharedLists() {
 
           {sets.lists.length > 1 && (
             <section className="panel">
-              <h3>Overlap between lists</h3>
-              <p className="small muted">Counted over people you can identify (your friends, plus names from full lists).</p>
+              <h3>{tr("lists.overlapBetweenLists")}</h3>
+              <p className="small muted">{tr("lists.countedOverPeopleYouCan")}</p>
               <div className="matrix-wrap">
                 <table className="matrix">
                   <thead>
@@ -387,14 +388,14 @@ export function SharedLists() {
           )}
 
           <section className="panel">
-            <h3>Your friends who show up in the most lists</h3>
+            <h3>{tr("lists.yourFriendsWhoShowUp")}</h3>
             <div className="mini-list">
               {sets.ranking.map(([id, n]) => (
                 <button key={id} className="mini" onClick={() => setState({ selectedId: id })}>
                   {cache.friends[id]?.displayName ?? id} <span className="muted">×{n}</span>
                 </button>
               ))}
-              {!sets.ranking.length && <span className="muted small">None of your friends appear in these lists.</span>}
+              {!sets.ranking.length && <span className="muted small">{tr("lists.noneOfYourFriendsAppear")}</span>}
             </div>
           </section>
         </>

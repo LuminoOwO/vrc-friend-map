@@ -1,3 +1,4 @@
+import { t as tr } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { clearActivity, demoActivity, loadActivity, type ActivityEntry, type ActivityKind } from "../activity";
 import { fmtDate } from "../model";
@@ -9,10 +10,10 @@ import { Icon } from "./Icon";
 type Group = "instance" | "online" | "moving" | "list" | "invites";
 
 const GROUPS: { key: Group; label: string; kinds: ActivityKind[] }[] = [
-  { key: "instance", label: "My instance", kinds: ["world", "join", "leave", "left", "quit", "crash"] },
-  { key: "online", label: "Friends online / offline", kinds: ["online", "offline"] },
-  { key: "moving", label: "Friends changing worlds", kinds: ["location"] },
-  { key: "list", label: "Friends added / removed", kinds: ["friend-add", "friend-remove"] },
+  { key: "instance", label: tr("activityView.myInstance"), kinds: ["world", "join", "leave", "left", "quit", "crash"] },
+  { key: "online", label: tr("activityView.friendsOnlineOffline"), kinds: ["online", "offline"] },
+  { key: "moving", label: tr("activityView.friendsChangingWorlds"), kinds: ["location"] },
+  { key: "list", label: tr("activityView.friendsAddedRemoved"), kinds: ["friend-add", "friend-remove"] },
   { key: "invites", label: "Invites", kinds: ["invite", "request-invite"] },
 ];
 
@@ -69,15 +70,15 @@ export function ActivityText({ e }: { e: ActivityEntry }) {
       case "world":
         return <>You joined {world(e)}</>;
       case "join":
-        return <>{who(e)} {e.initial ? "was here when you arrived" : "joined"}</>;
+        return <>{who(e)} {e.initial ? tr("activityView.wasHereWhenYouArrived") : "joined"}</>;
       case "leave":
         return <>{who(e)} left</>;
       case "left":
         return <>You left {world(e)}</>;
       case "quit":
-        return <>VRChat closed</>;
+        return <>{tr("activityView.vrchatClosed")}</>;
       case "crash":
-        return <>VRChat stopped without closing properly</>;
+        return <>{tr("activityView.vrchatStoppedWithoutClosingProperly")}</>;
       case "online":
         return <>{who(e)} came online</>;
       case "offline":
@@ -173,12 +174,12 @@ export function ActivityView() {
         ))}
         <label className="check small">
           <input type="checkbox" checked={arrivals} onChange={(e) => setArrivals(e.target.checked)} />
-          People already there when I arrived
+          {tr("activityView.peopleAlreadyThereWhenI")}
         </label>
-        <input className="activity-search" value={search} placeholder="Find a name or world" onChange={(e) => setSearch(e.target.value)} />
+        <input className="activity-search" value={search} placeholder={tr("activityView.findANameOrWorld")} onChange={(e) => setSearch(e.target.value)} />
         {activity.length > 0 && (
-          <button className="btn small" onClick={() => confirm("Clear the activity log on this device?") && clearActivity()}>
-            Clear
+          <button className="btn small" onClick={() => confirm(tr("activityView.clearTheActivityLogOn")) && clearActivity()}>
+            {tr("activityView.clear")}
           </button>
         )}
       </div>

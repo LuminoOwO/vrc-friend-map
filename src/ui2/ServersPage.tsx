@@ -2,6 +2,7 @@
 // listed right away (tap one for its settings), adding one is its own step,
 // and the general options are grouped with a line saying what each does.
 // The classic UI keeps its Servers dialog (src/components/ServersModal.tsx).
+import { t as tr } from "../i18n";
 import { useEffect, useState } from "react";
 import { backend, isTauri, type MyIdentity } from "../backend";
 import { SETTING_GROUPS } from "../devicesync";
@@ -14,27 +15,27 @@ import { Icon } from "../components/Icon";
 
 /** One plain status per server: what's going on, in words. */
 export function serverStatus(s: ShareServer, live: boolean): { text: string; tone: "ok" | "warn" | "bad" | "" } {
-  if (s.keyChanged) return { text: "Server key changed: check it", tone: "bad" };
-  if (!s.info) return { text: s.lastError ? "Can't reach it" : "Checking…", tone: s.lastError ? "bad" : "" };
+  if (s.keyChanged) return { text: tr("serversPage.serverKeyChangedCheckIt"), tone: "bad" };
+  if (!s.info) return { text: s.lastError ? tr("serversPage.canTReachIt") : tr("serversPage.checking"), tone: s.lastError ? "bad" : "" };
   const mismatch = mismatchOf(s);
   if (mismatch) return { text: mismatch.short, tone: "bad" };
-  if (s.loggerOwner && s.loggerExpired) return { text: "Server login expired", tone: "bad" };
-  if (!s.registered) return { text: "Not joined yet", tone: "warn" };
+  if (s.loggerOwner && s.loggerExpired) return { text: tr("serversPage.serverLoginExpired"), tone: "bad" };
+  if (!s.registered) return { text: tr("serversPage.notJoinedYet"), tone: "warn" };
   // One failed sync is usually a hiccup (a timeout, the server's request limit): say so calmly
   // and only turn red when it keeps failing.
-  if (s.lastError && (s.failedSyncs ?? 2) < 2) return { text: live ? "Connected · live (retrying a sync)" : "Retrying…", tone: live ? "ok" : "" };
-  if (s.lastError) return { text: "Last sync failed", tone: "bad" };
-  if (live) return { text: "Connected · live", tone: "ok" };
-  return { text: s.lastSync ? "Connected" : "Joined, not synced yet", tone: s.lastSync ? "ok" : "" };
+  if (s.lastError && (s.failedSyncs ?? 2) < 2) return { text: live ? tr("serversPage.connectedLiveRetryingASync") : tr("serversPage.retrying"), tone: live ? "ok" : "" };
+  if (s.lastError) return { text: tr("serversPage.lastSyncFailed"), tone: "bad" };
+  if (live) return { text: tr("serversPage.connectedLive"), tone: "ok" };
+  return { text: s.lastSync ? "Connected" : tr("serversPage.joinedNotSyncedYet"), tone: s.lastSync ? "ok" : "" };
 }
 
 /** What a server does for you, as short chips. */
 export function serverRoles(s: ShareServer): string[] {
   const out: string[] = [];
-  if (s.upload && (s.shareFriends || s.shareActivity)) out.push("You share");
-  if (s.download) out.push("Friends share with you");
-  if (s.syncMine) out.push("Your devices");
-  if (s.loggerOwner) out.push("Logs 24/7");
+  if (s.upload && (s.shareFriends || s.shareActivity)) out.push(tr("serversPage.youShare"));
+  if (s.download) out.push(tr("serversPage.friendsShareWithYou"));
+  if (s.syncMine) out.push(tr("serversPage.yourDevices"));
+  if (s.loggerOwner) out.push(tr("serversPage.logs247"));
   return out;
 }
 
@@ -64,31 +65,31 @@ function AddServer({ onDone }: { onDone: () => void }) {
   return (
     <div className="ui2-add-server">
       <ol className="ui2-steps small">
-        <li>Paste the invite link the server's owner gave you: it adds the server and joins it in one go.</li>
-        <li>Or enter the server's address, then join it with an invite code.</li>
-        <li>Pick what to share there. Nothing is shared before you choose.</li>
+        <li>{tr("serversPage.pasteTheInviteLinkThe")}</li>
+        <li>{tr("serversPage.orEnterTheServerS")}</li>
+        <li>{tr("serversPage.pickWhatToShareThere")}</li>
       </ol>
       <div className="row">
         <input
           id="ui2-add-url"
           className="grow"
           value={url}
-          placeholder="Invite link, or an address like vfm.example.com"
+          placeholder={tr("serversPage.inviteLinkOrAnAddress")}
           onChange={(e) => setUrl(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && url.trim() && void add()}
           disabled={demo}
           autoFocus
         />
         <button className="btn primary" onClick={() => void add()} disabled={!url.trim() || busy || demo}>
-          {busy ? "Checking…" : "Add"}
+          {busy ? tr("serversPage.checking") : "Add"}
         </button>
         <button className="btn ghost" onClick={onDone}>
-          Cancel
+          {tr("serversPage.cancel")}
         </button>
       </div>
       {error && <p className="error-text">{error}</p>}
       <p className="small muted">
-        Want your own? Install vfm-server on a device that's always on (a Pi, an old PC, a NAS). The setup guide is in the project's docs.
+        {tr("serversPage.wantYourOwnInstallVfm")}
       </p>
     </div>
   );
@@ -151,10 +152,10 @@ export function ServersPage() {
 
       <section>
         <div className="ui2-section-head">
-          <h3>Your servers</h3>
+          <h3>{tr("serversPage.yourServers")}</h3>
           {!adding && (
             <button className="btn small primary" onClick={() => setAdding(true)} disabled={demo}>
-              <Icon name="plus" size={14} /> Add a server
+              <Icon name="plus" size={14} /> {tr("serversPage.addAServer")}
             </button>
           )}
         </div>
@@ -166,30 +167,30 @@ export function ServersPage() {
             ))}
           </ul>
         ) : (
-          !adding && <p className="small muted">No servers yet. Add one with the address its owner gave you.</p>
+          !adding && <p className="small muted">{tr("serversPage.noServersYetAddOne")}</p>
         )}
         <div className="row">
           <button className="btn small" onClick={() => syncAllServers({ manual: true })} disabled={busy || !sharing.servers.length || demo}>
-            <Icon name="refresh" size={14} /> {busy ? "Syncing…" : "Sync all now"}
+            <Icon name="refresh" size={14} /> {busy ? tr("serversPage.syncing2") : tr("serversPage.syncAllNow")}
           </button>
-          <span className="small muted">{people ? `${people} ${people === 1 ? "person shares" : "people share"} with you.` : "Nothing shared with you yet."}</span>
+          <span className="small muted">{people ? tr("serversPage.peopleValueWithYou", { people, value: people === 1 ? "person shares" : "people share" }) : tr("serversPage.nothingSharedWithYouYet")}</span>
         </div>
       </section>
 
       <section>
-        <h3>Syncing</h3>
+        <h3>{tr("serversPage.syncing")}</h3>
         <label className="check">
           <input id="ui2-autosync" type="checkbox" checked={sharing.autoSync} onChange={(e) => updateSharing({ autoSync: e.target.checked })} />
           <span>
-            Sync by itself while the app is open
+            {tr("serversPage.syncByItselfWhileThe")}
             <small className="muted ui2-help">Servers that can tell the app about changes get them within seconds; the rest are checked every</small>
           </span>
         </label>
         <div className="indent">
-          <select id="ui2-interval" value={sharing.intervalMin} onChange={(e) => updateSharing({ intervalMin: Number(e.target.value) })} disabled={!sharing.autoSync} aria-label="How often">
+          <select id="ui2-interval" value={sharing.intervalMin} onChange={(e) => updateSharing({ intervalMin: Number(e.target.value) })} disabled={!sharing.autoSync} aria-label={tr("serversPage.howOften")}>
             {[15, 30, 60, 180, 720].map((m) => (
               <option key={m} value={m}>
-                {m < 60 ? `${m} minutes` : `${m / 60} hours`}
+                {m < 60 ? tr("serversPage.mMinutes", { m }) : tr("serversPage.valueHours", { value: m / 60 })}
               </option>
             ))}
           </select>
@@ -197,15 +198,15 @@ export function ServersPage() {
       </section>
 
       <section>
-        <h3>Between my own devices</h3>
-        <p className="small muted ui2-help">Your circles, notes, stars and nicknames always go along to your other devices (encrypted for you only). Settings can too:</p>
+        <h3>{tr("serversPage.betweenMyOwnDevices")}</h3>
+        <p className="small muted ui2-help">{tr("serversPage.yourCirclesNotesStarsAnd")}</p>
         <label className="check">
           <input id="ui2-syncsettings" type="checkbox" checked={sharing.syncSettings} onChange={(e) => updateSharing({ syncSettings: e.target.checked })} />
-          <span>Also keep my settings the same on all my devices</span>
+          <span>{tr("serversPage.alsoKeepMySettingsThe")}</span>
         </label>
         {sharing.syncSettings && (
           <div className="indent ui2-groups">
-            <p className="small muted">Which ones (frame rate, tray, graphics and phone settings always stay per device):</p>
+            <p className="small muted">{tr("serversPage.whichOnesFrameRateTray")}</p>
             {SETTING_GROUPS.map((g) => {
               const synced = (!sharing.syncGroups.length || sharing.syncGroups.includes(g.id)) && !sharing.localOnly.includes(g.id);
               return (
@@ -234,16 +235,16 @@ export function ServersPage() {
       </section>
 
       <section>
-        <h3>Privacy</h3>
+        <h3>{tr("serversPage.privacy")}</h3>
         <label className="check">
           <input id="ui2-neverplain" type="checkbox" checked={sharing.neverUnencrypted} onChange={(e) => updateSharing({ neverUnencrypted: e.target.checked })} />
           <span>
-            Never send anything unencrypted
+            {tr("serversPage.neverSendAnythingUnencrypted")}
             <small className="muted ui2-help">Even where a server allows it. Recommended; a server that only takes unencrypted uploads then gets nothing.</small>
           </span>
         </label>
         <label className="field narrow">
-          <span>Encryption on new servers</span>
+          <span>{tr("serversPage.encryptionOnNewServers")}</span>
           <select
             id="ui2-encdefault"
             value={sharing.encDefault}
@@ -257,30 +258,30 @@ export function ServersPage() {
           </select>
           <small className="muted">{DEFAULTS.find((d) => d.value === sharing.encDefault)?.why} Changing it resets every server's own switch.</small>
         </label>
-        {!anyEncrypted && sharing.servers.length > 0 && <p className="small warn-text">None of your servers encrypts what you upload right now.</p>}
+        {!anyEncrypted && sharing.servers.length > 0 && <p className="small warn-text">{tr("serversPage.noneOfYourServersEncrypts")}</p>}
       </section>
 
       <section>
-        <h3>Group suggestions</h3>
+        <h3>{tr("serversPage.groupSuggestions")}</h3>
         <label className="check">
           <input id="ui2-useshared" type="checkbox" checked={sharing.useShared} onChange={(e) => updateSharing({ useShared: e.target.checked })} />
           <span>
-            Use what friends share
-            <small className="muted ui2-help">Their "who spends time with whom" makes your suggested circles better.</small>
+            {tr("serversPage.useWhatFriendsShare")}
+            <small className="muted ui2-help">{tr("serversPage.theirWhoSpendsTimeWith")}</small>
           </span>
         </label>
         <label className="check">
           <input id="ui2-uselogger" type="checkbox" checked={sharing.useLogger} onChange={(e) => updateSharing({ useLogger: e.target.checked })} />
           <span>
-            Use my server's 24/7 log
-            <small className="muted ui2-help">Where your friends hung out while your PC was off.</small>
+            {tr("serversPage.useMyServerS24")}
+            <small className="muted ui2-help">{tr("serversPage.whereYourFriendsHungOut")}</small>
           </span>
         </label>
       </section>
 
       <section>
         <button className="btn link small" onClick={() => setAdvanced(!advanced)} aria-expanded={advanced}>
-          <Icon name={advanced ? "chevron-up" : "chevron-down"} size={14} /> Advanced: your key and friends' keys
+          <Icon name={advanced ? "chevron-up" : "chevron-down"} size={14} /> {tr("serversPage.advancedYourKeyAndFriends")}
         </button>
         {advanced && (
           <div className="ui2-advanced">

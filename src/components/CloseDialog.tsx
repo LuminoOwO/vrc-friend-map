@@ -1,5 +1,6 @@
 // Asked when the window is closed and Settings → Closing the window is "Ask me"
 // (the default, so the first close always asks).
+import { t as tr } from "../i18n";
 import { useState } from "react";
 import { setState, updateSettings, useApp } from "../store";
 import { hideToTray, quitApp } from "../tray";
@@ -19,36 +20,36 @@ export function CloseDialog() {
   return (
     <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && cancel()}>
       <div className="modal confirm" role="alertdialog" aria-labelledby="close-title" onKeyDown={(e) => e.key === "Escape" && cancel()}>
-        <h2 id="close-title">Close the window</h2>
+        <h2 id="close-title">{tr("closeDialog.closeTheWindow")}</h2>
         <label className="check radio-card">
           <input type="radio" name="close" checked={choice === "tray"} onChange={() => setChoice("tray")} autoFocus />
           <span>
-            <b>Keep running in the tray</b> (recommended)
+            <b>{tr("closeDialog.keepRunningInTheTray")}</b> (recommended)
             <br />
-            <span className="small muted">Notifications and sounds keep coming, live updates and game logs keep being collected. Nothing is drawn, so it uses little power. Click the tray icon to come back.</span>
+            <span className="small muted">{tr("closeDialog.notificationsAndSoundsKeepComing")}</span>
           </span>
         </label>
         <label className="check radio-card">
           <input type="radio" name="close" checked={choice === "quit"} onChange={() => setChoice("quit")} />
           <span>
-            <b>Quit</b>
+            <b>{tr("closeDialog.quit")}</b>
             <br />
-            <span className="small muted">No notifications until you open the app again.</span>
+            <span className="small muted">{tr("closeDialog.noNotificationsUntilYouOpen")}</span>
           </span>
         </label>
         <label className="check">
           <input type="checkbox" checked={askAgain} onChange={(e) => setAskAgain(e.target.checked)} />
-          Ask me every time
+          {tr("closeDialog.askMeEveryTime")}
         </label>
         <p className="small muted">
-          <Icon name="settings" size={13} /> You can change this later in Settings → Notifications → Closing the window.
+          <Icon name="settings" size={13} /> {tr("closeDialog.youCanChangeThisLater")}
         </p>
         <div className="row end">
           <button className="btn" onClick={cancel}>
-            Cancel
+            {tr("closeDialog.cancel")}
           </button>
           <button className="btn primary" onClick={go}>
-            {choice === "tray" ? "Close to tray" : "Quit"}
+            {choice === "tray" ? tr("closeDialog.closeToTray") : "Quit"}
           </button>
         </div>
       </div>

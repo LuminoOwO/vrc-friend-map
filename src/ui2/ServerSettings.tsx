@@ -2,6 +2,7 @@
 // switches and calls as the classic card (src/components/ServersModal.tsx ServerCard),
 // laid out as: joining, what I share, what I receive, my other devices, the 24/7
 // logger, and the footer (last sync, Sync now, remove).
+import { t as tr } from "../i18n";
 import { useEffect, useState } from "react";
 import { backend, type LoggerStatus } from "../backend";
 import { fmtDate } from "../model";
@@ -54,13 +55,13 @@ function MyDevices({ url }: { url: string }) {
   const [list, setList] = useState<Peer[]>(() => knownPeers());
   useEffect(() => onPeers(() => setList(knownPeers())), []);
   const here = list.filter((p) => p.via === url || p.direct);
-  if (!here.length) return <p className="small muted">Your other devices show up here once they're online too.</p>;
+  if (!here.length) return <p className="small muted">{tr("serverSettings.yourOtherDevicesShowUp")}</p>;
   return (
     <ul className="ui2-devices">
       {here.map((p) => (
         <li key={p.device}>
           <Icon name={/phone/i.test(p.name) ? "phone" : "desktop"} size={14} /> {p.name}
-          <span className="small muted"> · {p.direct ? "directly, at home" : "through this server"}</span>
+          <span className="small muted"> · {p.direct ? tr("serverSettings.directlyAtHome") : tr("serverSettings.throughThisServer")}</span>
         </li>
       ))}
     </ul>
@@ -110,8 +111,8 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
             </span>
           </>
         )}
-        <button className="btn small ghost" onClick={() => run("refresh", () => refreshServer(s.id))} title="Ask the server again">
-          <Icon name="refresh" size={14} /> Check again
+        <button className="btn small ghost" onClick={() => run("refresh", () => refreshServer(s.id))} title={tr("serverSettings.askTheServerAgain")}>
+          <Icon name="refresh" size={14} /> {tr("serverSettings.checkAgain")}
         </button>
       </div>
       {info?.motd && <p className="motd">{info.motd}</p>}
@@ -126,7 +127,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
       )}
       {plainHttp && (
         <p className="small warn-text">
-          <Icon name="warn" size={14} /> Not HTTPS: encrypted uploads stay unreadable, but others on the way can see that you use this server.
+          <Icon name="warn" size={14} /> {tr("serverSettings.notHttpsEncryptedUploadsStay")}
         </p>
       )}
       {s.keyChanged && (
@@ -136,19 +137,19 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
             to be it. Nothing is sent to it until you decide.
           </p>
           <button className="btn small" onClick={() => run("trust", () => trustServerKey(s.id))}>
-            It was reinstalled: trust the new key
+            {tr("serverSettings.itWasReinstalledTrustThe")}
           </button>
         </div>
       )}
 
       {!s.registered && info && !s.keyChanged && (
-        <Section icon="user-plus" title="Join this server" help={info.registration === "invite" ? "Ask its owner for an invite code." : undefined}>
+        <Section icon="user-plus" title={tr("serverSettings.joinThisServer")} help={info.registration === "invite" ? tr("serverSettings.askItsOwnerForAn") : undefined}>
           {info.registration === "closed" ? (
-            <p className="small muted">This server isn't taking new people.</p>
+            <p className="small muted">{tr("serverSettings.thisServerIsnTTaking")}</p>
           ) : (
             <div className="row">
               {info.registration === "invite" && (
-                <input id={`join-${s.id}`} className="grow" value={invite} placeholder="Invite code" onChange={(e) => setInvite(e.target.value)} />
+                <input id={`join-${s.id}`} className="grow" value={invite} placeholder={tr("serverSettings.inviteCode")} onChange={(e) => setInvite(e.target.value)} />
               )}
               <button
                 className="btn primary small"
@@ -160,7 +161,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
                   })
                 }
               >
-                {working === "join" ? "Joining…" : "Join"}
+                {working === "join" ? tr("serverSettings.joining") : "Join"}
               </button>
             </div>
           )}
@@ -169,11 +170,11 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
 
       {s.registered && (
         <>
-          <Section icon="upload" title="What I share here" help="Goes only to the friends you pick, and only if they joined this server too. These choices follow you to your other devices (when they sync your devices).">
+          <Section icon="upload" title={tr("serverSettings.whatIShareHere")} help="Goes only to the friends you pick, and only if they joined this server too. These choices follow you to your other devices (when they sync your devices).">
             <Check
               id={`up-${s.id}`}
               checked={s.upload}
-              label="Share my data on this server"
+              label={tr("serverSettings.shareMyDataOnThis")}
               onChange={(v) => {
                 set({ upload: v });
                 // On a server that can read uploads, ask right away.
@@ -182,21 +183,21 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
             />
             {s.upload && (
               <div className="indent ui2-stack">
-                <Check id={`fr-${s.id}`} checked={s.shareFriends} onChange={(v) => set({ shareFriends: v })} icon="users" label="My friend list" hint="Names and IDs, so friends see connections VRChat hides." />
-                <Check id={`ac-${s.id}`} checked={s.shareActivity} onChange={(v) => set({ shareActivity: v })} icon="clock" label="Who spends time with whom" hint="Makes everyone's circle suggestions better." />
-                <Check id={`no-${s.id}`} checked={s.shareNotes} disabled={!s.shareFriends} onChange={(v) => set({ shareNotes: v })} icon="tag" label="My notes about people" hint="Only what you chose to tell friends. Notes about age never leave your device." />
-                <Check id={`rm-${s.id}`} checked={s.shareRemovals} disabled={!s.shareFriends} onChange={(v) => set({ shareRemovals: v })} icon="flag" label="Whom I removed as a friend" hint="Friends see it as a note on that person's profile." />
-                <Check id={`bl-${s.id}`} checked={s.shareBlocks} disabled={!s.shareFriends} onChange={(v) => set({ shareBlocks: v })} icon="shield" label="Why I blocked people" hint="The reasons you picked, never your own words." />
-                <Check id={`tz-${s.id}`} checked={s.shareTimezone} disabled={!s.shareFriends} onChange={(v) => set({ shareTimezone: v })} icon="clock" label="My time zone" hint="So friends see your local time." />
+                <Check id={`fr-${s.id}`} checked={s.shareFriends} onChange={(v) => set({ shareFriends: v })} icon="users" label={tr("serverSettings.myFriendList")} hint="Names and IDs, so friends see connections VRChat hides." />
+                <Check id={`ac-${s.id}`} checked={s.shareActivity} onChange={(v) => set({ shareActivity: v })} icon="clock" label={tr("serverSettings.whoSpendsTimeWithWhom")} hint="Makes everyone's circle suggestions better." />
+                <Check id={`no-${s.id}`} checked={s.shareNotes} disabled={!s.shareFriends} onChange={(v) => set({ shareNotes: v })} icon="tag" label={tr("serverSettings.myNotesAboutPeople")} hint="Only what you chose to tell friends. Notes about age never leave your device." />
+                <Check id={`rm-${s.id}`} checked={s.shareRemovals} disabled={!s.shareFriends} onChange={(v) => set({ shareRemovals: v })} icon="flag" label={tr("serverSettings.whomIRemovedAsA")} hint="Friends see it as a note on that person's profile." />
+                <Check id={`bl-${s.id}`} checked={s.shareBlocks} disabled={!s.shareFriends} onChange={(v) => set({ shareBlocks: v })} icon="shield" label={tr("serverSettings.whyIBlockedPeople")} hint="The reasons you picked, never your own words." />
+                <Check id={`tz-${s.id}`} checked={s.shareTimezone} disabled={!s.shareFriends} onChange={(v) => set({ shareTimezone: v })} icon="clock" label={tr("serverSettings.myTimeZone")} hint="So friends see your local time." />
                 <div className="ui2-sub">
                   <span className="small">
-                    <Icon name="filter" size={14} /> Which friends it's about
+                    <Icon name="filter" size={14} /> {tr("serverSettings.whichFriendsItSAbout")}
                   </span>
                   <PeopleChooser value={s.include} onChange={(include) => set({ include })} />
                 </div>
                 <div className="ui2-sub">
                   <span className="small">
-                    <Icon name="user-check" size={14} /> Who may get it
+                    <Icon name="user-check" size={14} /> {tr("serverSettings.whoMayGetIt")}
                   </span>
                   <PeopleChooser
                     value={{ who: s.audience, circleIds: s.circleIds, picked: s.audiencePicked, autoAdd: s.audienceAutoAdd }}
@@ -211,7 +212,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
                     disabled={!sw.on}
                     onChange={(v) => set({ hideAudience: v })}
                     icon="eye"
-                    label="Hide from the server whom I share with"
+                    label={tr("serverSettings.hideFromTheServerWhom")}
                     hint="Needs encryption. Friends need app 0.12.0 or newer to get it."
                   />
                 )}
@@ -219,7 +220,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
                   <p className="small muted">
                     You chose not to be asked again before unencrypted uploads.{" "}
                     <button className="btn link small" onClick={() => set({ ackUnencrypted: false })}>
-                      Ask me again
+                      {tr("serverSettings.askMeAgain")}
                     </button>
                   </p>
                 )}
@@ -227,24 +228,24 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
             )}
           </Section>
 
-          <Section icon="download" title="What I receive here">
-            <Check id={`dl-${s.id}`} checked={s.download} onChange={(v) => set({ download: v })} label="What friends share with me" hint="Their friend lists and time together show on your map." />
+          <Section icon="download" title={tr("serverSettings.whatIReceiveHere")}>
+            <Check id={`dl-${s.id}`} checked={s.download} onChange={(v) => set({ download: v })} label={tr("serverSettings.whatFriendsShareWithMe")} hint="Their friend lists and time together show on your map." />
             <Check
               id={`ca-${s.id}`}
               checked={s.useCache !== false}
               onChange={(v) => set({ useCache: v })}
-              label="Public VRChat info from this server's cache"
+              label={tr("serverSettings.publicVrchatInfoFromThis")}
               hint="Worlds and avatars others already loaded, so VRChat gets fewer requests."
             />
           </Section>
 
-          <Section icon="desktop" title="My other devices" help="Your circles, notes, stars and nicknames, encrypted for you only; the server can't read them.">
-            <Check id={`me-${s.id}`} checked={s.syncMine} onChange={(v) => set({ syncMine: v })} label="Sync my devices through this server" />
+          <Section icon="desktop" title={tr("serverSettings.myOtherDevices")} help="Your circles, notes, stars and nicknames, encrypted for you only; the server can't read them.">
+            <Check id={`me-${s.id}`} checked={s.syncMine} onChange={(v) => set({ syncMine: v })} label={tr("serverSettings.syncMyDevicesThroughThis")} />
             {s.syncMine && s.info?.deviceRelay && <MyDevices url={s.url} />}
           </Section>
 
           {info?.loggerEnabled && (
-            <Section icon="clock" title="24/7 logger" help="The server watches where your friends are, around the clock, so time together keeps counting while your PC is off.">
+            <Section icon="clock" title={tr("serverSettings.n247Logger")} help="The server watches where your friends are, around the clock, so time together keeps counting while your PC is off.">
               {s.loggerOwner ? (
                 <>
                   {(s.loggerExpired || logger?.expired) && (
@@ -254,9 +255,9 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
                         admin page) and enter it here. The server gets this app's current login, sealed so only it can open it.
                       </p>
                       <div className="row">
-                        <input className="code-input" inputMode="numeric" maxLength={7} value={code} placeholder="123456" aria-label="Pairing code" onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ""))} />
+                        <input className="code-input" inputMode="numeric" maxLength={7} value={code} placeholder="123456" aria-label={tr("serverSettings.pairingCode")} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ""))} />
                         <button className="btn small primary" disabled={code.length !== 6 || working !== ""} onClick={() => run("pair", () => pairLogger(s.id, code))}>
-                          {working === "pair" ? "Logging in…" : "Log in again"}
+                          {working === "pair" ? tr("serverSettings.loggingIn") : tr("serverSettings.logInAgain")}
                         </button>
                       </div>
                     </div>
@@ -264,7 +265,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
                   <p className="small">
                     {logger ? (
                       <>
-                        <span className={logger.connected ? "ok-text" : "warn-text"}>{logger.connected ? "● Logging" : "○ Not connected"}</span> · {logger.online}/
+                        <span className={logger.connected ? "ok-text" : "warn-text"}>{logger.connected ? tr("serverSettings.logging") : tr("serverSettings.notConnected")}</span> · {logger.online}/
                         {logger.friends} friends online · {logger.pairs} pairs seen together since {fmtDate(logger.since * 1000)}
                       </>
                     ) : (
@@ -273,22 +274,22 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
                   </p>
                   <div className="row">
                     <button className="btn small" onClick={() => run("unpair", () => unpairLogger(s.id, false))}>
-                      Unpair (keep history)
+                      {tr("serverSettings.unpairKeepHistory")}
                     </button>
                     <button className="btn small danger" onClick={() => run("unpair", () => unpairLogger(s.id, true))}>
-                      Unpair and delete history
+                      {tr("serverSettings.unpairAndDeleteHistory")}
                     </button>
                   </div>
                 </>
               ) : info.loggerPaired ? (
-                <p className="small muted">Paired with someone else's account.</p>
+                <p className="small muted">{tr("serverSettings.pairedWithSomeoneElseS")}</p>
               ) : (
                 <div className="row">
                   <input id={`pair-${s.id}`} className="code-input" inputMode="numeric" maxLength={7} value={code} placeholder="123456" onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, ""))} />
                   <button className="btn small primary" disabled={code.length !== 6 || working !== ""} onClick={() => run("pair", () => pairLogger(s.id, code))}>
-                    {working === "pair" ? "Pairing…" : "Pair"}
+                    {working === "pair" ? tr("serverSettings.pairing") : "Pair"}
                   </button>
-                  <Why text="The pairing code is shown in the server's window or on its admin page. Pairing hands the server your VRChat login, sealed so only it can open it; only pair a server you run." label="Where's the code?" />
+                  <Why text="The pairing code is shown in the server's window or on its admin page. Pairing hands the server your VRChat login, sealed so only it can open it; only pair a server you run." label={tr("serverSettings.whereSTheCode")} />
                 </div>
               )}
             </Section>
@@ -304,24 +305,24 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
         <span className="grow" />
         {s.registered && (
           <button className="btn small" disabled={busy || working !== ""} onClick={() => run("sync", () => syncServer(s.id, { manual: true }))}>
-            <Icon name="refresh" size={14} /> Sync now
+            <Icon name="refresh" size={14} /> {tr("serverSettings.syncNow")}
           </button>
         )}
         {confirmRemove ? (
           <>
             <button className="btn small danger" onClick={() => run("remove", () => removeServer(s.id, true))} disabled={!s.registered}>
-              Delete my account there
+              {tr("serverSettings.deleteMyAccountThere")}
             </button>
             <button className="btn small" onClick={() => run("remove", () => removeServer(s.id, false))}>
-              Just remove from my list
+              {tr("serverSettings.justRemoveFromMyList")}
             </button>
             <button className="btn small ghost" onClick={() => setConfirmRemove(false)}>
-              Cancel
+              {tr("serverSettings.cancel")}
             </button>
           </>
         ) : (
           <button className="btn small ghost" onClick={() => setConfirmRemove(true)}>
-            <Icon name="trash" size={14} /> Remove
+            <Icon name="trash" size={14} /> {tr("serverSettings.remove")}
           </button>
         )}
       </div>

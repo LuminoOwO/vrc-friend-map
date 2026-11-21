@@ -1,3 +1,4 @@
+import { t as tr } from "../i18n";
 import { useMemo, useState } from "react";
 import { shareCircle } from "../sharedcircles";
 import { duplicateColorIds, pickCircleColor } from "../colors";
@@ -65,27 +66,27 @@ export function Sidebar() {
     <aside className="sidebar">
       {herePlace === "sidebar" && <HereNow inSidebar />}
       <section>
-        <h3>Overview</h3>
+        <h3>{tr("sidebar.overview")}</h3>
         <div className="stat-grid">
-          <FilterChip patch={clearAll} active={false} title="Show everyone (clears all filters)">
+          <FilterChip patch={clearAll} active={false} title={tr("sidebar.showEveryoneClearsAllFilters")}>
             <b>{friends.length}</b>
             <span>friends</span>
           </FilterChip>
           <FilterChip
             patch={() => statusToggle(IN_GAME_STATUSES, "set")}
             active={IN_GAME_STATUSES.every((k) => filters.statuses.includes(k)) && filters.statuses.length === IN_GAME_STATUSES.length}
-            title="Only people in VRChat right now (click again to undo)"
+            title={tr("sidebar.onlyPeopleInVrchatRight")}
           >
             <b className="online">{stats.online}</b>
-            <span>in VRChat</span>
+            <span>{tr("sidebar.inVrchat")}</span>
           </FilterChip>
           <FilterChip
             patch={() => statusToggle(["web"], "set")}
             active={filters.statuses.length === 1 && filters.statuses[0] === "web"}
-            title="Only people on the website or app (click again to undo)"
+            title={tr("sidebar.onlyPeopleOnTheWebsite")}
           >
             <b>{stats.web}</b>
-            <span>web / app</span>
+            <span>{tr("sidebar.webApp")}</span>
           </FilterChip>
           <div className="stat-static">
             <b>{edges.length}</b>
@@ -101,19 +102,19 @@ export function Sidebar() {
 
       <section>
         <div className="section-head">
-          <h3>Circles</h3>
+          <h3>{tr("sidebar.circles")}</h3>
           {filters.circleId && (
             <button className="btn link small" onClick={() => updateFilters({ circleId: null })}>
-              Show everyone
+              {tr("sidebar.showEveryone")}
             </button>
           )}
         </div>
-        <p className="muted small">Your own groups. They can overlap. Drag people onto a circle here, or into its outline on the map.</p>
+        <p className="muted small">{tr("sidebar.yourOwnGroupsTheyCan")}</p>
         {dupes.length > 0 && (
           <p className="small dupe-note">
-            {dupes.length === 1 ? "One circle shares" : `${dupes.length} circles share`} a color with another.{" "}
+            {dupes.length === 1 ? tr("sidebar.oneCircleShares") : tr("sidebar.lengthCirclesShare", { length: dupes.length })} a color with another.{" "}
             <button className="btn link small" onClick={fixDuplicates}>
-              Give each its own color
+              {tr("sidebar.giveEachItsOwnColor")}
             </button>
           </p>
         )}
@@ -133,7 +134,7 @@ export function Sidebar() {
               onDrop={onDrop(c.id)}
             >
               <span className="swatch-wrap">
-                <button className="swatch" style={{ background: c.color }} title="Change color" onClick={() => setPicking(picking === c.id ? null : c.id)} />
+                <button className="swatch" style={{ background: c.color }} title={tr("sidebar.changeColor")} onClick={() => setPicking(picking === c.id ? null : c.id)} />
                 {picking === c.id && (
                   <ColorPicker
                     value={c.color}
@@ -160,33 +161,33 @@ export function Sidebar() {
               ) : (
                 <button
                   className="circle-name"
-                  title="Show only this circle (double-click to rename)"
+                  title={tr("sidebar.showOnlyThisCircleDouble")}
                   onClick={() => updateFilters({ circleId: filters.circleId === c.id ? null : c.id })}
                   onDoubleClick={() => setEditing(c.id)}
                 >
                   {c.name}
                   {c.auto && (
-                    <span className="auto-tag" title="Made from your game logs. It keeps updating until you rename it or change who's in it.">
+                    <span className="auto-tag" title={tr("sidebar.madeFromYourGameLogs")}>
                       auto
                     </span>
                   )}
                 </button>
               )}
               <span className="count">{c.members.filter((m) => cache.friends[m]).length}</span>
-              <button className="icon-btn tiny" title={c.hidden ? "Show outline on map" : "Hide outline on map"} onClick={() => patchCircle(c.id, { hidden: !c.hidden })}>
+              <button className="icon-btn tiny" title={c.hidden ? tr("sidebar.showOutlineOnMap") : tr("sidebar.hideOutlineOnMap")} onClick={() => patchCircle(c.id, { hidden: !c.hidden })}>
                 <Icon name={c.hidden ? "eyeOff" : "eye"} size={14} />
               </button>
-              <button className="icon-btn tiny" title="Rename" onClick={() => setEditing(c.id)}>
+              <button className="icon-btn tiny" title={tr("sidebar.rename")} onClick={() => setEditing(c.id)}>
                 <Icon name="tag" size={14} />
               </button>
               <button
                 className={`icon-btn tiny ${sharedCircles?.[c.id] ? "on" : ""}`}
-                title={sharedCircles?.[c.id] ? `Shared with ${sharedCircles[c.id].with.length} friend(s): edit together` : "Share with friends to edit together"}
+                title={sharedCircles?.[c.id] ? tr("sidebar.sharedWithValueFriendS", { value: sharedCircles[c.id].with.length }) : tr("sidebar.shareWithFriendsToEdit")}
                 onClick={() => setSharing(c.id)}
               >
                 <Icon name="share" size={14} />
               </button>
-              <button className="icon-btn tiny danger" title="Delete circle" onClick={() => deleteCircle(c.id)}>
+              <button className="icon-btn tiny danger" title={tr("sidebar.deleteCircle")} onClick={() => deleteCircle(c.id)}>
                 <Icon name="trash" size={14} />
               </button>
             </li>
@@ -202,8 +203,8 @@ export function Sidebar() {
             setName("");
           }}
         >
-          <input value={name} placeholder="New circle name" onChange={(e) => setName(e.target.value)} />
-          <button className="btn" type="submit" disabled={!name.trim()} title="Create circle">
+          <input value={name} placeholder={tr("sidebar.newCircleName")} onChange={(e) => setName(e.target.value)} />
+          <button className="btn" type="submit" disabled={!name.trim()} title={tr("sidebar.createCircle")}>
             <Icon name="plus" size={16} />
           </button>
         </form>
@@ -231,13 +232,13 @@ function RecentActivity() {
   return (
     <section>
       <div className="row between">
-        <h3>Activity</h3>
+        <h3>{tr("sidebar.activity")}</h3>
         <button className="btn link small" onClick={() => setState({ view: "activity" })}>
-          See all
+          {tr("sidebar.seeAll")}
         </button>
       </div>
       {recent.length === 0 ? (
-        <p className="muted small">Nothing yet. Friends coming online, joining your world, being added or removed show up here.</p>
+        <p className="muted small">{tr("sidebar.nothingYetFriendsComingOnline")}</p>
       ) : (
         <ul className="log side-activity">
           {recent.map((e) => (
@@ -279,7 +280,7 @@ function ShareCircleDialog({ circleId, onClose }: { circleId: string; onClose: (
           name and members.
         </p>
         {!owner && <p className="small">Shared with you by {friends[info!.owner]?.displayName ?? "a friend"}.</p>}
-        <input placeholder="Find a friend" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input placeholder={tr("sidebar.findAFriend")} value={q} onChange={(e) => setQ(e.target.value)} />
         <div className="picker-list">
           {list.map((f) => (
             <label key={f.id} className="check">
@@ -290,7 +291,7 @@ function ShareCircleDialog({ circleId, onClose }: { circleId: string; onClose: (
         </div>
         <div className="row end">
           <button className="btn" onClick={onClose}>
-            Cancel
+            {tr("sidebar.cancel")}
           </button>
           {owner && (
             <button
@@ -300,7 +301,7 @@ function ShareCircleDialog({ circleId, onClose }: { circleId: string; onClose: (
                 onClose();
               }}
             >
-              {picked.length ? `Share with ${picked.length}` : "Stop sharing"}
+              {picked.length ? tr("sidebar.shareWithLength", { length: picked.length }) : tr("sidebar.stopSharing")}
             </button>
           )}
         </div>

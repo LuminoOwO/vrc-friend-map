@@ -1,3 +1,4 @@
+import { t as tr } from "../i18n";
 import { useEffect, useRef } from "react";
 import { CIRCLE_PALETTE, colorUsage, pickCircleColor } from "../colors";
 
@@ -37,7 +38,7 @@ export function ColorPicker({
   }, [onClose]);
 
   return (
-    <div className="color-pop" ref={ref} role="dialog" aria-label="Circle color">
+    <div className="color-pop" ref={ref} role="dialog" aria-label={tr("colors.circleColor")}>
       <div className="color-grid">
         {CIRCLE_PALETTE.map((c) => {
           const used = usage.get(c) ?? 0;
@@ -46,7 +47,7 @@ export function ColorPicker({
               key={c}
               className={`color-cell ${c === value.toLowerCase() ? "current" : ""} ${used ? "used" : ""}`}
               style={{ background: c }}
-              title={used ? `${c} · used by ${used} other circle${used === 1 ? "" : "s"}` : c}
+              title={used ? tr("colors.cUsedByUsedOther", { c, used, value: used === 1 ? "" : "s" }) : c}
               onClick={() => {
                 onPick(c);
                 onClose();
@@ -63,10 +64,10 @@ export function ColorPicker({
             onClose();
           }}
         >
-          Pick unused
+          {tr("colors.pickUnused")}
         </button>
-        <label className="btn small custom-color" title="Any color">
-          Custom…
+        <label className="btn small custom-color" title={tr("colors.anyColor")}>
+          {tr("colors.custom")}
           <input type="color" value={/^#[0-9a-f]{6}$/i.test(value) ? value : "#2dd4bf"} onChange={(e) => onPick(e.target.value)} />
         </label>
       </div>

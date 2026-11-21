@@ -1,5 +1,6 @@
 // "Online now" (new interface): your online friends, one row per instance (and one for the
 // website or app). Hover a row for a quick look at who's there; click it for the world overview.
+import { t as tr } from "../i18n";
 import { t } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { backend, imgSrc } from "../backend";
@@ -175,7 +176,7 @@ export function WorldPopup({ spotKey, onClose }: { spotKey: string; onClose: () 
             <span className="ui2-close-x">
               <Icon name="close" size={20} />
             </span>
-            <span className="ui2-close-esc">ESC</span>
+            <span className="ui2-close-esc">{tr("online2.esc")}</span>
           </button>
           <span className="ui2-world-tags">
             {loc && <span className="ui2-tag">{loc.type}</span>}
@@ -190,7 +191,7 @@ export function WorldPopup({ spotKey, onClose }: { spotKey: string; onClose: () 
             <h2>{title}</h2>
             <span className="muted">
               {world?.authorName ? t("online.by", { name: world.authorName }) : spotKey === "private" ? t("online.privateNote") : ""}
-              {loc ? `${world?.authorName ? " · " : ""}${loc.flag} ${loc.region.toUpperCase()}` : ""}
+              {loc ? tr("online2.valueFlagValue2", { value: world?.authorName ? " · " : "", flag: loc.flag, value2: loc.region.toUpperCase() }) : ""}
             </span>
           </span>
           {loc && (

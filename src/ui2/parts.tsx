@@ -1,5 +1,6 @@
 // Pieces every desktop layout of the new interface uses: the views, the bell, filters, you,
 // the profile popup, the layout picker, and the keys that work everywhere.
+import { t as tr } from "../i18n";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { t } from "../i18n";
 import { imgSrc } from "../backend";
@@ -100,23 +101,23 @@ export function Bell() {
   const list = useMemo(() => [...missed].reverse().slice(0, 30), [missed]);
   return (
     <div className="ui2-drop-wrap" ref={ref}>
-      <button className={`ui2-top-icon ${open ? "on" : ""}`} title="Notifications" aria-label={unread ? `Notifications, ${unread} new` : "Notifications"} aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button className={`ui2-top-icon ${open ? "on" : ""}`} title={tr("parts.notifications")} aria-label={unread ? tr("parts.notificationsUnreadNew", { unread }) : "Notifications"} aria-expanded={open} onClick={() => setOpen(!open)}>
         <Icon name="bell" size={19} />
         {unread > 0 && <span className="ui2-dot">{unread > 99 ? "99+" : unread}</span>}
       </button>
       {open && (
-        <div className="ui2-drop" role="dialog" aria-label="Notifications">
+        <div className="ui2-drop" role="dialog" aria-label={tr("parts.notifications")}>
           <div className="ui2-drop-head">
-            <b>Notifications</b>
+            <b>{tr("parts.notifications")}</b>
             <span className="ui2-grow" />
             {unread > 0 && (
               <button className="btn small" onClick={markAllRead}>
-                Mark read
+                {tr("parts.markRead")}
               </button>
             )}
           </div>
           {list.length === 0 ? (
-            <p className="small muted ui2-drop-empty">Nothing yet.</p>
+            <p className="small muted ui2-drop-empty">{tr("parts.nothingYet")}</p>
           ) : (
             <ul className="ui2-drop-list" ref={smooth}>
               {list.map((m, i) => (
@@ -131,7 +132,7 @@ export function Bell() {
                     <span>{m.text}</span>
                     <span className="small muted">
                       {new Date(m.t).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}
-                      {m.why === "quiet" ? " · during quiet hours" : m.why === "muted" ? " · while muted" : ""}
+                      {m.why === "quiet" ? tr("parts.duringQuietHours") : m.why === "muted" ? tr("parts.whileMuted") : ""}
                     </span>
                   </button>
                 </li>
@@ -145,7 +146,7 @@ export function Bell() {
               close();
             }}
           >
-            All notifications in Insights
+            {tr("parts.allNotificationsInInsights")}
           </button>
         </div>
       )}
@@ -160,7 +161,7 @@ export function FilterButton() {
   const filtering = matched.size !== friends.length;
   return (
     <div className="filter-wrap ui2-drop-wrap">
-      <button className={`ui2-top-icon ${open ? "on" : ""}`} title={filtering ? `Filters: showing ${matched.size} of ${friends.length}` : "Filters"} aria-label="Filters" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <button className={`ui2-top-icon ${open ? "on" : ""}`} title={filtering ? tr("parts.filtersShowingSizeOfLength", { size: matched.size, length: friends.length }) : "Filters"} aria-label={tr("parts.filters")} aria-expanded={open} onClick={() => setOpen(!open)}>
         <Icon name="filter" size={19} />
         {filtering && <span className="ui2-dot small" />}
       </button>
@@ -178,8 +179,8 @@ export function MeButton() {
   return (
     <button
       className="ui2-top-me"
-      title="Your profile"
-      aria-label="Your profile"
+      title={tr("parts.yourProfile")}
+      aria-label={tr("parts.yourProfile")}
       onClick={(e) => {
         if (!me) return;
         // Your picture flies into the profile's picture.
@@ -215,14 +216,14 @@ export function ToolCluster({ onPalette, className = "", filters = true }: { onP
   return (
     <div className={`ui2-tools ${className}`}>
       {onPalette && (
-        <button className="ui2-top-icon" title="Search everything (Ctrl+K)" aria-label="Search everything" onClick={onPalette}>
+        <button className="ui2-top-icon" title={tr("parts.searchEverythingCtrlK")} aria-label={tr("parts.searchEverything")} onClick={onPalette}>
           <Icon name="search" size={18} />
         </button>
       )}
       {filters && (view === "graph" || view === "cards") && <FilterButton />}
       <ServerMenu />
       <Bell />
-      <button className="ui2-top-icon" title="Settings (Ctrl+,)" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
+      <button className="ui2-top-icon" title={tr("parts.settingsCtrl")} aria-label={tr("parts.settings")} onClick={() => setState({ settingsOpen: true })}>
         <Icon name="settings" size={18} />
       </button>
     </div>

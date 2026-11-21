@@ -2,6 +2,7 @@
 // overview tiles, Online now and Activity. Right or left (swap button), resizable (snaps back to
 // its default width, dragged very narrow it folds away), folds to a small "wing" on the edge.
 // Overview, Online now and Activity fold too. The layout is remembered on this device.
+import { t as tr } from "../i18n";
 import { t } from "../i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
@@ -201,7 +202,7 @@ export function WhereCard() {
                     {faceOf(p.id) ? <img src={faceOf(p.id)} alt="" /> : p.name[0]}
                   </span>
                   <span className="ui2-grow ui2-ellipsis">{friends[p.id]?.displayName ?? p.name}</span>
-                  <span className="small muted">{isFriend(p.id) ? "friend" : "not a friend"}</span>
+                  <span className="small muted">{isFriend(p.id) ? "friend" : tr("party2.notAFriend")}</span>
                 </button>
               </li>
             ))}

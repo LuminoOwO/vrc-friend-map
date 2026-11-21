@@ -62,25 +62,14 @@ describe("translations", () => {
 });
 
 describe("every text the code asks for exists", () => {
-  it("t(\"…\") / tr(\"…\") keys are all in en.json", async () => {
-    const fs = await import("node:fs");
-    const path = await import("node:path");
+  it("t(\"…\") / tr(\"…\") keys are all in en.json", () => {
+    const sources = import.meta.glob<string>(["../**/*.ts", "../**/*.tsx", "!../__tests__/**"], { query: "?raw", import: "default", eager: true });
     const en = flat(byCode.en);
     const has = (k: string) => k in en || `${k}_other` in en || `${k}_one` in en;
-    const files: string[] = [];
-    const walk = (dir: string) => {
-      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
-        const p = path.join(dir, e.name);
-        if (e.isDirectory()) {
-          if (e.name !== "__tests__") walk(p);
-        } else if (/\.tsx?$/.test(e.name)) files.push(p);
-      }
-    };
-    walk(path.resolve(__dirname, ".."));
     const missing: string[] = [];
-    for (const f of files) {
-      const src = fs.readFileSync(f, "utf8");
-      for (const m of src.matchAll(/\b(?:t|tr|tx)\(\s*"([a-zA-Z][\w]*(?:\.[\w]+)+)"/g)) if (!has(m[1])) missing.push(`${path.basename(f)}: ${m[1]}`);
+    expect(Object.keys(sources).length).toBeGreaterThan(50);
+    for (const [f, src] of Object.entries(sources)) {
+      for (const m of src.matchAll(/\b(?:t|tr|tx)\(\s*"([a-zA-Z][\w]*(?:\.[\w]+)+)"/g)) if (!has(m[1])) missing.push(`${f}: ${m[1]}`);
     }
     expect(missing).toEqual([]);
   });

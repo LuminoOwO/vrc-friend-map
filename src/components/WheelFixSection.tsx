@@ -1,3 +1,4 @@
+import { t as tr } from "../i18n";
 import { useEffect, useState } from "react";
 import { updateSettings, useApp } from "../store";
 import { wheelFixSet, wheelFixState, type WheelFixState } from "../wheelfix";
@@ -11,7 +12,7 @@ export function WheelFixSection() {
   }, []);
   return (
     <>
-      <h3>Mouse wheel</h3>
+      <h3>{tr("wheelFix.mouseWheel")}</h3>
       <label className="check">
         <input
           type="checkbox"
@@ -22,7 +23,7 @@ export function WheelFixSection() {
             setSt(await wheelFixSet(e.target.checked));
           }}
         />
-        Fix the mouse wheel (if scrolling and zooming do nothing)
+        {tr("wheelFix.fixTheMouseWheelIf")}
       </label>
       <p className="small muted">
         On some X11 systems (seen with XLibre) the web view never gets the wheel. This reads the wheel from the X server instead, only when

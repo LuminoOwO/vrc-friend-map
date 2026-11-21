@@ -2,6 +2,7 @@
 // pending friend requests, friend groups from the map (→ circles), bridges,
 // drifting apart, a path between two people, comparing two friends, and the
 // friend list over time.
+import { t as tr } from "../i18n";
 import { useMemo, useState } from "react";
 import { backend, imgSrc } from "../backend";
 import { clearMissed, dismissPreviousVisit, markAllRead, previousVisit, useHistory } from "../history";
@@ -49,7 +50,7 @@ function People({ ids, max = 12 }: { ids: string[]; max?: number }) {
       ))}
       {ids.length > max && (
         <button className="btn small ghost" onClick={() => setAll(!all)}>
-          {all ? "Less" : `+${ids.length - max} more`}
+          {all ? "Less" : tr("insights.valueMore", { value: ids.length - max })}
         </button>
       )}
     </div>
@@ -66,7 +67,7 @@ function SinceLastHere() {
         <h3>
           <Icon name="clock" size={16} /> Since you were last here ({new Date(v.since).toLocaleString()})
         </h3>
-        <button className="icon-btn small" title="Dismiss" onClick={dismissPreviousVisit}>
+        <button className="icon-btn small" title={tr("insights.dismiss")} onClick={dismissPreviousVisit}>
           <Icon name="close" size={14} />
         </button>
       </div>
@@ -102,20 +103,20 @@ function Missed() {
         </h3>
         <div className="row tight">
           <label className="check small">
-            <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> Also the ones shown
+            <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> {tr("insights.alsoTheOnesShown")}
           </label>
           {unread > 0 && (
             <button className="btn small" onClick={markAllRead}>
-              Mark read
+              {tr("insights.markRead")}
             </button>
           )}
           <button className="btn small ghost" onClick={clearMissed}>
-            Clear
+            {tr("insights.clear")}
           </button>
         </div>
       </div>
       {list.length === 0 ? (
-        <p className="small muted">Nothing missed: everything was shown when it happened.</p>
+        <p className="small muted">{tr("insights.nothingMissedEverythingWasShown")}</p>
       ) : (
         <ul className="missed-list">
           {list.slice(0, 100).map((m, i) => (
@@ -126,7 +127,7 @@ function Missed() {
               </button>
               <span className="muted small">
                 {EVENT_LABEL[m.event]}
-                {m.why === "quiet" ? " · during quiet hours" : m.why === "muted" ? " · while muted" : ""}
+                {m.why === "quiet" ? tr("insights.duringQuietHours") : m.why === "muted" ? tr("insights.whileMuted") : ""}
               </span>
             </li>
           ))}
@@ -158,14 +159,14 @@ function PendingRequests() {
     <section className="insight-card">
       <div className="row between">
         <h3>
-          <Icon name="user-plus" size={16} /> Friend requests you sent
+          <Icon name="user-plus" size={16} /> {tr("insights.friendRequestsYouSent")}
         </h3>
         <button className="btn small" onClick={load}>
           {list ? "Reload" : "Load"}
         </button>
       </div>
       {err && <p className="small warn">{err}</p>}
-      {list && list.length === 0 && <p className="small muted">None waiting.</p>}
+      {list && list.length === 0 && <p className="small muted">{tr("insights.noneWaiting")}</p>}
       {list && list.length > 0 && (
         <ul className="missed-list">
           {list
@@ -173,7 +174,7 @@ function PendingRequests() {
             .map((r) => (
               <li key={r.id}>
                 <Face id={r.id} />
-                <span className="muted small">{r.t ? `sent ${new Date(r.t).toLocaleDateString()}` : ""}</span>
+                <span className="muted small">{r.t ? tr("insights.sentValue", { value: new Date(r.t).toLocaleDateString() }) : ""}</span>
                 <button
                   className="btn small"
                   onClick={async () => {
@@ -182,7 +183,7 @@ function PendingRequests() {
                     else setList((l) => (l ? l.filter((x) => x.id !== r.id) : l));
                   }}
                 >
-                  Cancel request
+                  {tr("insights.cancelRequest")}
                 </button>
               </li>
             ))}
@@ -206,18 +207,18 @@ function FriendGroups() {
     <section className="insight-card">
       <div className="row between">
         <h3>
-          <Icon name="users" size={16} /> Friend groups on your map
+          <Icon name="users" size={16} /> {tr("insights.friendGroupsOnYourMap")}
         </h3>
         <label className="small group-size" title="How big the groups are: fewer, bigger groups to the left; more, smaller ones to the right">
-          <span className="muted">Bigger</span>
-          <Range min={0.5} max={2} step={0.1} value={resolution} onChange={(e) => setResolution(Number(e.target.value))} aria-label="Group size" />
-          <span className="muted">Smaller</span>
+          <span className="muted">{tr("insights.bigger")}</span>
+          <Range min={0.5} max={2} step={0.1} value={resolution} onChange={(e) => setResolution(Number(e.target.value))} aria-label={tr("insights.groupSize")} />
+          <span className="muted">{tr("insights.smaller")}</span>
           <output className="group-size-val">
             {groups.length} {groups.length === 1 ? "group" : "groups"}
           </output>
         </label>
       </div>
-      <p className="small muted">Found from who is friends with whom (mutual friends). Make any of them a circle with one click.</p>
+      <p className="small muted">{tr("insights.foundFromWhoIsFriends")}</p>
       <div className="group-list">
         {groups.slice(0, 12).map((m, i) => {
           const c = covered(m);
@@ -233,11 +234,11 @@ function FriendGroups() {
                   <button
                     className="btn small"
                     onClick={() => {
-                      const name = window.prompt("Name for the new circle", `${shownName(m[0])}'s group`);
+                      const name = window.prompt(tr("insights.nameForTheNewCircle"), `${shownName(m[0])}'s group`);
                       if (name) createCircle(name, m);
                     }}
                   >
-                    <Icon name="plus" size={14} /> Make a circle
+                    <Icon name="plus" size={14} /> {tr("insights.makeACircle")}
                   </button>
                 )}
               </div>
@@ -248,8 +249,8 @@ function FriendGroups() {
       </div>
       {br.length > 0 && (
         <>
-          <h4>Bridges</h4>
-          <p className="small muted">People who connect two or more of these groups.</p>
+          <h4>{tr("insights.bridges")}</h4>
+          <p className="small muted">{tr("insights.peopleWhoConnectTwoOr")}</p>
           <ul className="missed-list">
             {br.map((b) => (
               <li key={b.id}>
@@ -272,7 +273,7 @@ function PersonSelect({ value, onChange, label }: { value: string | null; onChan
     <label className="field narrow">
       <span>{label}</span>
       <select value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}>
-        <option value="">Pick someone…</option>
+        <option value="">{tr("insights.pickSomeone")}</option>
         {me && <option value={me.id}>You ({me.displayName})</option>}
         {list.map((f) => (
           <option key={f.id} value={f.id}>
@@ -304,15 +305,15 @@ function PathAndCompare() {
   return (
     <section className="insight-card">
       <h3>
-        <Icon name="route" size={16} /> Two people
+        <Icon name="route" size={16} /> {tr("insights.twoPeople")}
       </h3>
       <div className="row">
-        <PersonSelect label="First" value={a} onChange={(v) => set(0, v)} />
-        <PersonSelect label="Second" value={b} onChange={(v) => set(1, v)} />
+        <PersonSelect label={tr("insights.first")} value={a} onChange={(v) => set(0, v)} />
+        <PersonSelect label={tr("insights.second")} value={b} onChange={(v) => set(1, v)} />
       </div>
       {a && b && (
         <>
-          <h4>Path between them</h4>
+          <h4>{tr("insights.pathBetweenThem")}</h4>
           {path ? (
             <div className="path-row">
               {path.map((id, i) => (
@@ -323,7 +324,7 @@ function PathAndCompare() {
               ))}
             </div>
           ) : (
-            <p className="small muted">No chain of friends found (mutuals may be hidden).</p>
+            <p className="small muted">{tr("insights.noChainOfFriendsFound")}</p>
           )}
           {cmp && (
             <>
@@ -356,14 +357,14 @@ function Drifting() {
     <section className="insight-card">
       <div className="row between">
         <h3>
-          <Icon name="heart" size={16} /> Drifting apart
+          <Icon name="heart" size={16} /> {tr("insights.driftingApart")}
         </h3>
         <label className="check small">
-          <input type="checkbox" checked={on} onChange={(e) => updateSettings({ insights: { drifting: e.target.checked } })} /> Show
+          <input type="checkbox" checked={on} onChange={(e) => updateSettings({ insights: { drifting: e.target.checked } })} /> {tr("insights.show")}
         </label>
       </div>
       {!on ? (
-        <p className="small muted">Off by default. When on: friends you spent a lot of time with (from your game logs) but haven't been with for over 6 weeks, so you can reconnect. Only on this device, never shared.</p>
+        <p className="small muted">{tr("insights.offByDefaultWhenOn")}</p>
       ) : list.length ? (
         <ul className="missed-list">
           {list.map((d) => (
@@ -376,7 +377,7 @@ function Drifting() {
           ))}
         </ul>
       ) : (
-        <p className="small muted">{stats ? "Nobody: you've seen everyone you spend time with recently." : "Needs game logs (Settings → Game logs)."}</p>
+        <p className="small muted">{stats ? tr("insights.nobodyYouVeSeenEveryone") : tr("insights.needsGameLogsSettingsGame")}</p>
       )}
     </section>
   );
@@ -393,9 +394,9 @@ function ListOverTime() {
   return (
     <section className="insight-card">
       <h3>
-        <Icon name="chart" size={16} /> Your friend list over time
+        <Icon name="chart" size={16} /> {tr("insights.yourFriendListOverTime")}
       </h3>
-      <div className="month-chart" role="img" aria-label="Friend list size per month">
+      <div className="month-chart" role="img" aria-label={tr("insights.friendListSizePerMonth")}>
         {months.map((m) => (
           <div key={m.month} className="month" title={`${m.month}: ${m.size} friends, +${m.added} / −${m.removed}`}>
             <span className="month-size">{m.size}</span>

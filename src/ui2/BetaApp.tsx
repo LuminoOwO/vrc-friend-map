@@ -7,6 +7,7 @@
 //    archive/ui-layouts;
 //  - phones: the same look in a bottom tab bar (Map, People, Party, Insights, Menu); profiles,
 //    settings and filters full screen.
+import { t as tr } from "../i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "../i18n";
 import { isMobile } from "../backend";
@@ -260,11 +261,11 @@ function MenuPage({ onOpen }: { onOpen: (v: View) => void }) {
       <div className="lob-logo ui2-menu-logo">
         <AppLogo size={44} />
         <span className="lob-logo-text">
-          <span>VRC</span>
-          <b>FRIEND MAP</b>
+          <span>{tr("phone2.vrc")}</span>
+          <b>{tr("phone2.friendMap")}</b>
         </span>
       </div>
-      <nav className="ui2-bigmenu" aria-label="Menu">
+      <nav className="ui2-bigmenu" aria-label={tr("phone2.menu")}>
         {items.map(([l, i, f, extra]) => (
           <button key={l} className="ui2-big-item" onClick={f}>
             <Icon name={i} size={26} />

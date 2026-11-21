@@ -1,6 +1,7 @@
 // Profile additions (0.12): star, nickname, snooze, local time, online
 // history and best time to catch someone, earlier names, friends since,
 // VRChat's own note (editable), block reasons and invite actions.
+import { t as tr } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { describeHours, earlierNames, history, lastSeen, onlineShare, overlap, useHistory } from "../history";
 import { friendsSince } from "../insights";
@@ -31,7 +32,7 @@ import { pictureSrc } from "../logbook";
 export function StarButton({ id }: { id: string }) {
   const on = useApp((s) => s.local.starred?.includes(id) ?? false);
   return (
-    <button className={`btn star-btn ${on ? "on" : ""}`} title={on ? "Starred: stays at the top and stands out on the map" : "Star this friend"} aria-pressed={on} onClick={() => toggleStar(id)}>
+    <button className={`btn star-btn ${on ? "on" : ""}`} title={on ? tr("personExtras.starredStaysAtTheTop") : tr("personExtras.starThisFriend")} aria-pressed={on} onClick={() => toggleStar(id)}>
       <Icon name="star" size={16} />
     </button>
   );
@@ -57,18 +58,18 @@ export function NicknameAndSnooze({ id, name }: { id: string; name: string }) {
         >
           <input autoFocus value={draft} maxLength={40} placeholder={`Your name for ${name}`} onChange={(e) => setDraft(e.target.value)} />
           <button className="btn small primary" type="submit">
-            Save
+            {tr("personExtras.save")}
           </button>
           <button className="btn small" type="button" onClick={() => setEditing(false)}>
-            Cancel
+            {tr("personExtras.cancel")}
           </button>
         </form>
       ) : (
-        <button className="btn small ghost" onClick={() => setEditing(true)} title="Your own name for them, shown on the map (only you see it)">
-          <Icon name="tag" size={14} /> {nick ? `Nickname: ${nick}` : "Nickname"}
+        <button className="btn small ghost" onClick={() => setEditing(true)} title={tr("personExtras.yourOwnNameForThem")}>
+          <Icon name="tag" size={14} /> {nick ? tr("personExtras.nicknameNick", { nick }) : "Nickname"}
         </button>
       )}
-      <label className={`btn small ghost select-btn ${snoozed ? "on" : ""}`} title="Pause notifications about them">
+      <label className={`btn small ghost select-btn ${snoozed ? "on" : ""}`} title={tr("personExtras.pauseNotificationsAboutThem")}>
         <Icon name={snoozed ? "bell-off" : "clock"} size={14} />
         {snoozed ? `Snoozed until ${new Date(until).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}` : "Snooze"}
         <select
@@ -79,12 +80,12 @@ export function NicknameAndSnooze({ id, name }: { id: string; name: string }) {
             else if (v) snooze(id, snoozeUntil(v));
           }}
         >
-          <option value="">Snooze notifications…</option>
-          <option value="1h">For an hour</option>
-          <option value="3h">For 3 hours</option>
-          <option value="tomorrow">Until tomorrow 8:00</option>
-          <option value="week">For a week</option>
-          {snoozed && <option value="off">Stop snoozing</option>}
+          <option value="">{tr("personExtras.snoozeNotifications")}</option>
+          <option value="1h">{tr("personExtras.forAnHour")}</option>
+          <option value="3h">{tr("personExtras.for3Hours")}</option>
+          <option value="tomorrow">{tr("personExtras.untilTomorrow800")}</option>
+          <option value="week">{tr("personExtras.forAWeek")}</option>
+          {snoozed && <option value="off">{tr("personExtras.stopSnoozing")}</option>}
         </select>
       </label>
     </div>
@@ -107,22 +108,22 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
   if (!tz.tz && !open) {
     return (
       <div className="profile-block local-time" data-flip-fade>
-        <h3>Local time</h3>
+        <h3>{tr("personExtras.localTime")}</h3>
         <p className="small muted">
           Nothing to go on yet.{" "}
           <button className="btn link small" onClick={() => setOpen(true)}>
-            Set their time zone
+            {tr("personExtras.setTheirTimeZone")}
           </button>
         </p>
       </div>
     );
   }
   const diff = tz.tz ? differenceFromMe(tz.tz) : null;
-  const diffText = diff === null ? "" : diff === 0 ? "same as you" : `${Math.abs(diff)} h ${diff > 0 ? "ahead of" : "behind"} you`;
+  const diffText = diff === null ? "" : diff === 0 ? tr("personExtras.sameAsYou") : tr("personExtras.valueHValue2You", { value: Math.abs(diff), value2: diff > 0 ? "ahead of" : "behind" });
   const verified = tz.how === "set" || tz.how === "confirmed" || tz.how === "shared";
   return (
     <div className="profile-block local-time" data-flip-fade>
-      <h3>Local time</h3>
+      <h3>{tr("personExtras.localTime")}</h3>
       {tz.tz && (
         <p className="local-time-now">
           <b>{timeIn(tz.tz)}</b> {!verified && <span className="tag-suggested">probably</span>} <span className="muted small">{zoneLabel(tz.tz)} · {diffText}</span>
@@ -140,7 +141,7 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
         {tz.how === "shared" && `${name} shares their time zone through the app.`}
         {tz.how === "suggested" && "A guess until you confirm it."}{" "}
         <button className="btn link small" onClick={() => setOpen(!open)}>
-          {open ? "Close" : verified ? "Change" : "Why, and other options"}
+          {open ? "Close" : verified ? "Change" : tr("personExtras.whyAndOtherOptions")}
         </button>
       </p>
       {open && (
@@ -154,7 +155,7 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
                     <div className="small muted">{c.reasons.slice(0, 4).join(" · ")}</div>
                   </div>
                   <button className="btn small" onClick={() => setTimezone(id, c.tz, "confirmed")}>
-                    <Icon name="check" size={14} /> That's it
+                    <Icon name="check" size={14} /> {tr("personExtras.thatSIt")}
                   </button>
                 </li>
               ))}
@@ -164,11 +165,11 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
           <div className="row">
             {(tz.how === "set" || tz.how === "confirmed") && (
               <button className="btn small ghost" onClick={() => setTimezone(id, null)}>
-                Forget
+                {tr("personExtras.forget")}
               </button>
             )}
           </div>
-          <p className="small muted">Synced between your devices only. Suggestions come from their bio, status, linked pages, languages, groups and usual online hours.</p>
+          <p className="small muted">{tr("personExtras.syncedBetweenYourDevicesOnly")}</p>
         </div>
       )}
     </div>
@@ -183,8 +184,8 @@ function TzPicker({ value, onPick }: { value: string | null | undefined; onPick:
   const shown = words ? ZONE_LIST.filter((z) => `${z.offset} ${z.places}`.toLowerCase().includes(words) || z.offset.replace("−", "-").toLowerCase().includes(words)) : ZONE_LIST;
   return (
     <div className="tz-picker">
-      <input id="tz-filter" type="search" placeholder="Filter: a country, a city or +2" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Filter time zones" />
-      <ul className="tz-list" role="listbox" aria-label="Time zones">
+      <input id="tz-filter" type="search" placeholder={tr("personExtras.filterACountryACity")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={tr("personExtras.filterTimeZones")} />
+      <ul className="tz-list" role="listbox" aria-label={tr("personExtras.timeZones")}>
         {shown.map((z) => (
           <li key={z.tz}>
             <button type="button" role="option" aria-selected={current?.tz === z.tz} className={current?.tz === z.tz ? "on" : ""} onClick={() => onPick(z.tz)}>
@@ -214,16 +215,16 @@ export function OnlineHistory({ id, name, online }: { id: string; name: string; 
   const last = lastSeen(id);
   return (
     <div className="profile-block online-history" data-flip-fade>
-      <h3>Online</h3>
+      <h3>{tr("personExtras.online")}</h3>
       <dl className="facts">
         {!online && (
           <>
-            <dt>Last seen</dt>
-            <dd>{last ? `${ago(last)} (${new Date(last).toLocaleString()})` : "not seen online yet"}</dd>
+            <dt>{tr("personExtras.lastSeen")}</dt>
+            <dd>{last ? tr("personExtras.valueValue2", { value: ago(last), value2: new Date(last).toLocaleString() }) : tr("personExtras.notSeenOnlineYet")}</dd>
           </>
         )}
-        <dt>Friends since</dt>
-        <dd>{since ? fmtDate(since) : logSince ? `before ${fmtDate(logSince)}` : "unknown"}</dd>
+        <dt>{tr("personExtras.friendsSince")}</dt>
+        <dd>{since ? fmtDate(since) : logSince ? tr("personExtras.beforeValue", { value: fmtDate(logSince) }) : "unknown"}</dd>
         {best && best.length > 0 && (
           <>
             <dt>Best time to catch {name}</dt>
@@ -232,7 +233,7 @@ export function OnlineHistory({ id, name, online }: { id: string; name: string; 
         )}
         {names.length > 0 && (
           <>
-            <dt>Earlier names</dt>
+            <dt>{tr("personExtras.earlierNames")}</dt>
             <dd>{names.map((n) => `${n.name} (until ${fmtDate(n.to)})`).join(", ")}</dd>
           </>
         )}
@@ -266,10 +267,10 @@ export function OnlineHistory({ id, name, online }: { id: string; name: string; 
 function ago(t: number): string {
   const m = Math.round((Date.now() - t) / 60e3);
   if (m < 2) return "just now";
-  if (m < 60) return `${m} min ago`;
+  if (m < 60) return tr("personExtras.mMinAgo", { m });
   const h = Math.round(m / 60);
-  if (h < 48) return `${h} h ago`;
-  return `${Math.round(h / 24)} days ago`;
+  if (h < 48) return tr("personExtras.hHAgo", { h });
+  return tr("personExtras.valueDaysAgo", { value: Math.round(h / 24) });
 }
 
 /** VRChat's own note on them (shown in game too), editable. */
@@ -290,7 +291,7 @@ export function VrcNote({ id }: { id: string }) {
   return (
     <div className="profile-block" data-flip-fade>
       <h3>
-        Your note <span className="muted small">(VRChat's, shown in game)</span>
+        Your note <span className="muted small">{tr("personExtras.vrchatSShownInGame")}</span>
       </h3>
       {line && <p className="note-flag small">{line}</p>}
       {editing ? (
@@ -299,11 +300,11 @@ export function VrcNote({ id }: { id: string }) {
           <div className="row">
             <span className={`small ${draft.length > room ? "warn" : "muted"}`}>
               {draft.length}/{room}
-              {line ? " (the flag line takes the rest)" : ""}
+              {line ? tr("personExtras.theFlagLineTakesThe") : ""}
             </span>
             <span className="grow" />
             <button className="btn small" onClick={() => setEditing(false)}>
-              Cancel
+              {tr("personExtras.cancel")}
             </button>
             <button
               className="btn small primary"
@@ -312,19 +313,19 @@ export function VrcNote({ id }: { id: string }) {
                 setBusy(true);
                 const err = await setUserNote(id, draft);
                 setBusy(false);
-                if (err) showToast(`Couldn't save the note: ${err}`);
+                if (err) showToast(tr("personExtras.couldnTSaveTheNote", { error: err }));
                 else setEditing(false);
               }}
             >
-              Save
+              {tr("personExtras.save")}
             </button>
           </div>
         </>
       ) : (
         <>
-          {rest ? <p className="note-text">{rest}</p> : <p className="small muted">No note.</p>}
+          {rest ? <p className="note-text">{rest}</p> : <p className="small muted">{tr("personExtras.noNote")}</p>}
           <button className="btn small ghost" onClick={() => setEditing(true)}>
-            <Icon name="settings" size={14} /> {rest ? "Edit note" : "Add a note"}
+            <Icon name="settings" size={14} /> {rest ? tr("personExtras.editNote") : tr("personExtras.addANote")}
           </button>
         </>
       )}
@@ -355,10 +356,10 @@ export function BlockFlags({ id, blocked }: { id: string; blocked: boolean }) {
         <p className="red-flag mine">
           <Icon name="flag" size={15} />
           <span>
-            {mine?.reasons.length ? `You blocked them: ${mine.reasons.map(reasonLabel).join(", ")}` : "You blocked them."}
+            {mine?.reasons.length ? tr("personExtras.youBlockedThemValue", { value: mine.reasons.map(reasonLabel).join(", ") }) : tr("personExtras.youBlockedThem")}
             {mine?.text && <span className="muted"> “{mine.text}”</span>}{" "}
             <button className="btn link small" onClick={() => setState((s) => ({ blockAsk: [...new Set([...s.blockAsk, id])] }))}>
-              {mine ? "Change reasons" : "Add reasons"}
+              {mine ? tr("personExtras.changeReasons") : tr("personExtras.addReasons")}
             </button>
           </span>
         </p>
@@ -385,7 +386,7 @@ export function BlockReasonDialog() {
   const name = person?.displayName ?? "Them";
   const adult = age?.hints.filter((h) => h.dir === "adult").length ?? 0;
   const minor = age?.hints.filter((h) => h.dir === "minor").length ?? 0;
-  const ageText = !age ? "" : adult && !minor ? "hints point to over 18" : minor && !adult ? "hints point to under 18" : adult || minor ? "mixed age hints" : "no age hints";
+  const ageText = !age ? "" : adult && !minor ? tr("personExtras.hintsPointToOver18") : minor && !adult ? tr("personExtras.hintsPointToUnder18") : adult || minor ? tr("personExtras.mixedAgeHints") : tr("personExtras.noAgeHints");
   const toggle = (r: string) => setPicked((p) => (p.includes(r) ? p.filter((x) => x !== r) : [...p, r]));
   return (
     <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && close()}>
@@ -410,16 +411,16 @@ export function BlockReasonDialog() {
           </div>
         ))}
         <label className="field">
-          <span>In your own words (only on your devices, never shared)</span>
+          <span>{tr("personExtras.inYourOwnWordsOnly")}</span>
           <input value={text} maxLength={500} onChange={(e) => setText(e.target.value)} placeholder="optional" />
         </label>
         <p className="small muted">
-          The reasons you pick can be shared with friends like friend removals (per server, off by default), and shown at the top of your VRChat note on them if you turn that on.
-          {queue.length > 1 ? ` ${queue.length - 1} more after this.` : ""}
+          {tr("personExtras.theReasonsYouPickCan")}
+          {queue.length > 1 ? tr("personExtras.valueMoreAfterThis", { value: queue.length - 1 }) : ""}
         </p>
         <div className="row end">
           <button className="btn" onClick={close}>
-            Skip
+            {tr("personExtras.skip")}
           </button>
           <button
             className="btn primary"
@@ -428,7 +429,7 @@ export function BlockReasonDialog() {
               close();
             }}
           >
-            Save
+            {tr("personExtras.save")}
           </button>
         </div>
       </div>
@@ -447,18 +448,18 @@ export function InviteActions({ id, name, location, full, worldName }: { id: str
     setBusy(true);
     const err = await requestInvite(id, slot);
     setBusy(false);
-    showToast(err ? `Couldn't ask for an invite: ${err}` : `Asked ${name} for an invite`);
+    showToast(err ? tr("personExtras.couldnTAskForAn", { error: err }) : tr("personExtras.askedNameForAnInvite", { name }));
   };
   return (
     <div className="world-actions">
       <button className="btn" disabled={busy || demo} onClick={() => send()} title={`Ask ${name} to invite you`}>
-        <Icon name="user-plus" size={16} /> Request invite
+        <Icon name="user-plus" size={16} /> {tr("personExtras.requestInvite")}
       </button>
       {templates.length > 0 && (
-        <label className="btn select-btn" title="Request an invite with one of your saved messages">
+        <label className="btn select-btn" title={tr("personExtras.requestAnInviteWithOne")}>
           <Icon name="copy" size={16} /> With message
           <select value="" disabled={busy || demo} onChange={(e) => e.target.value && send(Number(e.target.value))}>
-            <option value="">Pick a message…</option>
+            <option value="">{tr("personExtras.pickAMessage")}</option>
             {templates
               .filter((t) => t.slot !== undefined)
               .map((t) => (
@@ -470,8 +471,8 @@ export function InviteActions({ id, name, location, full, worldName }: { id: str
         </label>
       )}
       {full && (
-        <button className={`btn ${watching ? "on" : ""}`} onClick={() => watchSlot(location, worldName || name, !watching)} title="Tell me when someone leaves and a slot opens (for 3 hours)">
-          <Icon name={watching ? "bell-off" : "bell"} size={16} /> {watching ? "Stop watching" : "Tell me when a slot opens"}
+        <button className={`btn ${watching ? "on" : ""}`} onClick={() => watchSlot(location, worldName || name, !watching)} title={tr("personExtras.tellMeWhenSomeoneLeaves")}>
+          <Icon name={watching ? "bell-off" : "bell"} size={16} /> {watching ? tr("personExtras.stopWatching") : tr("personExtras.tellMeWhenASlot")}
         </button>
       )}
     </div>
@@ -490,13 +491,13 @@ export function PersonLog({ id, name }: { id: string; name: string }) {
   if (!data || (!data.pics.length && !data.avatars.length)) return null;
   return (
     <div className="profile-block" data-flip-fade>
-      <h3>From your game logs</h3>
+      <h3>{tr("personExtras.fromYourGameLogs")}</h3>
       {data.avatars.length > 0 && (
         <p className="small">
-          <b>Avatars seen:</b> {data.avatars.slice(0, open ? 40 : 6).map((a) => a.avatar).join(", ")}
+          <b>{tr("personExtras.avatarsSeen")}</b> {data.avatars.slice(0, open ? 40 : 6).map((a) => a.avatar).join(", ")}
           {data.avatars.length > 6 && (
             <button className="btn link small" onClick={() => setOpen(!open)}>
-              {open ? "less" : `+${data.avatars.length - 6} more`}
+              {open ? "less" : tr("personExtras.valueMore", { value: data.avatars.length - 6 })}
             </button>
           )}
         </p>
@@ -542,8 +543,8 @@ export function SafetyCode({ id, name }: { id: string; name: string }) {
   return (
     <div className="profile-block" data-flip-fade>
       <button className="age-head" onClick={() => setOpen(!open)} aria-expanded={open}>
-        <h3>Encryption</h3>
-        <span className="age-headline">{pin.offered ? "their key changed: check the code" : "compare a code to be sure"}</span>
+        <h3>{tr("personExtras.encryption")}</h3>
+        <span className="age-headline">{pin.offered ? tr("personExtras.theirKeyChangedCheckThe") : tr("personExtras.compareACodeToBe")}</span>
         <Icon name={open ? "chevron-up" : "chevron-down"} size={14} />
       </button>
       {open && (

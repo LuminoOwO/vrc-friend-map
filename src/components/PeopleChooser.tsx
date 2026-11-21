@@ -1,6 +1,7 @@
 // Pick a set of friends: all of them, the members of some circles, or by hand
 // (with "add new friends to this automatically"). Used for what you share and
 // who you share it with.
+import { t as tr } from "../i18n";
 import { useMemo, useState } from "react";
 import { useApp } from "../store";
 import type { PeopleSelection } from "../types";
@@ -50,7 +51,7 @@ export function PeopleChooser({
       </div>
       {value.who === "circles" && (
         <div className="chips">
-          {circles.length === 0 && <span className="small muted">Make circles first (on the map or in the sidebar).</span>}
+          {circles.length === 0 && <span className="small muted">{tr("chooser.makeCirclesFirstOnThe")}</span>}
           {circles.map((c) => {
             const on = value.circleIds.includes(c.id);
             return (
@@ -69,21 +70,21 @@ export function PeopleChooser({
       {value.who === "picked" && (
         <div className="picker">
           <div className="row tight">
-            <input value={q} placeholder="Find a friend" onChange={(e) => setQ(e.target.value)} />
+            <input value={q} placeholder={tr("chooser.findAFriend")} onChange={(e) => setQ(e.target.value)} />
             <span className="small muted">
               {count} of {Object.keys(friends).length}
             </span>
           </div>
           <div className="row tight">
             <button className="btn small" onClick={() => set({ picked: [...new Set([...value.picked, ...list.map((f) => f.id)])] })}>
-              {q ? "Pick these" : "Pick all"}
+              {q ? tr("chooser.pickThese") : tr("chooser.pickAll")}
             </button>
             <button className="btn small" onClick={() => set({ picked: q ? value.picked.filter((id) => !list.some((f) => f.id === id)) : [] })}>
-              {q ? "Unpick these" : "Pick none"}
+              {q ? tr("chooser.unpickThese") : tr("chooser.pickNone")}
             </button>
             <label className="check small">
               <input type="checkbox" checked={onlyPicked} onChange={(e) => setOnlyPicked(e.target.checked)} />
-              Only show picked
+              {tr("chooser.onlyShowPicked")}
             </label>
           </div>
           <ul className="picker-list">
@@ -96,7 +97,7 @@ export function PeopleChooser({
               </li>
             ))}
             {list.length > 300 && <li className="small muted">…and {list.length - 300} more. Search to narrow it down.</li>}
-            {list.length === 0 && <li className="small muted">Nobody here.</li>}
+            {list.length === 0 && <li className="small muted">{tr("chooser.nobodyHere")}</li>}
           </ul>
           <label className="check">
             <input type="checkbox" checked={value.autoAdd} onChange={(e) => set({ autoAdd: e.target.checked })} />

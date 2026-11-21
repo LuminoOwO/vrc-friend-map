@@ -3,6 +3,7 @@
 // on the right (you with your banner, where you are, the overview, Online now and Activity; it
 // folds away to a tab on the edge); the latest activity along the bottom. A view (or Settings)
 // opens in a big frame; the map fades out and stops drawing behind it.
+import { t as tr } from "../../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { useT } from "../../i18n";
 import { imgSrc } from "../../backend";
@@ -45,7 +46,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
   const [leaving, setLeaving] = useState(false);
   return (
     <div className={`lay-lobby ${covered ? "covered" : ""} ${prefs.collapsed ? "party-folded" : ""}`}>
-      <h1 className="sr-only">VRC Friend Map</h1>
+      <h1 className="sr-only">{tr("lobby.vrcFriendMap")}</h1>
       <div className="lob-bg" aria-hidden={covered} role="main" aria-label={t("party.friendMap")}>
         <GraphView />
       </div>
@@ -54,8 +55,8 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
         <div className="lob-logo">
           <AppLogo size={48} />
           <span className="lob-logo-text">
-            <span>VRC</span>
-            <b>FRIEND MAP</b>
+            <span>{tr("lobby.vrc")}</span>
+            <b>{tr("lobby.friendMap")}</b>
           </span>
         </div>
         <nav className="lob-menu" aria-label={t("menu.menu")} data-arrows="v">
@@ -116,7 +117,7 @@ function Frame({ view, onClose }: { view: View; onClose: () => void }) {
         <h1>{RAIL.find((r) => r.key === view)?.label}</h1>
         <span className="ui2-grow" />
         <button className="ui2-pill-btn" onClick={onClose}>
-          <Icon name="chevron-left" size={14} /> {t("common.back")} <kbd>Esc</kbd>
+          <Icon name="chevron-left" size={14} /> {t("common.back")} <kbd>{tr("lobby.esc")}</kbd>
         </button>
       </header>
       <div className="lob-frame-body">{ready && <ViewBody view={view} />}</div>

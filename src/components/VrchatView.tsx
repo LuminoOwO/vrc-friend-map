@@ -2,6 +2,7 @@
 // groups, worlds, avatars), your avatars, prints / stickers / emojis /
 // gallery pictures (with uploading and cropping), world notes, and opening
 // any VRChat link.
+import { t as tr } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
 import { setState, showToast, updateFilters, useApp } from "../store";
@@ -64,7 +65,7 @@ export function VrchatView() {
         <OpenLink />
       </div>
       {demo ? (
-        <p className="muted">This part talks to VRChat directly, so it needs a real login (not the demo).</p>
+        <p className="muted">{tr("vrchat.thisPartTalksToVrchat")}</p>
       ) : (
         <>
           {tab === "groups" && <MyGroups />}
@@ -85,13 +86,13 @@ function OpenLink() {
       className="row tight open-link"
       onSubmit={(e) => {
         e.preventDefault();
-        if (!openVrchatLink(v)) showToast("That isn't a VRChat profile, world, group or instance link.");
+        if (!openVrchatLink(v)) showToast(tr("vrchat.thatIsnTAVrchat"));
         else setV("");
       }}
     >
-      <input value={v} placeholder="Paste a VRChat link (profile, world, group, instance)" onChange={(e) => setV(e.target.value)} />
+      <input value={v} placeholder={tr("vrchat.pasteAVrchatLinkProfile")} onChange={(e) => setV(e.target.value)} />
       <button className="btn small" type="submit" disabled={!v.trim()}>
-        Open
+        {tr("vrchat.open")}
       </button>
     </form>
   );
@@ -137,7 +138,7 @@ function MyGroups() {
       </section>
       <section className="insight-card">
         <h3>
-          <Icon name="calendar" size={16} /> Upcoming events
+          <Icon name="calendar" size={16} /> {tr("vrchat.upcomingEvents")}
         </h3>
         {err && <p className="small warn">{err}</p>}
         {events ? <EventList events={events} /> : <SkelBlock lines={2} />}
@@ -179,7 +180,7 @@ function Favorites() {
       {(gErr || fErr) && <p className="small warn">{gErr || fErr}</p>}
       {kind === "friend" && (
         <p className="small muted">
-          Filter the map by one of these: Filters → <i>Only VRChat favorites</i>, or click a group's name.
+          Filter the map by one of these: Filters → <i>{tr("vrchat.onlyVrchatFavorites")}</i>, or click a group's name.
         </p>
       )}
       <div className="insights">
@@ -189,7 +190,7 @@ function Favorites() {
               <h3>
                 <Icon name="star" size={16} />{" "}
                 {kind === "friend" ? (
-                  <button className="link-btn" title="Show only them on the map" onClick={() => {
+                  <button className="link-btn" title={tr("vrchat.showOnlyThemOnThe")} onClick={() => {
                       updateFilters({ favoriteGroup: g.displayName });
                       setState({ view: "graph" });
                     }}>
@@ -203,11 +204,11 @@ function Favorites() {
               <button
                 className="btn small ghost"
                 onClick={() => {
-                  const n = window.prompt("New name", g.displayName);
-                  if (n && n !== g.displayName) void favoriteActions.rename(g, n).then((e) => { showToast(e ? `VRChat said no: ${e}` : "Renamed"); reloadGroups(); });
+                  const n = window.prompt(tr("vrchat.newName"), g.displayName);
+                  if (n && n !== g.displayName) void favoriteActions.rename(g, n).then((e) => { showToast(e ? tr("vrchat.vrchatSaidNoError", { error: e }) : "Renamed"); reloadGroups(); });
                 }}
               >
-                Rename
+                {tr("vrchat.rename")}
               </button>
             </div>
             <ul className="fav-list">
@@ -217,7 +218,7 @@ function Favorites() {
                   <button className="link-btn" onClick={() => openIt(f)}>
                     {label(f)}
                   </button>
-                  <button className="icon-btn tiny" title="Remove from favorites" onClick={() => window.confirm(`Remove ${label(f)} from ${g.displayName}?`) && void favoriteActions.remove(f).then((e) => { showToast(e ? `VRChat said no: ${e}` : "Removed"); reloadFavs(); })}>
+                  <button className="icon-btn tiny" title={tr("vrchat.removeFromFavorites")} onClick={() => window.confirm(tr("vrchat.removeValueFromName", { value: label(f), name: g.displayName })) && void favoriteActions.remove(f).then((e) => { showToast(e ? tr("vrchat.vrchatSaidNoError", { error: e }) : "Removed"); reloadFavs(); })}>
                     <Icon name="close" size={12} />
                   </button>
                 </li>
@@ -245,7 +246,7 @@ function AvatarCard({ a, onSelect }: { a: AvatarInfo; onSelect?: () => void }) {
       </span>
       {onSelect && (
         <button className="btn small" onClick={onSelect}>
-          Switch to it
+          {tr("vrchat.switchToIt")}
         </button>
       )}
     </div>
@@ -260,7 +261,7 @@ function Avatars() {
   useEffect(() => {
     void avatarNameFromImage(meProfile?.currentAvatarImageUrl).then(setCurrent);
   }, [meProfile?.currentAvatarImageUrl]);
-  const sel = (a: AvatarInfo) => window.confirm(`Switch to ${a.name}? (You change avatar in game right away.)`) && void selectAvatar(a.id).then((e) => showToast(e ? `VRChat said no: ${e}` : `Switched to ${a.name}`));
+  const sel = (a: AvatarInfo) => window.confirm(tr("vrchat.switchToNameYouChange", { name: a.name })) && void selectAvatar(a.id).then((e) => showToast(e ? tr("vrchat.vrchatSaidNoError", { error: e }) : tr("vrchat.switchedToName", { name: a.name })));
   return (
     <>
       {current && <p className="small">You're wearing: <b>{current}</b></p>}
@@ -299,9 +300,9 @@ function Files() {
           ))}
         </div>
         <button className="btn small primary" onClick={() => setUploading(true)}>
-          <Icon name="upload" size={14} /> Upload
+          <Icon name="upload" size={14} /> {tr("vrchat.upload")}
         </button>
-        {!isVrcPlus && <span className="small muted">Most of these need VRC+.</span>}
+        {!isVrcPlus && <span className="small muted">{tr("vrchat.mostOfTheseNeedVrc")}</span>}
       </div>
       {err && <p className="small warn">{err}</p>}
       <div className="pic-grid file-grid">
@@ -314,11 +315,11 @@ function Files() {
               {"animated" in f && f.animated && <span className="pic-tag small">animated</span>}
               <button
                 className="icon-btn tiny pic-del"
-                title="Delete"
+                title={tr("vrchat.delete")}
                 onClick={() =>
-                  window.confirm("Delete this from VRChat?") &&
+                  window.confirm(tr("vrchat.deleteThisFromVrchat")) &&
                   void (kind === "print" ? deletePrint(f.id) : deleteFile(f.id)).then((e) => {
-                    showToast(e ? `VRChat said no: ${e}` : "Deleted");
+                    showToast(e ? tr("vrchat.vrchatSaidNoError", { error: e }) : "Deleted");
                     reload();
                   })
                 }
@@ -329,7 +330,7 @@ function Files() {
           );
         })}
       </div>
-      {files?.length === 0 && <p className="small muted">None yet.</p>}
+      {files?.length === 0 && <p className="small muted">{tr("vrchat.noneYet")}</p>}
       {uploading && (
         <Uploader
           kind={kind}
@@ -454,7 +455,7 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
               onPointerUp={() => (drag.current = null)}
             />
             <label className="field">
-              <span>Zoom (drag the picture to move it)</span>
+              <span>{tr("vrchat.zoomDragThePictureTo")}</span>
               <Range min={1} max={5} step={0.01} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} />
             </label>
             {frames && <p className="small">Animated: {frames.length} frames (an animated emoji).</p>}
@@ -466,7 +467,7 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
             )}
             {kind === "emoji" && (
               <label className="field narrow">
-                <span>Effect in game</span>
+                <span>{tr("vrchat.effectInGame")}</span>
                 <select value={style} onChange={(e) => setStyle(e.target.value)}>
                   {ANIMATION_STYLES.map((s) => (
                     <option key={s} value={s}>
@@ -478,7 +479,7 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
             )}
             {kind === "print" && (
               <label className="field">
-                <span>Note on the print</span>
+                <span>{tr("vrchat.noteOnThePrint")}</span>
                 <input value={note} maxLength={64} onChange={(e) => setNote(e.target.value)} />
               </label>
             )}
@@ -486,7 +487,7 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
         )}
         <div className="row end">
           <button className="btn" onClick={() => onClose(false)}>
-            Cancel
+            {tr("vrchat.cancel")}
           </button>
           <button
             className="btn primary"
@@ -496,16 +497,16 @@ function Uploader({ kind, onClose }: { kind: FileKind | "print"; onClose: (done:
               try {
                 const blob = await render();
                 const e = await uploadImage(kind, blob, { animationStyle: style, frames: frames?.length, fps, note });
-                showToast(e ? `Upload failed: ${e}` : "Uploaded");
+                showToast(e ? tr("vrchat.uploadFailedError", { error: e }) : "Uploaded");
                 if (!e) onClose(true);
               } catch (e) {
-                showToast(`Upload failed: ${e}`);
+                showToast(tr("vrchat.uploadFailedError", { error: e }));
               } finally {
                 setBusy(false);
               }
             }}
           >
-            {busy ? "Uploading…" : "Upload"}
+            {busy ? tr("vrchat.uploading") : "Upload"}
           </button>
         </div>
       </div>
@@ -530,7 +531,7 @@ function WorldNotes() {
       {tags.length > 0 && (
         <div className="chips">
           <button className={`chip ${!tag ? "on" : ""}`} onClick={() => setTag("")}>
-            All
+            {tr("vrchat.all")}
           </button>
           {tags.map((t) => (
             <button key={t} className={`chip ${tag === t ? "on" : ""}`} onClick={() => setTag(tag === t ? "" : t)}>
@@ -539,7 +540,7 @@ function WorldNotes() {
           ))}
         </div>
       )}
-      {!all.length && <p className="small muted">Add notes and tags to any world from its page (click a world on a profile, in the logbook or a favorite).</p>}
+      {!all.length && <p className="small muted">{tr("vrchat.addNotesAndTagsTo")}</p>}
       <ul className="missed-list">
         {shown.map(([id, n]) => (
           <li key={id}>

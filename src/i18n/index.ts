@@ -10,7 +10,7 @@ import { Fragment, createElement, useSyncExternalStore, type ReactNode } from "r
 import en from "./locales/en.json";
 
 type Dict = { [k: string]: string | Dict };
-type Vars = Record<string, string | number>;
+type Vars = Record<string, unknown>;
 
 // Every language file, loaded only when picked (English is always there).
 const loaders = import.meta.glob<{ default: Dict }>("./locales/*.json");
@@ -63,9 +63,9 @@ function find(d: Dict, code: string, key: string, vars?: Vars): string | undefin
 function fill(text: string, code: string, vars?: Vars): string {
   if (!vars) return text;
   return text.replace(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g, (all, name: string) => {
+    if (!(name in vars)) return all;
     const v = vars[name];
-    if (v === undefined) return all;
-    return typeof v === "number" ? v.toLocaleString(code) : v;
+    return typeof v === "number" ? v.toLocaleString(code) : String(v ?? "");
   });
 }
 
@@ -82,7 +82,7 @@ export function t(key: string, vars?: Vars): string {
  *  { date: <b>…</b> } gives the sentence with the bold date where the language puts it. */
 export function tx(key: string, vars: Record<string, ReactNode>): ReactNode {
   const plain: Vars = {};
-  for (const [k, v] of Object.entries(vars)) if (typeof v === "string" || typeof v === "number") plain[k] = v;
+  for (const [k, v] of Object.entries(vars)) if (typeof v === "string" || typeof v === "number" || v == null) plain[k] = v;
   const text = t(key, { ...plain, ...Object.fromEntries(Object.keys(vars).filter((k) => !(k in plain)).map((k) => [k, `\u0000${k}\u0000`])) });
   const parts = text.split("\u0000");
   return createElement(

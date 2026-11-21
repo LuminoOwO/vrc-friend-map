@@ -1,4 +1,5 @@
 // "Version X is available": what's new, and update now / later / skip.
+import { t as tr } from "../i18n";
 import { useEffect, useState } from "react";
 import { backend } from "../backend";
 import { setState, useApp } from "../store";
@@ -48,16 +49,16 @@ export function UpdateDialog() {
   };
   const how =
     info.kind === "flatpak"
-      ? "The Flatpak can't install itself: the app saves the new file to Downloads and shows the command."
+      ? tr("update.theFlatpakCanTInstall")
       : info.kind === "android"
-        ? "Android downloads the new version and asks you to install it."
+        ? tr("update.androidDownloadsTheNewVersion")
         : info.kind === "ios"
-          ? "Sideloaded apps can't update themselves: install the new .ipa with your sideloading app."
+          ? tr("update.sideloadedAppsCanTUpdate")
           : info.kind === "deb" || info.kind === "rpm"
-            ? "The system asks for your password to install the package; the app then restarts."
+            ? tr("update.theSystemAsksForYour")
             : info.kind === "windows-msi"
-              ? "Windows asks for permission to install; the app then restarts."
-              : "The app downloads it, checks it against the release's checksums, installs it and restarts.";
+              ? tr("update.windowsAsksForPermissionTo")
+              : tr("update.theAppDownloadsItChecks");
   return (
     <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <div className="modal update-dialog" role="dialog" aria-labelledby="update-title">
@@ -72,34 +73,34 @@ export function UpdateDialog() {
         {busy && (
           <div className="update-progress">
             <div style={{ width: `${pct ?? 5}%` }} />
-            <span className="small">{pct != null && pct < 100 ? `Downloading… ${pct}%` : "Installing…"}</span>
+            <span className="small">{pct != null && pct < 100 ? tr("update.downloadingPct", { pct }) : tr("update.installing")}</span>
           </div>
         )}
         {result && (
           <div className="update-result">
-            <p className="small">Saved. Install it with:</p>
+            <p className="small">{tr("update.savedInstallItWith")}</p>
             <code>{result}</code>
             <button className="btn small" onClick={() => navigator.clipboard?.writeText(result)}>
-              <Icon name="copy" size={14} /> Copy
+              <Icon name="copy" size={14} /> {tr("update.copy")}
             </button>
           </div>
         )}
         {error && <p className="error-text">{error}</p>}
         <div className="row end">
           <button className="btn ghost" disabled={busy} onClick={() => skipVersion(info.latest)}>
-            Skip this version
+            {tr("update.skipThisVersion")}
           </button>
           <button className="btn" disabled={busy} onClick={close}>
-            Later
+            {tr("update.later")}
           </button>
           {info.kind === "android" || info.kind === "ios" || !info.can_install ? (
             <button className="btn primary" onClick={() => void backend.openUrl(info.kind === "android" && info.asset ? info.asset.url : info.page)}>
-              <Icon name="external" size={15} /> {info.kind === "android" && info.asset ? "Download" : "Open the release"}
+              <Icon name="external" size={15} /> {info.kind === "android" && info.asset ? "Download" : tr("update.openTheRelease")}
             </button>
           ) : (
             !result && (
               <button className="btn primary" disabled={busy} onClick={go}>
-                {busy ? "Updating…" : info.kind === "flatpak" ? "Download" : "Update now"}
+                {busy ? tr("update.updating") : info.kind === "flatpak" ? "Download" : tr("update.updateNow")}
               </button>
             )
           )}
