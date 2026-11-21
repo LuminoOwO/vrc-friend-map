@@ -43,7 +43,8 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
   const [leaving, setLeaving] = useState(false);
   return (
     <div className={`lay-lobby ${covered ? "covered" : ""} ${prefs.collapsed ? "party-folded" : ""}`}>
-      <div className="lob-bg" aria-hidden={covered}>
+      <h1 className="sr-only">VRC Friend Map</h1>
+      <div className="lob-bg" aria-hidden={covered} role="main" aria-label="Friend map">
         <GraphView />
       </div>
       <div className="lob-shade" />
@@ -107,7 +108,7 @@ function Frame({ view, onClose }: { view: View; onClose: () => void }) {
     };
   }, [view]);
   return (
-    <div className="lob-frame" key={view}>
+    <div className="lob-frame" key={view} role="region" aria-label={RAIL.find((r) => r.key === view)?.label}>
       <header>
         <h1>{RAIL.find((r) => r.key === view)?.label}</h1>
         <span className="ui2-grow" />

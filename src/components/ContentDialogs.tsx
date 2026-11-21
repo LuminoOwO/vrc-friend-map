@@ -254,7 +254,7 @@ export function GroupDialog() {
           {g.bannerUrl && <img className="content-banner" src={imgSrc(g.bannerUrl)} alt="" />}
           <div className="seg wrap">
             {tabs.map(([k, l]) => (
-              <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+              <button key={k} className={tab === k ? "on" : ""} aria-pressed={tab === k} onClick={() => setTab(k)}>
                 {l}
               </button>
             ))}

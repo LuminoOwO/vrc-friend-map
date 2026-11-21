@@ -168,7 +168,7 @@ function Toggle<T extends string>({ value, options, onChange }: { value: T; opti
   return (
     <div className="seg">
       {options.map(([v, label]) => (
-        <button key={v} className={value === v ? "on" : ""} onClick={() => onChange(v)}>
+        <button key={v} className={value === v ? "on" : ""} aria-pressed={value === v} onClick={() => onChange(v)}>
           {label}
         </button>
       ))}

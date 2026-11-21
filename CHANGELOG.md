@@ -16,6 +16,9 @@ minor releases can change behavior.
   person (starting from you; the hover card follows and the map pans along), Enter opens the
   profile, Esc lets go. Screen readers hear the name. Arrow keys (and Home/End) also move through
   the menu on computers, the Settings list and the phone's tabs.
+- **Screen readers:** popups and dialogs say they're dialogs and that the page behind doesn't
+  count (and get their heading as a name if they had none); choice rows (filters, VRChat tabs,
+  invite messages) say which option is on; the computer layout has a main area and a page title.
 - **Keyboard:** every popup and dialog (profiles, worlds, Settings, search everything, filters,
   the classic dialogs) takes the focus when it opens, keeps Tab inside it, and gives the focus
   back to the button that opened it when it closes. Views on computers take the focus too and

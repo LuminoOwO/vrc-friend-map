@@ -171,7 +171,7 @@ function Favorites() {
     <>
       <div className="seg">
         {(["friend", "world", "avatar"] as const).map((k) => (
-          <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>
+          <button key={k} className={kind === k ? "on" : ""} aria-pressed={kind === k} onClick={() => setKind(k)}>
             {k === "friend" ? "Friends" : k === "world" ? "Worlds" : "Avatars"}
           </button>
         ))}
@@ -293,7 +293,7 @@ function Files() {
       <div className="row">
         <div className="seg">
           {(["emoji", "sticker", "print", "gallery", "icon"] as const).map((k) => (
-            <button key={k} className={kind === k ? "on" : ""} onClick={() => setKind(k)}>
+            <button key={k} className={kind === k ? "on" : ""} aria-pressed={kind === k} onClick={() => setKind(k)}>
               {k === "emoji" ? "Emojis" : k === "sticker" ? "Stickers" : k === "print" ? "Prints" : k === "gallery" ? "Gallery" : "Icons"}
             </button>
           ))}

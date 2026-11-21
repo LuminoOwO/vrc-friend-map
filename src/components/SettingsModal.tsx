@@ -110,10 +110,10 @@ function InviteMessagesSection() {
       </p>
       <div className="row">
         <div className="seg">
-          <button className={kind === "request" ? "on" : ""} onClick={() => { setKind("request"); if (slots) load("request"); }}>
+          <button className={kind === "request" ? "on" : ""} aria-pressed={kind === "request"} onClick={() => { setKind("request"); if (slots) load("request"); }}>
             Asking for an invite
           </button>
-          <button className={kind === "message" ? "on" : ""} onClick={() => { setKind("message"); if (slots) load("message"); }}>
+          <button className={kind === "message" ? "on" : ""} aria-pressed={kind === "message"} onClick={() => { setKind("message"); if (slots) load("message"); }}>
             Invites I send
           </button>
         </div>

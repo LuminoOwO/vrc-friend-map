@@ -56,7 +56,9 @@ function opened(el: HTMLElement) {
   // The latest control outside this dialog that had focus (something inside may have it already,
   // e.g. a search box with autoFocus).
   const prev = [...recent].reverse().find((r) => !el.contains(r.el));
-  stack.push({ el, before: prev?.el ?? null, name: prev?.name ?? null, trap: el.matches(DIALOG_SELECTOR) });
+  const trap = el.matches(DIALOG_SELECTOR);
+  stack.push({ el, before: prev?.el ?? null, name: prev?.name ?? null, trap });
+  if (trap) markModal(el);
   // After React has run autoFocus and effects.
   requestAnimationFrame(() => {
     if (!el.isConnected || el.contains(document.activeElement)) return;
@@ -67,6 +69,22 @@ function opened(el: HTMLElement) {
       el.focus({ preventScroll: true });
     }
   });
+}
+
+/** Screen readers: a dialog says it's one, that the page behind doesn't count, and its name
+ *  (its first heading, when it has no name of its own). */
+function markModal(el: HTMLElement) {
+  let d = el.matches("[role=dialog], [role=alertdialog]") ? el : el.querySelector<HTMLElement>("[role=dialog], [role=alertdialog]");
+  if (!d) {
+    d = (el.firstElementChild as HTMLElement | null) ?? el;
+    d.setAttribute("role", "dialog");
+  }
+  if (!d.hasAttribute("aria-modal")) d.setAttribute("aria-modal", "true");
+  if (!d.hasAttribute("aria-label") && !d.hasAttribute("aria-labelledby")) {
+    const h = d.querySelector("h1, h2, h3");
+    const text = h?.textContent?.trim();
+    if (text) d.setAttribute("aria-label", text.slice(0, 80));
+  }
 }
 
 function closed(el: HTMLElement) {
