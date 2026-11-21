@@ -6,7 +6,7 @@
 //   - plurals by each language's own rules: key_one, key_other (and key_few, key_many, key_two,
 //     key_zero where the language has them), picked with Intl.PluralRules from `count`.
 // docs/translating.md says how to add or fix a language.
-import { useSyncExternalStore } from "react";
+import { Fragment, createElement, useSyncExternalStore, type ReactNode } from "react";
 import en from "./locales/en.json";
 
 type Dict = { [k: string]: string | Dict };
@@ -76,6 +76,20 @@ export function t(key: string, vars?: Vars): string {
   if (own !== undefined) return fill(own, lang, vars);
   const base = find(en as Dict, "en", key, vars);
   return fill(base ?? key, "en", vars);
+}
+
+/** Like t(), but values can be components (a link, bold text…): "Show the map as of {{date}}" with
+ *  { date: <b>…</b> } gives the sentence with the bold date where the language puts it. */
+export function tx(key: string, vars: Record<string, ReactNode>): ReactNode {
+  const plain: Vars = {};
+  for (const [k, v] of Object.entries(vars)) if (typeof v === "string" || typeof v === "number") plain[k] = v;
+  const text = t(key, { ...plain, ...Object.fromEntries(Object.keys(vars).filter((k) => !(k in plain)).map((k) => [k, `\u0000${k}\u0000`])) });
+  const parts = text.split("\u0000");
+  return createElement(
+    Fragment,
+    null,
+    ...parts.map((part, i) => (i % 2 ? createElement(Fragment, { key: i }, vars[part]) : part)),
+  );
 }
 
 /** The current language's code. */

@@ -3,6 +3,7 @@
 // logs), and soft "circle" outlines around the groups you create. Circles can
 // overlap. Drag a person into a circle outline (or onto a circle in the
 // sidebar) to add them. Map options change how people and lines are drawn.
+import { t as tr } from "../i18n";
 import { mapStats, noteFrame } from "../diag";
 import * as d3 from "d3";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -617,7 +618,7 @@ export function GraphView() {
         const byScreen = perf.fps === 0 && cap === perf.screenHz;
         const capped = cap !== Infinity && !byScreen && fps >= cap - 3 && fps <= cap + 3;
         fpsRef.current.textContent =
-          `${fps} fps · draw ${(a.drawMs / a.frames).toFixed(1)} ms · slowest ${Math.round(a.worst)} ms` + (capped ? ` · limited to ${cap} fps (Settings → Frame rate)` : "");
+          tr("map.fps", { fps, draw: (a.drawMs / a.frames).toFixed(1), worst: Math.round(a.worst) }) + (capped ? tr("map.fpsLimited", { cap }) : "");
       }
       fpsAcc.current = { since: t0, frames: 0, drawMs: 0, worst: 0, last: t0 };
     }
@@ -1282,7 +1283,7 @@ export function GraphView() {
       if (labelled && isMatch && !(card && n.kind !== "me")) {
         const px = n.kind === "me" ? 13 : 12;
         const fs = px / t.k;
-        const name = n.kind === "me" ? "You" : f.displayName;
+        const name = n.kind === "me" ? tr("map.you") : f.displayName;
         const below = card ? n.hh : n.r;
         const fill = n.kind === "other" ? PAL.sub : n.kind === "me" ? PAL.accent : PAL.label;
         drawLabel(ctx, name, n.x, n.y + below + 4 / t.k + fs, t.k, px, 500, fill, PAL.outline, 3, dpr);
@@ -2018,7 +2019,7 @@ export function GraphView() {
       }
       setTooltip({ id, x: sx, y: sy } as { id: string; x: number; y: number });
       const st = getState();
-      setKbName(st.cache.friends[n.id]?.displayName ?? (st.cache.me?.id === n.id ? "You" : (st.cache.others?.[n.id]?.displayName ?? "Someone")));
+      setKbName(st.cache.friends[n.id]?.displayName ?? (st.cache.me?.id === n.id ? tr("map.you") : (st.cache.others?.[n.id]?.displayName ?? tr("map.someone"))));
       requestDraw();
     };
     const DIRS: Record<string, Dir> = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" };
@@ -2096,22 +2097,22 @@ export function GraphView() {
         className="graph-canvas"
         tabIndex={0}
         role="application"
-        aria-label="Friend map. Arrow keys move between people, Enter opens a profile, plus and minus zoom."
+        aria-label={tr("map.friendMapArrowKeysMove")}
       />
       <div className="sr-only" aria-live="polite">
         {kbName}
       </div>
       {map.showFps && (
         <div ref={fpsRef} className="fps-readout" aria-live="off">
-          measuring…
+          {tr("map.measuring")}
         </div>
       )}
-      {empty && <div className="graph-empty">No friends loaded yet. They'll appear here after the first sync.</div>}
+      {empty && <div className="graph-empty">{tr("map.noFriendsLoadedYetThey")}</div>}
       {noMutualData && !wantsTogether && (
-        <div className="graph-hint">Connections appear as mutual-friend data loads (one request per friend, about a second each).</div>
+        <div className="graph-hint">{tr("map.connectionsAppearAsMutualFriend")}</div>
       )}
       {wantsTogether && !empty && (
-        <div className="graph-hint">No time-together data from game logs yet, so lines show mutual friends for now.</div>
+        <div className="graph-hint">{tr("map.noTimeTogetherDataFrom")}</div>
       )}
       {tipFriend && tooltip && map.hoverCard && map.nodeStyle !== "fullcard" && (
         <div className="hover-card" ref={hoverCardRef} style={{ left: -9999, top: -9999 }}>
@@ -2154,25 +2155,25 @@ export function GraphView() {
         <div className="time-travel-banner">
           <Icon name="clock" size={14} /> The map as of {new Date(travelAt).toLocaleDateString()} ({travel?.size ?? 0} friends then)
           <button className="btn small" onClick={() => setState({ timeTravel: null })}>
-            Back to now
+            {tr("map.backToNow")}
           </button>
         </div>
       )}
       <div className="graph-controls">
         <div className="zoom-btns">
-          <button className="icon-btn" title="Zoom in (+)" onClick={() => zoomBy(1.4)}>
+          <button className="icon-btn" title={tr("map.zoomIn")} onClick={() => zoomBy(1.4)}>
             <Icon name="plus" />
           </button>
-          <button className="icon-btn" title="Zoom out (−)" onClick={() => zoomBy(1 / 1.4)}>
+          <button className="icon-btn" title={tr("map.zoomOut")} onClick={() => zoomBy(1 / 1.4)}>
             <Icon name="minus" />
           </button>
-          <button className="icon-btn" title="Fit to screen (0)" onClick={() => fit()}>
+          <button className="icon-btn" title={tr("map.fitToScreen0")} onClick={() => fit()}>
             <Icon name="fit" />
           </button>
         </div>
         <button
           className="btn small"
-          title="What the ring around each person shows"
+          title={tr("map.whatTheRingAroundEach")}
           onClick={() => updateSettings({ ringMode: getState().settings.ringMode === "status" ? "trust" : "status" })}
         >
           Ring: {settings.ringMode === "status" ? "status" : "trust rank"}
@@ -2180,7 +2181,7 @@ export function GraphView() {
         {!card && (
           <button
             className="btn small"
-            title="Name labels"
+            title={tr("map.nameLabels")}
             onClick={() => {
               const order = ["auto", "always", "never"] as const;
               const next = order[(order.indexOf(getState().settings.showLabels) + 1) % 3];
@@ -2190,7 +2191,7 @@ export function GraphView() {
             Names: {settings.showLabels}
           </button>
         )}
-        <button className={`btn small keep ${optionsOpen ? "active" : ""}`} title="Map options" onClick={() => setOptionsOpen(!optionsOpen)}>
+        <button className={`btn small keep ${optionsOpen ? "active" : ""}`} title={tr("map.mapOptions")} onClick={() => setOptionsOpen(!optionsOpen)}>
           <Icon name="sliders" size={15} /> Map options
         </button>
       </div>
@@ -2227,12 +2228,12 @@ function Legend({
     ringMode === "status"
       ? (
           [
-            ["join me", "Join me"],
-            ["active", "Online"],
-            ["ask me", "Ask me"],
-            ["busy", "Busy"],
-            ["web", "Website/app"],
-            ["offline", "Offline"],
+            ["join me", tr("filters.joinMe")],
+            ["active", tr("filters.online")],
+            ["ask me", tr("filters.askMe")],
+            ["busy", tr("filters.busy")],
+            ["web", tr("filters.web")],
+            ["offline", tr("filters.offline")],
           ] as const
         ).map(([key, label]) => ({
           color: STATUS_COLORS[key as keyof typeof STATUS_COLORS],
@@ -2242,7 +2243,7 @@ function Legend({
         }))
       : [...TRUST_RANKS].reverse().map((r) => ({
           color: r.color,
-          label: r.label.replace(" User", ""),
+          label: tr(`trustShort.${r.key}`),
           patch: () => trustToggle(r.key),
           active: filters.trust.includes(r.key),
         }));
@@ -2252,7 +2253,7 @@ function Legend({
     <div className="legend">
       <div className={`legend-row ${anyActive ? "filtering" : ""}`}>
         {items.map((it) => (
-          <FilterChip key={it.label} patch={it.patch} active={it.active} className="legend-item" title={`Show only ${it.label} (click to toggle)`}>
+          <FilterChip key={it.label} patch={it.patch} active={it.active} className="legend-item" title={tr("map.showOnly", { name: it.label })}>
             <span className="dot" style={{ background: it.color }} />
             {it.label}
           </FilterChip>
@@ -2262,23 +2263,23 @@ function Legend({
             patch={() => ({ favoritesOnly: !getState().filters.favoritesOnly })}
             active={filters.favoritesOnly}
             className="legend-item"
-            title="Only favorites (click to toggle)"
+            title={tr("map.onlyFavoritesClickToToggle")}
           >
-            <span className="star">★</span>Favorite
+            <span className="star">★</span>{tr("map.favorite")}
           </FilterChip>
         )}
-        {sizeBy !== "same" && <span title="Bigger = more">◯ size = {sizeBy === "mutuals" ? "mutuals" : "time together"}</span>}
+        {sizeBy !== "same" && <span title={tr("map.bigger")}>{sizeBy === "mutuals" ? tr("map.sizeMutuals") : tr("map.sizeTogether")}</span>}
       </div>
       {colored && (
         <div
           className="legend-row"
           title={
             lineMode === "together"
-              ? "Line color = hours the two spent in the same instance (from your game logs)"
-              : "Line color = how many friends the two connected people have in common (among your friends)"
+              ? tr("map.lineColorTogether")
+              : tr("map.lineColorShared")
           }
         >
-          <span className="legend-title">{lineMode === "together" ? "Lines · hours together" : "Lines · friends in common"}</span>
+          <span className="legend-title">{lineMode === "together" ? tr("map.linesTogether") : tr("map.linesShared")}</span>
           {EDGE_RGB.map((c, i) => (
             <span key={i}>
               <span className="swatch-line" style={{ background: rgba(c, 0.95) }} />
@@ -2293,14 +2294,14 @@ function Legend({
 
 /** "You" / "Not a friend · in your instance · friend of A, B" for hover cards. */
 function relationLine(id: string, kind: "me" | "other" | null, here: boolean, info: OtherInfo | undefined, cache: Cache): string {
-  if (kind === "me") return "You";
+  if (kind === "me") return tr("map.you");
   const parts: string[] = [];
-  if (kind === "other") parts.push("Not a friend yet");
-  if (here) parts.push("in your instance");
-  if (info?.met) parts.push(`${fmtHours(info.met.secs)} together`);
+  if (kind === "other") parts.push(tr("map.notFriendYet"));
+  if (here) parts.push(tr("map.inYourInstance"));
+  if (info?.met) parts.push(tr("map.together", { time: fmtHours(info.met.secs) }));
   const via = (info?.via ?? []).map((id) => cache.friends[id]?.displayName).filter(Boolean) as string[];
   const mutual = kind === "other" ? (cache.mutuals[id]?.count ?? 0) : 0;
-  if (via.length) parts.push(`friend of ${via.slice(0, 2).join(", ")}${via.length > 2 ? ` +${via.length - 2}` : ""}`);
-  else if (mutual) parts.push(`${mutual} mutual`);
+  if (via.length) parts.push(tr("map.friendOf", { names: `${via.slice(0, 2).join(", ")}${via.length > 2 ? ` +${via.length - 2}` : ""}` }));
+  else if (mutual) parts.push(tr("map.mutual", { count: mutual }));
   return parts.join(" · ");
 }

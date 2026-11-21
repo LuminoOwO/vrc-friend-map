@@ -1,3 +1,4 @@
+import { language, t, tx } from "../i18n";
 import { defaultMap, setState, updateMap, updateSettings, useApp } from "../store";
 import type { Gravity, MapSettings, NodeStyle } from "../types";
 import { Icon } from "./Icon";
@@ -6,10 +7,10 @@ import { mePinned, unpinMe } from "../mapstate";
 import { Range } from "./Range";
 
 const STYLES: { value: NodeStyle; label: string; hint: string }[] = [
-  { value: "dot", label: "Dot", hint: "Small colored dots. Fastest with big friend lists." },
-  { value: "icon", label: "Picture", hint: "Round profile pictures (default)." },
-  { value: "card", label: "Card", hint: "Compact cards with name and status." },
-  { value: "fullcard", label: "Full card", hint: "The whole player card: banner, picture, name, status, rank, mutuals and circles." },
+  { value: "dot", label: "mapOptions.styleDot", hint: "mapOptions.styleDotHint" },
+  { value: "icon", label: "mapOptions.stylePicture", hint: "mapOptions.stylePictureHint" },
+  { value: "card", label: "mapOptions.styleCard", hint: "mapOptions.styleCardHint" },
+  { value: "fullcard", label: "mapOptions.styleFull", hint: "mapOptions.styleFullHint" },
 ];
 
 function Slider({
@@ -48,153 +49,152 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
   const round = map.nodeStyle === "dot" || map.nodeStyle === "icon";
 
   return (
-    <div className="map-options" role="dialog" aria-label="Map options">
+    <div className="map-options" role="dialog" aria-label={t("mapOptions.mapOptions")}>
       <div className="map-options-head">
-        <b>Map options</b>
-        <button className="icon-btn tiny" title="Close" onClick={onClose}>
+        <b>{t("mapOptions.mapOptions")}</b>
+        <button className="icon-btn tiny" title={t("mapOptions.close")} onClick={onClose}>
           <Icon name="close" size={14} />
         </button>
       </div>
 
       <MePinned />
       <div className="opt-group">
-        <div className="opt-title">People</div>
-        <div className="segmented" role="radiogroup" aria-label="How people are drawn">
+        <div className="opt-title">{t("mapOptions.people")}</div>
+        <div className="segmented" role="radiogroup" aria-label={t("mapOptions.howPeopleAreDrawn")}>
           {STYLES.map((s) => (
-            <button key={s.value} className={map.nodeStyle === s.value ? "on" : ""} title={s.hint} role="radio" aria-checked={map.nodeStyle === s.value} onClick={() => set({ nodeStyle: s.value })}>
-              {s.label}
+            <button key={s.value} className={map.nodeStyle === s.value ? "on" : ""} title={t(s.hint)} role="radio" aria-checked={map.nodeStyle === s.value} onClick={() => set({ nodeStyle: s.value })}>
+              {t(s.label)}
             </button>
           ))}
         </div>
-        <Slider label="Size" value={map.nodeScale} min={0.5} max={2.5} step={0.05} onChange={(v) => set({ nodeScale: v })} />
+        <Slider label={t("mapOptions.size")} value={map.nodeScale} min={0.5} max={2.5} step={0.05} onChange={(v) => set({ nodeScale: v })} />
         {round && (
           <label className="opt-row">
-            <span>Size by</span>
+            <span>{t("mapOptions.sizeBy")}</span>
             <select value={map.sizeBy} onChange={(e) => set({ sizeBy: e.target.value as MapSettings["sizeBy"] })}>
-              <option value="mutuals">Mutual friends</option>
+              <option value="mutuals">{t("mapOptions.mutualFriends")}</option>
               <option value="together" disabled={!hasLogData}>
-                Time together (game logs)
+                {t("mapOptions.timeTogetherGameLogs")}
               </option>
-              <option value="same">Same for everyone</option>
+              <option value="same">{t("mapOptions.sameForEveryone")}</option>
             </select>
           </label>
         )}
         <label className="opt-row">
-          <span>Ring / accent</span>
+          <span>{t("mapOptions.ringAccent")}</span>
           <select value={ringMode} onChange={(e) => updateSettings({ ringMode: e.target.value as "status" | "trust" })}>
-            <option value="status">Online status</option>
-            <option value="trust">Trust rank</option>
+            <option value="status">{t("mapOptions.onlineStatus")}</option>
+            <option value="trust">{t("mapOptions.trustRank")}</option>
           </select>
         </label>
         {round && (
           <label className="opt-row">
-            <span>Names</span>
+            <span>{t("mapOptions.names")}</span>
             <select value={showLabels} onChange={(e) => updateSettings({ showLabels: e.target.value as "auto" | "always" | "never" })}>
-              <option value="auto">When zoomed in</option>
-              <option value="always">Always</option>
-              <option value="never">Only on hover</option>
+              <option value="auto">{t("mapOptions.whenZoomedIn")}</option>
+              <option value="always">{t("mapOptions.always")}</option>
+              <option value="never">{t("mapOptions.onlyOnHover")}</option>
             </select>
           </label>
         )}
         <label className="opt-row">
-          <span>Not matching filters</span>
+          <span>{t("mapOptions.notMatchingFilters")}</span>
           <select value={dimMode} onChange={(e) => updateSettings({ dimMode: e.target.value as "dim" | "hide" })}>
-            <option value="dim">Dim</option>
-            <option value="hide">Hide</option>
+            <option value="dim">{t("mapOptions.dim")}</option>
+            <option value="hide">{t("mapOptions.hide")}</option>
           </select>
         </label>
         <label className="check small">
           <input type="checkbox" checked={map.showStars} onChange={(e) => set({ showStars: e.target.checked })} />
-          Star on favorites
+          {t("mapOptions.starOnFavorites")}
         </label>
         <label className="check small">
           <input type="checkbox" checked={map.showShield} onChange={(e) => set({ showShield: e.target.checked })} />
-          Trust-rank shield next to names on cards
+          {t("mapOptions.trustRankShieldNextTo")}
         </label>
         <label className="check small">
           <input type="checkbox" checked={map.showMe} onChange={(e) => set({ showMe: e.target.checked })} />
-          Show me (between the friends I'm closest to)
+          {t("mapOptions.showMeBetweenTheFriends")}
         </label>
         <label className="opt-row">
-          <span>Not friends yet</span>
+          <span>{t("mapOptions.notFriendsYet")}</span>
           <select value={map.showOthers} onChange={(e) => set({ showOthers: e.target.value as MapSettings["showOthers"] })}>
-            <option value="off">Don't show</option>
-            <option value="here">In my instance now</option>
-            <option value="met">+ people I've spent time with</option>
-            <option value="all">+ friends of friends (shared lists)</option>
+            <option value="off">{t("mapOptions.donTShow")}</option>
+            <option value="here">{t("mapOptions.inMyInstanceNow")}</option>
+            <option value="met">{t("mapOptions.peopleIVeSpentTime")}</option>
+            <option value="all">{t("mapOptions.friendsOfFriendsSharedLists")}</option>
           </select>
         </label>
         <p className="small muted opt-hint">
-          They have a dashed outline and faint lines to the friends you share. "Spent time with" uses your game logs; "friends of friends" needs
-          friend lists that friends shared with you.
+          {t("mapOptions.othersHint")}
         </p>
         <label className="check small">
           <input type="checkbox" checked={map.showFps} onChange={(e) => set({ showFps: e.target.checked })} />
-          Show frame rate
+          {t("mapOptions.showFrameRate")}
         </label>
         {map.nodeStyle !== "fullcard" && (
           <label className="check small">
             <input type="checkbox" checked={map.hoverCard} onChange={(e) => set({ hoverCard: e.target.checked })} />
-            Show the full player card when pointing at someone
+            {t("mapOptions.showTheFullPlayerCard")}
           </label>
         )}
       </div>
 
       <div className="opt-group">
-        <div className="opt-title">Lines</div>
+        <div className="opt-title">{t("mapOptions.lines")}</div>
         <label className="opt-row">
-          <span>Show</span>
+          <span>{t("mapOptions.show")}</span>
           <select value={map.lines} onChange={(e) => set({ lines: e.target.value as MapSettings["lines"] })}>
-            <option value="shared">Mutual friends, colored by friends in common</option>
-            <option value="plain">Mutual friends, one color</option>
-            <option value="together">Time together (game logs){hasLogData ? "" : " – no data yet"}</option>
-            <option value="none">No lines</option>
+            <option value="shared">{t("mapOptions.mutualFriendsColoredByFriends")}</option>
+            <option value="plain">{t("mapOptions.mutualFriendsOneColor")}</option>
+            <option value="together">{hasLogData ? t("mapOptions.timeTogetherGameLogs") : t("mapOptions.timeTogetherNoData")}</option>
+            <option value="none">{t("mapOptions.noLines")}</option>
           </select>
         </label>
-        <Slider label="Thickness" value={map.lineWidth} min={0.3} max={3} step={0.05} onChange={(v) => set({ lineWidth: v })} />
-        <Slider label="Visibility" value={map.lineOpacity} min={0.2} max={3} step={0.05} onChange={(v) => set({ lineOpacity: v })} />
+        <Slider label={t("mapOptions.thickness")} value={map.lineWidth} min={0.3} max={3} step={0.05} onChange={(v) => set({ lineWidth: v })} />
+        <Slider label={t("mapOptions.visibility")} value={map.lineOpacity} min={0.2} max={3} step={0.05} onChange={(v) => set({ lineOpacity: v })} />
         <label className="check small">
           <input type="checkbox" checked={map.focusLinesOnly} onChange={(e) => set({ focusLinesOnly: e.target.checked })} />
-          Only show lines of the person I point at or select
+          {t("mapOptions.onlyShowLinesOfThe")}
         </label>
       </div>
 
       <div className="opt-group">
-        <div className="opt-title">Layout & circles</div>
+        <div className="opt-title">{t("mapOptions.layoutCircles")}</div>
         <label className="opt-row">
-          <span>Gravity</span>
+          <span>{t("mapOptions.gravity")}</span>
           <select value={map.gravity} onChange={(e) => set({ gravity: e.target.value as Gravity })}>
-            <option value="mutuals">Loners float in a ring</option>
-            <option value="loners">Loners gather in one spot</option>
-            <option value="center">Everyone close together</option>
-            <option value="circles">Each circle (and loners) in its own spot</option>
+            <option value="mutuals">{t("mapOptions.lonersFloatInARing")}</option>
+            <option value="loners">{t("mapOptions.lonersGatherInOneSpot")}</option>
+            <option value="center">{t("mapOptions.everyoneCloseTogether")}</option>
+            <option value="circles">{t("mapOptions.eachCircleAndLonersIn")}</option>
           </select>
         </label>
         <label className="opt-row">
-          <span>Slowly turn the map</span>
+          <span>{t("mapOptions.slowlyTurnTheMap")}</span>
           <select value={map.orbit} onChange={(e) => set({ orbit: Number(e.target.value) })}>
-            <option value={0}>Off</option>
-            <option value={1}>Slow</option>
-            <option value={2}>Medium</option>
-            <option value={3}>Fast</option>
+            <option value={0}>{t("mapOptions.off")}</option>
+            <option value={1}>{t("mapOptions.slow")}</option>
+            <option value={2}>{t("mapOptions.medium")}</option>
+            <option value={3}>{t("mapOptions.fast")}</option>
           </select>
         </label>
         {map.orbit > 0 && (
           <label className="opt-row">
-            <span>Direction</span>
+            <span>{t("mapOptions.direction")}</span>
             <select value={map.orbitDir} onChange={(e) => set({ orbitDir: Number(e.target.value) === -1 ? -1 : 1 })}>
-              <option value={1}>Clockwise</option>
-              <option value={-1}>Counter-clockwise</option>
+              <option value={1}>{t("mapOptions.clockwise")}</option>
+              <option value={-1}>{t("mapOptions.counterClockwise")}</option>
             </select>
           </label>
         )}
-        <Slider label="Spacing" value={map.spacing} min={0.5} max={2.5} step={0.05} onChange={(v) => set({ spacing: v })} />
-        <Slider label="Pull circle members together" value={map.groupPull} min={0} max={3} step={0.1} onChange={(v) => set({ groupPull: v })} format={(v) => (v === 0 ? "off" : `${Math.round(v * 100)}%`)} />
+        <Slider label={t("mapOptions.spacing")} value={map.spacing} min={0.5} max={2.5} step={0.05} onChange={(v) => set({ spacing: v })} />
+        <Slider label={t("mapOptions.pullCircleMembersTogether")} value={map.groupPull} min={0} max={3} step={0.1} onChange={(v) => set({ groupPull: v })} format={(v) => (v === 0 ? t("mapOptions.off") : `${Math.round(v * 100)}%`)} />
         <label className="check small">
           <input type="checkbox" checked={map.hulls} onChange={(e) => set({ hulls: e.target.checked })} />
-          Draw circle outlines
+          {t("mapOptions.drawCircleOutlines")}
         </label>
-        {map.hulls && <Slider label="Outline strength" value={map.hullOpacity} min={0.2} max={3} step={0.05} onChange={(v) => set({ hullOpacity: v })} />}
+        {map.hulls && <Slider label={t("mapOptions.outlineStrength")} value={map.hullOpacity} min={0.2} max={3} step={0.05} onChange={(v) => set({ hullOpacity: v })} />}
       </div>
 
       <TimeTravel />
@@ -204,7 +204,7 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
           <Icon name="fit" size={14} /> Fit to screen
         </button>
         <button className="btn small" onClick={() => updateMap(defaultMap())}>
-          Reset map options
+          {t("mapOptions.resetMapOptions")}
         </button>
       </div>
     </div>
@@ -220,10 +220,10 @@ function TimeTravel() {
   const value = at ? Math.round((Date.now() - at) / 864e5) : 0;
   return (
     <div className="opt-group">
-      <span className="opt-title">Time travel</span>
+      <span className="opt-title">{t("mapOptions.timeTravel")}</span>
       <label className="opt-slider">
         <span>
-          Show the map as of <b>{at ? new Date(at).toLocaleDateString() : "now"}</b>
+          {tx("mapOptions.showAsOf", { date: <b>{at ? new Date(at).toLocaleDateString(language()) : t("mapOptions.now")}</b> })}
         </span>
         <Range pct={false}
           min={0}
@@ -239,10 +239,10 @@ function TimeTravel() {
       </label>
       {at && (
         <button className="btn small" onClick={() => setState({ timeTravel: null })}>
-          Back to now
+          {t("mapOptions.backToNow")}
         </button>
       )}
-      <span className="small muted">Who was your friend then (since {new Date(since).toLocaleDateString()}). People you're no longer friends with aren't on the map.</span>
+      <span className="small muted">{t("mapOptions.timeTravelNote", { date: new Date(since).toLocaleDateString(language()) })}</span>
     </div>
   );
 }

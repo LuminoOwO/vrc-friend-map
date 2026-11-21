@@ -1,6 +1,7 @@
 // Game-log reading on desktop: finds VRChat's log folders, scans them on a
 // timer, and turns the stored history into time-together statistics and
 // friend group suggestions.
+import { t } from "./i18n";
 import { useMemo } from "react";
 import { backend, isTauri } from "./backend";
 import { useDerived } from "./derived";
@@ -218,7 +219,7 @@ export function personTime(stats: PresenceStats | null, id: string) {
 
 export function fmtHours(secs: number): string {
   const h = secs / 3600;
-  if (h < 1) return `${Math.max(1, Math.round(secs / 60))} min`;
-  if (h < 10) return `${h.toFixed(1).replace(/\.0$/, "")} h`;
-  return `${Math.round(h)} h`;
+  if (h < 1) return t("hours.min", { count: Math.max(1, Math.round(secs / 60)) });
+  if (h < 10) return t("hours.h", { count: Math.round(h * 10) / 10 });
+  return t("hours.h", { count: Math.round(h) });
 }
