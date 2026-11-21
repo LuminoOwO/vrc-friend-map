@@ -4,6 +4,7 @@
 // the current world (who's there, open or launch it), badges and groups, plus
 // this app's circles, time together and shared friends. One column on narrow
 // screens.
+import { listJoin, t as tr } from "../i18n";
 import { openImage, type ViewerItem } from "./ImageViewer";
 import { betaActive } from "../ui2/active";
 import { removedByMe } from "../notifications";
@@ -63,7 +64,7 @@ export function parseLocation(loc: string) {
   else if (tags.some((t) => t.startsWith("private("))) type = tags.includes("canRequestInvite") ? "Invite+" : "Invite";
   else if (tags.some((t) => t.startsWith("group("))) {
     const access = tag("groupAccessType");
-    type = access === "public" ? "Group Public" : access === "plus" ? "Group+" : "Group";
+    type = access === "public" ? tr("profile.groupPublic") : access === "plus" ? "Group+" : "Group";
   }
   const region = tag("region") ?? "us";
   return { world, instance, type, region, flag: REGION_FLAG[region] ?? "🌐" };
@@ -101,14 +102,14 @@ function StatusArt({ kind }: { kind: string }) {
 function statusCard(f: Friend, p: Presence, now: number): { icon: string; text: string; sub?: string } {
   if (p === "offline") {
     const seen = lastSeen(f);
-    return { icon: "moon", text: seen ? `Offline for ${duration(now - seen)}` : "Offline" };
+    return { icon: "moon", text: seen ? tr("profile.offlineForValue", { value: duration(now - seen) }) : tr("status.offline") };
   }
-  if (p === "web") return { icon: "globe", text: "Active on the website or app", sub: "Not in VRChat right now" };
+  if (p === "web") return { icon: "globe", text: tr("profile.activeOnTheWebsiteOr"), sub: tr("profile.notInVrchatRightNow") };
   const since = toTime(f.last_login);
-  const sub = since ? `Online for ${duration(now - since)}` : undefined;
-  if (f.location === "private") return { icon: "lock", text: "In a private world", sub };
-  if (f.location === "traveling") return { icon: "globe", text: "Traveling to a world", sub };
-  return { icon: "globe", text: "Online", sub };
+  const sub = since ? tr("profile.onlineForValue", { value: duration(now - since) }) : undefined;
+  if (f.location === "private") return { icon: "lock", text: tr("profile.inAPrivateWorld"), sub };
+  if (f.location === "traveling") return { icon: "globe", text: tr("profile.travelingToAWorld"), sub };
+  return { icon: "globe", text: tr("status.online"), sub };
 }
 
 export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean }) {
@@ -209,14 +210,14 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
     if (!url) return -1;
     const i = pics.findIndex((p) => p.url === url);
     if (i >= 0) return i;
-    pics.push({ url, title: `${f.displayName} – ${title}` });
+    pics.push({ url, title: tr("profile.nameTitle", { name: f.displayName, title }) });
     return pics.length - 1;
   };
   const iconIdx = picAt(iconUrl(f), "profile picture");
   const bannerIdx = picAt(bannerUrl(f), "banner");
   picAt(f.currentAvatarImageUrl, "avatar");
   const worldPic = world?.imageUrl || world?.thumbnailImageUrl;
-  const worldIdx = worldPic ? picAt(worldPic, world?.name ? `world ${world.name}` : "world") : -1;
+  const worldIdx = worldPic ? picAt(worldPic, world?.name ? tr("profile.worldName", { name: world.name }) : "world") : -1;
   const show = (i: number) => (e: React.MouseEvent | React.KeyboardEvent) => {
     if ("key" in e && e.key !== "Enter" && e.key !== " ") return;
     e.stopPropagation();
@@ -227,11 +228,11 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const isHere = othersHere(here, cache.me?.id).some((x) => x.id === id);
   const viaLists = relation === "other" ? local.imports.filter((l) => l.owner.id && cache.friends[l.owner.id] && l.mode === "full" && l.friends?.some((x) => x.id === id)) : [];
   const close = () => setState({ selectedId: null });
-  const open = (url: string) => backend.openUrl(url).catch(() => showToast("Couldn't open the link"));
+  const open = (url: string) => backend.openUrl(url).catch(() => showToast(tr("profile.couldnTOpenTheLink")));
   const copy = (text: string) => {
     navigator.clipboard?.writeText(text).then(
-      () => showToast("Link copied"),
-      () => showToast("Couldn't copy the link"),
+      () => showToast(tr("profile.linkCopied")),
+      () => showToast(tr("profile.couldnTCopyTheLink")),
     );
   };
   const longBio = (detail?.bio ?? "").split("\n").length > 4 || (detail?.bio ?? "").length > 260;
@@ -245,7 +246,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
       style={{ background: f.bannerColor || "#2a9fcc" }}
       role={bannerIdx >= 0 ? "button" : undefined}
       tabIndex={bannerIdx >= 0 ? 0 : undefined}
-      title={bannerIdx >= 0 ? "View full size" : undefined}
+      title={bannerIdx >= 0 ? tr("profile.viewFullSize") : undefined}
       onClick={show(bannerIdx)}
       onKeyDown={show(bannerIdx)}
     >
@@ -260,7 +261,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
         style={{ borderColor: sColor }}
         role={iconIdx >= 0 ? "button" : undefined}
         tabIndex={iconIdx >= 0 ? 0 : undefined}
-        title={iconIdx >= 0 ? "View full size" : undefined}
+        title={iconIdx >= 0 ? tr("profile.viewFullSize") : undefined}
         onClick={show(iconIdx)}
         onKeyDown={show(iconIdx)}
       >
@@ -276,8 +277,8 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
     <h2>
       <span data-flip="name">{f.displayName}</span>
       {supporter && (
-        <span className="vrcplus-badge" data-flip-fade title="VRC+ supporter">
-          VRC+
+        <span className="vrcplus-badge" data-flip-fade title={tr("profile.vrcSupporter")}>
+          {tr("profile.vrc")}
         </span>
       )}
     </h2>
@@ -290,15 +291,15 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
         </span>
       )}
       {detail?.ageVerified && (
-        <span className="verified" data-flip-fade title="Age verified by VRChat">
-          <Icon name="idcard" size={15} /> Verified 18+
+        <span className="verified" data-flip-fade title={tr("profile.ageVerifiedByVrchat")}>
+          <Icon name="idcard" size={15} /> {tr("profile.verified18")}
         </span>
       )}
       <span className="trust" data-flip="trust" style={{ color: trust.color }}>
         <Icon name="shield" size={14} /> {trust.label}
       </span>
       {representing && (
-        <button className="group-pill" data-flip-fade title="Representing this group" onClick={() => open(`https://vrchat.com/home/group/${representing.groupId}`)}>
+        <button className="group-pill" data-flip-fade title={tr("profile.representingThisGroup")} onClick={() => open(`https://vrchat.com/home/group/${representing.groupId}`)}>
           {representing.iconUrl && <img src={imgSrc(representing.iconUrl)} alt="" />}
           {representing.name}
         </button>
@@ -308,14 +309,14 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   return (
     <aside ref={rootRef} className={`profile ${popup ? "popup" : ""} ${hero ? "ui2-profile" : ""}`} role={popup ? "dialog" : undefined} aria-label={`Profile of ${f.displayName}`}>
       {hero ? (
-        <button className="ui2-close" data-flip-fade title="Close (Esc)" aria-label="Close profile" onClick={close}>
+        <button className="ui2-close" data-flip-fade title={tr("profile.closeEsc")} aria-label={tr("profile.closeProfile")} onClick={close}>
           <span className="ui2-close-x">
             <Icon name="close" size={20} />
           </span>
-          <span className="ui2-close-esc">ESC</span>
+          <span className="ui2-close-esc">{tr("profile.esc")}</span>
         </button>
       ) : (
-        <button className="icon-btn profile-close" data-flip-fade title="Close (Esc)" onClick={close}>
+        <button className="icon-btn profile-close" data-flip-fade title={tr("profile.closeEsc")} onClick={close}>
           <Icon name="close" />
         </button>
       )}
@@ -366,26 +367,26 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               )}
               {relation === "friend" && isHere && (
                 <p className="relation-here" data-flip-fade>
-                  <span className="here-dot" /> In your instance right now
+                  <span className="here-dot" /> {tr("profile.inYourInstanceRightNow2")}
                 </p>
               )}
               <div className="profile-actions" data-flip-fade>
                 {!demo && (
-                  <button className="btn" onClick={() => refreshPerson(id).then(() => loadGroups(id, true))} title="Load this profile again from VRChat">
-                    <Icon name="refresh" size={16} /> Refresh
+                  <button className="btn" onClick={() => refreshPerson(id).then(() => loadGroups(id, true))} title={tr("profile.loadThisProfileAgainFrom")}>
+                    <Icon name="refresh" size={16} /> {tr("profile.refresh")}
                   </button>
                 )}
-                <button className="btn" onClick={() => open(`https://vrchat.com/home/user/${id}`)} title="Open on vrchat.com in your browser">
-                  <Icon name="external" size={16} /> Open on vrchat.com
+                <button className="btn" onClick={() => open(`https://vrchat.com/home/user/${id}`)} title={tr("profile.openOnVrchatComIn")}>
+                  <Icon name="external" size={16} /> {tr("profile.openOnVrchatCom")}
                 </button>
-                <button className="btn" onClick={() => copy(`https://vrchat.com/home/user/${id}`)} title="Copy the profile link">
+                <button className="btn" onClick={() => copy(`https://vrchat.com/home/user/${id}`)} title={tr("profile.copyTheProfileLink")}>
                   <Icon name="link" size={16} />
                 </button>
                 {relation === "friend" && <StarButton id={id} />}
                 {relation === "friend" && <PersonMore id={id} />}
                 {relation === "me" && (
-                  <button className="btn" onClick={() => setEditing(true)} title="Change your status, bio, links, languages and look">
-                    <Icon name="settings" size={16} /> Edit profile
+                  <button className="btn" onClick={() => setEditing(true)} title={tr("profile.changeYourStatusBioLinks")}>
+                    <Icon name="settings" size={16} /> {tr("profile.editProfile")}
                   </button>
                 )}
               </div>
@@ -396,18 +397,18 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               {relation !== "me" && <BlockFlags id={id} blocked={isBlocked(cache, id)} />}
 
               <div className="profile-block" data-flip-fade>
-                <h3>About me</h3>
+                <h3>{tr("profile.aboutMe")}</h3>
                 {detail?.bio ? (
                   <>
                     <p className={`bio ${longBio && !bioOpen ? "clamped" : ""}`}>{detail.bio}</p>
                     {longBio && (
                       <button className="btn link small" onClick={() => setBioOpen(!bioOpen)}>
-                        {bioOpen ? "Show less" : "Read more"}
+                        {bioOpen ? tr("profile.showLess") : tr("profile.readMore")}
                       </button>
                     )}
                   </>
                 ) : detail && (detail.profileFetchedAt || demo) ? (
-                  <p className="muted small">Nothing written.</p>
+                  <p className="muted small">{tr("profile.nothingWritten")}</p>
                 ) : (
                   <p className="skel-lines">
                     <Skel w="92%" block />
@@ -429,7 +430,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               </div>
               {languages.length > 0 && (
                 <div className="profile-block" data-flip-fade>
-                  <h3>Languages</h3>
+                  <h3>{tr("profile.languages")}</h3>
                   <div className="chips">
                     {languages.map((l) => (
                       <span key={l} className="lang">
@@ -446,32 +447,32 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               {relation !== "me" && !demo && <PersonLog id={id} name={f.displayName} />}
               {relation === "friend" && !demo && <SafetyCode id={id} name={f.displayName} />}
               <div className="profile-block">
-                <h3 data-flip-fade>Profile</h3>
+                <h3 data-flip-fade>{tr("profile.profile")}</h3>
                 <dl className="facts with-icons">
                   <dt data-flip-fade>
-                    <PlatformIcon plat={plat} /> Platform
+                    <PlatformIcon plat={plat} /> {tr("profile.platform")}
                   </dt>
                   <dd data-flip="plat">{PLATFORM_LABEL[plat]}</dd>
                   <dt data-flip-fade>
-                    <Icon name="clock" size={15} /> Last login
+                    <Icon name="clock" size={15} /> {tr("profile.lastLogin")}
                   </dt>
                   <dd data-flip-fade>{toTime(f.last_login) ? new Date(toTime(f.last_login)).toLocaleString() : "unknown"}</dd>
                   <dt data-flip-fade>
-                    <Icon name="calendar" size={15} /> Joined VRChat
+                    <Icon name="calendar" size={15} /> {tr("profile.joinedVrchat")}
                   </dt>
                   <dd data-flip-fade>{detail?.date_joined ? fmtDate(detail.date_joined) : <Skel w="7em" />}</dd>
                   {relation !== "me" && (
                     <>
                       <dt data-flip-fade>
-                        <Icon name="users" size={15} /> Mutual friends
+                        <Icon name="users" size={15} /> {tr("profile.mutualFriends")}
                       </dt>
-                      <dd data-flip-fade>{mutual ? (mutual.hidden ? "hidden by them" : mutual.count) : <Skel w="2.5em" />}</dd>
+                      <dd data-flip-fade>{mutual ? (mutual.hidden ? tr("profile.hiddenByThem") : mutual.count) : <Skel w="2.5em" />}</dd>
                     </>
                   )}
                   {cache.favorites[id]?.length ? (
                     <>
                       <dt data-flip-fade>
-                        <Icon name="star" size={15} /> Your favorites
+                        <Icon name="star" size={15} /> {tr("profile.yourFavorites")}
                       </dt>
                       <dd data-flip-fade>{cache.favorites[id].join(", ")}</dd>
                     </>
@@ -479,7 +480,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   {inLists.length > 0 && (
                     <>
                       <dt data-flip-fade>
-                        <Icon name="share" size={15} /> Also in lists of
+                        <Icon name="share" size={15} /> {tr("profile.alsoInListsOf")}
                       </dt>
                       <dd data-flip-fade>{inLists.map((l) => l.owner.displayName).join(", ")}</dd>
                     </>
@@ -497,17 +498,17 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 className={`world-banner ${worldIdx >= 0 ? "viewable" : ""}`}
                 role="button"
                 tabIndex={0}
-                title={worldIdx >= 0 ? "View full size" : "Open this world on vrchat.com"}
+                title={worldIdx >= 0 ? tr("profile.viewFullSize") : tr("profile.openThisWorldOnVrchat")}
                 onClick={worldIdx >= 0 ? show(worldIdx) : () => open(`https://vrchat.com/home/world/${loc.world}`)}
                 onKeyDown={worldIdx >= 0 ? show(worldIdx) : undefined}
               >
                 {worldPic ? <img src={imgSrc(worldPic)} alt="" /> : <StatusArt kind="globe" />}
                 <span className="loc-pill">
-                  <Icon name="pin" size={14} /> Current Location
+                  <Icon name="pin" size={14} /> {tr("profile.currentLocation")}
                 </span>
                 <button
                   className="banner-link"
-                  title="Open this world on vrchat.com"
+                  title={tr("profile.openThisWorldOnVrchat")}
                   onClick={(e) => {
                     e.stopPropagation();
                     open(`https://vrchat.com/home/world/${loc.world}`);
@@ -518,19 +519,19 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               </div>
               <div className="world-info">
                 <h3 className="world-name">
-                  <button className="link-btn" onClick={() => setState({ openWorld: loc.world })} title="World details, your notes">
-                    {world?.name ?? (demo ? "Demo World" : <Skel w="11em" h="1em" />)}
+                  <button className="link-btn" onClick={() => setState({ openWorld: loc.world })} title={tr("profile.worldDetailsYourNotes")}>
+                    {world?.name ?? (demo ? tr("profile.demoWorld") : <Skel w="11em" h="1em" />)}
                   </button>
                 </h3>
                 <div className="world-line">
                   <span className="flag">{loc.flag}</span> {loc.instance} - {loc.type}
                 </div>
-                <div className="world-line clickable" role="button" title="Who's in this instance" onClick={() => setState({ openInstance: location })}>
-                  <Icon name="users" size={15} /> {instance ? `${instance.users} / ${instance.capacity ?? world?.capacity ?? "?"}` : world?.capacity ? `? / ${world.capacity}` : "…"}
+                <div className="world-line clickable" role="button" title={tr("profile.whoSInThisInstance")} onClick={() => setState({ openInstance: location })}>
+                  <Icon name="users" size={15} /> {instance ? tr("profile.usersValue", { users: instance.users, value: instance.capacity ?? world?.capacity ?? "?" }) : world?.capacity ? `? / ${world.capacity}` : "…"}
                   {withThem.length > 0 && (
                     <>
                       {" · "}
-                      <span className="face-stack small-faces clickable" role="button" title="Who's in this instance" onClick={() => setState({ openInstance: location })}>
+                      <span className="face-stack small-faces clickable" role="button" title={tr("profile.whoSInThisInstance")} onClick={() => setState({ openInstance: location })}>
                         {withThem.slice(0, 5).map((o) => {
                           const src = imgSrc(iconUrl(o));
                           return <span key={o.id} className="face">{src ? <img src={src} alt="" /> : o.displayName.slice(0, 1)}</span>;
@@ -563,16 +564,16 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   <button
                     className="btn"
                     disabled={demo}
-                    title="VRChat sends you an invite to this instance (works where you're allowed in); accept it in game"
-                    onClick={() => inviteMyself(location).then((err) => showToast(err ? `Couldn't invite you: ${err}` : "Invite sent to you: accept it in VRChat"))}
+                    title={tr("profile.inviteMeTitle")}
+                    onClick={() => inviteMyself(location).then((err) => showToast(err ? tr("profile.couldnTInviteYouError", { error: err }) : tr("profile.inviteSentToYouAccept")))}
                   >
-                    <Icon name="user-check" size={16} /> Invite me
+                    <Icon name="user-check" size={16} /> {tr("profile.inviteMe")}
                   </button>
-                  <button className="btn launch" onClick={() => open(`vrchat://launch?ref=vrchat.com&id=${location}`)} title="Opens VRChat on this device and goes to this instance (you may need an invite)">
-                    <Icon name="rocket" size={16} /> Launch in VRChat
+                  <button className="btn launch" onClick={() => open(`vrchat://launch?ref=vrchat.com&id=${location}`)} title={tr("profile.opensVrchatOnThisDevice")}>
+                    <Icon name="rocket" size={16} /> {tr("profile.launchInVrchat")}
                   </button>
-                  <button className="btn" onClick={() => open(`https://vrchat.com/home/launch?worldId=${loc.world}&instanceId=${location.split(":")[1] ?? ""}`)} title="Open the instance page on vrchat.com">
-                    <Icon name="external" size={16} /> Instance page
+                  <button className="btn" onClick={() => open(`https://vrchat.com/home/launch?worldId=${loc.world}&instanceId=${location.split(":")[1] ?? ""}`)} title={tr("profile.openTheInstancePageOn")}>
+                    <Icon name="external" size={16} /> {tr("profile.instancePage")}
                   </button>
                 </div>
               </div>
@@ -587,7 +588,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
 
           {badges.length > 0 && (
             <section className="pcard">
-              <h3>Badges</h3>
+              <h3>{tr("profile.badges")}</h3>
               <div className="badges">
                 {badges.map((b, i) => (
                   <img
@@ -595,8 +596,8 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                     className="viewable"
                     src={imgSrc(b.imageUrl)}
                     alt={b.name}
-                    title={b.description ? `${b.name}: ${b.description}` : b.name}
-                    onClick={() => openImage(badges.map((x) => ({ url: x.imageUrl, title: `Badge – ${x.name}` })), i)}
+                    title={b.description ? tr("profile.nameDescription", { name: b.name, description: b.description }) : b.name}
+                    onClick={() => openImage(badges.map((x) => ({ url: x.imageUrl, title: tr("profile.badgeName", { name: x.name }) })), i)}
                   />
                 ))}
               </div>
@@ -605,25 +606,25 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
 
           {groupList.length > 0 && (
             <section className="pcard">
-              <h3>Groups</h3>
+              <h3>{tr("profile.groups")}</h3>
               <ul className="group-list">
                 {groupList.slice(0, 5).map((g) => (
                   <li key={g.groupId}>
-                    <button className="group-row" onClick={() => setState({ openGroup: g.groupId })} title="Open the group">
+                    <button className="group-row" onClick={() => setState({ openGroup: g.groupId })} title={tr("profile.openTheGroup")}>
                       <span
                         className={`group-icon ${g.iconUrl ? "viewable" : ""}`}
-                        title={g.iconUrl ? "View full size" : undefined}
+                        title={g.iconUrl ? tr("profile.viewFullSize") : undefined}
                         onClick={(e) => {
                           if (!g.iconUrl) return;
                           e.stopPropagation();
-                          openImage({ url: g.iconUrl, title: `Group ${g.name} – icon` });
+                          openImage({ url: g.iconUrl, title: tr("profile.groupNameIcon", { name: g.name }) });
                         }}
                       >
                         {g.iconUrl ? <img src={imgSrc(g.iconUrl)} alt="" /> : g.name.slice(0, 1)}
                       </span>
                       <span className="group-name">{g.name}</span>
                       {g.isRepresenting && (
-                        <span className="rep" title="Representing">
+                        <span className="rep" title={tr("profile.representing")}>
                           <Icon name="bookmark" size={16} />
                         </span>
                       )}
@@ -633,7 +634,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               </ul>
               {groupList.length > 5 && (
                 <button className="btn wide" onClick={() => setGroupsOpen(true)}>
-                  View all {groupList.length}
+                  {tr("profile.viewAll", { count: groupList.length })}
                 </button>
               )}
             </section>
@@ -641,7 +642,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
 
           {relation === "friend" && (
           <section className="pcard">
-            <h3>Your circles</h3>
+            <h3>{tr("profile.yourCircles")}</h3>
             <div className="circle-toggles">
               {local.circles.map((c) => {
                 const on = c.members.includes(id);
@@ -662,7 +663,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                 setNewCircle("");
               }}
             >
-              <input value={newCircle} placeholder="New circle with this person" onChange={(e) => setNewCircle(e.target.value)} />
+              <input value={newCircle} placeholder={tr("profile.newCircleWithThisPerson")} onChange={(e) => setNewCircle(e.target.value)} />
               <button className="btn" type="submit" disabled={!newCircle.trim()}>
                 <Icon name="plus" size={16} />
               </button>
@@ -673,7 +674,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
           {(time || oftenWith.length > 0) && (
             <section className="pcard">
               <h3>
-                Time together <span className="muted small">from your game logs</span>
+                Time together <span className="muted small">{tr("profile.fromYourGameLogs")}</span>
               </h3>
               {time && (
                 <p className="small">
@@ -683,7 +684,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               )}
               {oftenWith.length > 0 && (
                 <>
-                  <div className="muted small">Often with</div>
+                  <div className="muted small">{tr("profile.oftenWith")}</div>
                   <div className="mini-list">
                     {oftenWith.map((x) => {
                       const other = cache.friends[x.a === id ? x.b : x.a];
@@ -739,19 +740,18 @@ function BioKey({ bio, userId }: { bio?: string; userId: string }) {
   if (st === "match")
     return (
       <p className="key-check ok-text">
-        <Icon name="key" size={14} /> Sharing key confirmed by their bio
+        <Icon name="key" size={14} /> {tr("profile.sharingKeyConfirmedByTheir")}
       </p>
     );
   if (st === "mismatch")
     return (
       <p className="key-check warn-text">
-        <Icon name="warn" size={14} /> The sharing key in their bio doesn't match the one a server gave you. Don't trust what you get from them
-        through servers until this is sorted out (ask them).
+        <Icon name="warn" size={14} /> {tr("profile.keyMismatch")}
       </p>
     );
   return (
     <p className="key-check muted">
-      <Icon name="key" size={14} /> Has a sharing key in their bio (you haven't received anything from them yet).
+      <Icon name="key" size={14} /> {tr("profile.hasASharingKeyIn")}
     </p>
   );
 }
@@ -761,12 +761,12 @@ function BioKey({ bio, userId }: { bio?: string; userId: string }) {
 /** Which of your accounts are friends with them (shown when it's more than just the main one). */
 function KnownBy({ ids }: { ids: string[] }) {
   const list = useApp((s) => s.settings.accounts.list);
-  const me = useApp((s) => s.cache.me?.displayName ?? "Main account");
-  const names = ids.map((a) => (a === MAIN ? me : (list.find((l) => l.id === a)?.name ?? "Other account")));
+  const me = useApp((s) => s.cache.me?.displayName ?? tr("profile.mainAccount"));
+  const names = ids.map((a) => (a === MAIN ? me : (list.find((l) => l.id === a)?.name ?? tr("profile.otherAccount"))));
   return (
     <p className="small known-by" data-flip-fade>
-      <Icon name="users" size={14} /> Friends with {names.join(" and ")}
-      {ids.length >= 2 && <span className="chip">crossover</span>}
+      <Icon name="users" size={14} /> {tr("card.friendsWith", { names: listJoin(names) })}
+      {ids.length >= 2 && <span className="chip">{tr("profile.crossover")}</span>}
     </p>
   );
 }
@@ -774,10 +774,10 @@ function KnownBy({ ids }: { ids: string[] }) {
 /** Pick which of your accounts profile actions run as. */
 function ActAs({ value, onChange }: { value: string | undefined; onChange: (v: string | undefined) => void }) {
   const list = useApp((s) => s.settings.accounts.list);
-  const me = useApp((s) => s.cache.me?.displayName ?? "Main account");
+  const me = useApp((s) => s.cache.me?.displayName ?? tr("profile.mainAccount"));
   return (
     <label className="field narrow act-as" data-flip-fade>
-      <span>Act as</span>
+      <span>{tr("profile.actAs")}</span>
       <select id="act-as" value={value ?? MAIN} onChange={(e) => onChange(e.target.value === MAIN ? undefined : e.target.value)}>
         <option value={MAIN}>{me} (main)</option>
         {list.map((a) => (
@@ -807,7 +807,7 @@ function RelationBox({ id, relation, here, via, account }: { id: string; relatio
   if (relation === "me") {
     return (
       <div className="relation-box me" data-flip-fade>
-        <Icon name="user" size={15} /> This is you. On the map you float between the friends you spend the most time with.
+        <Icon name="user" size={15} /> {tr("profile.thisIsYouOnThe")}
       </div>
     );
   }
@@ -828,49 +828,49 @@ function RelationBox({ id, relation, here, via, account }: { id: string; relatio
     if (err) setError(err);
     else {
       setStatus((s) => ({ isFriend: false, incoming: s?.incoming ?? false, outgoing: send }));
-      showToast(send ? "Friend request sent" : "Friend request cancelled");
+      showToast(send ? tr("profile.friendRequestSent") : tr("profile.friendRequestCancelled"));
     }
   };
-  const bits = ["Not a friend yet"];
-  if (here) bits.push("in your instance right now");
-  if (via.length) bits.push(`in ${via.slice(0, 2).join(" and ")}${via.length > 2 ? ` and ${via.length - 2} more` : ""}'s friend list`);
+  const bits = [tr("map.notFriendYet")];
+  if (here) bits.push(tr("profile.inYourInstanceRightNow"));
+  if (via.length) bits.push(via.length > 2 ? tr("profile.inFriendListMore", { names: via.slice(0, 2).join(", "), count: via.length - 2 }) : tr("profile.inFriendList", { names: listJoin(via) }));
   return (
     <div className="relation-box" data-flip-fade>
       <p>
         {here && <span className="here-dot" />} {bits.join(" · ")}
       </p>
       {status?.isFriend ? (
-        <p className="small ok-text">You're friends now. They'll show up as a friend after the next sync.</p>
+        <p className="small ok-text">{tr("profile.youReFriendsNowThey")}</p>
       ) : (
         <div className="row">
           {status?.outgoing ? (
             <>
               <span className="small muted">
-                <Icon name="user-check" size={14} /> Request sent
+                <Icon name="user-check" size={14} /> {tr("profile.requestSent")}
               </span>
               <button className="btn small" disabled={busy || demo} onClick={() => act(false)}>
-                Cancel request
+                {tr("profile.cancelRequest")}
               </button>
             </>
           ) : (
-            <button className="btn primary small" disabled={busy || demo} onClick={() => act(true)} title={demo ? "Not in demo mode" : "Send them a friend request on VRChat"}>
-              <Icon name="user-plus" size={15} /> {status?.incoming ? "Accept: send request back" : "Send friend request"}
+            <button className="btn primary small" disabled={busy || demo} onClick={() => act(true)} title={demo ? tr("profile.notInDemoMode2") : tr("profile.sendThemAFriendRequest")}>
+              <Icon name="user-plus" size={15} /> {status?.incoming ? tr("profile.acceptSendRequestBack") : tr("profile.sendFriendRequest")}
             </button>
           )}
-          {status?.incoming && !status.outgoing && <span className="small">They sent you one.</span>}
+          {status?.incoming && !status.outgoing && <span className="small">{tr("profile.theySentYouOne")}</span>}
         </div>
       )}
       {concern && (
         <div className="age-confirm">
           <p>
-            <Icon name="warn" size={15} /> Think twice: {concern}.
+            <Icon name="warn" size={15} /> {tr("profile.thinkTwice", { reason: concern })}
           </p>
           <div className="row">
             <button className="btn small" onClick={() => setConcern(null)} autoFocus>
-              Don't send
+              {tr("profile.donTSend")}
             </button>
             <button className="btn small danger" onClick={() => act(true, true)}>
-              {status?.incoming ? "Accept anyway" : "Send anyway"}
+              {status?.incoming ? tr("profile.acceptAnyway") : tr("profile.sendAnyway")}
             </button>
           </div>
         </div>
@@ -932,8 +932,8 @@ function ModerationRow({ id, name, friend, account }: { id: string; name: string
   if (confirming) {
     const text =
       confirming === "unfriend"
-        ? `Remove ${name} from your friends? They aren't told, but you'd have to send a new request to be friends again.`
-        : `Block ${name}? You won't see or hear each other in VRChat. You can unblock them here later.`;
+        ? tr("profile.removeNameFromYourFriends", { name })
+        : tr("profile.blockNameYouWonT", { name });
     return (
       <div className="mod-row confirm" data-flip-fade>
         <p className="small">{text}</p>
@@ -954,14 +954,14 @@ function ModerationRow({ id, name, friend, account }: { id: string; name: string
                     if (err) removedByMe.delete(id);
                     if (!err) applyPipelineEvent("friend-delete", { userId: id });
                     return err;
-                  }, `${name} removed from your friends`)
-                : toggle("block", true, `${name} blocked`)
+                  }, tr("profile.removedFromFriends", { name }))
+                : toggle("block", true, tr("profile.blocked", { name }))
             }
           >
             {confirming === "unfriend" ? "Unfriend" : "Block"}
           </button>
           <button className="btn small" onClick={() => setConfirming(null)}>
-            Cancel
+            {tr("profile.cancel")}
           </button>
         </div>
       </div>
@@ -971,32 +971,32 @@ function ModerationRow({ id, name, friend, account }: { id: string; name: string
   return (
     <div className="mod-row" data-flip-fade>
       {friend && (
-        <button className="btn small" disabled={off} onClick={() => setConfirming("unfriend")} title="Remove from your friends on VRChat">
-          <Icon name="user" size={14} /> Unfriend
+        <button className="btn small" disabled={off} onClick={() => setConfirming("unfriend")} title={tr("profile.removeFromYourFriendsOn")}>
+          <Icon name="user" size={14} /> {tr("profile.unfriend")}
         </button>
       )}
       {has("block") ? (
         <button className="btn small" disabled={off} onClick={() => toggle("block", false, `${name} unblocked`)}>
-          Unblock
+          {tr("profile.unblock")}
         </button>
       ) : (
         <button className="btn small" disabled={off} onClick={() => setConfirming("block")}>
-          Block
+          {tr("profile.block")}
         </button>
       )}
-      <button className="btn small" disabled={off} onClick={() => toggle("mute", !has("mute"), has("mute") ? `${name} unmuted` : `${name} muted`)}>
+      <button className="btn small" disabled={off} onClick={() => toggle("mute", !has("mute"), has("mute") ? tr("profile.nameUnmuted", { name }) : tr("profile.nameMuted", { name }))}>
         {has("mute") ? "Unmute" : "Mute"}
       </button>
       <button
         className="btn small"
         disabled={off}
-        onClick={() => toggle("hideAvatar", !has("hideAvatar"), has("hideAvatar") ? "Avatar back to your safety settings" : "Avatar hidden")}
-        title={has("hideAvatar") ? "Back to what your safety settings decide" : "Always hide their avatar in VRChat"}
+        onClick={() => toggle("hideAvatar", !has("hideAvatar"), has("hideAvatar") ? tr("profile.avatarBackToYourSafety") : tr("profile.avatarHidden"))}
+        title={has("hideAvatar") ? tr("profile.backToWhatYourSafety") : tr("profile.alwaysHideTheirAvatarIn")}
       >
-        {has("hideAvatar") ? "Stop hiding avatar" : "Hide avatar"}
+        {has("hideAvatar") ? tr("profile.stopHidingAvatar") : tr("profile.hideAvatar")}
       </button>
-      {has("block") && <span className="small muted">You've blocked them.</span>}
-      {demo && <span className="small muted">Not in demo mode.</span>}
+      {has("block") && <span className="small muted">{tr("profile.youVeBlockedThem")}</span>}
+      {demo && <span className="small muted">{tr("profile.notInDemoMode")}</span>}
       {error && <p className="error-text">{error}</p>}
     </div>
   );
@@ -1021,8 +1021,8 @@ function PersonMore({ id }: { id: string }) {
     <div className="person-more" ref={ref}>
       <button
         className={`btn ${changed ? "on" : ""}`}
-        title="Notifications and sound for this person"
-        aria-label="Notifications and sound for this person"
+        title={tr("profile.notificationsAndSoundForThis")}
+        aria-label={tr("profile.notificationsAndSoundForThis")}
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
@@ -1030,10 +1030,10 @@ function PersonMore({ id }: { id: string }) {
         {changed && <span className="person-more-dot" aria-hidden="true" />}
       </button>
       {open && (
-        <div className="person-more-menu" role="dialog" aria-label="Notifications and sound">
+        <div className="person-more-menu" role="dialog" aria-label={tr("profile.notificationsAndSound")}>
           <label className="field">
             <span>
-              <Icon name={mode === "never" ? "bell-off" : "bell"} size={14} /> Notify me
+              <Icon name={mode === "never" ? "bell-off" : "bell"} size={14} /> {tr("profile.notifyMe")}
             </span>
             <select value={mode} onChange={(e) => setPersonMode(id, e.target.value as (typeof PERSON_MODES)[number]["value"])}>
               {PERSON_MODES.map((m) => (
@@ -1045,7 +1045,7 @@ function PersonMore({ id }: { id: string }) {
           </label>
           <label className="field">
             <span>
-              <Icon name="sound" size={14} /> Sound
+              <Icon name="sound" size={14} /> {tr("profile.sound")}
             </span>
             <select
               value={own}
@@ -1057,7 +1057,7 @@ function PersonMore({ id }: { id: string }) {
                 if (e.target.value) setTimeout(() => previewEvent("online", name, id), 50);
               }}
             >
-              <option value="">Their tune (from their name)</option>
+              <option value="">{tr("profile.theirTuneFromTheirName")}</option>
               {SOUNDS.map((s) => (
                 <option key={s.value} value={s.value}>
                   {s.label}

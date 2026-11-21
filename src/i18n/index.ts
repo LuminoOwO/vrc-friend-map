@@ -2,7 +2,7 @@
 // base; a missing text falls back to English), in the i18next JSON format, so Weblate and Crowdin
 // can read and write the files directly:
 //   - nested keys: { "menu": { "people": "People" } } → t("menu.people")
-//   - values put in with {{name}}: t("people.count", { count: 3 }) → "{{count}} friends"
+//   - values put in with {{name}}: t("common.friends", { count: 3 }) → "3 friends"
 //   - plurals by each language's own rules: key_one, key_other (and key_few, key_many, key_two,
 //     key_zero where the language has them), picked with Intl.PluralRules from `count`.
 // docs/translating.md says how to add or fix a language.
