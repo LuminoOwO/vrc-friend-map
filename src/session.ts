@@ -1,9 +1,10 @@
 import { backend } from "./backend";
 import { makeDemo } from "./demo";
 import { initLogs, stopLogScans } from "./logs";
-import { stopSharing } from "./share";
+import { serverSwitch, stopSharing, syncServer } from "./share";
+import { knownPeers } from "./peers";
 import { demoHere } from "./live";
-import { defaultFilters, emptyCache, emptyLocal, flushSaves, getState, loadPersisted, setLogs, setState } from "./store";
+import { defaultFilters, emptyCache, emptyLocal, flushSaves, getState, loadPersisted, setLogs, setState, updateLocal } from "./store";
 import { stopSync, syncAll } from "./sync";
 
 export function enterDemo() {
@@ -31,7 +32,7 @@ export async function exitDemo() {
 }
 
 /** Log out of VRChat. Keeps circles and imported lists; optionally wipes the friend cache. */
-export async function logoutAll(wipeCache: boolean) {
+export async function logoutAll(wipeCache: boolean, message = "Logged out.") {
   stopSync();
   stopSharing();
   await flushSaves();
@@ -45,7 +46,29 @@ export async function logoutAll(wipeCache: boolean) {
   const note = loggers.length
     ? ` Your logger on ${loggers.map((s) => s.info?.name ?? s.url).join(", ")} keeps running with this VRChat login; unpair it in Settings → Servers to stop it.`
     : "";
-  setState({ mode: "login", session: null, selectedId: null, settingsOpen: false, serversOpen: false, loginMessage: "Logged out." + note, live: { connected: false, message: "" } });
+  setState({ mode: "login", session: null, selectedId: null, settingsOpen: false, serversOpen: false, loginMessage: message + note, live: { connected: false, message: "" } });
+}
+
+/** Servers that carry "log out everywhere" to your other devices (your own synced data). */
+export function logoutCarriers() {
+  return getState().settings.sharing.servers.filter((s) => s.registered && s.syncMine && serverSwitch(s).on);
+}
+
+/**
+ * "Log out everywhere": logs out this device and every other device of yours that syncs with it
+ * (through your servers, or directly at home). VRChat has no way to end sessions other apps or
+ * the game hold (only changing your password on vrchat.com does that, as far as is known).
+ */
+export async function logoutEverywhere() {
+  updateLocal((l) => ({ ...l, logoutAt: Date.now() }));
+  const servers = logoutCarriers();
+  // Through each server your devices sync on (the next sync of a device that's off brings it).
+  await Promise.all(servers.map((s) => syncServer(s.id).catch(() => {})));
+  // Devices met directly get your changes within 3 seconds.
+  if (knownPeers().length) await new Promise((r) => setTimeout(r, 4000));
+  await flushSaves();
+  const where = servers.length || knownPeers().length ? " Your other devices log out at their next sync." : "";
+  await logoutAll(false, "Logged out everywhere." + where);
 }
 
 export async function wipeEverything() {

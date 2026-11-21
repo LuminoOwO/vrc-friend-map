@@ -103,6 +103,8 @@ export interface SelfData {
   settingsAt?: Record<string, number>;
   /** Since 0.13: each server's sharing choices (by its address), see ACCOUNT_SHARE_KEYS. */
   serverShare?: Record<string, ServerShare>;
+  /** Since 0.14: "log out everywhere" was pressed at this time; devices logged in before it log out. */
+  logoutAt?: number;
 }
 
 export interface SelfPayload extends SelfData {
@@ -253,6 +255,7 @@ export function mergeSelf(base: SelfData | null, mine: SelfData, theirs: SelfDat
     worldNotes: theirs.worldNotes === undefined ? mine.worldNotes : mergeRecord(b.worldNotes ?? {}, mine.worldNotes ?? {}, theirs.worldNotes),
     pushTargets: theirs.pushTargets === undefined ? mine.pushTargets : mergeRecord(b.pushTargets ?? {}, mine.pushTargets ?? {}, theirs.pushTargets),
     serverShare: theirs.serverShare === undefined ? mine.serverShare : mergeServerShare(mine.serverShare ?? {}, theirs.serverShare),
+    logoutAt: laterTime(mine.logoutAt, theirs.logoutAt),
   };
 }
 
@@ -348,7 +351,18 @@ export function readSelf(raw: unknown): SelfData | null {
     worldNotes: p.worldNotes ? rec(p.worldNotes) : undefined,
     pushTargets: p.pushTargets ? rec(p.pushTargets) : undefined,
     serverShare: p.serverShare ? readServerShare(p.serverShare) : undefined,
+    logoutAt: typeof p.logoutAt === "number" && Number.isFinite(p.logoutAt) && p.logoutAt > 0 ? p.logoutAt : undefined,
   };
+}
+
+/** The later of two times (either may be missing). */
+export function laterTime(a: number | undefined, b: number | undefined): number | undefined {
+  return a === undefined ? b : b === undefined ? a : Math.max(a, b);
+}
+
+/** Whether a device logged in at `loginAt` (0 = before this was recorded) must log out. */
+export function mustLogOut(logoutAt: number | undefined, loginAt: number | undefined): boolean {
+  return !!logoutAt && logoutAt > (loginAt ?? 0);
 }
 
 const AUDIENCES = ["all", "circles", "picked"];

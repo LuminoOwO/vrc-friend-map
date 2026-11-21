@@ -1203,3 +1203,5 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
 .own-colors { display: flex; flex-wrap: wrap; gap: 10px 18px; }
 .own-color { display: flex; align-items: center; gap: 8px; }
 .own-color input[type="color"] { width: 34px; height: 28px; padding: 0; border: 1px solid var(--border-strong); border-radius: 6px; background: none; cursor: pointer; }
+/* Settings → Account → Log out everywhere: the vrchat.com link sits in the text. */
+.logout-everywhere .btn.link { display: inline; min-height: 0; height: auto; padding: 0; vertical-align: baseline; }

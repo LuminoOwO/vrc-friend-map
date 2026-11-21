@@ -4,7 +4,7 @@ import { scoreSection } from "../settingsSearch";
 import { backend, imgSrc, isMobile, type GraphicsInfo, type GraphicsMode } from "../backend";
 import { iconUrl, STATUS_LABEL, statusColor } from "../model";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
-import { exitDemo, logoutAll, wipeEverything } from "../session";
+import { exitDemo, logoutAll, logoutCarriers, logoutEverywhere, wipeEverything } from "../session";
 import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, updateUi, useApp } from "../store";
 import { CloseSection, NotificationsSection } from "./NotificationsSection";
 import { WheelFixSection } from "./WheelFixSection";
@@ -477,7 +477,7 @@ export function SettingsModal() {
             )}
             <SecContext.Provider value={ctx}>
 {/*SECTIONS*/}
-        <Sec id="account" cat="account" title="Account" keys="login log out sign out user">
+        <Sec id="account" cat="account" title="Account" keys="login log out sign out user everywhere hacked compromised sessions password">
           <h3>Account</h3>
           {demo ? (
             <p>
@@ -499,6 +499,7 @@ export function SettingsModal() {
               </button>
             </div>
           )}
+          {!demo && <LogoutEverywhere />}
         </Sec>
 
         <Sec id="servers" cat="sharing" title="Servers and sharing" keys="server sync share encryption logger">
@@ -878,6 +879,58 @@ const BETA_OF: Record<string, string> = {
   updates: "updates",
   about: "about",
 };
+
+/** "Log out everywhere", with what it can and can't do (VRChat has no "end all sessions"). */
+function LogoutEverywhere() {
+  const [ask, setAsk] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const carriers = logoutCarriers();
+  return (
+    <div className="logout-everywhere">
+      <h4 className="sub-h">Log out everywhere</h4>
+      <p className="small muted">
+        Logs out this device and every other device of yours where this app syncs with it
+        {carriers.length ? ` (through ${carriers.map((s) => serverName(s)).join(", ")}, or directly at home)` : " (needs a server that syncs your devices; without one, only this device)"}. Devices
+        that are off log out at their next sync.
+      </p>
+      <p className="small muted">
+        If your account may be hacked: VRChat has no button to end every session, so also change your password on{" "}
+        <button className="btn link" onClick={() => backend.openUrl("https://vrchat.com/home/profile").catch(() => {})}>
+          vrchat.com
+        </button>{" "}
+        and turn on two-factor authentication there. A logger on your server keeps its own login: unpair it in Sharing &amp; servers.
+      </p>
+      {ask ? (
+        <div className="row">
+          <button
+            className="btn danger"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await logoutEverywhere();
+              } catch (e) {
+                showToast(`Couldn't log out everywhere: ${e}`);
+                setBusy(false);
+              }
+            }}
+          >
+            {busy ? "Logging out…" : "Yes, log out everywhere"}
+          </button>
+          <button className="btn ghost" disabled={busy} onClick={() => setAsk(false)}>
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <div className="row">
+          <button className="btn" onClick={() => setAsk(true)}>
+            <Icon name="logout" size={16} /> Log out everywhere…
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** New interface: you at the top of the settings sidebar (opens My account), with Log out. */
 function AccountCard({ onOpen }: { onOpen: () => void }) {

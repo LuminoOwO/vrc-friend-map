@@ -106,6 +106,8 @@ export default function App() {
         await backend.onLoginFinished(async (e) => {
           if (e.ok) {
             const session = await backend.sessionInfo();
+            // A fresh login: earlier "log out everywhere" presses don't apply to it.
+            updateLocal((l) => ({ ...l, loginAt: Date.now() }));
             setState({ session, mode: "app", loginBusy: false, loginMessage: "", demo: false });
             goLive();
           } else {

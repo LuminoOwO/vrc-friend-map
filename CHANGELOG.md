@@ -5,6 +5,12 @@ minor releases can change behavior.
 
 ## Unreleased
 
+### Added
+- **Log out everywhere** (Settings → My account): logs out this device and every other device of
+  yours where the app syncs with it (through your servers, or directly at home); devices that are
+  off log out at their next sync. VRChat has no way to end all sessions, so it also says what to
+  do on vrchat.com if your account may be hacked (change the password, turn on two-factor).
+
 ### Fixed
 - Phones: Settings → Performance talks about touches and the app being in the background instead
   of the mouse and windows; the Activity search box fills its row.

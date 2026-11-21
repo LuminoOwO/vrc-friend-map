@@ -292,7 +292,7 @@ tray. On hold: Discord rich presence.
   - [ ] **Renew it from the app** (a server setting, off by default for the security-conscious):
     the owner enters username, password and 2FA code in their own app, sent sealed to the
     server. Off: renewing stays on the admin page only.
-- [ ] **Log out everywhere** (in case an account was hacked): end every VRChat session of your
+- [x] **Log out everywhere** (2026-11-22: done for every device where the app syncs; VRChat's API has no "end all sessions" (only PUT /logout for one session), so the app points to a password change on vrchat.com) (in case an account was hacked): end every VRChat session of your
   account, not just this device's. To research first: whether VRChat's API offers this at all
   (changing the password may be the only way); if not, say so and link to VRChat's own page.
 

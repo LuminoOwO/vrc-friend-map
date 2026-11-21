@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeCircles, mergeRecord, mergeSelf, mergeServerShare, mergeSet, mineForMerge, readSelf, sameSelf, SELF_FORMAT, stableJson, type SelfData } from "../devicesync";
+import { mergeCircles, mergeRecord, mergeSelf, mergeServerShare, mergeSet, mineForMerge, mustLogOut, readSelf, sameSelf, SELF_FORMAT, stableJson, type SelfData } from "../devicesync";
 import type { Circle } from "../types";
 
 const c = (id: string, members: string[], extra: Partial<Circle> = {}): Circle => ({ id, name: id, color: "#fff", members, ...extra });
@@ -173,5 +173,31 @@ describe("sharing choices follow the account", () => {
       serverShare: { [A]: { upload: true, audience: "everyone", circleIds: ["c", 3], loggerOwner: true, shareAt: 5 }, "javascript:x": { upload: true } },
     });
     expect(got?.serverShare).toEqual({ [A]: { upload: true, circleIds: ["c"], shareAt: 5 } });
+  });
+});
+
+describe("log out everywhere", () => {
+  const empty = { circles: [], dismissedGroups: [], shareNotes: {}, notifyPeople: {} };
+  it("keeps the later press when merging", () => {
+    expect(mergeSelf(null, { ...empty, logoutAt: 100 }, { ...empty, logoutAt: 200 }).logoutAt).toBe(200);
+    expect(mergeSelf(null, { ...empty, logoutAt: 300 }, { ...empty, logoutAt: 200 }).logoutAt).toBe(300);
+    expect(mergeSelf(null, { ...empty }, { ...empty, logoutAt: 50 }).logoutAt).toBe(50);
+    // An older app on the other device doesn't send it: ours stays.
+    expect(mergeSelf(null, { ...empty, logoutAt: 50 }, { ...empty }).logoutAt).toBe(50);
+    expect(mergeSelf(null, { ...empty }, { ...empty }).logoutAt).toBeUndefined();
+  });
+  it("reads only a sane time", () => {
+    const base = { format: SELF_FORMAT, t: 1 };
+    expect(readSelf({ ...base, logoutAt: 1234 })?.logoutAt).toBe(1234);
+    expect(readSelf({ ...base, logoutAt: "1234" })?.logoutAt).toBeUndefined();
+    expect(readSelf({ ...base, logoutAt: -5 })?.logoutAt).toBeUndefined();
+    expect(readSelf({ ...base, logoutAt: Infinity })?.logoutAt).toBeUndefined();
+  });
+  it("logs out only devices logged in before the press", () => {
+    expect(mustLogOut(undefined, 10)).toBe(false);
+    expect(mustLogOut(200, 100)).toBe(true);
+    expect(mustLogOut(100, 200)).toBe(false);
+    // Logged in before this was recorded: counts as earlier.
+    expect(mustLogOut(100, undefined)).toBe(true);
   });
 });

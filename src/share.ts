@@ -12,7 +12,7 @@ import { getState, subscribeState, newServer, normalizeSettings, setState, showT
 import { combineStats } from "./together";
 import { allowHomeNetwork } from "./phone";
 import { mainFriendIds } from "./accountmerge";
-import { mergeSelf, mineForMerge, readSelf, sameSelf, sameSelfPart, SELF_FORMAT, serverShareOf, stableJson, syncedKeys, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
+import { mergeSelf, mineForMerge, mustLogOut, readSelf, sameSelf, sameSelfPart, SELF_FORMAT, serverShareOf, stableJson, syncedKeys, syncedSettings, type SelfData, type SelfPayload } from "./devicesync";
 import { selectedIds } from "./selection";
 import type { Settings, EncDefault, EncPolicy, ImportedList, PairTime, ServerInfoLite, ShareNote, ShareServer, SharedData, SharedRemoval, SharedCircle } from "./types";
 
@@ -756,8 +756,11 @@ function currentSelf(): SelfData {
     pushTargets: st.local.pushTargets ?? {},
     settingsAt: st.local.settingsAt ?? {},
     serverShare: Object.fromEntries(st.settings.sharing.servers.map((s) => [s.url, serverShareOf(s)])),
+    logoutAt: st.local.logoutAt,
   };
 }
+
+let logoutQueued = false;
 
 function applySelf(d: SelfData) {
   updateLocal((l) => ({
@@ -774,7 +777,17 @@ function applySelf(d: SelfData) {
     sharedCircles: d.sharedCircles ?? l.sharedCircles,
     worldNotes: d.worldNotes ?? l.worldNotes,
     pushTargets: d.pushTargets ?? l.pushTargets,
+    logoutAt: d.logoutAt ?? l.logoutAt,
   }));
+  // "Log out everywhere" pressed on another device after this one logged in: log out here too,
+  // once the sync that brought it has finished.
+  const st0 = getState();
+  if (!st0.demo && st0.session?.logged_in && mustLogOut(d.logoutAt, st0.local.loginAt) && !logoutQueued) {
+    logoutQueued = true;
+    setTimeout(() => {
+      void import("./session").then((m) => m.logoutAll(false, "Logged out: you chose \"Log out everywhere\" on another device.")).finally(() => (logoutQueued = false));
+    }, 0);
+  }
   const st = getState();
   const merged = normalizeSettings({
     ...st.settings,

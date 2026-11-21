@@ -260,6 +260,10 @@ export interface LocalData {
   shareNotes: Record<string, ShareNote>;
   /** Device sync: the state this device and your others last agreed on. */
   selfBase?: import("./devicesync").SelfData | null;
+  /** When this device last logged in to VRChat (for "log out everywhere"). */
+  loginAt?: number;
+  /** The latest "log out everywhere" this device knows of (from any of your devices). */
+  logoutAt?: number;
   /** The one-time "try the new interface" hint was answered (classic UI users). */
   betaHintSeen?: boolean;
   /** Set once the 0.13.0 switch to the new interface has happened on this device. */
