@@ -1,3 +1,4 @@
+import { t as tr, lazy } from "../i18n";
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { LANGUAGES, MACHINE_TRANSLATED, languageName, resolveLanguage, useT } from "../i18n";
 import { NO_OWN_COLORS, type OwnColors } from "../owncolors";
@@ -16,24 +17,24 @@ import { forgetObserved } from "../together";
 import type { GroupSettings, MapSettings, Theme } from "../types";
 
 import { CAT_ACCENTS, CAT_FLAVORS, CAT_LABEL, CAT_PALETTES, isCatFlavor } from "../catppuccin";
-const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: string }[] = [
-  { value: "dark", label: "Dark", bg: "#070b0f", panel: "#131c24", accent: "#19c3b1" },
-  { value: "oled", label: "OLED black", bg: "#000000", panel: "#0e1215", accent: "#19c3b1" },
-  { value: "graphite", label: "Graphite (grey)", bg: "#1c1c1f", panel: "#2a2a2f", accent: "#d4d4d8" },
-  { value: "light", label: "Light", bg: "#eef2f5", panel: "#ffffff", accent: "#0f9d8f" },
+const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: string }[] = lazy(() => [
+  { value: "dark", label: tr("settings.dark"), bg: "#070b0f", panel: "#131c24", accent: "#19c3b1" },
+  { value: "oled", label: tr("settings.oledBlack"), bg: "#000000", panel: "#0e1215", accent: "#19c3b1" },
+  { value: "graphite", label: tr("settings.graphiteGrey"), bg: "#1c1c1f", panel: "#2a2a2f", accent: "#d4d4d8" },
+  { value: "light", label: tr("settings.light"), bg: "#eef2f5", panel: "#ffffff", accent: "#0f9d8f" },
   ...CAT_FLAVORS.slice()
     .reverse()
-    .map((f) => ({ value: f as Theme, label: `Catppuccin ${CAT_LABEL[f]}`, bg: CAT_PALETTES[f].base, panel: CAT_PALETTES[f].surface0, accent: CAT_PALETTES[f].mauve })),
-  { value: "nord", label: "Nord", bg: "#2e3440", panel: "#3b4252", accent: "#88c0d0" },
-  { value: "dracula", label: "Dracula", bg: "#21222c", panel: "#44475a", accent: "#bd93f9" },
-  { value: "tokyonight", label: "Tokyo Night", bg: "#1a1b26", panel: "#24283b", accent: "#7aa2f7" },
-  { value: "gruvbox", label: "Gruvbox", bg: "#282828", panel: "#3c3836", accent: "#fabd2f" },
-  { value: "rosepine", label: "Rosé Pine", bg: "#191724", panel: "#26233a", accent: "#c4a7e7" },
-  { value: "onedark", label: "One Dark", bg: "#282c34", panel: "#2c313a", accent: "#61afef" },
-  { value: "everforest", label: "Everforest", bg: "#2d353b", panel: "#343f44", accent: "#a7c080" },
-  { value: "solarized", label: "Solarized dark", bg: "#002b36", panel: "#073642", accent: "#2aa198" },
-  { value: "solarizedlight", label: "Solarized light", bg: "#fdf6e3", panel: "#fffbef", accent: "#268bd2" },
-];
+    .map((f) => ({ value: f as Theme, label: tr("settings.catppuccinValue", { value: CAT_LABEL[f] }), bg: CAT_PALETTES[f].base, panel: CAT_PALETTES[f].surface0, accent: CAT_PALETTES[f].mauve })),
+  { value: "nord", label: tr("settings.nord"), bg: "#2e3440", panel: "#3b4252", accent: "#88c0d0" },
+  { value: "dracula", label: tr("settings.dracula"), bg: "#21222c", panel: "#44475a", accent: "#bd93f9" },
+  { value: "tokyonight", label: tr("settings.tokyoNight"), bg: "#1a1b26", panel: "#24283b", accent: "#7aa2f7" },
+  { value: "gruvbox", label: tr("settings.gruvbox"), bg: "#282828", panel: "#3c3836", accent: "#fabd2f" },
+  { value: "rosepine", label: tr("settings.rosPine"), bg: "#191724", panel: "#26233a", accent: "#c4a7e7" },
+  { value: "onedark", label: tr("settings.oneDark"), bg: "#282c34", panel: "#2c313a", accent: "#61afef" },
+  { value: "everforest", label: tr("settings.everforest"), bg: "#2d353b", panel: "#343f44", accent: "#a7c080" },
+  { value: "solarized", label: tr("settings.solarizedDark"), bg: "#002b36", panel: "#073642", accent: "#2aa198" },
+  { value: "solarizedlight", label: tr("settings.solarizedLight"), bg: "#fdf6e3", panel: "#fffbef", accent: "#268bd2" },
+]);
 import { Icon } from "./Icon";
 import { Diagnostics } from "./Diagnostics";
 import { FrameRateSection } from "./FrameRateSection";
@@ -62,30 +63,30 @@ function NotesLineSection() {
   );
   return (
     <>
-      <h3>Red flags in VRChat notes</h3>
+      <h3>{tr("settings.redFlagsInVrchatNotes")}</h3>
       <p className="small muted">
         Writes a short line at the top of your VRChat note on people with red flags (why you blocked them, friends' shared blocks and removals),
         so you see it in game on their profile. Your own note text moves below it and is never changed. Nothing about age goes there.
       </p>
       <label className="field narrow">
-        <span>Line in the note</span>
+        <span>{tr("settings.lineInTheNote")}</span>
         <select value={n.mode} onChange={(e) => set({ mode: e.target.value as typeof n.mode })}>
-          <option value="off">Off</option>
-          <option value="mine">Only my block reasons</option>
-          <option value="friends">Mine, and how many friends blocked or removed them</option>
-          <option value="full">Mine and each friend's, with names</option>
+          <option value="off">{tr("settings.off")}</option>
+          <option value="mine">{tr("settings.onlyMyBlockReasons")}</option>
+          <option value="friends">{tr("settings.mineAndHowManyFriends")}</option>
+          <option value="full">{tr("settings.mineAndEachFriendS")}</option>
         </select>
       </label>
       <label className="check">
         <input type="checkbox" checked={n.compact} onChange={(e) => set({ compact: e.target.checked })} />
-        Compact (short words, fits better)
+        {tr("settings.compactShortWordsFitsBetter")}
       </label>
       <p className="small">
         Example: <code>{example}</code>
       </p>
       <p className="small muted">
         Updated every 20 minutes, a few notes at a time. Turning it off removes the lines again. Block reasons: asked after you block someone
-        (here or in game); shared with friends only per server (Servers → <i>Why I blocked people</i>).
+        (here or in game); shared with friends only per server (Servers → <i>{tr("settings.whyIBlockedPeople")}</i>).
       </p>
     </>
   );
@@ -104,22 +105,22 @@ function InviteMessagesSection() {
   };
   return (
     <>
-      <h3>Invite messages</h3>
+      <h3>{tr("settings.inviteMessages")}</h3>
       <p className="small muted">
         VRChat keeps 12 saved messages for asking for an invite and 12 for invites you send; each can be changed once an hour. Saved ones show up
-        on profiles under <i>Request invite → With message</i>.
+        on profiles under <i>{tr("settings.requestInviteWithMessage")}</i>.
       </p>
       <div className="row">
         <div className="seg">
           <button className={kind === "request" ? "on" : ""} aria-pressed={kind === "request"} onClick={() => { setKind("request"); if (slots) load("request"); }}>
-            Asking for an invite
+            {tr("settings.askingForAnInvite")}
           </button>
           <button className={kind === "message" ? "on" : ""} aria-pressed={kind === "message"} onClick={() => { setKind("message"); if (slots) load("message"); }}>
-            Invites I send
+            {tr("settings.invitesISend")}
           </button>
         </div>
         <button className="btn small" disabled={demo} onClick={() => load()}>
-          {slots ? "Reload" : "Load from VRChat"}
+          {slots ? "Reload" : tr("settings.loadFromVrchat")}
         </button>
       </div>
       {err && <p className="small warn">{err}</p>}
@@ -135,17 +136,17 @@ function InviteMessagesSection() {
                     className="btn small primary"
                     onClick={async () => {
                       const e2 = await saveSlot(kind, sl.slot, edit.text);
-                      if (e2) showToast(`Couldn't save: ${e2}`);
+                      if (e2) showToast(tr("settings.couldnTSaveE2", { e2 }));
                       else {
                         setEdit(null);
                         load();
                       }
                     }}
                   >
-                    Save
+                    {tr("settings.save")}
                   </button>
                   <button className="btn small" onClick={() => setEdit(null)}>
-                    Cancel
+                    {tr("settings.cancel")}
                   </button>
                 </>
               ) : (
@@ -155,7 +156,7 @@ function InviteMessagesSection() {
                     <span className="small muted">can change in {sl.cooldown} min</span>
                   ) : (
                     <button className="btn small ghost" onClick={() => setEdit({ slot: sl.slot, text: sl.message })}>
-                      Change
+                      {tr("settings.change")}
                     </button>
                   )}
                 </>
@@ -178,10 +179,10 @@ function BioSection() {
   const p = bioProgress();
   return (
     <>
-      <h3>Reading bios in the background</h3>
+      <h3>{tr("settings.readingBiosInTheBackground")}</h3>
       <label className="check">
         <input type="checkbox" checked={b.background} onChange={(e) => updateSettings({ bios: { ...b, background: e.target.checked } })} />
-        Slowly read everyone's profile (bio, links, languages) in the background
+        {tr("settings.slowlyReadEveryoneSProfile")}
       </label>
       <label className="field narrow">
         <span>One person every {b.everySecs} s</span>
@@ -202,7 +203,7 @@ function InterfaceSection() {
   const shownLang = resolveLanguage(ui.language);
   return (
     <>
-      <h3>Interface</h3>
+      <h3>{tr("settings.interface")}</h3>
       <label className="field narrow">
         <span>{t("language.title")}</span>
         <select value={ui.language} onChange={(e) => set({ language: e.target.value })}>
@@ -220,9 +221,9 @@ function InterfaceSection() {
       </p>
       <label className="check">
         <input type="checkbox" checked={ui.hideUnavailable} onChange={(e) => set({ hideUnavailable: e.target.checked })} />
-        Hide features not available on this platform
+        {tr("settings.hideFeaturesNotAvailableOn")}
       </label>
-      <p className="small muted">Off: they're shown greyed out, with why they can't work here.</p>
+      <p className="small muted">{tr("settings.offTheyReShownGreyed")}</p>
       {(!unavailable("haptics") || !ui.hideUnavailable) && (
         <label className={`check ${unavailable("haptics") ? "dim" : ""}`}>
           <input
@@ -243,21 +244,21 @@ function InterfaceSection() {
           <Range min={0.8} max={1.6} step={0.05} value={ui.textScale} onChange={(e) => set({ textScale: Number(e.target.value) })} />
         </label>
         <label className="field narrow">
-          <span>Animations</span>
+          <span>{tr("settings.animations")}</span>
           <select value={ui.reducedMotion} onChange={(e) => set({ reducedMotion: e.target.value as UiSettings["reducedMotion"] })}>
-            <option value="system">Like the system</option>
-            <option value="on">Fewer animations</option>
-            <option value="off">All animations</option>
+            <option value="system">{tr("settings.likeTheSystem")}</option>
+            <option value="on">{tr("settings.fewerAnimations")}</option>
+            <option value="off">{tr("settings.allAnimations")}</option>
           </select>
         </label>
       </div>
       <label className="check">
         <input type="checkbox" checked={ui.colorblind} onChange={(e) => set({ colorblind: e.target.checked })} />
-        Color-blind friendly status colors (online / offline also differ in brightness and shape)
+        {tr("settings.colorBlindFriendlyStatusColors")}
       </label>
       <label className="check">
         <input type="checkbox" checked={!ui.beta} onChange={(e) => set({ beta: !e.target.checked })} />
-        Classic interface
+        {tr("settings.classicInterface")}
       </label>
       <p className="small muted">
         The older layout, for now. The new interface is the default and where new things land; the classic one will go away later. Only this device
@@ -368,7 +369,7 @@ export function SettingsModal() {
         ref={searchRef}
         autoFocus={!/Android|iPhone|iPad/i.test(navigator.userAgent)}
         value={query}
-        placeholder={beta ? "Search settings" : "Search settings (e.g. theme, fps, sound, blocked)"}
+        placeholder={beta ? tr("settings.searchSettings") : tr("settings.searchSettingsEGTheme")}
         onChange={(e) => setQuery(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Escape" && query) {
@@ -378,7 +379,7 @@ export function SettingsModal() {
         }}
       />
       {query && (
-        <button className="icon-btn small" title="Clear" onClick={() => setQuery("")}>
+        <button className="icon-btn small" title={tr("settings.clear")} onClick={() => setQuery("")}>
           <Icon name="close" size={14} />
         </button>
       )}
@@ -388,30 +389,30 @@ export function SettingsModal() {
 
   return (
     <div
-      className={`modal-backdrop ${beta ? "ui2-settings" : ""} ${phone ? (phoneList ? `ph-list ${scores ? "searching" : ""}` : "ph-page") : ""}`}
+      className={`modal-backdrop ${beta ? "ui2-settings" : ""} ${phone ? (phoneList ? tr("settings.phListValue", { value: scores ? "searching" : "" }) : "ph-page") : ""}`}
       onMouseDown={(e) => e.target === e.currentTarget && close()}
     >
-      <div className="modal settings-modal" role="dialog" aria-label="Settings">
+      <div className="modal settings-modal" role="dialog" aria-label={tr("settings.settings")}>
         {phone && (
           <div className="ui2-set-bar">
             {phoneList ? (
               <span />
             ) : (
-              <button className="ui2-set-back" aria-label="Back to settings" onClick={() => setPhoneList(true)}>
+              <button className="ui2-set-back" aria-label={tr("settings.backToSettings")} onClick={() => setPhoneList(true)}>
                 <Icon name="chevron-left" size={22} />
               </button>
             )}
             <h2>{phoneList || scores ? "Settings" : page.label}</h2>
-            <button className="ui2-set-x" aria-label="Close settings" onClick={close}>
+            <button className="ui2-set-x" aria-label={tr("settings.closeSettings")} onClick={close}>
               <Icon name="close" size={20} />
             </button>
           </div>
         )}
         {!beta && (
         <div className="modal-head settings-head">
-          <h2>Settings</h2>
+          <h2>{tr("settings.settings")}</h2>
           {!beta && searchBox}
-          <button className="icon-btn" onClick={close} title="Close (Esc)" aria-label="Close settings">
+          <button className="icon-btn" onClick={close} title={tr("settings.closeEsc")} aria-label={tr("settings.closeSettings")}>
             <Icon name="close" />
           </button>
         </div>
@@ -419,12 +420,12 @@ export function SettingsModal() {
         <div className="settings-layout">
           {beta ? (
             <div className="ui2-set-side">
-              <nav className="settings-nav" aria-label="Settings sections" data-arrows="v">
+              <nav className="settings-nav" aria-label={tr("settings.settingsSections")} data-arrows="v">
                 {searchBox}
                 <AccountCard onOpen={() => pick("account")} />
                 {BETA_GROUPS.map((g) => (
                   <div key={g.label} className="settings-group">
-                    {g.label !== "User" && (
+                    {g.icon !== "user" && (
                       <span className="settings-group-head">
                         <Icon name={g.icon} size={14} /> {g.label}
                       </span>
@@ -445,7 +446,7 @@ export function SettingsModal() {
               </nav>
             </div>
           ) : (
-          <nav className="settings-nav" aria-label="Settings categories">
+          <nav className="settings-nav" aria-label={tr("settings.settingsCategories")}>
             {CATS.map((c) => {
               const hits = scores ? ranked.filter(([id]) => sections.current.get(id)?.cat === c.id).length : 0;
               return (
@@ -495,13 +496,13 @@ export function SettingsModal() {
             )}
             <SecContext.Provider value={ctx}>
 {/*SECTIONS*/}
-        <Sec id="account" cat="account" title="Account" keys="login log out sign out user everywhere hacked compromised sessions password">
-          <h3>Account</h3>
+        <Sec id="account" cat="account" title={tr("settings.account")} keys="login log out sign out user everywhere hacked compromised sessions password">
+          <h3>{tr("settings.account")}</h3>
           {demo ? (
             <p>
               Demo mode: all data is made up.{" "}
               <button className="btn link" onClick={() => { close(); exitDemo(); }}>
-                Leave demo
+                {tr("settings.leaveDemo")}
               </button>
             </p>
           ) : (
@@ -510,60 +511,60 @@ export function SettingsModal() {
           {!demo && (
             <div className="row">
               <button className="btn" onClick={() => logoutAll(false)}>
-                <Icon name="logout" size={16} /> Log out (keep data)
+                <Icon name="logout" size={16} /> {tr("settings.logOutKeepData")}
               </button>
               <button className="btn" onClick={() => logoutAll(true)}>
-                Log out and clear friend cache
+                {tr("settings.logOutAndClearFriend")}
               </button>
             </div>
           )}
           {!demo && <LogoutEverywhere />}
         </Sec>
 
-        <Sec id="servers" cat="sharing" title="Servers and sharing" keys="server sync share encryption logger">
+        <Sec id="servers" cat="sharing" title={tr("settings.serversAndSharing")} keys="server sync share encryption logger">
           <h3>
-            <Icon name="server" size={16} /> Servers and sharing
+            <Icon name="server" size={16} /> {tr("settings.serversAndSharing")}
           </h3>
           {betaActive() ? <ServersPage /> : <ServersSummary />}
         </Sec>
 
-        <Sec id="requests" cat="account" title="Requests to VRChat" keys="api rate limit contact user agent interval refresh">
-          <h3>Requests to VRChat</h3>
+        <Sec id="requests" cat="account" title={tr("settings.requestsToVrchat")} keys="api rate limit contact user agent interval refresh">
+          <h3>{tr("settings.requestsToVrchat")}</h3>
           <label className="field">
-            <span>Contact for the User-Agent</span>
-            <input value={settings.contact} placeholder="Discord name or email" onChange={(e) => updateSettings({ contact: e.target.value })} />
-            <small>Sent with each request so VRChat can reach the tool's user if something goes wrong.</small>
+            <span>{tr("settings.contactForTheUserAgent")}</span>
+            <input value={settings.contact} placeholder={tr("settings.discordNameOrEmail")} onChange={(e) => updateSettings({ contact: e.target.value })} />
+            <small>{tr("settings.sentWithEachRequestSo")}</small>
           </label>
           <label className="field">
             <span>Time between requests: {(settings.intervalMs / 1000).toFixed(1)} s</span>
             <Range min={1000} max={4000} step={100} value={settings.intervalMs} onChange={(e) => updateSettings({ intervalMs: Number(e.target.value) })} />
-            <small>Never faster than one per second. Slower is gentler on VRChat; the first full sync takes about 2 × (number of friends) requests.</small>
+            <small>{tr("settings.neverFasterThanOnePer")}</small>
           </label>
           <label className="check">
             <input type="checkbox" checked={settings.autoRefresh} onChange={(e) => updateSettings({ autoRefresh: e.target.checked })} />
-            Refresh online status about every 5 minutes while the app is open
+            {tr("settings.refreshOnlineStatusAboutEvery")}
           </label>
           <div className="row">
             <label className="field narrow">
-              <span>Reload profiles after (days)</span>
+              <span>{tr("settings.reloadProfilesAfterDays")}</span>
               <input type="number" min={1} max={60} value={settings.detailTtlDays} onChange={(e) => updateSettings({ detailTtlDays: Math.max(1, Number(e.target.value) || 7) })} />
             </label>
             <label className="field narrow">
-              <span>Reload mutuals after (days)</span>
+              <span>{tr("settings.reloadMutualsAfterDays")}</span>
               <input type="number" min={1} max={60} value={settings.mutualTtlDays} onChange={(e) => updateSettings({ mutualTtlDays: Math.max(1, Number(e.target.value) || 7) })} />
             </label>
           </div>
         </Sec>
 
-        <Sec id="interface" cat="appearance" title="Interface" keys="language sprache idioma langue translation hide unavailable platform haptics vibration beta new ui text size font motion animation color blind accessibility">
+        <Sec id="interface" cat="appearance" title={tr("settings.interface")} keys="language sprache idioma langue translation hide unavailable platform haptics vibration beta new ui text size font motion animation color blind accessibility">
           <InterfaceSection />
         </Sec>
 
-        <Sec id="display" cat="appearance" title="Themes" keys="theme colors dark light style look catppuccin accent latte frappe macchiato mocha graphite grey gray tokyo night gruvbox rose pine one dark everforest solarized nord dracula">
-          <h3>Themes</h3>
+        <Sec id="display" cat="appearance" title={tr("settings.themes")} keys="theme colors dark light style look catppuccin accent latte frappe macchiato mocha graphite grey gray tokyo night gruvbox rose pine one dark everforest solarized nord dracula">
+          <h3>{tr("settings.themes")}</h3>
           <div className="field">
-            <span>Color theme</span>
-            <div className="theme-grid" role="radiogroup" aria-label="Color theme">
+            <span>{tr("settings.colorTheme")}</span>
+            <div className="theme-grid" role="radiogroup" aria-label={tr("settings.colorTheme")}>
               {THEMES.map((t) => (
                 <button
                   key={t.value}
@@ -584,7 +585,7 @@ export function SettingsModal() {
           {isCatFlavor(settings.theme) && (
             <div className="field">
               <span>Catppuccin accent: {settings.catAccent[0].toUpperCase() + settings.catAccent.slice(1)}</span>
-              <div className="accent-grid" role="radiogroup" aria-label="Accent color">
+              <div className="accent-grid" role="radiogroup" aria-label={tr("settings.accentColor")}>
                 {CAT_ACCENTS.map((a) => {
                   const color = CAT_PALETTES[settings.theme as keyof typeof CAT_PALETTES][a];
                   return (
@@ -605,52 +606,52 @@ export function SettingsModal() {
           <OwnColorsField />
         </Sec>
 
-        <Sec id="mapdisplay" cat="appearance" title="Map and profiles" keys="popup sidebar lines ring trust dim filters">
-          <h3>Map and profiles</h3>
+        <Sec id="mapdisplay" cat="appearance" title={tr("settings.mapAndProfiles")} keys="popup sidebar lines ring trust dim filters">
+          <h3>{tr("settings.mapAndProfiles")}</h3>
           <label className="field narrow">
-            <span>Open profiles</span>
+            <span>{tr("settings.openProfiles")}</span>
             <select value={settings.profileAs} onChange={(e) => updateSettings({ profileAs: e.target.value as "popup" | "sidebar" })}>
-              <option value="popup">As a popup (best on phones)</option>
-              <option value="sidebar">In a panel next to the map</option>
+              <option value="popup">{tr("settings.asAPopupBestOn")}</option>
+              <option value="sidebar">{tr("settings.inAPanelNextTo")}</option>
             </select>
           </label>
           <div className="row">
             <label className="field narrow">
-              <span>People who don't match filters</span>
+              <span>{tr("settings.peopleWhoDonTMatch")}</span>
               <select value={settings.dimMode} onChange={(e) => updateSettings({ dimMode: e.target.value as "dim" | "hide" })}>
-                <option value="dim">Dim them</option>
-                <option value="hide">Hide them</option>
+                <option value="dim">{tr("settings.dimThem")}</option>
+                <option value="hide">{tr("settings.hideThem")}</option>
               </select>
             </label>
             <label className="field narrow">
-              <span>Lines between people</span>
+              <span>{tr("settings.linesBetweenPeople")}</span>
               <select value={settings.map.lines} onChange={(e) => updateMap({ lines: e.target.value as MapSettings["lines"] })}>
-                <option value="shared">Colored by friends in common</option>
-                <option value="plain">Single color</option>
-                <option value="together">Time together (game logs)</option>
-                <option value="none">None</option>
+                <option value="shared">{tr("settings.coloredByFriendsInCommon")}</option>
+                <option value="plain">{tr("settings.singleColor")}</option>
+                <option value="together">{tr("settings.timeTogetherGameLogs")}</option>
+                <option value="none">{tr("settings.none")}</option>
               </select>
             </label>
             <label className="field narrow">
-              <span>Ring around people on the map</span>
+              <span>{tr("settings.ringAroundPeopleOnThe")}</span>
               <select value={settings.ringMode} onChange={(e) => updateSettings({ ringMode: e.target.value as "status" | "trust" })}>
-                <option value="status">Online status</option>
-                <option value="trust">Trust rank</option>
+                <option value="status">{tr("settings.onlineStatus")}</option>
+                <option value="trust">{tr("settings.trustRank")}</option>
               </select>
             </label>
           </div>
-          <p className="small muted">More options (full player cards, sizes, spacing…) are under “Map options” on the map.</p>
+          <p className="small muted">{tr("settings.moreOptionsFullPlayerCards")}</p>
         </Sec>
 
-        <Sec id="framerate" cat="performance" title="Frame rate" keys="fps vsync limit power saving battery">
+        <Sec id="framerate" cat="performance" title={tr("settings.frameRate")} keys="fps vsync limit power saving battery">
           <FrameRateSection gfx={gfx} />
         </Sec>
 
         {gfx?.supported && (
-          <Sec id="graphics" cat="performance" title="Graphics" keys="gpu software rendering">
-            <h3>Graphics</h3>
+          <Sec id="graphics" cat="performance" title={tr("settings.graphics")} keys="gpu software rendering">
+            <h3>{tr("settings.graphics")}</h3>
             <label className="field narrow">
-              <span>Map rendering</span>
+              <span>{tr("settings.mapRendering")}</span>
               <select
                 value={gfx.mode}
                 onChange={(e) => {
@@ -658,12 +659,12 @@ export function SettingsModal() {
                   backend
                     .setGraphicsMode(mode)
                     .then(() => setGfx((g) => (g ? { ...g, mode } : g)))
-                    .catch((err) => showToast(`Couldn't save the graphics setting: ${err}`));
+                    .catch((err) => showToast(tr("settings.couldnTSaveTheGraphics", { error: err })));
                 }}
               >
-                <option value="auto">Automatic</option>
-                <option value="gpu">Prefer the graphics card (GPU)</option>
-                <option value="software">Software (CPU only)</option>
+                <option value="auto">{tr("settings.automatic")}</option>
+                <option value="gpu">{tr("settings.preferTheGraphicsCardGpu")}</option>
+                <option value="software">{tr("settings.softwareCpuOnly")}</option>
               </select>
             </label>
             <p className="small muted">
@@ -672,12 +673,12 @@ export function SettingsModal() {
             </p>
             {gfx.forced && (
               <p className="small">
-                The <code>VRC_FRIEND_MAP_GPU</code> environment variable is set to <code>{gfx.forced}</code> and overrides this choice.
+                The <code>{tr("settings.vrcFriendMapGpu")}</code> environment variable is set to <code>{gfx.forced}</code> {tr("settings.andOverridesThisChoice")}
               </p>
             )}
             {gfxStart !== null && gfxStart !== gfx.mode && !gfx.forced && (
               <div className="row">
-                <span className="small">Restart the app for this to take effect.</span>
+                <span className="small">{tr("settings.restartTheAppForThis")}</span>
                 <button
                   className="btn"
                   onClick={async () => {
@@ -685,114 +686,114 @@ export function SettingsModal() {
                       await flushSaves();
                       await backend.restartApp();
                     } catch (err) {
-                      showToast(`Couldn't restart: ${err}`);
+                      showToast(tr("settings.couldnTRestartError", { error: err }));
                     }
                   }}
                 >
-                  Restart now
+                  {tr("settings.restartNow")}
                 </button>
               </div>
             )}
           </Sec>
         )}
 
-        <Sec id="age" cat="people" title="Age hints" keys="age minor adult 18 underage kids safety notes vouch distance friend request warning">
+        <Sec id="age" cat="people" title={tr("settings.ageHints")} keys="age minor adult 18 underage kids safety notes vouch distance friend request warning">
           <AgeSection />
         </Sec>
-        <Sec id="redflags" cat="people" title="Red flags in VRChat notes" keys="block reasons red flag note in game vrchat notes removed blocked">
+        <Sec id="redflags" cat="people" title={tr("settings.redFlagsInVrchatNotes")} keys="block reasons red flag note in game vrchat notes removed blocked">
           <NotesLineSection />
         </Sec>
-        <Sec id="invites" cat="people" title="Invite messages" keys="invite request message template slot">
+        <Sec id="invites" cat="people" title={tr("settings.inviteMessages")} keys="invite request message template slot">
           <InviteMessagesSection />
         </Sec>
-        <Sec id="bios" cat="people" title="Reading bios in the background" keys="bio profile background cache preload slow">
+        <Sec id="bios" cat="people" title={tr("settings.readingBiosInTheBackground")} keys="bio profile background cache preload slow">
           <BioSection />
         </Sec>
-        <Sec id="people" cat="people" title="People who aren't friends" keys="strangers blocked profiles cache">
+        <Sec id="people" cat="people" title={tr("settings.peopleWhoArenTFriends")} keys="strangers blocked profiles cache">
           <PeopleSection />
         </Sec>
 
-        <Sec id="wheel" cat="performance" title="Mouse wheel" keys="scroll zoom wheel mouse touchpad x11 xlibre input not working" unavailable={wheelFixHere ? null : unavailable("wheelFix") ?? "Only needed on Linux (X11)."}>
+        <Sec id="wheel" cat="performance" title={tr("settings.mouseWheel")} keys="scroll zoom wheel mouse touchpad x11 xlibre input not working" unavailable={wheelFixHere ? null : unavailable("wheelFix") ?? tr("settings.onlyNeededOnLinuxX11")}>
           <WheelFixSection />
         </Sec>
-        <Sec id="diagnostics" cat="performance" title="Diagnostics" keys="fps gpu benchmark debug">
+        <Sec id="diagnostics" cat="performance" title={tr("settings.diagnostics")} keys="fps gpu benchmark debug">
           <Diagnostics />
         </Sec>
 
-        <Sec id="notify" cat="sounds" title="Notifications" keys="sound notification volume chime online offline alert mute ping tune friend added removed joined left world once date waiting">
+        <Sec id="notify" cat="sounds" title={tr("settings.notifications")} keys="sound notification volume chime online offline alert mute ping tune friend added removed joined left world once date waiting">
           <NotificationsSection />
         </Sec>
-        <Sec id="phone" cat="sounds" title="Phone in the background" keys="android background service push unifiedpush sunup ntfy battery refresh rate 120hz widget root quest singularity logs" unavailable={unavailable("backgroundService")}>
+        <Sec id="phone" cat="sounds" title={tr("settings.phoneInTheBackground")} keys="android background service push unifiedpush sunup ntfy battery refresh rate 120hz widget root quest singularity logs" unavailable={unavailable("backgroundService")}>
           <PhoneSection />
         </Sec>
-        <Sec id="close" cat="sounds" title="Closing the window" keys="tray minimize background close quit exit" unavailable={unavailable("closeWindow")}>
+        <Sec id="close" cat="sounds" title={tr("settings.closingTheWindow")} keys="tray minimize background close quit exit" unavailable={unavailable("closeWindow")}>
           <CloseSection />
         </Sec>
 
-        <Sec id="logs" cat="logs" title="Game logs" keys="log folder steam instance here live" unavailable={unavailable("gameLogs")}>
+        <Sec id="logs" cat="logs" title={tr("settings.gameLogs")} keys="log folder steam instance here live" unavailable={unavailable("gameLogs")}>
           <GameLogSection />
         </Sec>
 
-        <Sec id="groups" cat="logs" title="Friend group detection" keys="circles suggestions automatic">
+        <Sec id="groups" cat="logs" title={tr("settings.friendGroupDetection")} keys="circles suggestions automatic">
           <GroupSection />
         </Sec>
 
-        <Sec id="nowplaying" cat="account" title="Now playing in your status" keys="music song spotify mpris playerctl status text" unavailable={unavailable("mpris")}>
+        <Sec id="nowplaying" cat="account" title={tr("settings.nowPlayingInYourStatus")} keys="music song spotify mpris playerctl status text" unavailable={unavailable("mpris")}>
           <NowPlayingSection />
         </Sec>
-        <Sec id="playtime" cat="account" title="Steam play time in your bio" keys="steam hours play time bio" unavailable={unavailable("steam")}>
+        <Sec id="playtime" cat="account" title={tr("settings.steamPlayTimeInYour")} keys="steam hours play time bio" unavailable={unavailable("steam")}>
           <PlaytimeSection />
         </Sec>
-        <Sec id="accounts" cat="account" title="Your other accounts" keys="multiple accounts alt second account main switch act as crossover">
+        <Sec id="accounts" cat="account" title={tr("settings.yourOtherAccounts")} keys="multiple accounts alt second account main switch act as crossover">
           <AccountsSection />
         </Sec>
-        <Sec id="backup" cat="account" title="Backup to another device" keys="backup export import restore move device encrypted password file">
+        <Sec id="backup" cat="account" title={tr("settings.backupToAnotherDevice")} keys="backup export import restore move device encrypted password file">
           <BackupSection />
         </Sec>
-        <Sec id="data" cat="account" title="Local data" keys="storage cache delete backup folder">
-          <h3>Local data</h3>
+        <Sec id="data" cat="account" title={tr("settings.localData")} keys="storage cache delete backup folder">
+          <h3>{tr("settings.localData")}</h3>
           {demo ? (
-            <p className="small muted">Demo data isn't saved. Your real circles and cache are untouched.</p>
+            <p className="small muted">{tr("settings.demoDataIsnTSaved")}</p>
           ) : info ? (
             <>
               <p className="small">
                 Stored in <code>{info.data_dir}</code>. Image cache: {(info.image_cache_bytes / 1024 / 1024).toFixed(1)} MB. Before an update
-                changes the format of your data, a copy is saved in <code>store/backups</code>.
+                changes the format of your data, a copy is saved in <code>{tr("settings.storeBackups")}</code>.
               </p>
               <div className="row">
                 <button className="btn" onClick={() => backend.clearImageCache().then(() => backend.storageInfo().then(setInfo))}>
-                  Clear image cache
+                  {tr("settings.clearImageCache")}
                 </button>
                 {!confirmWipe ? (
                   <button className="btn danger" onClick={() => setConfirmWipe(true)}>
-                    Delete all local data…
+                    {tr("settings.deleteAllLocalData")}
                   </button>
                 ) : (
                   <button className="btn danger" onClick={() => wipeEverything()}>
-                    Yes, delete circles, imports, cache, log history and log out
+                    {tr("settings.yesDeleteCirclesImportsCache")}
                   </button>
                 )}
               </div>
             </>
           ) : (
-            <p className="small muted">Running in a browser: data is kept in this browser's local storage.</p>
+            <p className="small muted">{tr("settings.runningInABrowserData")}</p>
           )}
         </Sec>
-        <Sec id="updates" cat="account" title="Updates" keys="update upgrade new version download install release">
+        <Sec id="updates" cat="account" title={tr("settings.updates")} keys="update upgrade new version download install release">
           <UpdatesSection />
         </Sec>
-        <Sec id="about" cat="account" title="About" keys="version">
-          <h3>About</h3>
+        <Sec id="about" cat="account" title={tr("settings.about")} keys="version">
+          <h3>{tr("settings.about")}</h3>
           <p className="small muted">VRC Friend Map {__APP_VERSION__} (build {__APP_BUILD__}). Not affiliated with VRChat Inc.</p>
         </Sec>
             </SecContext.Provider>
             </div>
             {beta && !phone && (
               <div className="ui2-set-close">
-                <button onClick={close} title="Close (Esc)" aria-label="Close settings">
+                <button onClick={close} title={tr("settings.closeEsc")} aria-label={tr("settings.closeSettings")}>
                   <Icon name="close" size={18} />
                 </button>
-                <span>ESC</span>
+                <span>{tr("settings.esc")}</span>
               </div>
             )}
           </div>
@@ -803,22 +804,22 @@ export function SettingsModal() {
 }
 
 type Cat = "appearance" | "performance" | "people" | "logs" | "sharing" | "sounds" | "account";
-const CATS: { id: Cat; label: string; icon: string }[] = [
-  { id: "appearance", label: "Appearance", icon: "eye" },
-  { id: "performance", label: "Performance", icon: "rocket" },
-  { id: "people", label: "People", icon: "users" },
-  { id: "logs", label: "Game logs & groups", icon: "clock" },
-  { id: "sharing", label: "Sharing & servers", icon: "server" },
-  { id: "sounds", label: "Notifications", icon: "sound" },
-  { id: "account", label: "Account & data", icon: "user" },
-];
+const CATS: { id: Cat; label: string; icon: string }[] = lazy(() => [
+  { id: "appearance", label: tr("settings.appearance"), icon: "eye" },
+  { id: "performance", label: tr("settings.performance"), icon: "rocket" },
+  { id: "people", label: tr("settings.people"), icon: "users" },
+  { id: "logs", label: tr("settings.gameLogsGroups"), icon: "clock" },
+  { id: "sharing", label: tr("settings.sharingServers"), icon: "server" },
+  { id: "sounds", label: tr("settings.notifications"), icon: "sound" },
+  { id: "account", label: tr("settings.accountData"), icon: "user" },
+]);
 
-const OWN_COLOR_FIELDS: { key: keyof OwnColors; label: string }[] = [
-  { key: "accent", label: "Accent" },
-  { key: "bg", label: "Background" },
-  { key: "panel", label: "Panels" },
-  { key: "text", label: "Text" },
-];
+const OWN_COLOR_FIELDS: { key: keyof OwnColors; label: string }[] = lazy(() => [
+  { key: "accent", label: tr("settings.accent") },
+  { key: "bg", label: tr("settings.background") },
+  { key: "panel", label: tr("settings.panels") },
+  { key: "text", label: tr("settings.text") },
+]);
 
 /** Appearance: pick your own main colors on top of the theme; each can go back to the theme's. */
 function OwnColorsField() {
@@ -833,15 +834,15 @@ function OwnColorsField() {
   const any = OWN_COLOR_FIELDS.some((f) => own[f.key]);
   return (
     <div className="field">
-      <span>Your own colors (on top of the theme)</span>
+      <span>{tr("settings.yourOwnColorsOnTop")}</span>
       <div className="own-colors">
         {OWN_COLOR_FIELDS.map((f) => (
           <label key={f.key} className="own-color">
             <input type="color" value={own[f.key] || shown(f.key)} onChange={(e) => set(f.key, e.target.value)} aria-label={`${f.label} color`} />
             <span>{f.label}</span>
             {own[f.key] && (
-              <button type="button" className="btn link small" onClick={() => set(f.key, "")} title="Back to the theme's color">
-                Reset
+              <button type="button" className="btn link small" onClick={() => set(f.key, "")} title={tr("settings.backToTheThemeS")}>
+                {tr("settings.reset")}
               </button>
             )}
           </label>
@@ -849,7 +850,7 @@ function OwnColorsField() {
       </div>
       {any && (
         <button type="button" className="btn small ghost" onClick={() => updateSettings({ ownColors: { ...NO_OWN_COLORS } })}>
-          Use the theme's colors again
+          {tr("settings.useTheThemeSColors")}
         </button>
       )}
     </div>
@@ -857,29 +858,29 @@ function OwnColorsField() {
 }
 
 /** New interface: settings pages in groups (User, App, People, Connect, Advanced), like Discord. */
-const BETA_PAGES: { id: string; group: string; label: string; icon: string; about: string }[] = [
-  { id: "account", group: "User", label: "My account", icon: "user", about: "Your VRChat login and what this app asks VRChat for." },
-  { id: "status", group: "User", label: "Status extras", icon: "star", about: "Things the app can put into your VRChat status or bio." },
-  { id: "appearance", group: "App", label: "Appearance", icon: "eye", about: "Theme, colours and how the map and profiles look." },
-  { id: "performance", group: "App", label: "Performance", icon: "rocket", about: "How smooth the map is and how much power it uses." },
-  { id: "notify", group: "App", label: "Notifications & sounds", icon: "bell", about: "What you hear and see when friends do things." },
-  { id: "people", group: "People", label: "People & safety", icon: "shield", about: "Hints about people, and who shows up at all." },
-  { id: "invites", group: "People", label: "Invite messages", icon: "user-plus", about: "Ready-made messages for invites and requests." },
-  { id: "logs", group: "People", label: "Game logs & groups", icon: "clock", about: "Reading VRChat's log files on this computer." },
-  { id: "servers", group: "Connect", label: "Sharing & servers", icon: "server", about: "Share with friends, sync your devices, log around the clock." },
-  { id: "devices", group: "Connect", label: "Devices & backup", icon: "phone", about: "Keep your phone and PC in step." },
-  { id: "data", group: "Advanced", label: "Local data", icon: "folder", about: "Everything stored on this device." },
-  { id: "diagnostics", group: "Advanced", label: "Diagnostics", icon: "chart", about: "Numbers that help find bugs." },
-  { id: "updates", group: "Advanced", label: "Updates", icon: "download", about: "Checks GitHub for new versions." },
-  { id: "about", group: "Advanced", label: "About", icon: "info", about: "Version, build and links." },
-];
-const BETA_GROUPS: { label: string; icon: string }[] = [
-  { label: "User", icon: "user" },
-  { label: "App", icon: "sliders" },
-  { label: "People", icon: "users" },
-  { label: "Connect", icon: "link" },
-  { label: "Advanced", icon: "key" },
-];
+const BETA_PAGES: { id: string; group: string; label: string; icon: string; about: string }[] = lazy(() => [
+  { id: "account", group: tr("settings.user"), label: tr("settings.myAccount"), icon: "user", about: tr("settings.yourVrchatLoginAndWhat") },
+  { id: "status", group: tr("settings.user"), label: tr("settings.statusExtras"), icon: "star", about: tr("settings.thingsTheAppCanPut") },
+  { id: "appearance", group: tr("settings.app"), label: tr("settings.appearance"), icon: "eye", about: tr("settings.themeColoursAndHowThe") },
+  { id: "performance", group: tr("settings.app"), label: tr("settings.performance"), icon: "rocket", about: tr("settings.howSmoothTheMapIs") },
+  { id: "notify", group: tr("settings.app"), label: tr("settings.notificationsSounds"), icon: "bell", about: tr("settings.whatYouHearAndSee") },
+  { id: "people", group: tr("settings.people"), label: tr("settings.peopleSafety"), icon: "shield", about: tr("settings.hintsAboutPeopleAndWho") },
+  { id: "invites", group: tr("settings.people"), label: tr("settings.inviteMessages"), icon: "user-plus", about: tr("settings.readyMadeMessagesForInvites") },
+  { id: "logs", group: tr("settings.people"), label: tr("settings.gameLogsGroups"), icon: "clock", about: tr("settings.readingVrchatSLogFiles") },
+  { id: "servers", group: tr("settings.connect"), label: tr("settings.sharingServers"), icon: "server", about: tr("settings.shareWithFriendsSyncYour") },
+  { id: "devices", group: tr("settings.connect"), label: tr("settings.devicesBackup"), icon: "phone", about: tr("settings.keepYourPhoneAndPc") },
+  { id: "data", group: tr("settings.advanced"), label: tr("settings.localData"), icon: "folder", about: tr("settings.everythingStoredOnThisDevice") },
+  { id: "diagnostics", group: tr("settings.advanced"), label: tr("settings.diagnostics"), icon: "chart", about: tr("settings.numbersThatHelpFindBugs") },
+  { id: "updates", group: tr("settings.advanced"), label: tr("settings.updates"), icon: "download", about: tr("settings.checksGithubForNewVersions") },
+  { id: "about", group: tr("settings.advanced"), label: tr("settings.about"), icon: "info", about: tr("settings.versionBuildAndLinks") },
+]);
+const BETA_GROUPS: { label: string; icon: string }[] = lazy(() => [
+  { label: tr("settings.user"), icon: "user" },
+  { label: tr("settings.app"), icon: "sliders" },
+  { label: tr("settings.people"), icon: "users" },
+  { label: tr("settings.connect"), icon: "link" },
+  { label: tr("settings.advanced"), icon: "key" },
+]);
 /** Which page each section is on in the new interface. */
 const BETA_OF: Record<string, string> = {
   account: "account", requests: "account", accounts: "account",
@@ -905,10 +906,10 @@ function LogoutEverywhere() {
   const carriers = logoutCarriers();
   return (
     <div className="logout-everywhere">
-      <h4 className="sub-h">Log out everywhere</h4>
+      <h4 className="sub-h">{tr("settings.logOutEverywhere")}</h4>
       <p className="small muted">
-        Logs out this device and every other device of yours where this app syncs with it
-        {carriers.length ? ` (through ${carriers.map((s) => serverName(s)).join(", ")}, or directly at home)` : " (needs a server that syncs your devices; without one, only this device)"}. Devices
+        {tr("settings.logsOutThisDeviceAnd")}
+        {carriers.length ? tr("settings.throughValueOrDirectlyAt", { value: carriers.map((s) => serverName(s)).join(", ") }) : tr("settings.needsAServerThatSyncs")}. Devices
         that are off log out at their next sync.
       </p>
       <p className="small muted">
@@ -928,21 +929,21 @@ function LogoutEverywhere() {
               try {
                 await logoutEverywhere();
               } catch (e) {
-                showToast(`Couldn't log out everywhere: ${e}`);
+                showToast(tr("settings.couldnTLogOutEverywhere", { error: e }));
                 setBusy(false);
               }
             }}
           >
-            {busy ? "Logging out…" : "Yes, log out everywhere"}
+            {busy ? tr("settings.loggingOut") : tr("settings.yesLogOutEverywhere")}
           </button>
           <button className="btn ghost" disabled={busy} onClick={() => setAsk(false)}>
-            Cancel
+            {tr("settings.cancel")}
           </button>
         </div>
       ) : (
         <div className="row">
           <button className="btn" onClick={() => setAsk(true)}>
-            <Icon name="logout" size={16} /> Log out everywhere…
+            <Icon name="logout" size={16} /> {tr("settings.logOutEverywhere2")}
           </button>
         </div>
       )}
@@ -958,24 +959,24 @@ function AccountCard({ onOpen }: { onOpen: () => void }) {
   const f = me?.profile;
   const src = f ? imgSrc(iconUrl(f)) : undefined;
   const ring = f ? statusColor(f, "online") : "var(--muted)";
-  const status = f ? (STATUS_LABEL[f.status] ?? "Online") : demo ? "Demo mode" : "Not signed in";
+  const status = f ? (STATUS_LABEL[f.status] ?? "Online") : demo ? tr("settings.demoMode") : tr("settings.notSignedIn");
   return (
     <div className="settings-account">
-      <button className="settings-account-me" onClick={onOpen} title="My account">
+      <button className="settings-account-me" onClick={onOpen} title={tr("settings.myAccount")}>
         <span className="ui2-avatar" style={{ width: 38, height: 38, boxShadow: `0 0 0 2px var(--panel-2), 0 0 0 4px ${ring}` }}>
           {src ? <img src={src} alt="" /> : (me?.displayName?.[0] ?? "?")}
         </span>
         <span className="settings-account-text">
-          <b>{me?.displayName ?? (demo ? "Demo" : "Not signed in")}</b>
+          <b>{me?.displayName ?? (demo ? "Demo" : tr("settings.notSignedIn"))}</b>
           <span className="small muted">
             {status}
-            {alts > 0 ? ` · ${alts + 1} accounts` : ""}
+            {alts > 0 ? tr("settings.valueAccounts", { value: alts + 1 }) : ""}
           </span>
         </span>
       </button>
       {!demo && me && (
-        <button className="settings-logout" onClick={() => logoutAll(false)} title="Log out (keeps your data)">
-          Log out
+        <button className="settings-logout" onClick={() => logoutAll(false)} title={tr("settings.logOutKeepsYourData")}>
+          {tr("settings.logOut")}
         </button>
       )}
     </div>
@@ -1051,22 +1052,22 @@ function PictureFolders() {
   }, []);
   return (
     <div className="field">
-      <span>Picture folders (Logbook → Pictures)</span>
+      <span>{tr("settings.pictureFoldersLogbookPictures")}</span>
       <ul className="path-list">
         {found.map((p) => (
           <li key={p}>
-            <code>{p}</code> <span className="muted small">(found)</span>
+            <code>{p}</code> <span className="muted small">{tr("settings.found")}</span>
           </li>
         ))}
         {ls.pictureDirs.map((p) => (
           <li key={p}>
             <code>{p}</code>
-            <button className="icon-btn tiny" title="Remove" onClick={() => updateLogSettings({ pictureDirs: ls.pictureDirs.filter((x) => x !== p) })}>
+            <button className="icon-btn tiny" title={tr("settings.remove")} onClick={() => updateLogSettings({ pictureDirs: ls.pictureDirs.filter((x) => x !== p) })}>
               <Icon name="close" size={12} />
             </button>
           </li>
         ))}
-        {!found.length && !ls.pictureDirs.length && <li className="muted small">No VRChat picture folder found automatically.</li>}
+        {!found.length && !ls.pictureDirs.length && <li className="muted small">{tr("settings.noVrchatPictureFolderFound")}</li>}
       </ul>
       <form
         className="inline-form"
@@ -1078,8 +1079,8 @@ function PictureFolders() {
           setD("");
         }}
       >
-        <input value={d} placeholder="/path/to/Pictures/VRChat" onChange={(e) => setD(e.target.value)} />
-        <button className="btn" type="submit" disabled={!d.trim()} title="Add folder">
+        <input value={d} placeholder={tr("settings.pathToPicturesVrchat")} onChange={(e) => setD(e.target.value)} />
+        <button className="btn" type="submit" disabled={!d.trim()} title={tr("settings.addFolder")}>
           <Icon name="plus" size={16} />
         </button>
       </form>
@@ -1098,47 +1099,47 @@ function GameLogSection() {
   if (!logsSupported(logs.platform)) {
     return (
       <>
-        <h3>Game logs</h3>
+        <h3>{tr("settings.gameLogs")}</h3>
         <p className="small muted">
           {logs.platform === "browser"
-            ? "Reading VRChat's log files needs the desktop app."
-            : "VRChat's log files only exist on the PC that runs VRChat, so this part works in the Windows and Linux apps only."}
+            ? tr("settings.readingVrchatSLogFiles2")
+            : tr("settings.vrchatSLogFilesOnly")}
         </p>
       </>
     );
   }
   return (
     <>
-      <h3>Game logs (this PC)</h3>
+      <h3>{tr("settings.gameLogsThisPc")}</h3>
       <p className="small muted">
         VRChat writes a log while it runs. The app reads who joined and left your instances to work out who spends time together. It only reads
         files; nothing is sent anywhere. Logs from Quest or phone sessions aren't available.
       </p>
-      {demo && <p className="small warn">Demo mode: log reading is paused and the data shown is made up.</p>}
+      {demo && <p className="small warn">{tr("settings.demoModeLogReadingIs")}</p>}
       <label className="check">
         <input type="checkbox" checked={ls.enabled} onChange={(e) => updateLogSettings({ enabled: e.target.checked })} />
-        Read VRChat's logs
+        {tr("settings.readVrchatSLogs")}
       </label>
       <label className="check">
         <input type="checkbox" checked={ls.autoDetect} onChange={(e) => updateLogSettings({ autoDetect: e.target.checked })} />
-        Find the log folder automatically (Windows, Steam/Proton libraries on any drive, Flatpak and Snap Steam)
+        {tr("settings.findTheLogFolderAutomatically")}
       </label>
       <label className="check">
         <input type="checkbox" checked={ls.live} disabled={!ls.enabled} onChange={(e) => updateLogSettings({ live: e.target.checked })} />
-        Show who's in my instance right now (follows the log while VRChat runs)
+        {tr("settings.showWhoSInMy")}
       </label>
       {ls.autoDetect && (
         <ul className="path-list">
-          {logs.detected.length ? logs.detected.map((d) => <li key={d}><code>{d}</code></li>) : <li className="muted small">No VRChat log folder found automatically.</li>}
+          {logs.detected.length ? logs.detected.map((d) => <li key={d}><code>{d}</code></li>) : <li className="muted small">{tr("settings.noVrchatLogFolderFound")}</li>}
         </ul>
       )}
       <div className="field">
-        <span>Extra folders</span>
+        <span>{tr("settings.extraFolders")}</span>
         <ul className="path-list">
           {ls.dirs.map((d) => (
             <li key={d}>
               <code>{d}</code>
-              <button className="icon-btn tiny" title="Remove" onClick={() => updateLogSettings({ dirs: ls.dirs.filter((x) => x !== d) })}>
+              <button className="icon-btn tiny" title={tr("settings.remove")} onClick={() => updateLogSettings({ dirs: ls.dirs.filter((x) => x !== d) })}>
                 <Icon name="close" size={12} />
               </button>
             </li>
@@ -1154,17 +1155,17 @@ function GameLogSection() {
             setNewDir("");
           }}
         >
-          <input value={newDir} placeholder="/path/to/AppData/LocalLow/VRChat/VRChat" onChange={(e) => setNewDir(e.target.value)} />
-          <button className="btn" type="submit" disabled={!newDir.trim()} title="Add folder">
+          <input value={newDir} placeholder={tr("settings.pathToAppdataLocallowVrchat")} onChange={(e) => setNewDir(e.target.value)} />
+          <button className="btn" type="submit" disabled={!newDir.trim()} title={tr("settings.addFolder")}>
             <Icon name="plus" size={16} />
           </button>
         </form>
-        <small>Full path of the folder that contains the output_log_….txt files.</small>
+        <small>{tr("settings.fullPathOfTheFolder")}</small>
       </div>
       <PictureFolders />
       <div className="row">
         <label className="field narrow">
-          <span>Check for new entries every</span>
+          <span>{tr("settings.checkForNewEntriesEvery")}</span>
           <select value={ls.scanMinutes} onChange={(e) => updateLogSettings({ scanMinutes: Number(e.target.value) })}>
             {[1, 2, 5, 10, 30, 60].map((m) => (
               <option key={m} value={m}>
@@ -1174,7 +1175,7 @@ function GameLogSection() {
           </select>
         </label>
         <label className="field narrow">
-          <span>Keep history</span>
+          <span>{tr("settings.keepHistory")}</span>
           <select value={ls.retentionDays} onChange={(e) => updateLogSettings({ retentionDays: Number(e.target.value) })}>
             {RETENTION.map(([v, l]) => (
               <option key={v} value={v}>
@@ -1186,17 +1187,17 @@ function GameLogSection() {
       </div>
       <p className="small">
         {r && r.visits > 0
-          ? `History: ${r.visits} instance visits from ${r.files_stored} log files, ${naiveToDate(r.first).toLocaleDateString()} – ${naiveToDate(r.last).toLocaleDateString()} (${(r.bytes / 1024).toFixed(0)} KB). It's kept even after VRChat deletes old log files.`
-          : "No log history yet."}
+          ? tr("settings.historyVisitsInstanceVisitsFrom", { visits: r.visits, files_stored: r.files_stored, value: naiveToDate(r.first).toLocaleDateString(), value2: naiveToDate(r.last).toLocaleDateString(), value3: (r.bytes / 1024).toFixed(0) })
+          : tr("settings.noLogHistoryYet")}
       </p>
       {logs.error && <p className="small warn">{logs.error}</p>}
       <div className="row">
         <button className="btn" disabled={logs.scanning || demo} onClick={() => scanLogs(true)}>
-          <Icon name="refresh" size={16} /> {logs.scanning ? "Reading…" : "Read logs now"}
+          <Icon name="refresh" size={16} /> {logs.scanning ? tr("settings.reading") : tr("settings.readLogsNow")}
         </button>
         {!confirm ? (
           <button className="btn" disabled={demo} onClick={() => setConfirm(true)}>
-            Forget log history…
+            {tr("settings.forgetLogHistory")}
           </button>
         ) : (
           <button
@@ -1206,7 +1207,7 @@ function GameLogSection() {
               setConfirm(false);
             }}
           >
-            Yes, forget it (log files themselves stay)
+            {tr("settings.yesForgetItLogFiles")}
           </button>
         )}
       </div>
@@ -1220,10 +1221,10 @@ function GroupSection() {
   const set = (patch: Partial<GroupSettings>) => updateGroupSettings(patch);
   return (
     <>
-      <h3>Friend group detection</h3>
+      <h3>{tr("settings.friendGroupDetection")}</h3>
       <label className="check">
         <input type="checkbox" checked={g.useLogs} onChange={(e) => set({ useLogs: e.target.checked })} />
-        Use my game logs (time friends spent in instances with me, PC only)
+        {tr("settings.useMyGameLogsTime")}
       </label>
       <label className="check">
         <input type="checkbox" checked={g.useLive} onChange={(e) => set({ useLive: e.target.checked })} />
@@ -1231,7 +1232,7 @@ function GroupSection() {
         device; private instances can't be seen)
       </label>
       <button className="btn small" onClick={() => forgetObserved()}>
-        Forget friend-location history
+        {tr("settings.forgetFriendLocationHistory")}
       </button>
       <p className="small muted">
         Suggestions come from who spends time in the same instance. Two people count as connected when they spent enough time together on
@@ -1239,17 +1240,17 @@ function GroupSection() {
       </p>
       <div className="row">
         <label className="field narrow">
-          <span>Time together at least</span>
+          <span>{tr("settings.timeTogetherAtLeast")}</span>
           <select value={g.minMinutes} onChange={(e) => set({ minMinutes: Number(e.target.value) })}>
             {[10, 20, 30, 60, 120, 240].map((m) => (
               <option key={m} value={m}>
-                {m < 60 ? `${m} min` : `${m / 60} h`}
+                {m < 60 ? tr("settings.mMin", { m }) : tr("settings.valueH", { value: m / 60 })}
               </option>
             ))}
           </select>
         </label>
         <label className="field narrow">
-          <span>…on at least</span>
+          <span>{tr("settings.onAtLeast")}</span>
           <select value={g.minDays} onChange={(e) => set({ minDays: Number(e.target.value) })}>
             {[1, 2, 3, 5, 7, 10].map((d) => (
               <option key={d} value={d}>
@@ -1259,7 +1260,7 @@ function GroupSection() {
           </select>
         </label>
         <label className="field narrow">
-          <span>Smallest group</span>
+          <span>{tr("settings.smallestGroup")}</span>
           <select value={g.minSize} onChange={(e) => set({ minSize: Number(e.target.value) })}>
             {[2, 3, 4, 5, 6, 8].map((n) => (
               <option key={n} value={n}>
@@ -1271,37 +1272,37 @@ function GroupSection() {
       </div>
       <label className="field">
         <span>
-          Group size: <b>{g.resolution < 0.8 ? "bigger, looser groups" : g.resolution > 1.25 ? "smaller, tighter groups" : "balanced"}</b>
+          Group size: <b>{g.resolution < 0.8 ? tr("settings.biggerLooserGroups") : g.resolution > 1.25 ? tr("settings.smallerTighterGroups") : "balanced"}</b>
         </span>
         <Range min={0.4} max={2.2} step={0.05} value={g.resolution} onChange={(e) => set({ resolution: Number(e.target.value) })} />
       </label>
       <div className="row">
         <label className="field narrow">
-          <span>Big instances count</span>
+          <span>{tr("settings.bigInstancesCount")}</span>
           <select value={g.crowd} onChange={(e) => set({ crowd: e.target.value as GroupSettings["crowd"] })}>
-            <option value="strong">Much less (recommended)</option>
-            <option value="mild">A bit less</option>
-            <option value="off">The same</option>
+            <option value="strong">{tr("settings.muchLessRecommended")}</option>
+            <option value="mild">{tr("settings.aBitLess")}</option>
+            <option value="off">{tr("settings.theSame")}</option>
           </select>
         </label>
         <label className="field narrow">
-          <span>Use history from</span>
+          <span>{tr("settings.useHistoryFrom")}</span>
           <select value={g.sinceDays} onChange={(e) => set({ sinceDays: Number(e.target.value) })}>
-            <option value={0}>All time</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-            <option value={180}>Last 6 months</option>
-            <option value={365}>Last year</option>
+            <option value={0}>{tr("settings.allTime")}</option>
+            <option value={30}>{tr("settings.last30Days")}</option>
+            <option value={90}>{tr("settings.last90Days")}</option>
+            <option value={180}>{tr("settings.last6Months")}</option>
+            <option value={365}>{tr("settings.lastYear")}</option>
           </select>
         </label>
       </div>
       <label className="check">
         <input type="checkbox" checked={g.overlap} onChange={(e) => set({ overlap: e.target.checked })} />
-        People can be in more than one suggested group
+        {tr("settings.peopleCanBeInMore")}
       </label>
       <label className="check">
         <input type="checkbox" checked={g.mutualBoost} onChange={(e) => set({ mutualBoost: e.target.checked })} />
-        Weigh time together more when the two are VRChat friends too
+        {tr("settings.weighTimeTogetherMoreWhen")}
       </label>
       <label className="check">
         <input type="checkbox" checked={g.auto} onChange={(e) => set({ auto: e.target.checked })} />
@@ -1326,10 +1327,10 @@ function ServersSummary() {
       <p className="small">
         {servers.length
           ? `${servers.length} server${servers.length === 1 ? "" : "s"}: ${servers.map(serverName).join(", ")}. ${people} ${people === 1 ? "person shares" : "people share"} with you${loggers.length ? `; logging on ${loggers.map(serverName).join(", ")}` : ""}.`
-          : "Share friend lists and activity with friends through vfm-servers (end-to-end encrypted), and let a spare device log your friends' instance hopping 24/7 for better circle suggestions."}
+          : tr("settings.shareFriendListsAndActivity")}
       </p>
       <button className="btn" onClick={openServers}>
-        <Icon name="server" size={16} /> {servers.length ? "Manage servers" : "Set up"}
+        <Icon name="server" size={16} /> {servers.length ? tr("settings.manageServers") : tr("settings.setUp")}
       </button>
     </>
   );
@@ -1340,17 +1341,17 @@ function PeopleSection() {
   const blocked = useApp((s) => Object.values(s.cache.moderations?.byUser ?? {}).filter((t) => t.includes("block")).length);
   return (
     <>
-      <h3>People who aren't friends</h3>
+      <h3>{tr("settings.peopleWhoArenTFriends")}</h3>
       <label className="check">
         <input type="checkbox" checked={people.loadEveryone} onChange={(e) => updatePeople({ loadEveryone: e.target.checked })} />
-        Load the profile of everyone in my instance (otherwise the first 25)
+        {tr("settings.loadTheProfileOfEveryone")}
       </label>
       <label className="field narrow">
-        <span>Keep their profiles on this device</span>
+        <span>{tr("settings.keepTheirProfilesOnThis")}</span>
         <select value={people.keep} onChange={(e) => updatePeople({ keep: e.target.value as typeof people.keep })}>
-          <option value="none">Don't keep (only while the app is open)</option>
-          <option value="potential">Only potential friends</option>
-          <option value="everyone">Everyone</option>
+          <option value="none">{tr("settings.donTKeepOnlyWhile")}</option>
+          <option value="potential">{tr("settings.onlyPotentialFriends")}</option>
+          <option value="everyone">{tr("settings.everyone")}</option>
         </select>
       </label>
       <p className="small muted">
@@ -1370,7 +1371,7 @@ function UpdatesSection() {
   const [checking, setChecking] = useState(false);
   return (
     <>
-      <h3>Updates</h3>
+      <h3>{tr("settings.updates")}</h3>
       <label className="check">
         <input type="checkbox" checked={u.check} onChange={(e) => updateSettings({ updates: { ...u, check: e.target.checked } })} />
         Look for new versions automatically and ask me to update (every few hours, on GitHub; recommended)
@@ -1391,7 +1392,7 @@ function UpdatesSection() {
             setChecking(false);
           }}
         >
-          <Icon name="refresh" size={14} /> {checking ? "Checking…" : "Check now"}
+          <Icon name="refresh" size={14} /> {checking ? tr("settings.checking") : tr("settings.checkNow")}
         </button>
         {u.skipped && (
           <button className="btn small ghost" onClick={() => updateSettings({ updates: { ...u, skipped: "" } })}>
