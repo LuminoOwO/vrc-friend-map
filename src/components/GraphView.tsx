@@ -1677,17 +1677,29 @@ export function GraphView() {
     const speed = ([0, 0.012, 0.03, 0.07][Math.round(map.orbit)] ?? 0.012) * (map.orbitDir === -1 ? -1 : 1); // radians per second
     let raf = 0;
     let nap: ReturnType<typeof setTimeout> | undefined;
+    let wake: (() => void) | undefined;
     orbitRef.current.last = performance.now();
+    const resume = () => {
+      orbitRef.current.last = performance.now();
+      raf = requestAnimationFrame(step);
+    };
     const step = (now: number) => {
       const dt = Math.min(0.1, (now - orbitRef.current.last) / 1000);
       orbitRef.current.last = now;
       // A limit of 0 (unfocused / idle / in the tray) stops the orbit until something
       // changes. Check back twice a second instead of every frame, so the page sleeps.
       if (frameCapRef.current() <= 0) {
-        nap = setTimeout(() => {
-          orbitRef.current.last = performance.now();
-          raf = requestAnimationFrame(step);
-        }, 500);
+        // In the tray: sleep until the window is back (no checking at all meanwhile).
+        if (appHidden()) {
+          wake = onAppVisibility((hidden) => {
+            if (hidden) return;
+            wake?.();
+            wake = undefined;
+            resume();
+          });
+          return;
+        }
+        nap = setTimeout(resume, 500);
         return;
       }
       const a = speed * dt;
@@ -1711,6 +1723,7 @@ export function GraphView() {
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(nap);
+      wake?.();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map.orbit, map.orbitDir]);

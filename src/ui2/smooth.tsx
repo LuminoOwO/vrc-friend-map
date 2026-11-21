@@ -2,11 +2,14 @@
 //
 // useSmooth(): put the ref on a list's parent; items that appear, disappear or move get a short
 // animation, and everything around them slides into place instead of jumping (AutoAnimate).
-// Off with Settings → Animations → fewer (data-motion="reduce") or the system's reduced motion.
+// Off with Settings → Animations → fewer (data-motion="reduce") or the system's reduced motion,
+// and paused while the window is in the tray (the library keeps checking every item's position
+// on timers otherwise).
 //
 // <Skel />: a shimmering bar where text is still loading.
 import { useAutoAnimate } from "@formkit/auto-animate/react";
 import { useEffect } from "react";
+import { appHidden, onAppVisibility } from "../appvisible";
 
 function motionOff(): boolean {
   const m = document.documentElement.dataset.motion;
@@ -18,11 +21,15 @@ function motionOff(): boolean {
 export function useSmooth<T extends HTMLElement = HTMLDivElement>(duration = 260) {
   const [ref, enable] = useAutoAnimate<T>({ duration, easing: "cubic-bezier(0.2, 0.9, 0.25, 1)" });
   useEffect(() => {
-    const apply = () => enable(!motionOff());
+    const apply = () => enable(!motionOff() && !appHidden());
     apply();
     const mo = new MutationObserver(apply);
     mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion"] });
-    return () => mo.disconnect();
+    const off = onAppVisibility(apply);
+    return () => {
+      mo.disconnect();
+      off();
+    };
   }, [enable]);
   return ref;
 }

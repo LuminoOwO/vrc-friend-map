@@ -12,6 +12,9 @@ minor releases can change behavior.
   do on vrchat.com if your account may be hacked (change the password, turn on two-factor).
 
 ### Fixed
+- **Even less CPU in the tray:** the slowly turning map now sleeps until the window is back
+  (it checked twice a second), and the list animations stop checking positions meanwhile. While
+  hidden, the page now does about 25 times less work than before (measured: 2 ms per 10 s).
 - Phones: Settings → Performance talks about touches and the app being in the background instead
   of the mouse and windows; the Activity search box fills its row.
 
