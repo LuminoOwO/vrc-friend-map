@@ -121,15 +121,31 @@ export function languageName(code: string): string {
   }
 }
 
+const subscribe = (f: () => void) => {
+  subs.add(f);
+  return () => {
+    subs.delete(f);
+  };
+};
+
 /** For components: re-renders when the language changes; returns `t`. */
 export function useT(): typeof t {
-  useSyncExternalStore(
-    (f) => {
-      subs.add(f);
-      return () => subs.delete(f);
-    },
-    () => version,
-    () => version,
-  );
+  useSyncExternalStore(subscribe, () => version, () => version);
   return t;
+}
+
+/** The current language's code, as a hook. The app redraws its whole interface (keyed on this)
+ *  when the language changes, so even memoised parts and texts read outside components update. */
+export function useLanguage(): string {
+  useSyncExternalStore(subscribe, () => version, () => version);
+  return lang;
+}
+
+/** "A, B and C" in the current language. */
+export function listJoin(items: string[]): string {
+  try {
+    return new Intl.ListFormat(lang, { type: "conjunction" }).format(items);
+  } catch {
+    return items.join(", ");
+  }
 }

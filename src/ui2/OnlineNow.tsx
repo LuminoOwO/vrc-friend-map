@@ -1,5 +1,6 @@
 // "Online now" (new interface): your online friends, one row per instance (and one for the
 // website or app). Hover a row for a quick look at who's there; click it for the world overview.
+import { t } from "../i18n";
 import { useEffect, useMemo, useState } from "react";
 import { backend, imgSrc } from "../backend";
 import { iconUrl, presenceOf, statusColor } from "../model";
@@ -46,10 +47,10 @@ function useWorldOf(key: string) {
 }
 
 export function spotTitle(key: string, worldName?: string) {
-  if (key === "private") return "Private world";
-  if (key === "traveling") return "Traveling";
-  if (key === "web") return "On the website or app";
-  return worldName ?? "Loading world…";
+  if (key === "private") return t("online.private");
+  if (key === "traveling") return t("online.traveling");
+  if (key === "web") return t("online.web");
+  return worldName ?? t("online.loadingWorld");
 }
 
 function Face({ f, size = 28 }: { f: Friend; size?: number }) {
@@ -73,7 +74,7 @@ export function OnlineNow({ onOpen, side = "right" }: { onOpen: (key: string) =>
   useEffect(() => {
     for (const s of spots.slice(0, 15)) if (s.key.startsWith("wrld_")) loadWorld(parseLocation(s.key).world);
   }, [spots]);
-  if (!spots.length) return <p className="small muted ui2-side-empty">Nobody is online right now.</p>;
+  if (!spots.length) return <p className="small muted ui2-side-empty">{t("online.nobody")}</p>;
   return (
     <div className="ui2-spots" ref={smooth} data-arrows="v">
       {spots.map((s) => (
@@ -98,12 +99,12 @@ function SpotRow({ spot, side, onOpen }: { spot: Spot; side: "left" | "right"; o
   const kind = loc ? loc.type : spot.key === "private" ? "invite only" : "";
   return (
     <div className="ui2-spot-wrap" onMouseEnter={(e) => show(e.currentTarget)} onMouseLeave={() => setPeek(null)}>
-      <button className="ui2-spot" onClick={onOpen} aria-label={`${spotTitle(spot.key, world?.name)}: open the world overview`}>
+      <button className="ui2-spot" onClick={onOpen} aria-label={t("online.openOverview", { name: spotTitle(spot.key, world?.name) })}>
         <span className="ui2-spot-pic">{thumb ? <img src={thumb} alt="" loading="lazy" /> : <Icon name={spot.key === "private" ? "lock" : spot.key === "web" ? "globe" : "world"} size={16} />}</span>
         <span className="ui2-spot-text">
           <b>{spotTitle(spot.key, world?.name)}</b>
           <span>
-            {n} {n === 1 ? "friend" : "friends"}
+            {t("common.friends", { count: n })}
             {kind ? ` · ${kind.toLowerCase()}` : ""}
           </span>
         </span>
@@ -124,8 +125,8 @@ function SpotRow({ spot, side, onOpen }: { spot: Spot; side: "left" | "right"; o
               <StatusDot f={f} />
             </span>
           ))}
-          {n > 10 && <span className="small muted">and {n - 10} more</span>}
-          <span className="small muted">Click for the world overview</span>
+          {n > 10 && <span className="small muted">{t("online.andMore", { count: n - 10 })}</span>}
+          <span className="small muted">{t("online.clickOverview")}</span>
         </div>
       )}
     </div>
@@ -157,11 +158,11 @@ export function WorldPopup({ spotKey, onClose }: { spotKey: string; onClose: () 
   const title = spotTitle(spotKey, world?.name);
   const join = async () => {
     const err = await inviteMyself(spotKey);
-    showToast(err ? `Couldn't join: ${err}` : "Invite sent to you in VRChat");
+    showToast(err ? t("online.couldntJoin", { error: String(err) }) : t("online.inviteSent"));
   };
   const ask = async (f: Friend) => {
     const err = await requestInvite(f.id);
-    showToast(err ? `Couldn't ask ${f.displayName}: ${err}` : `Asked ${f.displayName} for an invite`);
+    showToast(err ? t("online.couldntAsk", { name: f.displayName, error: String(err) }) : t("online.asked", { name: f.displayName }));
   };
   const saveNote = () => {
     if (loc && draft !== (note?.text ?? "")) setWorldNote(loc.world, draft, (note?.tags ?? []).join(", "));
@@ -170,7 +171,7 @@ export function WorldPopup({ spotKey, onClose }: { spotKey: string; onClose: () 
     <div className="ui2-world-wrap" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="ui2-world" role="dialog" aria-label={title}>
         <div className="ui2-world-hero" style={pic ? { backgroundImage: `url("${pic}")` } : undefined}>
-          <button className="ui2-close" title="Close (Esc)" aria-label="Close world" onClick={onClose}>
+          <button className="ui2-close" title={t("online.closeEsc")} aria-label={t("online.closeWorld")} onClick={onClose}>
             <span className="ui2-close-x">
               <Icon name="close" size={20} />
             </span>
@@ -179,8 +180,8 @@ export function WorldPopup({ spotKey, onClose }: { spotKey: string; onClose: () 
           <span className="ui2-world-tags">
             {loc && <span className="ui2-tag">{loc.type}</span>}
             <span className="ui2-tag">
-              {people.length} {people.length === 1 ? "friend" : "friends"}
-              {world?.capacity ? ` · up to ${world.capacity}` : ""}
+              {t("common.friends", { count: people.length })}
+              {world?.capacity ? t("online.upTo", { count: world.capacity }) : ""}
             </span>
           </span>
         </div>
@@ -188,25 +189,25 @@ export function WorldPopup({ spotKey, onClose }: { spotKey: string; onClose: () 
           <span className="ui2-grow">
             <h2>{title}</h2>
             <span className="muted">
-              {world?.authorName ? `by ${world.authorName}` : spotKey === "private" ? "Where they are isn't shown to friends." : ""}
+              {world?.authorName ? t("online.by", { name: world.authorName }) : spotKey === "private" ? t("online.privateNote") : ""}
               {loc ? `${world?.authorName ? " · " : ""}${loc.flag} ${loc.region.toUpperCase()}` : ""}
             </span>
           </span>
           {loc && (
             <span className="ui2-world-actions">
               <button className="btn primary" onClick={join}>
-                Join
+                {t("online.join")}
               </button>
               <button className="btn" onClick={() => setState({ openWorld: loc.world })}>
-                World details
+                {t("online.worldDetails")}
               </button>
             </span>
           )}
         </div>
         <div className="ui2-world-cards">
           <div className="ui2-card">
-            <div className="ui2-card-title">Friends here</div>
-            {people.length === 0 && <p className="small muted">Nobody you know is here any more.</p>}
+            <div className="ui2-card-title">{t("online.friendsHere")}</div>
+            {people.length === 0 && <p className="small muted">{t("online.nobodyHere")}</p>}
             {people.map((f) => (
               <div key={f.id} className="ui2-world-person">
                 <button
@@ -220,8 +221,8 @@ export function WorldPopup({ spotKey, onClose }: { spotKey: string; onClose: () 
                   <StatusDot f={f} />
                 </button>
                 {spotKey !== "web" && (
-                  <button className="ui2-link" title={`Ask ${f.displayName} for an invite`} onClick={() => ask(f)}>
-                    Ask
+                  <button className="ui2-link" title={t("online.askTitle", { name: f.displayName })} onClick={() => ask(f)}>
+                    {t("online.ask")}
                   </button>
                 )}
               </div>
@@ -229,15 +230,15 @@ export function WorldPopup({ spotKey, onClose }: { spotKey: string; onClose: () 
           </div>
           {loc && (
             <label className="ui2-card ui2-card-note">
-              <span className="ui2-card-title">Your note on this world</span>
-              <textarea rows={3} value={draft} placeholder="Only on your devices" onChange={(e) => setDraft(e.target.value)} onBlur={saveNote} />
+              <span className="ui2-card-title">{t("online.yourNote")}</span>
+              <textarea rows={3} value={draft} placeholder={t("online.notePlaceholder")} onChange={(e) => setDraft(e.target.value)} onBlur={saveNote} />
             </label>
           )}
           {loc && (
             <div className="ui2-card">
-              <div className="ui2-card-title">Links</div>
-              <button className="ui2-link" onClick={() => backend.openUrl(`https://vrchat.com/home/world/${loc.world}`).catch(() => showToast("Couldn't open the link"))}>
-                World page on vrchat.com
+              <div className="ui2-card-title">{t("online.links")}</div>
+              <button className="ui2-link" onClick={() => backend.openUrl(`https://vrchat.com/home/world/${loc.world}`).catch(() => showToast(t("online.couldntOpen")))}>
+                {t("online.worldPage")}
               </button>
             </div>
           )}

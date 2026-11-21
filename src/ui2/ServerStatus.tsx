@@ -1,6 +1,7 @@
 // The servers at a glance (beta UI): one chip in the top bar, and a line on the phone's Me page.
 // Green: every server you joined is connected live. Grey: connected, checked now and then.
 // Amber: one isn't joined yet. Red: one can't be reached or its last sync failed.
+import { t } from "../i18n";
 import { useCallback, useEffect, useState } from "react";
 import { isLive, onLiveChange, serverName } from "../share";
 import { knownPeers, onPeers, type Peer } from "../peers";
@@ -22,17 +23,17 @@ export function useServersSummary(): { tone: "ok" | "warn" | "bad" | ""; text: s
   const warn = states.filter((x) => x.tone === "warn").length;
   const live = servers.filter((s) => s.registered && isLive(s.url)).length;
   const n = servers.length;
-  if (bad) return { tone: "bad", text: n === 1 ? states[0].text : `${bad} of ${n} servers have a problem` };
-  if (warn) return { tone: "warn", text: n === 1 ? states[0].text : `${warn} of ${n} servers not joined yet` };
-  if (live === n) return { tone: "ok", text: n === 1 ? "Server live" : `${n} servers live` };
-  return { tone: "", text: n === 1 ? "Server connected" : `${n} servers connected` };
+  if (bad) return { tone: "bad", text: n === 1 ? states[0].text : t("servers.someBad", { bad, count: n }) };
+  if (warn) return { tone: "warn", text: n === 1 ? states[0].text : t("servers.someWarn", { warn, count: n }) };
+  if (live === n) return { tone: "ok", text: n === 1 ? t("servers.oneLive") : t("servers.manyLive", { count: n }) };
+  return { tone: "", text: n === 1 ? t("servers.oneConnected") : t("servers.manyConnected", { count: n }) };
 }
 
 export function ServerStatusChip() {
   const sum = useServersSummary();
   if (!sum) return null;
   return (
-    <button className="ui2-srv" onClick={openServers} title={`${sum.text}. Open Sharing & servers`} aria-label={`Servers: ${sum.text}`}>
+    <button className="ui2-srv" onClick={openServers} title={t("servers.openTitle", { status: sum.text })} aria-label={t("servers.aria", { status: sum.text })}>
       <Icon name="server" size={14} />
       <span className={`ui2-srv-dot ${sum.tone}`} />
       <span className="ui2-srv-text">{sum.text}</span>
@@ -40,7 +41,7 @@ export function ServerStatusChip() {
   );
 }
 
-const agoShort = (ms: number) => (ms < 3600_000 ? `${Math.max(1, Math.round(ms / 60_000))} min ago` : `${Math.round(ms / 3600_000)} h ago`);
+const agoShort = (ms: number) => (ms < 3600_000 ? t("servers.minAgo", { count: Math.max(1, Math.round(ms / 60_000)) }) : t("servers.hAgo", { count: Math.round(ms / 3600_000) }));
 
 /** A device counts as online when it said hello in the last few minutes. */
 const PEER_ONLINE_MS = 5 * 60_000;
@@ -61,10 +62,10 @@ export function ServerMenu() {
   if (!sum)
     return (
       <div className="ui2-drop-wrap">
-        <button className="ui2-srv" onClick={openServers} title="No server yet: everything stays on this device. Open Sharing & servers" aria-label="No server: open Sharing & servers">
+        <button className="ui2-srv" onClick={openServers} title={t("servers.noneTitle")} aria-label={t("servers.noneAria")}>
           <Icon name="server" size={15} />
           <span className="ui2-srv-dot" />
-          <span className="ui2-srv-text">Only this device</span>
+          <span className="ui2-srv-text">{t("servers.onlyThisDevice")}</span>
         </button>
       </div>
     );
@@ -77,23 +78,23 @@ export function ServerMenu() {
   const liveHere = servers.filter((s) => s.registered && isLive(s.url));
   return (
     <div className="ui2-drop-wrap" ref={ref}>
-      <button className={`ui2-srv ${open ? "on" : ""}`} onClick={() => setOpen(!open)} title={sum.text} aria-label={`Servers and your devices: ${sum.text}`} aria-expanded={open}>
+      <button className={`ui2-srv ${open ? "on" : ""}`} onClick={() => setOpen(!open)} title={sum.text} aria-label={t("servers.devicesAria", { status: sum.text })} aria-expanded={open}>
         <Icon name="server" size={15} />
         <span className={`ui2-srv-dot ${sum.tone}`} />
         <span className="ui2-srv-text">{sum.text}</span>
         {peers.length > 0 && (
           <span className="ui2-srv-devices">
-            · {online.length + 1} of {peers.length + 1} devices
+            {t("servers.devicesCount", { online: online.length + 1, count: peers.length + 1 })}
           </span>
         )}
       </button>
       {open && (
-        <div className="ui2-drop" role="dialog" aria-label="Servers and devices">
+        <div className="ui2-drop" role="dialog" aria-label={t("servers.dropAria")}>
           <div className="ui2-drop-sync">
             <SyncPill />
           </div>
           <div className="ui2-drop-head">
-            <b>Servers</b>
+            <b>{t("servers.servers")}</b>
           </div>
           <ul className="ui2-drop-rows">
             {servers.map((s) => {
@@ -108,7 +109,7 @@ export function ServerMenu() {
             })}
           </ul>
           <div className="ui2-drop-head sub">
-            <b>Your devices</b>
+            <b>{t("servers.yourDevices")}</b>
           </div>
           <ul className="ui2-devices-list" ref={smoothDevices}>
             <li>
@@ -116,8 +117,8 @@ export function ServerMenu() {
                 <Icon name="desktop" size={17} />
               </span>
               <span className="ui2-dev-text">
-                <b>This device</b>
-                <span>Online now</span>
+                <b>{t("servers.thisDevice")}</b>
+                <span>{t("servers.onlineNow")}</span>
               </span>
               <span className="ui2-dev-servers">
                 {liveHere.map((x) => (
@@ -134,15 +135,15 @@ export function ServerMenu() {
                   </span>
                   <span className="ui2-dev-text">
                     <b>{p.name}</b>
-                    <span>{on ? "Online" : `Offline · last seen ${agoShort(now - p.seen)}`}</span>
+                    <span>{on ? t("servers.online") : t("servers.offlineSeen", { when: agoShort(now - p.seen) })}</span>
                   </span>
                   <span className="ui2-dev-servers">
-                    <span>{p.direct ? "At home" : nameOf(p.via)}</span>
+                    <span>{p.direct ? t("servers.atHome") : nameOf(p.via)}</span>
                   </span>
                 </li>
               );
             })}
-            {peers.length === 0 && <li className="small muted">Your other devices show up here once they're online.</li>}
+            {peers.length === 0 && <li className="small muted">{t("servers.devicesEmpty")}</li>}
           </ul>
           <button
             className="ui2-drop-foot"

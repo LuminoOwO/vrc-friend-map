@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { t } from "../i18n";
 import { useDerived } from "../derived";
 import { lastSeen, presenceOf, presenceRank, toTime } from "../model";
 import { setState, useApp } from "../store";
@@ -8,11 +9,11 @@ import { FriendCard } from "./FriendCard";
 type SortKey = "status" | "lastSeen" | "name" | "mutuals" | "accountAge";
 
 const SORTS: [SortKey, string][] = [
-  ["status", "Status"],
-  ["lastSeen", "Last online"],
-  ["name", "Name"],
-  ["mutuals", "Most mutuals"],
-  ["accountAge", "Account age"],
+  ["status", "people.sortStatus"],
+  ["lastSeen", "people.sortLastSeen"],
+  ["name", "people.sortName"],
+  ["mutuals", "people.sortMutuals"],
+  ["accountAge", "people.sortAccountAge"],
 ];
 
 /** How many cards to show: a first screenful right away, the rest over the next frames,
@@ -64,19 +65,19 @@ export function CardsView() {
   }, [friends, matched, sort, cache.presence, cache.mutuals, cache.details, dimMode, local.starred]);
 
   const groups = useMemo(() => {
-    if (!grouped) return [{ key: "all", label: "Everyone", items: sorted }];
+    if (!grouped) return [{ key: "all", label: t("people.everyone"), items: sorted }];
     const g = { online: [] as Friend[], web: [] as Friend[], offline: [] as Friend[] };
     for (const f of sorted) g[presenceOf(f, cache.presence)].push(f);
     return [
-      { key: "online", label: "In VRChat", items: g.online },
-      { key: "web", label: "On the website or app", items: g.web },
-      { key: "offline", label: "Offline", items: g.offline },
+      { key: "online", label: t("people.inVrchat"), items: g.online },
+      { key: "web", label: t("people.onWeb"), items: g.web },
+      { key: "offline", label: t("people.offline"), items: g.offline },
     ].filter((x) => x.items.length);
   }, [sorted, grouped, cache.presence]);
 
   const select = (id: string) => setState({ selectedId: id });
 
-  if (!friends.length) return <div className="empty">No friends loaded yet.</div>;
+  if (!friends.length) return <div className="empty">{t("people.noFriends")}</div>;
 
   // Cards before each group, for showing the first `shown` cards across all groups.
   const before = useMemo(() => {
@@ -93,19 +94,19 @@ export function CardsView() {
     <div className="cards-view">
       <div className="cards-toolbar">
         <label>
-          Sort by{" "}
+          {t("people.sortBy")}{" "}
           <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)}>
             {SORTS.map(([k, l]) => (
               <option key={k} value={k}>
-                {l}
+                {t(l)}
               </option>
             ))}
           </select>
         </label>
         <label className="check">
-          <input type="checkbox" checked={grouped} onChange={(e) => setGrouped(e.target.checked)} /> Group by online status
+          <input type="checkbox" checked={grouped} onChange={(e) => setGrouped(e.target.checked)} /> {t("people.groupByStatus")}
         </label>
-        <span className="muted cards-hint">Drag a card onto a circle in the sidebar to add them.</span>
+        <span className="muted cards-hint">{t("people.dragHint")}</span>
       </div>
       {groups.map((g, gi) => (
         <section key={g.key} className="card-group">

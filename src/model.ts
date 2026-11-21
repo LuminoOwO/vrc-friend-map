@@ -1,4 +1,5 @@
 import { matchesAccount } from "./accountmerge";
+import { language, t } from "./i18n";
 import type { Filters, Friend, MutualInfo, Presence, UserDetail, UserStatus } from "./types";
 
 export interface TrustRank {
@@ -8,15 +9,18 @@ export interface TrustRank {
   order: number;
 }
 
-export const TRUST_RANKS: TrustRank[] = [
-  { key: "visitor", label: "Visitor", color: "#CCCCCC", order: 0 },
-  { key: "new", label: "New User", color: "#1778FF", order: 1 },
-  { key: "user", label: "User", color: "#2BCF5C", order: 2 },
-  { key: "known", label: "Known User", color: "#FF7B42", order: 3 },
-  { key: "trusted", label: "Trusted User", color: "#8143E6", order: 4 },
-];
-const TEAM: TrustRank = { key: "team", label: "VRChat Team", color: "#B52626", order: 5 };
-const UNKNOWN: TrustRank = { key: "unknown", label: "Not loaded yet", color: "#5d6b78", order: -1 };
+// Names are read in the current language each time (src/i18n).
+const rank = (key: string, color: string, order: number): TrustRank => ({
+  key,
+  color,
+  order,
+  get label() {
+    return t(`trust.${key}`);
+  },
+});
+export const TRUST_RANKS: TrustRank[] = [rank("visitor", "#CCCCCC", 0), rank("new", "#1778FF", 1), rank("user", "#2BCF5C", 2), rank("known", "#FF7B42", 3), rank("trusted", "#8143E6", 4)];
+const TEAM: TrustRank = rank("team", "#B52626", 5);
+const UNKNOWN: TrustRank = rank("unknown", "#5d6b78", -1);
 
 /** VRChat's tag names are one rank off from the displayed names (legacy). */
 export function trustRank(tags: string[] | undefined, developerType?: string): TrustRank {
@@ -53,11 +57,21 @@ export function applyThemeColors(read: (cssVar: string) => string) {
 }
 
 export const STATUS_LABEL: Record<UserStatus, string> = {
-  "join me": "Join Me",
-  active: "Online",
-  "ask me": "Ask Me",
-  busy: "Do Not Disturb",
-  offline: "Offline",
+  get "join me"() {
+    return t("status.joinMe");
+  },
+  get active() {
+    return t("status.online");
+  },
+  get "ask me"() {
+    return t("status.askMe");
+  },
+  get busy() {
+    return t("status.busy");
+  },
+  get offline() {
+    return t("status.offline");
+  },
 };
 
 export function statusColor(f: Friend, p: Presence): string {
@@ -67,9 +81,9 @@ export function statusColor(f: Friend, p: Presence): string {
 }
 
 export function presenceLabel(f: Friend, p: Presence): string {
-  if (p === "offline") return "Offline";
-  if (p === "web") return "Active on website / app";
-  return STATUS_LABEL[f.status] ?? "Online";
+  if (p === "offline") return t("status.offline");
+  if (p === "web") return t("status.web");
+  return STATUS_LABEL[f.status] ?? t("status.online");
 }
 
 export function platformKey(f: Friend): "pc" | "android" | "ios" | "web" | "unknown" {
@@ -82,11 +96,21 @@ export function platformKey(f: Friend): "pc" | "android" | "ios" | "web" | "unkn
 }
 
 export const PLATFORM_LABEL: Record<string, string> = {
-  pc: "PC",
-  android: "Quest / Android",
-  ios: "iOS",
-  web: "Website",
-  unknown: "Unknown",
+  get pc() {
+    return t("platform.pc");
+  },
+  get android() {
+    return t("platform.android");
+  },
+  get ios() {
+    return t("platform.ios");
+  },
+  get web() {
+    return t("platform.web");
+  },
+  get unknown() {
+    return t("platform.unknown");
+  },
 };
 
 export function presenceOf(f: Friend, presence: Record<string, Presence>): Presence {
@@ -112,34 +136,42 @@ export function lastSeen(f: Friend): number {
   return Math.max(toTime(f.last_activity), toTime(f.last_login));
 }
 
-export function relTime(t: number, now = Date.now()): string {
-  if (!t) return "unknown";
-  const s = Math.max(0, Math.round((now - t) / 1000));
-  if (s < 60) return "just now";
+const relFormats = new Map<string, Intl.RelativeTimeFormat>();
+/** "5 minutes ago", in the app's language (the browser knows the words for every language). */
+export function relTime(at: number, now = Date.now()): string {
+  if (!at) return t("time.unknown");
+  const s = Math.max(0, Math.round((now - at) / 1000));
+  if (s < 60) return t("time.justNow");
+  const lang = language();
+  let f = relFormats.get(lang);
+  if (!f) {
+    f = new Intl.RelativeTimeFormat(lang, { numeric: "always" });
+    relFormats.set(lang, f);
+  }
   const m = Math.round(s / 60);
-  if (m < 60) return `${m} min ago`;
+  if (m < 60) return f.format(-m, "minute");
   const h = Math.round(m / 60);
-  if (h < 48) return `${h} h ago`;
+  if (h < 48) return f.format(-h, "hour");
   const d = Math.round(h / 24);
-  if (d < 60) return `${d} days ago`;
+  if (d < 60) return f.format(-d, "day");
   const mo = Math.round(d / 30);
-  if (mo < 24) return `${mo} months ago`;
-  return `${Math.round(d / 365)} years ago`;
+  if (mo < 24) return f.format(-mo, "month");
+  return f.format(-Math.round(d / 365), "year");
 }
 
 export function duration(ms: number): string {
   const m = Math.max(0, Math.round(ms / 60000));
-  if (m < 60) return `${m} min`;
+  if (m < 60) return t("time.min", { m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h} h ${m % 60} min`;
-  return `${Math.floor(h / 24)} d ${h % 24} h`;
+  if (h < 24) return t("time.hMin", { h, m: m % 60 });
+  return t("time.dH", { d: Math.floor(h / 24), h: h % 24 });
 }
 
-export function fmtDate(t: number | string | undefined): string {
-  if (!t) return "unknown";
-  const d = typeof t === "number" ? new Date(t) : new Date(t);
-  if (Number.isNaN(d.getTime())) return "unknown";
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+export function fmtDate(at: number | string | undefined): string {
+  if (!at) return t("time.unknown");
+  const d = new Date(at);
+  if (Number.isNaN(d.getTime())) return t("time.unknown");
+  return d.toLocaleDateString(language(), { year: "numeric", month: "short", day: "numeric" });
 }
 
 const STATUS_ORDER: Record<string, number> = { "join me": 0, active: 1, "ask me": 2, busy: 3 };

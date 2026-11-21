@@ -1,4 +1,5 @@
 import { InsightsView } from "./components/InsightsView";
+import { useLanguage } from "./i18n";
 import { LogbookView } from "./components/LogbookView";
 import { VrchatView } from "./components/VrchatView";
 import { GroupDialog, InstanceDialog, WorldDialog } from "./components/ContentDialogs";
@@ -91,6 +92,8 @@ export default function App() {
   const herePlace = useApp((s) => s.settings.map.herePlace);
   const beta = useApp((s) => s.settings.ui.beta);
   const classicFlag = useClassicFlag();
+  // A new language redraws the interface (below the start-up code here).
+  const lang = useLanguage();
 
   useEffect(() => {
     let unlisten: (() => void)[] = [];
@@ -157,7 +160,7 @@ export default function App() {
     return (
       <>
         <ThemeSync />
-        <LoginScreen canLogin={isTauri} />
+        <LoginScreen key={lang} canLogin={isTauri} />
         <CloseDialog />
         <UpdateDialog />
         <ToastView />
@@ -171,7 +174,7 @@ export default function App() {
       <Suspense fallback={<div className="splash">Loading…</div>}>
         <LogsAndGroups />
         <ThemeSync />
-        <BetaApp>
+        <BetaApp key={lang}>
           <Notice />
           <GlobalDialogs />
         </BetaApp>
@@ -180,7 +183,7 @@ export default function App() {
   }
 
   return (
-    <div className={`app ${sidebarOpen ? "with-sidebar" : ""}`}>
+    <div className={`app ${sidebarOpen ? "with-sidebar" : ""}`} key={lang}>
       <LogsAndGroups />
       <ThemeSync />
       <TopBar />

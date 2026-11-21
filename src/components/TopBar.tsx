@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { t } from "../i18n";
 import { useDerived } from "../derived";
 import { imgSrc } from "../backend";
 import { STATUS_COLORS, PLATFORM_LABEL, TRUST_RANKS, iconUrl } from "../model";
@@ -10,13 +11,13 @@ import { SyncLogDialog } from "./SyncLogDialog";
 import { useUnreadMissed } from "./InsightsView";
 
 const VIEWS: { key: View; label: string; icon: string }[] = [
-  { key: "graph", label: "Map", icon: "graph" },
-  { key: "cards", label: "Cards", icon: "cards" },
-  { key: "lists", label: "Shared lists", icon: "share" },
-  { key: "activity", label: "Activity", icon: "clock" },
-  { key: "insights", label: "Insights", icon: "bulb" },
-  { key: "logbook", label: "Logbook", icon: "calendar" },
-  { key: "vrchat", label: "VRChat", icon: "world" },
+  { key: "graph", get label() { return t("menu.map"); }, icon: "graph" },
+  { key: "cards", get label() { return t("menu.cards"); }, icon: "cards" },
+  { key: "lists", get label() { return t("menu.lists"); }, icon: "share" },
+  { key: "activity", get label() { return t("menu.activity"); }, icon: "clock" },
+  { key: "insights", get label() { return t("menu.insights"); }, icon: "bulb" },
+  { key: "logbook", get label() { return t("menu.logbook"); }, icon: "calendar" },
+  { key: "vrchat", get label() { return t("menu.vrchat"); }, icon: "world" },
 ];
 
 function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {
@@ -48,15 +49,15 @@ export function TopBar() {
 
   return (
     <header className="topbar">
-      <button className="icon-btn" title="Toggle sidebar" onClick={() => setState({ sidebarOpen: !sidebarOpen })}>
+      <button className="icon-btn" title={t("topbar.toggleSidebar")} onClick={() => setState({ sidebarOpen: !sidebarOpen })}>
         <Icon name="menu" />
       </button>
       <div className="brand small">
         <MeButton />
         <span className="brand-name">VRC Friend Map</span>
         {demo && (
-          <button className="pill demo" title="Leave demo mode" onClick={exitDemo}>
-            Demo<span className="hide-sm"> · exit</span>
+          <button className="pill demo" title={t("topbar.leaveDemo")} onClick={exitDemo}>
+            {t("topbar.demo")}<span className="hide-sm">{t("topbar.demoExit")}</span>
           </button>
         )}
       </div>
@@ -79,27 +80,27 @@ export function TopBar() {
         <Icon name="search" size={16} />
         <input
           value={filters.search}
-          placeholder="Search friends"
+          placeholder={t("phone.searchFriends")}
           onChange={(e) => updateFilters({ search: e.target.value })}
         />
         {filters.search && (
-          <button className="icon-btn tiny" title="Clear search" onClick={() => updateFilters({ search: "" })}>
+          <button className="icon-btn tiny" title={t("topbar.clearSearch")} onClick={() => updateFilters({ search: "" })}>
             <Icon name="close" size={14} />
           </button>
         )}
       </div>
       <div className="filter-wrap">
         <button className={`btn ${count ? "accent" : ""}`} onClick={() => setFiltersOpen(!filtersOpen)}>
-          <Icon name="filter" size={16} /> <span className="hide-sm">Filters</span>
+          <Icon name="filter" size={16} /> <span className="hide-sm">{t("phone.filters")}</span>
           {count > 0 && <span className="badge">{count}</span>}
         </button>
         {filtersOpen && <FilterPopover onClose={() => setFiltersOpen(false)} />}
       </div>
-      <span className="match-count hide-sm" title="Friends matching the filters">
+      <span className="match-count hide-sm" title={t("topbar.matching")}>
         {matched.size}/{friends.length}
       </span>
       <SyncPill />
-      <button className="icon-btn settings-btn" title="Settings" aria-label="Settings" onClick={() => setState({ settingsOpen: true })}>
+      <button className="icon-btn settings-btn" title={t("menu.settings")} aria-label={t("menu.settings")} onClick={() => setState({ settingsOpen: true })}>
         <Icon name="settings" />
       </button>
     </header>
@@ -120,7 +121,7 @@ export function SyncPill() {
 
   if (demo) return null;
   const logBtn = (
-    <button className="icon-btn tiny" title="Sync log: what each sync did and why something failed" aria-label="Sync log" onClick={() => setLogOpen(true)}>
+    <button className="icon-btn tiny" title={t("topbar.syncLogHint")} aria-label={t("menu.syncLog")} onClick={() => setLogOpen(true)}>
       <Icon name="info" size={14} />
     </button>
   );
@@ -129,9 +130,9 @@ export function SyncPill() {
     <div className={`sync ${sync.error ? "error" : ""}`} title={sync.error || sync.message}>
       <span
         className={`live ${live.connected ? "on" : ""}`}
-        title={live.connected ? "Live: friend changes and online status update instantly" : live.message || "Live updates not connected"}
+        title={live.connected ? t("topbar.liveOn") : live.message || t("topbar.liveOff")}
       >
-        {live.connected ? "Live" : "Offline"}
+        {live.connected ? t("topbar.live") : t("topbar.offline")}
       </span>
       {sync.running ? (
         <>
@@ -139,21 +140,21 @@ export function SyncPill() {
           <span className="sync-text">
             {sync.phase}
             {sync.total > 0 && ` ${sync.done}/${sync.total}`}
-            {wait > 0 && ` · waiting ${wait}s`}
-            {sync.paused && " · paused"}
+            {wait > 0 && t("topbar.waiting", { s: wait })}
+            {sync.paused && t("topbar.paused")}
           </span>
           {sync.total > 0 && (
-            <button className="icon-btn tiny" title={sync.paused ? "Resume" : "Pause"} onClick={togglePause}>
+            <button className="icon-btn tiny" title={sync.paused ? t("topbar.resume") : t("topbar.pause")} onClick={togglePause}>
               <Icon name={sync.paused ? "play" : "pause"} size={14} />
             </button>
           )}
         </>
       ) : (
         <>
-          <button className="sync-text linkish" title="Open the sync log" onClick={() => setLogOpen(true)}>
-            {sync.error ? "Sync failed" : sync.message || "Not synced yet"}
+          <button className="sync-text linkish" title={t("topbar.openSyncLog")} onClick={() => setLogOpen(true)}>
+            {sync.error ? t("topbar.syncFailed") : sync.message || t("topbar.notSynced")}
           </button>
-          <button className="icon-btn tiny" title="Refresh now" onClick={() => syncAll()}>
+          <button className="icon-btn tiny" title={t("topbar.refreshNow")} onClick={() => syncAll()}>
             <Icon name="refresh" size={14} />
           </button>
           {logBtn}
@@ -219,53 +220,52 @@ export function FilterPopover({ onClose }: { onClose: () => void }) {
   return (
     <div className="popover filters" ref={ref}>
       <div className="frow">
-        <span className="flabel">Who</span>
+        <span className="flabel">{t("filters.who")}</span>
         <select value={f.who} onChange={(e) => updateFilters({ who: e.target.value as typeof f.who })}>
-          <option value="all">Everyone on the map</option>
-          <option value="friends">Only friends</option>
-          <option value="potential">Only friends of friends I'm not friends with</option>
+          <option value="all">{t("filters.whoAll")}</option>
+          <option value="friends">{t("filters.whoFriends")}</option>
+          <option value="potential">{t("filters.whoPotential")}</option>
         </select>
       </div>
       {f.who === "potential" && (
         <p className="small muted frow-note">
-          People in your instance, people you've met and friends of friends from shared lists who share at least one friend with you. Your friends
-          stay dimmed for context.
+          {t("filters.potentialNote")}
         </p>
       )}
       <div className="frow">
-        <span className="flabel">Show</span>
+        <span className="flabel">{t("filters.show")}</span>
         <Toggle
           value={f.presence}
           options={[
-            ["all", "All"],
-            ["online", "Online"],
-            ["offline", "Offline"],
+            ["all", t("filters.all")],
+            ["online", t("filters.online")],
+            ["offline", t("filters.offline")],
           ]}
           onChange={(presence) => updateFilters({ presence })}
         />
       </div>
       <div className="frow">
-        <span className="flabel">Last online</span>
+        <span className="flabel">{t("filters.lastOnline")}</span>
         <select value={f.lastSeen} onChange={(e) => updateFilters({ lastSeen: e.target.value as typeof f.lastSeen })}>
-          <option value="any">Any time</option>
-          <option value="24h">Within 24 hours</option>
-          <option value="7d">Within 7 days</option>
-          <option value="30d">Within 30 days</option>
-          <option value="90d">Within 90 days</option>
-          <option value="older">More than 90 days ago</option>
+          <option value="any">{t("filters.anyTime")}</option>
+          <option value="24h">{t("filters.within24h")}</option>
+          <option value="7d">{t("filters.within7d")}</option>
+          <option value="30d">{t("filters.within30d")}</option>
+          <option value="90d">{t("filters.within90d")}</option>
+          <option value="older">{t("filters.older")}</option>
         </select>
       </div>
       <div className="frow">
-        <span className="flabel">Status</span>
+        <span className="flabel">{t("filters.status")}</span>
         <div className="chips">
           {(
             [
-              ["join me", "Join me"],
-              ["active", "Online"],
-              ["ask me", "Ask me"],
-              ["busy", "Busy"],
-              ["web", "Website/app"],
-              ["offline", "Offline"],
+              ["join me", t("filters.joinMe")],
+              ["active", t("filters.online")],
+              ["ask me", t("filters.askMe")],
+              ["busy", t("filters.busy")],
+              ["web", t("filters.web")],
+              ["offline", t("filters.offline")],
             ] as const
           ).map(([key, label]) => (
             <button
@@ -280,22 +280,22 @@ export function FilterPopover({ onClose }: { onClose: () => void }) {
         </div>
       </div>
       <div className="frow">
-        <span className="flabel">Trust rank</span>
+        <span className="flabel">{t("filters.trustRank")}</span>
         <div className="chips">
-          {TRUST_RANKS.map((t) => (
+          {TRUST_RANKS.map((r) => (
             <button
-              key={t.key}
-              className={`chip ${f.trust.includes(t.key) ? "on" : ""}`}
-              style={{ ["--chip" as string]: t.color }}
-              onClick={() => updateFilters({ trust: toggleIn(f.trust, t.key) })}
+              key={r.key}
+              className={`chip ${f.trust.includes(r.key) ? "on" : ""}`}
+              style={{ ["--chip" as string]: r.color }}
+              onClick={() => updateFilters({ trust: toggleIn(f.trust, r.key) })}
             >
-              {t.label}
+              {r.label}
             </button>
           ))}
         </div>
       </div>
       <div className="frow">
-        <span className="flabel">Platform</span>
+        <span className="flabel">{t("filters.platform")}</span>
         <div className="chips">
           {["pc", "android", "ios"].map((p) => (
             <button key={p} className={`chip ${f.platform.includes(p) ? "on" : ""}`} onClick={() => updateFilters({ platform: toggleIn(f.platform, p) })}>
@@ -305,9 +305,9 @@ export function FilterPopover({ onClose }: { onClose: () => void }) {
         </div>
       </div>
       <div className="frow">
-        <span className="flabel">Circle</span>
+        <span className="flabel">{t("filters.circle")}</span>
         <select value={f.circleId ?? ""} onChange={(e) => updateFilters({ circleId: e.target.value || null })}>
-          <option value="">Any</option>
+          <option value="">{t("filters.any")}</option>
           {circles.map((c) => (
             <option key={c.id} value={c.id}>
               {c.name}
@@ -317,9 +317,9 @@ export function FilterPopover({ onClose }: { onClose: () => void }) {
       </div>
       {imports.length > 0 && (
         <div className="frow">
-          <span className="flabel">Also in list</span>
+          <span className="flabel">{t("filters.alsoInList")}</span>
           <select value={f.listId ?? ""} onChange={(e) => updateFilters({ listId: e.target.value || null })}>
-            <option value="">Any</option>
+            <option value="">{t("filters.any")}</option>
             {imports.map((l) => (
               <option key={l.id} value={l.id}>
                 {l.owner.displayName}
@@ -330,9 +330,9 @@ export function FilterPopover({ onClose }: { onClose: () => void }) {
       )}
       {favGroups.length > 0 && (
         <div className="frow">
-          <span className="flabel">Favorite group</span>
+          <span className="flabel">{t("filters.favoriteGroup")}</span>
           <select value={f.favoriteGroup ?? ""} onChange={(e) => updateFilters({ favoriteGroup: e.target.value || null })}>
-            <option value="">Any</option>
+            <option value="">{t("filters.any")}</option>
             {favGroups.map((g) => (
               <option key={g} value={g}>
                 {g}
@@ -343,19 +343,19 @@ export function FilterPopover({ onClose }: { onClose: () => void }) {
       )}
       <label className="frow check">
         <input type="checkbox" checked={!!f.starredOnly} onChange={(e) => updateFilters({ starredOnly: e.target.checked })} />
-        <span>Only starred friends</span>
+        <span>{t("filters.starredOnly")}</span>
       </label>
       <AccountFilter />
       <label className="frow check">
         <input type="checkbox" checked={f.favoritesOnly} onChange={(e) => updateFilters({ favoritesOnly: e.target.checked })} />
-        <span>Only VRChat favorites</span>
+        <span>{t("filters.favoritesOnly")}</span>
       </label>
       <div className="frow end">
         <button className="btn ghost" onClick={() => updateFilters({ ...defaultFilters(), search: f.search })}>
-          Reset filters
+          {t("filters.reset")}
         </button>
         <button className="btn" onClick={onClose}>
-          Done
+          {t("filters.done")}
         </button>
       </div>
     </div>
@@ -372,7 +372,7 @@ function MeButton() {
   return (
     <button
       className={`me-btn ${selectedId === me.id ? "on" : ""}`}
-      title={`${me.displayName}: open your profile`}
+      title={t("topbar.openProfile", { name: me.displayName })}
       onClick={() => setState({ selectedId: selectedId === me.id ? null : me.id })}
     >
       {pic ? <img src={pic} alt="" /> : <span>{me.displayName.slice(0, 1).toUpperCase()}</span>}
@@ -385,14 +385,14 @@ function MeButton() {
 function AccountFilter() {
   const list = useApp((s) => s.settings.accounts.list);
   const value = useApp((s) => s.filters.account ?? "");
-  const me = useApp((s) => s.cache.me?.displayName ?? "Main account");
+  const me = useApp((s) => s.cache.me?.displayName ?? t("topbar.mainAccount"));
   if (!list.some((a) => a.show)) return null;
   return (
     <div className="frow">
-      <label htmlFor="filter-account">Account</label>
+      <label htmlFor="filter-account">{t("topbar.account")}</label>
       <select id="filter-account" value={value} onChange={(e) => updateFilters({ account: e.target.value || null })}>
-        <option value="">All my accounts</option>
-        <option value="main">{me} (main)</option>
+        <option value="">{t("topbar.allAccounts")}</option>
+        <option value="main">{t("topbar.mainSuffix", { name: me })}</option>
         {list
           .filter((a) => a.show)
           .map((a) => (
@@ -400,7 +400,7 @@ function AccountFilter() {
               {a.name}
             </option>
           ))}
-        <option value="crossover">Friends of two or more of my accounts</option>
+        <option value="crossover">{t("topbar.crossover")}</option>
       </select>
     </div>
   );

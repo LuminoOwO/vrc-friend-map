@@ -2,6 +2,7 @@
 // overview tiles, Online now and Activity. Right or left (swap button), resizable (snaps back to
 // its default width, dragged very narrow it folds away), folds to a small "wing" on the edge.
 // Overview, Online now and Activity fold too. The layout is remembered on this device.
+import { t } from "../i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
 import { useDerived } from "../derived";
@@ -75,7 +76,7 @@ export function PanelSections({ prefs, update, onWorld }: { prefs: PanelPrefs; u
       <WhereCard />
 
       <section className={`ui2-part ${open("overview") ? "open" : "shut"}`}>
-        <PartHead title="Overview" open={open("overview")} onFold={() => fold("overview")} />
+        <PartHead title={t("party.overview")} open={open("overview")} onFold={() => fold("overview")} />
         {/* Kept mounted and folded with a height transition, so folding is animated. */}
         <div className="ui2-fold" aria-hidden={!open("overview")} inert={!open("overview")}>
           <div className="ui2-fold-in">
@@ -86,8 +87,8 @@ export function PanelSections({ prefs, update, onWorld }: { prefs: PanelPrefs; u
 
       <section className={`ui2-part growable ${open("online") ? "open" : "shut"}`} style={{ flexGrow: open("online") ? 1 : 0 }}>
         <PartHead
-          title="Online now"
-          extra={friendsInGame ? `· ${friendsInGame} ${friendsInGame === 1 ? "friend" : "friends"} in ${inGame.length} ${inGame.length === 1 ? "world" : "worlds"}` : undefined}
+          title={t("party.onlineNow")}
+          extra={friendsInGame ? t("party.onlineExtra", { friends: t("common.friends", { count: friendsInGame }), worlds: t("party.worlds", { count: inGame.length }) }) : undefined}
           open={open("online")}
           onFold={() => fold("online")}
         />
@@ -145,7 +146,7 @@ export function WhereCard() {
     return (
       <section className="ui2-where empty">
         <Icon name="pin" size={18} />
-        <span className="small muted">Your instance shows here while VRChat runs on this PC.</span>
+        <span className="small muted">{t("party.notInVrchat")}</span>
       </section>
     );
   }
@@ -161,13 +162,13 @@ export function WhereCard() {
   return (
     <section className="ui2-where">
       <div className="ui2-where-pic" style={pic ? { backgroundImage: `url("${pic}")` } : undefined}>
-        <span className="ui2-tag">You are here</span>
+        <span className="ui2-tag">{t("party.youAreHere")}</span>
       </div>
       <div className="ui2-where-body" ref={smoothCard}>
-        <div className="ui2-where-name">{here.worldName || world?.name || "A world"}</div>
+        <div className="ui2-where-name">{here.worldName || world?.name || t("party.aWorld")}</div>
         <div className="ui2-where-sub">
           <span className="ui2-type-dot" />
-          {loc?.type ?? "Instance"}
+          {loc?.type ?? t("party.instance")}
           {` · ${(slots?.users ?? players.length + 1)}${slots?.capacity ? ` / ${slots.capacity}` : ""}`}
           {here.since ? ` · ${since(here.since, now)}` : ""}
         </div>
@@ -184,10 +185,10 @@ export function WhereCard() {
           })}
           {sorted.length > shown.length && <span className="small muted">+{sorted.length - shown.length}</span>}
           <span className="ui2-grow" />
-          <button className={`ui2-square ${list ? "on" : ""}`} aria-pressed={list} title="Everyone in this instance" aria-label="Everyone in this instance" onClick={() => setList(!list)}>
+          <button className={`ui2-square ${list ? "on" : ""}`} aria-pressed={list} title={t("party.everyoneHere")} aria-label={t("party.everyoneHere")} onClick={() => setList(!list)}>
             <Icon name="users" size={18} />
           </button>
-          <button className={`ui2-square ${inviting ? "on" : ""}`} aria-pressed={inviting} title="Invite friends here" aria-label="Invite friends here" onClick={() => setInviting(!inviting)}>
+          <button className={`ui2-square ${inviting ? "on" : ""}`} aria-pressed={inviting} title={t("party.inviteHere")} aria-label={t("party.inviteHere")} onClick={() => setInviting(!inviting)}>
             <Icon name="user-plus" size={18} />
           </button>
         </div>
@@ -204,7 +205,7 @@ export function WhereCard() {
                 </button>
               </li>
             ))}
-            {sorted.length === 0 && <li className="small muted">Just you.</li>}
+            {sorted.length === 0 && <li className="small muted">{t("party.justYou")}</li>}
           </ul>
         )}
         {inviting && <InviteHere location={here.location} here={new Set(players.map((p) => p.id))} />}
@@ -226,7 +227,7 @@ function InviteHere({ location, here }: { location: string; here: Set<string> })
         .sort((a, b) => a.displayName.localeCompare(b.displayName)),
     [friends, presence, here],
   );
-  if (!location.startsWith("wrld_")) return <p className="small muted">Invites need a world instance.</p>;
+  if (!location.startsWith("wrld_")) return <p className="small muted">{t("party.invitesNeedWorld")}</p>;
   return (
     <ul className="ui2-where-list" ref={smooth}>
       {list.map((f) => (
@@ -238,16 +239,16 @@ function InviteHere({ location, here }: { location: string; here: Set<string> })
               disabled={sent.has(f.id)}
               onClick={async () => {
                 const err = await inviteTo(f.id, location);
-                if (err) showToast(`Couldn't invite ${f.displayName}: ${err}`);
+                if (err) showToast(t("party.couldntInvite", { name: f.displayName, error: String(err) }));
                 else setSent(new Set([...sent, f.id]));
               }}
             >
-              {sent.has(f.id) ? "Invited" : "Invite"}
+              {sent.has(f.id) ? t("party.invited") : t("party.invite")}
             </button>
           </div>
         </li>
       ))}
-      {list.length === 0 && <li className="small muted">No other friends are in VRChat right now.</li>}
+      {list.length === 0 && <li className="small muted">{t("party.noOtherFriends")}</li>}
     </ul>
   );
 }
@@ -280,34 +281,34 @@ export function Overview() {
   return (
     <>
       <div className="ui2-tiles">
-        <span {...tile("Click: show everyone on the map")}>
+        <span {...tile(t("party.tileAll"))}>
           <FilterChip patch={clearAll} active={false}>
             <b>{friends.length}</b>
-            <span>friends</span>
+            <span>{t("party.friends")}</span>
           </FilterChip>
         </span>
-        <span {...tile(inGame ? "Click again to show everyone" : "Click: only people in VRChat")}>
+        <span {...tile(inGame ? t("party.tileAgain") : t("party.tileInGame"))}>
           <FilterChip patch={() => statusToggle(IN_GAME_STATUSES, "set")} active={inGame}>
             <b className="online">{stats.online}</b>
-            <span>in VRChat</span>
+            <span>{t("party.inVrchat")}</span>
           </FilterChip>
         </span>
-        <span {...tile(webOnly ? "Click again to show everyone" : "Click: only people on the website or app")}>
+        <span {...tile(webOnly ? t("party.tileAgain") : t("party.tileWeb"))}>
           <FilterChip patch={() => statusToggle(["web"], "set")} active={webOnly}>
             <b className="web">{stats.web}</b>
-            <span>web / app</span>
+            <span>{t("party.webApp")}</span>
           </FilterChip>
         </span>
-        <span {...tile("Lines between friends who know each other")}>
+        <span {...tile(t("party.tileLines"))}>
           <div className="stat-static">
             <b>{edges.length}</b>
-            <span>connections</span>
+            <span>{t("party.connections")}</span>
           </div>
         </span>
       </div>
       {hint && (
         <span className="ui2-mouse-tip" role="tooltip" style={{ left: hint.x + 14, top: hint.y + 16 }}>
-          {filtering ? "Filtering the map. Click the tile again to stop." : hint.text}
+          {filtering ? t("party.filtering") : hint.text}
         </span>
       )}
     </>
@@ -355,13 +356,13 @@ function SideActivity({ open, onFold }: { open: boolean; onFold: () => void }) {
   return (
     <section className={`ui2-part growable ${open ? "open" : "shut"}`} style={{ flexGrow: open ? 1.3 : 0 }}>
       <PartHead
-        title="Activity"
+        title={t("party.activity")}
         open={open}
         onFold={onFold}
         dot={fresh > 0}
         action={
           <button className="ui2-see-all" onClick={() => setState({ view: "activity" })}>
-            See all
+            {t("party.seeAll")}
           </button>
         }
       />
@@ -402,7 +403,7 @@ export function ActivityFeed({ onFresh, max = 80 }: { onFresh?: (n: number) => v
     <div className="ui2-act-wrap">
       <div className="ui2-scroll" ref={box} onScroll={(e) => setScrolled(e.currentTarget.scrollTop > 8)}>
         <div ref={smoothRows}>
-        {list.length === 0 && <p className="muted small ui2-side-empty">Nothing yet. Friends coming online, joining your world, being added or removed show up here.</p>}
+        {list.length === 0 && <p className="muted small ui2-side-empty">{t("party.activityEmpty")}</p>}
         {list.map((e) => (
           <div key={e.key} className={`ui2-act-row ${e.t > seenUntil ? "fresh" : ""}`} title={new Date(e.t).toLocaleString()}>
             <span className="ui2-act-time">{hhmm(e.t)}</span>
@@ -421,7 +422,7 @@ export function ActivityFeed({ onFresh, max = 80 }: { onFresh?: (n: number) => v
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
             <path d="M12 19V5M5 12l7-7 7 7" />
           </svg>
-          {fresh > 0 ? `${fresh} new · back to top` : "Back to top"}
+          {fresh > 0 ? t("party.newBackToTop", { count: fresh }) : t("party.backToTop")}
         </button>
       )}
     </div>

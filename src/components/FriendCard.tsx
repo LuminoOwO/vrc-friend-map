@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { listJoin, t } from "../i18n";
 import { imgSrc } from "../backend";
 import { captureCard } from "../flip";
 import { Icon } from "./Icon";
@@ -48,9 +49,9 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
   const online = p.presence !== "offline";
   const timeText = online
     ? toTime(f.last_login)
-      ? `online for ~${duration(p.now - toTime(f.last_login))}`
-      : "online"
-    : `last seen ${relTime(lastSeen(f), p.now)}`;
+      ? t("card.onlineFor", { time: duration(p.now - toTime(f.last_login)) })
+      : t("card.online")
+    : t("card.lastSeen", { when: relTime(lastSeen(f), p.now) });
 
   return (
     <div
@@ -79,7 +80,7 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
           </span>
         ) : null}
         <span className="plat" data-flip="plat" title={PLATFORM_LABEL[plat]}>
-          {plat === "pc" ? "PC" : plat === "android" ? "Quest" : plat === "ios" ? "iOS" : plat === "web" ? "Web" : ""}
+          {plat === "pc" ? "PC" : plat === "android" ? t("card.platQuest") : plat === "ios" ? "iOS" : plat === "web" ? t("card.platWeb") : ""}
         </span>
       </div>
       <div className="fcard-body">
@@ -113,8 +114,8 @@ export const FriendCard = memo(function FriendCard(p: FriendCardProps) {
         <span>{timeText}</span>
       </div>
       <div className="fcard-foot">
-        <span title="Mutual friends" data-flip="mutuals">
-          {p.mutual ? (p.mutual.hidden ? "mutuals hidden" : `${p.mutual.count} mutual${p.mutual.count === 1 ? "" : "s"}`) : "mutuals …"}
+        <span title={t("card.mutualFriends")} data-flip="mutuals">
+          {p.mutual ? (p.mutual.hidden ? t("card.mutualsHidden") : t("card.mutuals", { count: p.mutual.count })) : t("card.mutualsLoading")}
         </span>
         <span className="circle-dots">
           {p.circles.map((c) => (
@@ -132,9 +133,9 @@ function AccountDots({ id }: { id: string }) {
   const list = useApp((s) => s.settings.accounts.list);
   if (!of) return null;
   const alts = of.filter((a) => a !== MAIN);
-  const names = alts.map((a) => list.find((l) => l.id === a)?.name ?? "another account");
+  const names = alts.map((a) => list.find((l) => l.id === a)?.name ?? t("card.anotherAccount"));
   return (
-    <span className="account-dots" title={`Friends with ${of.includes(MAIN) ? "your main account and " : ""}${names.join(" and ")}`}>
+    <span className="account-dots" title={t("card.friendsWith", { names: listJoin([...(of.includes(MAIN) ? [t("card.yourMain")] : []), ...names]) })}>
       {alts.map((a) => (
         <span key={a} className="account-dot" style={{ background: accountColor(list, a) }} />
       ))}

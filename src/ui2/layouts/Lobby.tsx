@@ -46,7 +46,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
   return (
     <div className={`lay-lobby ${covered ? "covered" : ""} ${prefs.collapsed ? "party-folded" : ""}`}>
       <h1 className="sr-only">VRC Friend Map</h1>
-      <div className="lob-bg" aria-hidden={covered} role="main" aria-label="Friend map">
+      <div className="lob-bg" aria-hidden={covered} role="main" aria-label={t("party.friendMap")}>
         <GraphView />
       </div>
       <div className="lob-shade" />
@@ -58,7 +58,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
             <b>FRIEND MAP</b>
           </span>
         </div>
-        <nav className="lob-menu" aria-label="Menu" data-arrows="v">
+        <nav className="lob-menu" aria-label={t("menu.menu")} data-arrows="v">
           {RAIL.map((r) => (
             <button key={r.key} className={`lob-item ${!settingsOpen && (open ?? "graph") === r.key ? "on" : ""}`} title={r.label} onClick={() => pick(r.key)}>
               <Icon name={r.icon} size={26} />
@@ -73,7 +73,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
       </div>
       {open && !settingsOpen && <Frame view={open} onClose={() => setOpen(null)} />}
       {prefs.collapsed ? (
-        <button className="lob-party-tab" title="Show the side panel" aria-label="Show the side panel" onClick={() => updatePrefs({ collapsed: false })}>
+        <button className="lob-party-tab" title={t("party.showPanel")} aria-label={t("party.showPanel")} onClick={() => updatePrefs({ collapsed: false })}>
           <Icon name="chevron-left" size={18} />
           <Icon name="users" size={18} />
         </button>
@@ -81,7 +81,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
         <aside className={`lob-party ${leaving ? "leaving" : ""}`} onAnimationEnd={(e) => leaving && e.target === e.currentTarget && (setLeaving(false), updatePrefs({ collapsed: true }))}>
           <div className="lob-party-head">
             <ToolCluster onPalette={onPalette} className="lob-tools" filters={false} />
-            <button className="lob-fold" title="Fold the side panel away" aria-label="Fold the side panel away" onClick={() => setLeaving(true)}>
+            <button className="lob-fold" title={t("party.foldPanel")} aria-label={t("party.foldPanel")} onClick={() => setLeaving(true)}>
               <Icon name="chevron-right" size={18} />
             </button>
           </div>
@@ -137,6 +137,7 @@ export function MeCard() {
 
 /** The latest few things that happened, along the bottom. */
 function News() {
+  const t = useT();
   useActivityLoaded();
   const smooth = useSmooth(400);
   const activity = useApp((s) => s.activity);
@@ -149,7 +150,7 @@ function News() {
     [activity, friendLog],
   );
   return (
-    <footer className="lob-news" aria-label="Latest activity">
+    <footer className="lob-news" aria-label={t("party.latestActivity")}>
       <span className="lob-news-live" aria-hidden="true" />
       {/* Items that don't fit wrap onto a hidden second line: never cut off mid-word. */}
       <div className="lob-news-items" ref={smooth}>
@@ -159,7 +160,7 @@ function News() {
             <ActivityText e={e} />
           </span>
         ))}
-        {!items.length && <span className="lob-news-item muted">All quiet.</span>}
+        {!items.length && <span className="lob-news-item muted">{t("party.allQuiet")}</span>}
       </div>
       <button className="lob-news-all" onClick={() => setState({ view: "activity" })}>
         All activity <Icon name="chevron-right" size={14} />
