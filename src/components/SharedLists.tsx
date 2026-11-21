@@ -222,7 +222,7 @@ export function SharedLists() {
             <input type="radio" checked={mode === "hashed"} onChange={() => setMode("hashed")} />
             <div>
               <b>{tr("lists.onlyPeopleWeBothKnow")}</b> <span className="pill">recommended</span>
-              <p className="small muted">IDs are scrambled with a one-time key. Your friend can only match people they already have; everyone else stays unreadable.</p>
+              <p className="small muted">{tr("lists.idsAreScrambledWithA")}</p>
             </div>
           </label>
           <label className={`radio-card ${mode === "full" ? "on" : ""}`}>

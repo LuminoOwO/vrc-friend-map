@@ -71,7 +71,7 @@ export function ColorPicker({
           <input type="color" value={/^#[0-9a-f]{6}$/i.test(value) ? value : "#2dd4bf"} onChange={(e) => onPick(e.target.value)} />
         </label>
       </div>
-      <p className="muted tiny-text">Dotted = another circle uses it.</p>
+      <p className="muted tiny-text">{tr("colors.dottedAnotherCircleUsesIt")}</p>
     </div>
   );
 }

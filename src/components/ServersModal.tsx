@@ -177,7 +177,7 @@ export function ServersModal() {
             </button>
           </div>
           {addError && <p className="error-text">{addError}</p>}
-          <small className="muted">Run your own: download vfm-server for your device from the releases page and start it; it shows the address.</small>
+          <small className="muted">{tr("serversModal.runYourOwnDownloadVfm")}</small>
         </section>
 
         {sharing.servers.map((s) => (
@@ -522,7 +522,7 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
                   <input type="checkbox" checked={s.syncMine} onChange={(e) => set({ syncMine: e.target.checked })} />
                   {tr("serversModal.syncMyCirclesAndNotes")}
                 </label>
-                <Why text="Your circles, dismissed group suggestions, what you tell friends about people, and per-person notification rules (and settings, if that's on below) go to this server encrypted for your own key only, so the server can't read them. Your other devices pick them up when they sync; edits on both are merged. Your other devices need the same key: Copy key to another device. Age notes stay on each device." />
+                <Why text={tr("serversModal.yourCirclesDismissedGroupSuggestions")} />
                 {s.syncMine && s.info?.deviceRelay && <DevicesHere url={s.url} />}
                 <label className="check">
                   <input type="checkbox" checked={s.shareRemovals} disabled={!s.shareFriends} onChange={(e) => set({ shareRemovals: e.target.checked })} />
@@ -540,7 +540,7 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
                   <input type="checkbox" checked={s.useCache !== false} onChange={(e) => set({ useCache: e.target.checked })} />
                   {tr("serversModal.useThisServerSShared")}
                 </label>
-                <Why text="Friend list: your friends' names and IDs, so friends see your connections even when VRChat hides mutuals. Activity: how much time pairs of your friends spent in the same instance (from your game logs, live locations and loggers), which makes their group suggestions better. Friend removals: whom you stopped being friends with in the last year, and whether they were in your instance then; your friends see it as a note on that person's profile, so they can ask you about it. Notes about people: only what you chose to tell friends on someone's profile (over 18, probably over 18, or keep your distance); notes saying someone is under 18 never leave your device. Nothing else is sent." />
+                <Why text={tr("serversModal.friendListYourFriendsNames")} />
               </div>
               <div className="row">
                 <span className="small">{tr("serversModal.whichFriendsItCovers")}</span>
@@ -560,7 +560,7 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
                 <label className="check">
                   <input type="checkbox" checked={!!s.hideAudience} disabled={!serverSwitch(s).on} onChange={(e) => set({ hideAudience: e.target.checked })} />
                   {tr("serversModal.hideWhoIShareWith")}
-                  <Why text="What you upload then doesn't say who it's for: the server only sees that you shared something, not with whom, and your friends' apps find out themselves whether it's for them. The server can still see whose items each app downloads. Needs encryption. Friends need version 0.12.0 or newer of the app to get it; on older ones it disappears until they update." />
+                  <Why text={tr("serversModal.whatYouUploadThenDoesn")} />
                 </label>
               )}
               {serverSwitch(s).warn && s.ackUnencrypted && (
@@ -581,7 +581,7 @@ export function ServerCard({ server: s }: { server: ShareServer }) {
           {info?.loggerEnabled && (
             <div className="logger-box">
               <h4>
-                Logger <Why text="The server watches your friends' locations through VRChat's live feed (like this app does while open), around the clock, and counts who is in the same instance as whom. Private and invite-only instances are hidden by VRChat. To pair, it gets your VRChat login (sealed so only that server can open it); logging out of this app keeps it running. Its history comes back to this app signed and encrypted for you." />
+                Logger <Why text={tr("serversModal.theServerWatchesYourFriends")} />
               </h4>
               {s.loggerOwner ? (
                 <>

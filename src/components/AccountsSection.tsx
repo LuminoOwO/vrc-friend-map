@@ -34,11 +34,11 @@ export function AccountsSection() {
             </label>
             <label className="check">
               <input id={`acc-live-${acc.id}`} type="checkbox" checked={acc.live} disabled={!acc.show} onChange={(e) => setAccount(acc.id, { live: e.target.checked })} />
-              <span>Live updates (its own connection to VRChat; off: its friends' status refreshes with each sync)</span>
+              <span>{tr("accounts.liveUpdatesItsOwnConnection")}</span>
             </label>
             <label className="check">
               <input id={`acc-notify-${acc.id}`} type="checkbox" checked={acc.notify} disabled={!acc.show || !acc.live} onChange={(e) => setAccount(acc.id, { notify: e.target.checked })} />
-              <span>Notifications for its friends (your usual rules; needs live updates)</span>
+              <span>{tr("accounts.notificationsForItsFriendsYour")}</span>
             </label>
             {confirm === acc.id ? (
               <div className="row">

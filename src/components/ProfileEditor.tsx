@@ -268,7 +268,7 @@ export function ProfileEditor({ id, onClose }: { id: string; onClose: () => void
                 </label>
               )}
             </div>
-            <p className="small muted">Some looks need VRC+; VRChat says so if one isn't available. Uploading pictures isn't possible here (use vrchat.com).</p>
+            <p className="small muted">{tr("profileEditor.someLooksNeedVrcVrchat")}</p>
             {error && <p className="error-text">{error}</p>}
             <div className="row end">
               <button className="btn" onClick={onClose} disabled={busy}>

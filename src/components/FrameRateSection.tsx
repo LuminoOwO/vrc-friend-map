@@ -144,7 +144,7 @@ export function FrameRateSection({ gfx }: { gfx: GraphicsInfo | null }) {
           </>
         )}
       </label>
-      <p className="small muted">For these: 0 = stop moving, -1 = no change.</p>
+      <p className="small muted">{tr("frameRate.forThese0StopMoving")}</p>
       <p className="small muted">
         {isMobile
           ? tr("frameRate.theseOnlySlowDownThe")

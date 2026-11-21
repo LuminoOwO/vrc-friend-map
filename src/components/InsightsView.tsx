@@ -209,7 +209,7 @@ function FriendGroups() {
         <h3>
           <Icon name="users" size={16} /> {tr("insights.friendGroupsOnYourMap")}
         </h3>
-        <label className="small group-size" title="How big the groups are: fewer, bigger groups to the left; more, smaller ones to the right">
+        <label className="small group-size" title={tr("insights.howBigTheGroupsAre")}>
           <span className="muted">{tr("insights.bigger")}</span>
           <Range min={0.5} max={2} step={0.1} value={resolution} onChange={(e) => setResolution(Number(e.target.value))} aria-label={tr("insights.groupSize")} />
           <span className="muted">{tr("insights.smaller")}</span>

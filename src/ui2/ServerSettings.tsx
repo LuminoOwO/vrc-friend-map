@@ -289,7 +289,7 @@ export function ServerSettings({ server: s }: { server: ShareServer }) {
                   <button className="btn small primary" disabled={code.length !== 6 || working !== ""} onClick={() => run("pair", () => pairLogger(s.id, code))}>
                     {working === "pair" ? tr("serverSettings.pairing") : "Pair"}
                   </button>
-                  <Why text="The pairing code is shown in the server's window or on its admin page. Pairing hands the server your VRChat login, sealed so only it can open it; only pair a server you run." label={tr("serverSettings.whereSTheCode")} />
+                  <Why text={tr("serverSettings.thePairingCodeIsShown")} label={tr("serverSettings.whereSTheCode")} />
                 </div>
               )}
             </Section>

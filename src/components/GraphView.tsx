@@ -3,7 +3,7 @@
 // logs), and soft "circle" outlines around the groups you create. Circles can
 // overlap. Drag a person into a circle outline (or onto a circle in the
 // sidebar) to add them. Map options change how people and lines are drawn.
-import { t as tr } from "../i18n";
+import { t as tr, lazy } from "../i18n";
 import { mapStats, noteFrame } from "../diag";
 import * as d3 from "d3";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -324,7 +324,7 @@ function rectCollide(pad: number, strength = 0.7) {
   return force;
 }
 
-const PLAT_SHORT: Record<string, string> = { pc: "PC", android: "Quest", ios: "iOS", web: "Web", unknown: "" };
+const PLAT_SHORT: Record<string, string> = lazy(() => ({ pc: tr("map.pc"), android: tr("map.quest"), ios: "iOS", web: tr("map.web"), unknown: "" }));
 
 /** How much of the map is hidden: 2 when it's faded out behind settings or a view's frame
  *  (new interface), 1 under a popup (it shows dimmed behind it), 0 not at all. */
@@ -996,7 +996,7 @@ export function GraphView() {
         ctx.font = `${9.5 * s}px system-ui, sans-serif`;
         ctx.fillStyle = PAL.dim;
         ctx.textAlign = "right";
-        const when = offline ? `seen ${relTime(lastSeen(f))}` : p === "web" ? "on website" : "in VRChat";
+        const when = offline ? tr("map.seenValue", { value: relTime(lastSeen(f)) }) : p === "web" ? tr("map.onWebsite") : tr("map.inVrchat");
         ctx.fillText(fitText(ctx, when, inner - lw - 18 * s), x0 + W - 11 * s, py + 10 * s);
 
         // Footer: mutuals + circle dots.
@@ -1004,7 +1004,7 @@ export function GraphView() {
         const mi = cache.mutuals[n.id];
         ctx.textAlign = "left";
         ctx.fillStyle = PAL.dim;
-        ctx.fillText(mi ? (mi.hidden ? "mutuals hidden" : `${mi.count} mutual${mi.count === 1 ? "" : "s"}`) : "mutuals …", left, fy);
+        ctx.fillText(mi ? (mi.hidden ? tr("card.mutualsHidden") : tr("card.mutuals", { count: mi.count })) : tr("card.mutualsLoading"), left, fy);
         let dx = x0 + W - 11 * s;
         for (const c of circles) {
           if (!c.members.includes(n.id)) continue;
@@ -2192,7 +2192,7 @@ export function GraphView() {
           </button>
         )}
         <button className={`btn small keep ${optionsOpen ? "active" : ""}`} title={tr("map.mapOptions")} onClick={() => setOptionsOpen(!optionsOpen)}>
-          <Icon name="sliders" size={15} /> Map options
+          <Icon name="sliders" size={15} /> {tr("map.mapOptions")}
         </button>
       </div>
       {optionsOpen && <MapOptions onClose={() => setOptionsOpen(false)} onFit={() => fit()} hasLogData={!!stats?.pairs.length} />}

@@ -183,7 +183,7 @@ export function ServersPage() {
           <input id="ui2-autosync" type="checkbox" checked={sharing.autoSync} onChange={(e) => updateSharing({ autoSync: e.target.checked })} />
           <span>
             {tr("serversPage.syncByItselfWhileThe")}
-            <small className="muted ui2-help">Servers that can tell the app about changes get them within seconds; the rest are checked every</small>
+            <small className="muted ui2-help">{tr("serversPage.serversThatCanTellThe")}</small>
           </span>
         </label>
         <div className="indent">
@@ -240,7 +240,7 @@ export function ServersPage() {
           <input id="ui2-neverplain" type="checkbox" checked={sharing.neverUnencrypted} onChange={(e) => updateSharing({ neverUnencrypted: e.target.checked })} />
           <span>
             {tr("serversPage.neverSendAnythingUnencrypted")}
-            <small className="muted ui2-help">Even where a server allows it. Recommended; a server that only takes unencrypted uploads then gets nothing.</small>
+            <small className="muted ui2-help">{tr("serversPage.evenWhereAServerAllows")}</small>
           </span>
         </label>
         <label className="field narrow">

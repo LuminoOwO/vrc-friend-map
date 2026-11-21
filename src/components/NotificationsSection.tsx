@@ -416,7 +416,7 @@ function QuietAndCircles() {
               </div>
             </div>
           )}
-          <p className="small muted">During quiet hours nothing plays or pops up; everything is kept under Insights → Notifications.</p>
+          <p className="small muted">{tr("notify.duringQuietHoursNothingPlays")}</p>
         </div>
       )}
 

@@ -356,7 +356,13 @@
     "friendOf": "friend of {{names}}",
     "mutual": "{{count}} mutual",
     "fps": "{{fps}} fps · draw {{draw}} ms · slowest {{worst}} ms",
-    "fpsLimited": " · limited to {{cap}} fps (Settings → Frame rate)"
+    "fpsLimited": " · limited to {{cap}} fps (Settings → Frame rate)",
+    "seenValue": "seen {{value}}",
+    "inVrchat": "in VRChat",
+    "pc": "PC",
+    "quest": "Quest",
+    "web": "Web",
+    "onWebsite": "on website"
   },
   "trustShort": {
     "visitor": "Visitor",
@@ -706,7 +712,7 @@
     "play": "Play",
     "addASoundFile": "Add a sound file",
     "allowNotifications": "Allow notifications",
-    "joinMe": "join me"
+    "duringQuietHoursNothingPlays": "During quiet hours nothing plays or pops up; everything is kept under Insights → Notifications."
   },
   "serversModal": {
     "notAvailableInDemoMode": "Not available in demo mode.",
@@ -809,7 +815,12 @@
     "serverBased": "Server-based",
     "eachServerSSuggestionOn": "Each server's suggestion: on where it recommends encryption, off where it's optional.",
     "encryptWhereverTheServerLets": "Encrypt wherever the server lets you. Servers that never encrypt start with uploading turned off.",
-    "donTEncryptWhereThe": "Don't encrypt where the server lets you choose (it can then read what you share). Servers that always encrypt still do."
+    "donTEncryptWhereThe": "Don't encrypt where the server lets you choose (it can then read what you share). Servers that always encrypt still do.",
+    "runYourOwnDownloadVfm": "Run your own: download vfm-server for your device from the releases page and start it; it shows the address.",
+    "yourCirclesDismissedGroupSuggestions": "Your circles, dismissed group suggestions, what you tell friends about people, and per-person notification rules (and settings, if that's on below) go to this server encrypted for your own key only, so the server can't read them. Your other devices pick them up when they sync; edits on both are merged. Your other devices need the same key: Copy key to another device. Age notes stay on each device.",
+    "friendListYourFriendsNames": "Friend list: your friends' names and IDs, so friends see your connections even when VRChat hides mutuals. Activity: how much time pairs of your friends spent in the same instance (from your game logs, live locations and loggers), which makes their group suggestions better. Friend removals: whom you stopped being friends with in the last year, and whether they were in your instance then; your friends see it as a note on that person's profile, so they can ask you about it. Notes about people: only what you chose to tell friends on someone's profile (over 18, probably over 18, or keep your distance); notes saying someone is under 18 never leave your device. Nothing else is sent.",
+    "whatYouUploadThenDoesn": "What you upload then doesn't say who it's for: the server only sees that you shared something, not with whom, and your friends' apps find out themselves whether it's for them. The server can still see whose items each app downloads. Needs encryption. Friends need version 0.12.0 or newer of the app to get it; on older ones it disappears until they update.",
+    "theServerWatchesYourFriends": "The server watches your friends' locations through VRChat's live feed (like this app does while open), around the clock, and counts who is in the same instance as whom. Private and invite-only instances are hidden by VRChat. To pair, it gets your VRChat login (sealed so only that server can open it); logging out of this app keeps it running. Its history comes back to this app signed and encrypted for you."
   },
   "logbook": {
     "youDidnTPlayThis": "You didn't play this day.",
@@ -894,7 +905,8 @@
     "includesYou": "· includes you",
     "removedNameSList": "Removed {{name}}'s list",
     "copy": "Copy",
-    "saveFile": "Save file"
+    "saveFile": "Save file",
+    "idsAreScrambledWithA": "IDs are scrambled with a one-time key. Your friend can only match people they already have; everyone else stays unreadable."
   },
   "vrchat": {
     "thisPartTalksToVrchat": "This part talks to VRChat directly, so it needs a real login (not the demo).",
@@ -957,7 +969,8 @@
     "doNotDisturb": "Do not disturb",
     "profileSaved": "Profile saved",
     "saving": "Saving…",
-    "online": "Online"
+    "online": "Online",
+    "someLooksNeedVrcVrchat": "Some looks need VRC+; VRChat says so if one isn't available. Uploading pictures isn't possible here (use vrchat.com)."
   },
   "sidebar": {
     "overview": "Overview",
@@ -1116,7 +1129,8 @@
     "twoPeople": "Two people",
     "driftingApart": "Drifting apart",
     "show": "Show",
-    "yourFriendListOverTime": "Your friend list over time"
+    "yourFriendListOverTime": "Your friend list over time",
+    "howBigTheGroupsAre": "How big the groups are: fewer, bigger groups to the left; more, smaller ones to the right"
   },
   "frameRate": {
     "frameRate": "Frame rate",
@@ -1138,7 +1152,8 @@
     "afterNoTouchFor": "After no touch for",
     "afterNoInputFor": "After no input for",
     "theseOnlySlowDownThe": "These only slow down the orbit and other animation; any touch brings the full rate back right away. In the background the map doesn't draw at all. ",
-    "theseOnlySlowDownThe2": "These only slow down the orbit and other animation; anything you do (moving the mouse, a key, a click) brings the full rate back right away. A minimized window doesn't draw at all. "
+    "theseOnlySlowDownThe2": "These only slow down the orbit and other animation; anything you do (moving the mouse, a key, a click) brings the full rate back right away. A minimized window doesn't draw at all. ",
+    "forThese0StopMoving": "For these: 0 = stop moving, -1 = no change."
   },
   "phoneSettings": {
     "phoneInTheBackground": "Phone in the background",
@@ -1348,14 +1363,17 @@
     "removeFromThisDevice": "Remove from this device",
     "addAnotherAccount": "Add another account",
     "nFriends": "{{n}} friends",
-    "notLoadedYet": "not loaded yet"
+    "notLoadedYet": "not loaded yet",
+    "liveUpdatesItsOwnConnection": "Live updates (its own connection to VRChat; off: its friends' status refreshes with each sync)",
+    "notificationsForItsFriendsYour": "Notifications for its friends (your usual rules; needs live updates)"
   },
   "colors": {
     "circleColor": "Circle color",
     "anyColor": "Any color",
     "pickUnused": "Pick unused",
     "custom": "Custom…",
-    "cUsedByUsedOther": "{{c}} · used by {{used}} other circle{{value}}"
+    "cUsedByUsedOther": "{{c}} · used by {{used}} other circle{{value}}",
+    "dottedAnotherCircleUsesIt": "Dotted = another circle uses it."
   },
   "groupsModal": {
     "youReInIt": "you're in it",
@@ -1424,7 +1442,8 @@
     "soFriendsSeeYourLocal": "So friends see your local time.",
     "needsEncryptionFriendsNeedApp": "Needs encryption. Friends need app 0.12.0 or newer to get it.",
     "theirFriendListsAndTime": "Their friend lists and time together show on your map.",
-    "worldsAndAvatarsOthersAlready": "Worlds and avatars others already loaded, so VRChat gets fewer requests."
+    "worldsAndAvatarsOthersAlready": "Worlds and avatars others already loaded, so VRChat gets fewer requests.",
+    "thePairingCodeIsShown": "The pairing code is shown in the server's window or on its admin page. Pairing hands the server your VRChat login, sealed so only it can open it; only pair a server you run."
   },
   "serversPage": {
     "pasteTheInviteLinkThe": "Paste the invite link the server's owner gave you: it adds the server and joins it in one go.",
@@ -1472,7 +1491,9 @@
     "mMinutes": "{{m}} minutes",
     "valueHours": "{{value}} hours",
     "addAServer": "Add a server",
-    "advancedYourKeyAndFriends": "Advanced: your key and friends' keys"
+    "advancedYourKeyAndFriends": "Advanced: your key and friends' keys",
+    "serversThatCanTellThe": "Servers that can tell the app about changes get them within seconds; the rest are checked every",
+    "evenWhereAServerAllows": "Even where a server allows it. Recommended; a server that only takes unencrypted uploads then gets nothing."
   },
   "palette": {
     "nothingFound": "Nothing found.",
