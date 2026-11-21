@@ -20,7 +20,7 @@ const codeOf = (path: string) => path.match(/\/([A-Za-z-]+)\.json$/)?.[1] ?? "";
 export const LANGUAGES: string[] = ["en", ...Object.keys(loaders).map(codeOf).filter((c) => c && c !== "en").sort()];
 
 /** Languages whose text was machine-made and still needs a check by someone who speaks it. */
-export const MACHINE_TRANSLATED = new Set<string>(["de"]);
+export const MACHINE_TRANSLATED = new Set<string>(["de", "fr", "es", "it", "pl", "pt-BR", "ru"]);
 
 let lang = "en";
 let dict: Dict = en as Dict;
@@ -133,8 +133,17 @@ export function resolveLanguage(setting: string | undefined, preferred: readonly
   const wanted = !setting || setting === "system" ? preferred : [setting];
   for (const w of wanted) {
     if (LANGUAGES.includes(w)) return w;
-    const base = w.split("-")[0];
+    const [base, ...rest] = w.split("-");
+    // Chinese: Traditional for Taiwan, Hong Kong, Macau and "Hant"; Simplified otherwise.
+    if (base === "zh") {
+      const hant = rest.some((r) => /^(TW|HK|MO|Hant)$/i.test(r));
+      const pick = hant ? "zh-TW" : "zh-CN";
+      if (LANGUAGES.includes(pick)) return pick;
+    }
     if (LANGUAGES.includes(base)) return base;
+    // Another region of the same language ("pt-PT" → "pt-BR"): better than English.
+    const same = LANGUAGES.find((c) => c.split("-")[0] === base);
+    if (same) return same;
   }
   return "en";
 }

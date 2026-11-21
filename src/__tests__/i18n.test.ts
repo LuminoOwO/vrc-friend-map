@@ -55,6 +55,13 @@ describe("translations", () => {
     expect(resolveLanguage("system", ["xx", "en"])).toBe("en");
     expect(resolveLanguage("system", ["xx"])).toBe("en");
     expect(resolveLanguage("zz", [])).toBe("en");
+    if (LANGUAGES.includes("zh-TW") && LANGUAGES.includes("zh-CN")) {
+      expect(resolveLanguage("system", ["zh-HK"])).toBe("zh-TW");
+      expect(resolveLanguage("system", ["zh-Hant-TW"])).toBe("zh-TW");
+      expect(resolveLanguage("system", ["zh"])).toBe("zh-CN");
+      expect(resolveLanguage("system", ["zh-SG"])).toBe("zh-CN");
+    }
+    if (LANGUAGES.includes("pt-BR")) expect(resolveLanguage("system", ["pt-PT"])).toBe("pt-BR");
     expect(LANGUAGES[0]).toBe("en");
     expect(LANGUAGES).toContain("de");
   });
