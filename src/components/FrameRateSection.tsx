@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { backend, isTauri, type GraphicsInfo } from "../backend";
+import { backend, isMobile, isTauri, type GraphicsInfo } from "../backend";
 import { flushSaves, showToast, updatePerf, useApp } from "../store";
 
 const IDLE_AFTER = [0, 15, 30, 60, 120, 300, 600, 1800];
@@ -91,7 +91,7 @@ export function FrameRateSection({ gfx }: { gfx: GraphicsInfo | null }) {
         <input type="checkbox" checked={perf.vsync} disabled={!canUnlock && perf.vsync} onChange={(e) => updatePerf({ vsync: e.target.checked })} />
         Vsync (wait for the screen{hz ? `, ${hz} Hz` : ""})
       </label>
-      {!canUnlock && <p className="small muted">Turning vsync off needs the Chromium build (Linux) or Windows.</p>}
+      {!canUnlock && !isMobile && <p className="small muted">Turning vsync off needs the Chromium build (Linux) or Windows.</p>}
       {restartNeeded && (
         <div className="row">
           <span className="small">Restart the app to turn vsync {perf.vsync ? "on" : "off"}.</span>
@@ -122,12 +122,12 @@ export function FrameRateSection({ gfx }: { gfx: GraphicsInfo | null }) {
 
       <h4 className="sub-h">Saving power</h4>
       <label className="fps-row">
-        <span>While the window isn't focused</span>
+        <span>{isMobile ? "While the app isn't in front" : "While the window isn't focused"}</span>
         <FpsInput value={perf.unfocusedFps} onChange={(unfocusedFps) => updatePerf({ unfocusedFps })} />
         <span className="small muted">{meaning(perf.unfocusedFps, "stop moving", "no change")}</span>
       </label>
       <label className="fps-row">
-        <span>After no input for</span>
+        <span>{isMobile ? "After no touch for" : "After no input for"}</span>
         <select value={IDLE_AFTER.indexOf(perf.idleAfter) >= 0 ? IDLE_AFTER.indexOf(perf.idleAfter) : 0} onChange={(e) => updatePerf({ idleAfter: IDLE_AFTER[Number(e.target.value)] })}>
           {IDLE_AFTER.map((s, i) => (
             <option key={s} value={i}>
@@ -145,8 +145,10 @@ export function FrameRateSection({ gfx }: { gfx: GraphicsInfo | null }) {
       </label>
       <p className="small muted">For these: 0 = stop moving, -1 = no change.</p>
       <p className="small muted">
-        These only slow down the orbit and other animation; anything you do (moving the mouse, a key, a click) brings the full rate back
-        right away. A minimized window doesn't draw at all. Turn on “Show frame rate” in Map options to see the effect.
+        {isMobile
+          ? "These only slow down the orbit and other animation; any touch brings the full rate back right away. In the background the map doesn't draw at all. "
+          : "These only slow down the orbit and other animation; anything you do (moving the mouse, a key, a click) brings the full rate back right away. A minimized window doesn't draw at all. "}
+        Turn on “Show frame rate” in Map options to see the effect.
       </p>
     </>
   );

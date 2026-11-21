@@ -3,6 +3,12 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
+## Unreleased
+
+### Fixed
+- Phones: Settings → Performance talks about touches and the app being in the background instead
+  of the mouse and windows; the Activity search box fills its row.
+
 ## 0.13.0 (2026-11-21)
 
 ### Phones (new interface)
