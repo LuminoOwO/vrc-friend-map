@@ -283,10 +283,13 @@ tray. On hold: Discord rich presence.
   from what you want (share with friends, sync my devices, log around the clock) and keep the
   rest under "More options"; plain words for status ("Connected, live", "Needs an update").
 - [ ] **Translations:** move all text into one place so friends can add languages.
-  (2026-11-21, step 1 done: `src/i18n` (i18next JSON, plurals, fallback to English, per-device
-  setting, tests incl. a check that every language fits en.json), `docs/translating.md`, menus and
-  tabs moved, German. Next: move the rest of the text view by view; owner sets up Weblate or
-  Crowdin (free for open source) on `src/i18n/locales/*.json`; more machine-made first languages.)
+  (2026-11-21: step 1 (`src/i18n`, setting, tests, `docs/translating.md`) and step 2 (all ~2,040
+  texts in en.json, dates/numbers in the app language) done. Step 3 under way: section 1 (menus,
+  People, filters, Party, map; 339 texts) in de, fr, es, it, pl, pt-BR, ru. Next: sections 2+
+  (~1,700 texts) for those, then ja, zh-CN, zh-TW, the other EU languages by speakers, then
+  uk, ko, tr, id, vi, th, hi; Arabic/Hebrew need right-to-left first. A few complex sentences
+  are still English in the code. Owner: make the repo public + open-source licence, set up
+  Weblate or Crowdin on `src/i18n/locales/*.json`.)
 
 ## Round 9: the server's VRChat login (owner, 2026-11-18)
 
