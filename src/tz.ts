@@ -8,6 +8,7 @@
 // - their usual online hours (weak: people tend to be online in the evening).
 // Suggestions are ranked candidates with reasons; when hints disagree (groups
 // "America" and "Japan") you see several and pick. Nothing here is shared.
+import { t as tr } from "./i18n";
 
 export interface TzCandidate {
   tz: string;
@@ -245,7 +246,7 @@ export function guessTimezones(input: TzInput): TzCandidate[] {
       const zoneOff = offsetHours(c.tz);
       if (zoneOff !== null && Math.abs(zoneOff - off) <= 1.5) {
         c.score += 1;
-        c.reasons.push(`usually online in the evening there`);
+        c.reasons.push(tr("tzMsg.usuallyOnlineInTheEvening"));
       }
     }
     if (!map.size) add(fixedZone(off), 0.8, "usually online hours (weak)");
@@ -255,7 +256,7 @@ export function guessTimezones(input: TzInput): TzCandidate[] {
 
 function langName(code: string, c: Country): string {
   const names: Record<string, string> = { deu: "German", de: "German", ger: "German", jpn: "Japanese", ja: "Japanese", kor: "Korean", ko: "Korean", fra: "French", fr: "French", ita: "Italian", it: "Italian", pol: "Polish", rus: "Russian", ru: "Russian", tur: "Turkish", nld: "Dutch", swe: "Swedish", fin: "Finnish", tha: "Thai", vie: "Vietnamese", zho: "Chinese", chi: "Chinese", zh: "Chinese", ukr: "Ukrainian" };
-  return names[code] ?? `the language of ${c.name}`;
+  return names[code] ?? tr("tzMsg.theLanguageOfName", { name: c.name });
 }
 
 function fixedZone(offset: number): string {

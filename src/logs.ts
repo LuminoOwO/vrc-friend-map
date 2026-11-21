@@ -1,6 +1,7 @@
 // Game-log reading on desktop: finds VRChat's log folders, scans them on a
 // timer, and turns the stored history into time-together statistics and
 // friend group suggestions.
+import { t as tr } from "./i18n";
 import { t } from "./i18n";
 import { useMemo } from "react";
 import { backend, isTauri } from "./backend";
@@ -82,7 +83,7 @@ export async function scanLogs(manual: boolean) {
   if (!s.settings.logs.enabled && !manual) return;
   const dirs = logDirs();
   if (!dirs.length) {
-    setLogs({ error: manual ? "No VRChat log folder found. Add it under Settings → Game logs." : "" });
+    setLogs({ error: manual ? tr("logsMsg.noVrchatLogFolderFound") : "" });
     return;
   }
   setLogs({ scanning: true, error: "" });
@@ -93,11 +94,11 @@ export async function scanLogs(manual: boolean) {
       scanning: false,
       lastScan: Date.now(),
       error: report.newer_version
-        ? `The log history was saved by a newer version of the app (format ${report.newer_version}); it's left untouched.`
+        ? tr("logsMsg.theLogHistoryWasSaved", { newer_version: report.newer_version })
         : report.errors.join("; "),
     });
     if (report.files_read > 0 || !getState().logs.stats) await refreshStats(true);
-    if (manual) showToast(report.files_read ? `Read ${report.files_read} log file${report.files_read === 1 ? "" : "s"}` : "No new log entries");
+    if (manual) showToast(report.files_read ? tr("logsMsg.filesRead", { count: report.files_read }) : tr("logsMsg.noNewLogEntries"));
   } catch (e) {
     setLogs({ scanning: false, error: String(e) });
   }
@@ -178,10 +179,10 @@ export function acceptSuggestion(s: Suggestion, only?: string[]) {
     if (!circle) return;
     const add = all.filter((id) => !circle.members.includes(id));
     patchCircle(circle.id, { members: [...circle.members, ...add], ...(circle.auto ? { auto: true } : {}) });
-    showToast(`Added ${add.length} ${add.length === 1 ? "person" : "people"} to ${circle.name}`);
+    showToast(tr("logsMsg.addedPeople", { count: add.length, name: circle.name }));
   } else {
     createCircle(suggestionName(s, nameOf), all);
-    showToast(`Created a circle with ${all.length} people`);
+    showToast(tr("logsMsg.createdACircleWithLength", { length: all.length }));
   }
 }
 
@@ -209,7 +210,7 @@ export function applyAutoGroups(suggestions: Suggestion[]) {
   }
   if (created || updated) {
     const parts = [created && `created ${created}`, updated && `updated ${updated}`].filter(Boolean).join(", ");
-    showToast(`Automatic groups: ${parts}`);
+    showToast(tr("logsMsg.automaticGroupsParts", { parts }));
   }
 }
 

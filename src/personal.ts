@@ -2,6 +2,7 @@
 // reasons and watched instances. Stars, nicknames and time zones sync between
 // your devices (device sync); block reasons are shared with friends only as
 // presets and only when you turn that on per server (like friend removals).
+import { t as tr, lazy } from "./i18n";
 import { history, onlineShare } from "./history";
 import { getState, showToast, updateLocal } from "./store";
 import { guessTimezones, type TzCandidate } from "./tz";
@@ -126,30 +127,30 @@ export interface ReasonPreset {
 }
 
 /** Shared presets (stable ids: what friends receive). Never anything about age. */
-export const BLOCK_REASONS: ReasonPreset[] = [
-  { id: "soundboard", label: "Spamming soundboard", group: "annoying" },
-  { id: "loud-music", label: "Music too loud", group: "annoying" },
-  { id: "mic-spam", label: "Mic spam / screaming", group: "annoying" },
-  { id: "annoying-avatar", label: "Annoying avatar", group: "annoying" },
+export const BLOCK_REASONS: ReasonPreset[] = lazy(() => [
+  { id: "soundboard", label: tr("personalMsg.spammingSoundboard"), group: "annoying" },
+  { id: "loud-music", label: tr("personalMsg.musicTooLoud"), group: "annoying" },
+  { id: "mic-spam", label: tr("personalMsg.micSpamScreaming"), group: "annoying" },
+  { id: "annoying-avatar", label: tr("personalMsg.annoyingAvatar"), group: "annoying" },
   { id: "trolling", label: "Trolling", group: "annoying" },
-  { id: "invite-spam", label: "Spamming invites or friend requests", group: "annoying" },
-  { id: "begging", label: "Begging (VRC+, money)", group: "annoying" },
-  { id: "drama", label: "Drama / gossip", group: "annoying" },
+  { id: "invite-spam", label: tr("personalMsg.spammingInvitesOrFriendRequests"), group: "annoying" },
+  { id: "begging", label: tr("personalMsg.beggingVrcMoney"), group: "annoying" },
+  { id: "drama", label: tr("personalMsg.dramaGossip"), group: "annoying" },
   { id: "anti-queer", label: "Anti-queer", group: "harmful" },
-  { id: "racism", label: "Racism / slurs", group: "harmful" },
+  { id: "racism", label: tr("personalMsg.racismSlurs"), group: "harmful" },
   { id: "harassment", label: "Harassment", group: "harmful" },
-  { id: "sexual", label: "Unwanted sexual advances", group: "harmful" },
-  { id: "following", label: "Following me between instances", group: "harmful" },
-  { id: "personal-space", label: "Invading personal space", group: "harmful" },
-  { id: "doxxing", label: "Sharing personal info (doxxing)", group: "harmful" },
+  { id: "sexual", label: tr("personalMsg.unwantedSexualAdvances"), group: "harmful" },
+  { id: "following", label: tr("personalMsg.followingMeBetweenInstances"), group: "harmful" },
+  { id: "personal-space", label: tr("personalMsg.invadingPersonalSpace"), group: "harmful" },
+  { id: "doxxing", label: tr("personalMsg.sharingPersonalInfoDoxxing"), group: "harmful" },
   { id: "scam", label: "Scamming", group: "harmful" },
-  { id: "impersonation", label: "Impersonating someone", group: "harmful" },
+  { id: "impersonation", label: tr("personalMsg.impersonatingSomeone"), group: "harmful" },
   { id: "crasher", label: "Crasher", group: "technical" },
-  { id: "seizure", label: "Seizure / flashing avatar", group: "technical" },
-  { id: "malicious-links", label: "Malicious links", group: "technical" },
-  { id: "ripped", label: "Stolen (ripped) avatar", group: "technical" },
-  { id: "ban-evasion", label: "Ban evasion (an alt account)", group: "technical" },
-];
+  { id: "seizure", label: tr("personalMsg.seizureFlashingAvatar"), group: "technical" },
+  { id: "malicious-links", label: tr("personalMsg.maliciousLinks"), group: "technical" },
+  { id: "ripped", label: tr("personalMsg.stolenRippedAvatar"), group: "technical" },
+  { id: "ban-evasion", label: tr("personalMsg.banEvasionAnAltAccount"), group: "technical" },
+]);
 export const REASON_IDS = new Set(BLOCK_REASONS.map((r) => r.id));
 export const reasonLabel = (id: string) => BLOCK_REASONS.find((r) => r.id === id)?.label ?? id;
 export const REASON_GROUP_LABEL = { annoying: "Annoying", harmful: "Harmful", technical: "Technical" } as const;
@@ -187,6 +188,6 @@ export function watchSlot(location: string, name: string, on: boolean) {
     else delete slotWatch[location];
     return { ...l, slotWatch };
   });
-  if (on) showToast("You'll be told when a slot opens there (checked every minute).");
+  if (on) showToast(tr("personalMsg.youLlBeToldWhen"));
 }
 

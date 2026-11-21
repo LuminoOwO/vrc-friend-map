@@ -1,4 +1,5 @@
 // Global app state: a tiny external store + debounced persistence to disk.
+import { t as tr } from "./i18n";
 import { useSyncExternalStore } from "react";
 import { NO_OWN_COLORS, normalizeOwnColors } from "./owncolors";
 import { ACCOUNT_SHARE_KEYS } from "./devicesync";
@@ -1003,7 +1004,7 @@ export async function loadPersisted() {
   } else if (settings.lastVersion && settings.lastVersion !== current) {
     if (compareVersions(settings.lastVersion, current) < 0) {
       const news = WHATS_NEW[current];
-      notice = `Updated from ${settings.lastVersion} to ${current}.${news ? ` New: ${news}` : ""}`;
+      notice = tr("storeMsg.updatedFrom", { from: settings.lastVersion, to: current }) + (news ? tr("storeMsg.newNews", { news }) : "");
     } else {
       notice = `You're running ${current}, an older version than last time (${settings.lastVersion}). Your data is kept; features from the newer version just won't show here.`;
     }
@@ -1056,7 +1057,7 @@ export function deleteCircle(id: string) {
   const circle = prev.find((c) => c.id === id);
   updateLocal((l) => ({ ...l, circles: l.circles.filter((c) => c.id !== id) }));
   if (state.filters.circleId === id) updateFilters({ circleId: null });
-  if (circle) showToast(`Deleted circle "${circle.name}"`, () => updateLocal((l) => ({ ...l, circles: prev })));
+  if (circle) showToast(tr("storeMsg.deletedCircleName", { name: circle.name }), () => updateLocal((l) => ({ ...l, circles: prev })));
 }
 
 export function addToCircle(circleId: string, userId: string, quiet = false) {
@@ -1065,7 +1066,7 @@ export function addToCircle(circleId: string, userId: string, quiet = false) {
   patchCircle(circleId, { members: [...circle.members, userId] });
   if (!quiet) {
     const name = state.cache.friends[userId]?.displayName ?? "Friend";
-    showToast(`Added ${name} to ${circle.name}`, () => removeFromCircle(circleId, userId, true));
+    showToast(tr("storeMsg.addedNameToName2", { name, name2: circle.name }), () => removeFromCircle(circleId, userId, true));
   }
 }
 
@@ -1075,6 +1076,6 @@ export function removeFromCircle(circleId: string, userId: string, quiet = false
   patchCircle(circleId, { members: circle.members.filter((m) => m !== userId) });
   if (!quiet) {
     const name = state.cache.friends[userId]?.displayName ?? "Friend";
-    showToast(`Removed ${name} from ${circle.name}`, () => addToCircle(circleId, userId, true));
+    showToast(tr("storeMsg.removedNameFromName2", { name, name2: circle.name }), () => addToCircle(circleId, userId, true));
   }
 }

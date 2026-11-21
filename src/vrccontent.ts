@@ -2,6 +2,7 @@
 // gallery, members and management), favorites, avatars, and your prints,
 // stickers and emojis. Reads go through the Rust client's allow-listed GET;
 // changes through the write queue (src/writes.ts), only from your clicks.
+import { t as tr, lazy } from "./i18n";
 import { backend, type ApiResponse } from "./backend";
 import { getState, updateCache } from "./store";
 import { errorText, vrcWrite } from "./writes";
@@ -505,10 +506,10 @@ export async function uploadImage(kind: FileKind | "print", blob: Blob, opts: { 
 }
 
 /** Sizes VRChat expects per kind (square for emojis/stickers/icons; 16:9 or so for gallery/prints). */
-export const UPLOAD_SHAPE: Record<FileKind | "print", { w: number; h: number; label: string }> = {
-  emoji: { w: 1024, h: 1024, label: "Emoji (square)" },
-  sticker: { w: 1024, h: 1024, label: "Sticker (square)" },
-  icon: { w: 1024, h: 1024, label: "Icon (square)" },
-  gallery: { w: 1920, h: 1080, label: "Gallery picture (16:9)" },
-  print: { w: 1920, h: 1080, label: "Print (16:9)" },
-};
+export const UPLOAD_SHAPE: Record<FileKind | "print", { w: number; h: number; label: string }> = lazy(() => ({
+  emoji: { w: 1024, h: 1024, label: tr("contentMsg.emojiSquare") },
+  sticker: { w: 1024, h: 1024, label: tr("contentMsg.stickerSquare") },
+  icon: { w: 1024, h: 1024, label: tr("contentMsg.iconSquare") },
+  gallery: { w: 1920, h: 1080, label: tr("contentMsg.galleryPicture169") },
+  print: { w: 1920, h: 1080, label: tr("contentMsg.print169") },
+}));

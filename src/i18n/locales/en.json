@@ -1985,5 +1985,84 @@
     "thisServerNeedsAppVersion": "This server needs app version {{minApp}} or newer (you have {{app}}). Update the app to sync with it again.",
     "serverTooOld": "Server too old",
     "thisServerRunsVfmServer": "This server runs vfm-server {{version}}; this app needs {{MIN_SERVER}} or newer. Ask its owner to update it."
+  },
+  "personalMsg": {
+    "spammingSoundboard": "Spamming soundboard",
+    "musicTooLoud": "Music too loud",
+    "micSpamScreaming": "Mic spam / screaming",
+    "annoyingAvatar": "Annoying avatar",
+    "spammingInvitesOrFriendRequests": "Spamming invites or friend requests",
+    "beggingVrcMoney": "Begging (VRC+, money)",
+    "dramaGossip": "Drama / gossip",
+    "racismSlurs": "Racism / slurs",
+    "unwantedSexualAdvances": "Unwanted sexual advances",
+    "followingMeBetweenInstances": "Following me between instances",
+    "invadingPersonalSpace": "Invading personal space",
+    "sharingPersonalInfoDoxxing": "Sharing personal info (doxxing)",
+    "impersonatingSomeone": "Impersonating someone",
+    "seizureFlashingAvatar": "Seizure / flashing avatar",
+    "maliciousLinks": "Malicious links",
+    "stolenRippedAvatar": "Stolen (ripped) avatar",
+    "banEvasionAnAltAccount": "Ban evasion (an alt account)",
+    "youLlBeToldWhen": "You'll be told when a slot opens there (checked every minute)."
+  },
+  "tzMsg": {
+    "usuallyOnlineInTheEvening": "usually online in the evening there",
+    "theLanguageOfName": "the language of {{name}}"
+  },
+  "ageMsg": {
+    "iMSureTheyRe": "I'm sure they're an adult",
+    "mostCertainlyOver18": "Most certainly over 18",
+    "probablyOver18": "Probably over 18",
+    "probablyUnder18": "Probably under 18",
+    "mostCertainlyUnder18": "Most certainly under 18",
+    "keepYourDistance": "Keep your distance",
+    "yourNoteSaysTheyRe": "your note says they're most certainly under 18",
+    "yourNoteSaysTheyRe2": "your note says they're probably under 18",
+    "theirProfileHasHintsThey": "their profile has hints they're under 18",
+    "theirProfileHasMixedAge": "their profile has mixed age hints",
+    "valueSaidToKeepYour": "{{value}} said to keep your distance"
+  },
+  "linkMsg": {
+    "notALink": "not a link",
+    "socialSitesAreOff": "social sites are off",
+    "xNeedsTheFxtwitterSwitch": "X needs the FxTwitter switch",
+    "theSiteWantsALogin": "the site wants a login",
+    "onlyVisibleWhenLoggedIn": "only visible when logged in",
+    "pageLimitReached": "page limit reached"
+  },
+  "syncLogMsg": {},
+  "logsMsg": {
+    "noVrchatLogFolderFound": "No VRChat log folder found. Add it under Settings → Game logs.",
+    "theLogHistoryWasSaved": "The log history was saved by a newer version of the app (format {{newer_version}}); it's left untouched.",
+    "noNewLogEntries": "No new log entries",
+    "createdACircleWithLength": "Created a circle with {{length}} people",
+    "automaticGroupsParts": "Automatic groups: {{parts}}",
+    "filesRead_one": "Read {{count}} log file",
+    "filesRead_other": "Read {{count}} log files",
+    "addedPeople_one": "Added {{count}} person to {{name}}",
+    "addedPeople_other": "Added {{count}} people to {{name}}"
+  },
+  "contentMsg": {
+    "emojiSquare": "Emoji (square)",
+    "stickerSquare": "Sticker (square)",
+    "iconSquare": "Icon (square)",
+    "galleryPicture169": "Gallery picture (16:9)",
+    "print169": "Print (16:9)"
+  },
+  "deviceSync": {
+    "lookThemeColorsInterface": "Look (theme, colors, interface)",
+    "mapOptions": "Map options",
+    "groupDetection": "Group detection",
+    "peopleAgeHintsBiosRed": "People (age hints, bios, red flags, insights)",
+    "closingTheWindow": "Closing the window"
+  },
+  "backendMsg": {},
+  "storeMsg": {
+    "newNews": " New: {{news}}",
+    "deletedCircleName": "Deleted circle \"{{name}}\"",
+    "addedNameToName2": "Added {{name}} to {{name2}}",
+    "removedNameFromName2": "Removed {{name}} from {{name2}}",
+    "updatedFrom": "Updated from {{from}} to {{to}}."
   }
 }

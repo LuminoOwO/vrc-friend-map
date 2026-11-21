@@ -15,6 +15,7 @@
 // one device goes away unless the other changed it, and for single values
 // (a circle's name, a setting) the side that changed it wins, the other
 // device's change if both did.
+import { t as tr, lazy } from "./i18n";
 import type { BlockReason, Circle, InviteTemplate, LocalData, NotifyPerson, Settings, ShareNote, ShareServer } from "./types";
 
 /**
@@ -69,13 +70,13 @@ export const SELF_FORMAT = "vrc-friend-map/self-v1";
 export const SYNCED_SETTINGS = ["theme", "catAccent", "ownColors", "map", "groups", "age", "people", "closeAction", "bios", "notesLine", "insights", "ui"] as const;
 
 /** Groups of settings you can sync or keep per device (Servers → Also sync settings). */
-export const SETTING_GROUPS: { id: string; label: string; keys: (typeof SYNCED_SETTINGS)[number][] }[] = [
-  { id: "look", label: "Look (theme, colors, interface)", keys: ["theme", "catAccent", "ownColors", "ui"] },
-  { id: "map", label: "Map options", keys: ["map"] },
-  { id: "groups", label: "Group detection", keys: ["groups"] },
-  { id: "people", label: "People (age hints, bios, red flags, insights)", keys: ["age", "people", "bios", "notesLine", "insights"] },
-  { id: "window", label: "Closing the window", keys: ["closeAction"] },
-];
+export const SETTING_GROUPS: { id: string; label: string; keys: (typeof SYNCED_SETTINGS)[number][] }[] = lazy(() => [
+  { id: "look", label: tr("deviceSync.lookThemeColorsInterface"), keys: ["theme", "catAccent", "ownColors", "ui"] },
+  { id: "map", label: tr("deviceSync.mapOptions"), keys: ["map"] },
+  { id: "groups", label: tr("deviceSync.groupDetection"), keys: ["groups"] },
+  { id: "people", label: tr("deviceSync.peopleAgeHintsBiosRed"), keys: ["age", "people", "bios", "notesLine", "insights"] },
+  { id: "window", label: tr("deviceSync.closingTheWindow"), keys: ["closeAction"] },
+]);
 
 /** The settings keys that sync, given the chosen groups and this device's exceptions. */
 export function syncedKeys(groups: string[], localOnly: string[]): (typeof SYNCED_SETTINGS)[number][] {

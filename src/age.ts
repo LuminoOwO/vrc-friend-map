@@ -10,24 +10,25 @@
 // - What you can share with friends is only "most certainly over 18",
 //   "probably over 18" or a neutral "keep your distance" with no reason.
 //   A missing vouch means nothing.
+import { t as tr, lazy } from "./i18n";
 import { backend, isTauri } from "./backend";
 import { getState, updateCache, updateLocal } from "./store";
 import type { AgeHint, AgeNote, AgeRating, LinkReadsEntry, ShareNote } from "./types";
 import { readLinks, siteName, type LinkRead, type ReadOptions } from "./linkreaders";
 
-export const RATINGS: { value: AgeRating; label: string }[] = [
-  { value: "sure-adult", label: "I'm sure they're an adult" },
-  { value: "adult", label: "Most certainly over 18" },
-  { value: "likely-adult", label: "Probably over 18" },
-  { value: "likely-minor", label: "Probably under 18" },
-  { value: "minor", label: "Most certainly under 18" },
-];
+export const RATINGS: { value: AgeRating; label: string }[] = lazy(() => [
+  { value: "sure-adult", label: tr("ageMsg.iMSureTheyRe") },
+  { value: "adult", label: tr("ageMsg.mostCertainlyOver18") },
+  { value: "likely-adult", label: tr("ageMsg.probablyOver18") },
+  { value: "likely-minor", label: tr("ageMsg.probablyUnder18") },
+  { value: "minor", label: tr("ageMsg.mostCertainlyUnder18") },
+]);
 
-export const SHARE_NOTES: { value: ShareNote["v"]; label: string }[] = [
-  { value: "adult", label: "Most certainly over 18" },
-  { value: "likely-adult", label: "Probably over 18" },
-  { value: "distance", label: "Keep your distance" },
-];
+export const SHARE_NOTES: { value: ShareNote["v"]; label: string }[] = lazy(() => [
+  { value: "adult", label: tr("ageMsg.mostCertainlyOver18") },
+  { value: "likely-adult", label: tr("ageMsg.probablyOver18") },
+  { value: "distance", label: tr("ageMsg.keepYourDistance") },
+]);
 
 const DAY = 864e5;
 /** Guesses fade: old ones shouldn't stick to people. "I'm sure" doesn't expire. */
@@ -246,12 +247,12 @@ export function concernAbout(id: string): string | null {
   const note = noteOf(id);
   if (note && (note.rating === "sure-adult" || note.rating === "adult")) return null;
   const reasons: string[] = [];
-  if (note?.rating === "minor") reasons.push("your note says they're most certainly under 18");
-  else if (note?.rating === "likely-minor") reasons.push("your note says they're probably under 18");
+  if (note?.rating === "minor") reasons.push(tr("ageMsg.yourNoteSaysTheyRe"));
+  else if (note?.rating === "likely-minor") reasons.push(tr("ageMsg.yourNoteSaysTheyRe2"));
   const hints = s.cache.ageHints?.[id]?.hints ?? [];
   const sum = summarize(hints);
-  if (!note && (sum.verdict === "minor" || sum.verdict === "mixed")) reasons.push(sum.verdict === "minor" ? "their profile has hints they're under 18" : "their profile has mixed age hints");
+  if (!note && (sum.verdict === "minor" || sum.verdict === "mixed")) reasons.push(sum.verdict === "minor" ? tr("ageMsg.theirProfileHasHintsThey") : tr("ageMsg.theirProfileHasMixedAge"));
   const distance = friendNotesAbout(id).filter((n) => n.v === "distance");
-  if (distance.length) reasons.push(`${distance.map((n) => n.by).join(", ")} said to keep your distance`);
+  if (distance.length) reasons.push(tr("ageMsg.valueSaidToKeepYour", { value: distance.map((n) => n.by).join(", ") }));
   return reasons.length ? reasons.join("; ") : null;
 }

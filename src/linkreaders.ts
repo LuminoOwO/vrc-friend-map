@@ -7,6 +7,7 @@
 // Link pages (Linktree, Carrd, …) list more links; with "read deeper" on,
 // links from them to known profile sites are read too, up to the limits in
 // Settings → People → Age hints.
+import { t as tr } from "./i18n";
 
 export type Fetcher = (url: string) => Promise<string>;
 
@@ -327,12 +328,12 @@ export async function readOne(url: string, fetcher: Fetcher, opts: ReadOptions):
   try {
     u = new URL(url);
   } catch {
-    return { url, site: url, status: "skipped", text: "", links: [], note: "not a link" };
+    return { url, site: url, status: "skipped", text: "", links: [], note: tr("linkMsg.notALink") };
   }
   const reader = readerFor(u);
   const site = reader?.site ?? host(u);
-  if (reader?.kind === "social" && !opts.socials) return { url, site, status: "skipped", text: "", links: [], note: "social sites are off" };
-  if (reader?.needs === "fxTwitter" && !opts.fxTwitter) return { url, site, status: "skipped", text: "", links: [], note: "X needs the FxTwitter switch" };
+  if (reader?.kind === "social" && !opts.socials) return { url, site, status: "skipped", text: "", links: [], note: tr("linkMsg.socialSitesAreOff") };
+  if (reader?.needs === "fxTwitter" && !opts.fxTwitter) return { url, site, status: "skipped", text: "", links: [], note: tr("linkMsg.xNeedsTheFxtwitterSwitch") };
   const target = reader?.match(u) ?? u.toString();
   let body: string;
   try {
@@ -350,11 +351,11 @@ export async function readOne(url: string, fetcher: Fetcher, opts: ReadOptions):
       }
     }
     const login = /\b(401|403)\b/.test(msg);
-    return { url, site, status: login ? "login" : "unreachable", text: "", links: [], note: login ? "the site wants a login" : msg };
+    return { url, site, status: login ? "login" : "unreachable", text: "", links: [], note: login ? tr("linkMsg.theSiteWantsALogin") : msg };
   }
   const text = (reader?.parse ? reader.parse(body, u) : pageText(body)).trim();
   const links = linksIn(body).filter((l) => l !== url);
-  if (!text || (text.length < 200 && LOGIN_WALL.test(text))) return { url, site, status: "login", text: "", links, note: "only visible when logged in" };
+  if (!text || (text.length < 200 && LOGIN_WALL.test(text))) return { url, site, status: "login", text: "", links, note: tr("linkMsg.onlyVisibleWhenLoggedIn") };
   return { url, site, status: "read", text: text.slice(0, 4000), links };
 }
 
@@ -371,7 +372,7 @@ export async function readLinks(start: string[], fetcher: Fetcher, opts: ReadOpt
       if (seen.has(key)) continue;
       seen.add(key);
       if (out.filter((r) => r.status !== "skipped").length >= opts.maxPages) {
-        out.push({ ...item, site: siteName(item.url), status: "skipped", text: "", links: [], note: "page limit reached" });
+        out.push({ ...item, site: siteName(item.url), status: "skipped", text: "", links: [], note: tr("linkMsg.pageLimitReached") });
         continue;
       }
       const r = await readOne(item.url, fetcher, opts);
