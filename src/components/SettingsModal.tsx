@@ -16,7 +16,7 @@ import type { GroupSettings, MapSettings, Theme } from "../types";
 
 import { CAT_ACCENTS, CAT_FLAVORS, CAT_LABEL, CAT_PALETTES, isCatFlavor } from "../catppuccin";
 const THEMES: { value: Theme; label: string; bg: string; panel: string; accent: string }[] = [
-  { value: "dark", label: "Dark", bg: "#0b1015", panel: "#18242e", accent: "#19c3b1" },
+  { value: "dark", label: "Dark", bg: "#070b0f", panel: "#131c24", accent: "#19c3b1" },
   { value: "oled", label: "OLED black", bg: "#000000", panel: "#0e1215", accent: "#19c3b1" },
   { value: "graphite", label: "Graphite (grey)", bg: "#1c1c1f", panel: "#2a2a2f", accent: "#d4d4d8" },
   { value: "light", label: "Light", bg: "#eef2f5", panel: "#ffffff", accent: "#0f9d8f" },
@@ -377,14 +377,15 @@ export function SettingsModal() {
         {phone && (
           <div className="ui2-set-bar">
             {phoneList ? (
-              <h2>Settings</h2>
+              <span />
             ) : (
-              <button className="ui2-set-back" onClick={() => setPhoneList(true)}>
-                <Icon name="chevron-left" size={20} /> Settings
+              <button className="ui2-set-back" aria-label="Back to settings" onClick={() => setPhoneList(true)}>
+                <Icon name="chevron-left" size={22} />
               </button>
             )}
-            <button className="icon-btn" aria-label="Close settings" onClick={close}>
-              <Icon name="close" />
+            <h2>{phoneList || scores ? "Settings" : page.label}</h2>
+            <button className="ui2-set-x" aria-label="Close settings" onClick={close}>
+              <Icon name="close" size={20} />
             </button>
           </div>
         )}

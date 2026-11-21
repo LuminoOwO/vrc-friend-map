@@ -381,42 +381,59 @@
 
 /* Phones: a list of pages first (.ph-list), then one page with a back bar (.ph-page). */
 .ui2-settings.ph-list .settings-modal, .ui2-settings.ph-page .settings-modal { display: flex; flex-direction: column; }
-.ui2-set-bar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 56px; padding: env(safe-area-inset-top, 0px) 8px 0 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
-.ui2-set-bar h2 { margin: 0; font-size: 20px; font-weight: 800; }
-.ui2-set-back { display: inline-flex; align-items: center; gap: 2px; margin-left: -8px; padding: 0 10px 0 2px; border: 0; border-radius: 8px; background: none; color: var(--accent); font: inherit; font-size: 16px; font-weight: 700; }
-.ui2-set-back:active { background: var(--card-hover); }
+/* Phones, like Discord's settings: the bar blends into the page with the title centred; pages
+   are grouped rows on a slightly lighter surface, grey icons, dividers that start after the icon,
+   small section titles; a page's sections are cards. */
+.ph-list, .ph-page { --set-group: var(--panel-2); --set-press: var(--card); }
+.ph-list .settings-modal, .ph-page .settings-modal, .ph-list .ui2-set-side, .ph-page .settings-body { background: var(--bg); }
+.ui2-set-bar { flex: none; display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px; align-items: center; min-height: 54px; padding: env(safe-area-inset-top, 0px) 4px 0; background: var(--bg); }
+.ui2-set-bar h2 { margin: 0; text-align: center; font-size: 17px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ui2-set-back, .ui2-set-x { width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 50%; background: none; color: var(--text); }
+.ui2-set-back:active, .ui2-set-x:active { background: var(--set-press); }
 .ph-list .settings-layout, .ph-page .settings-layout { flex: 1; min-height: 0; flex-direction: column; height: auto; }
-.ph-list .ui2-set-side { flex: 1; max-height: none; min-height: 0; background: var(--bg); }
+.ph-list .ui2-set-side { flex: 1; max-height: none; min-height: 0; }
 .ph-list .settings-body { display: none; }
 .ph-page .ui2-set-side { display: none; }
 .ph-page .settings-body { flex: 1; min-height: 0; height: auto; }
-.ph-list .settings-nav { width: 100%; height: 100%; padding: 12px 12px calc(24px + env(safe-area-inset-bottom, 0px)); gap: 0; }
-.ph-list .settings-search { height: 44px; margin-bottom: 4px; background: var(--card); border-radius: 12px; padding: 0 12px; }
-.ph-list .settings-search input { font-size: 16px; }
-.ph-list .settings-account { margin: 8px 0 4px; padding: 12px; border-radius: 14px; background: var(--card); }
+.ph-list .settings-nav { width: 100%; height: 100%; padding: 4px 16px calc(28px + env(safe-area-inset-bottom, 0px)); gap: 0; }
 .ph-list .settings-nav > * { flex-shrink: 0; }
-.ph-list .settings-search { order: 0; flex-basis: auto; }
-.ph-list .settings-group { gap: 0; margin-top: 4px; }
-.ph-list .settings-group-head { padding: 18px 0 8px 6px; }
-.ph-list .settings-cat { margin: 0; min-height: 52px; padding: 0 14px; border-radius: 0; font-size: 16px; color: var(--text); width: 100%; background: var(--card); border: 1px solid var(--border); white-space: normal; }
-.ph-list .settings-cat + .settings-cat { border-top: 0; box-shadow: inset 0 1px 0 var(--border); }
-.ph-list .settings-group > .settings-cat:first-child, .ph-list .settings-group-head + .settings-cat { border-radius: 14px 14px 0 0; }
-.ph-list .settings-group > .settings-cat:last-child { border-bottom-left-radius: 14px; border-bottom-right-radius: 14px; }
-.ph-list .settings-group > .settings-cat:only-child, .ph-list .settings-group-head + .settings-cat:last-child { border-radius: 14px; }
-.ph-list .settings-cat.on { background: var(--card); font-weight: 600; }
+.ph-list .settings-search { order: 0; flex-basis: auto; height: 42px; margin: 0 0 18px; padding: 0 14px; border-radius: 21px; border: 0; background: var(--set-group); }
+.ph-list .settings-search input { font-size: 16px; }
+/* You: a profile header, like the top of Discord's settings. */
+.ph-list .settings-account { margin: 0 0 6px; padding: 14px; border: 0; border-radius: 16px; background: var(--set-group); }
+.ph-list .settings-account .ui2-avatar { width: 52px !important; height: 52px !important; }
+.ph-list .settings-account-me { gap: 14px; }
+.ph-list .settings-account-text b { font-size: 17px; }
+.ph-list .settings-group { gap: 0; margin-top: 0; }
+.ph-list .settings-group-head { padding: 22px 0 8px 4px; font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--muted); }
+.ph-list .settings-group-head svg { display: none; }
+.ph-list .settings-cat { position: relative; margin: 0; width: 100%; min-height: 52px; gap: 16px; padding: 0 14px 0 16px; border: 0; border-radius: 0; background: var(--set-group); color: var(--text); font-size: 16px; font-weight: 500; white-space: normal; }
+.ph-list .settings-cat + .settings-cat::before { content: ""; position: absolute; top: 0; left: 52px; right: 0; height: 1px; background: var(--border); }
+.ph-list .settings-group > .settings-cat:first-child, .ph-list .settings-group-head + .settings-cat { border-radius: 16px 16px 0 0; }
+.ph-list .settings-group > .settings-cat:last-child { border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; }
+.ph-list .settings-group > .settings-cat:only-child, .ph-list .settings-group-head + .settings-cat:last-child { border-radius: 16px; }
 .ph-list .settings-cat > span { flex: 1; text-align: left; }
-.ph-list .settings-cat > svg:first-child { color: var(--accent); }
-.ph-list .settings-cat > svg:last-child { color: var(--muted); }
-.ph-list .settings-cat.on { background: none; }
-.ph-list .settings-cat:active { background: var(--card-hover); }
+.ph-list .settings-cat > svg { color: var(--muted); }
+/* Touch: no hover colour stuck on the row you tapped last; only the press shows. */
+.ph-list .settings-cat:hover, .ph-list .settings-cat.on { background: var(--set-group); color: var(--text); font-weight: 500; }
+.ph-list .settings-cat:active { background: var(--set-press); }
 /* Searching on the list: the matches show below the search box instead of the pages. */
 .ph-list.searching .ui2-set-side { flex: none; }
 .ph-list.searching .settings-group, .ph-list.searching .settings-account { display: none; }
 .ph-list.searching .settings-nav { padding-bottom: 0; }
+.ph-list.searching .settings-search { margin-bottom: 4px; }
 .ph-list.searching .settings-body { display: flex; flex: 1; min-height: 0; height: auto; }
-.ph-list .ui2-set-page, .ph-page .ui2-set-page { padding: 18px 16px calc(40px + env(safe-area-inset-bottom, 0px)); max-width: none; min-width: 0; }
-.ph-page .ui2-page-head h1 { font-size: 22px; }
-.ph-page .ui2-page-icon { width: 36px; height: 36px; }
+.ph-list .ui2-set-page, .ph-page .ui2-set-page { padding: 6px 16px calc(40px + env(safe-area-inset-bottom, 0px)); max-width: none; min-width: 0; }
+/* A page: its name is in the bar; what it's for as a short line; each section a card. */
+.ph-page .ui2-page-head { margin: 0 4px 14px; }
+.ph-page .ui2-page-head h1 { display: none; }
+.ph-page .ui2-page-head p { font-size: 13px; }
+.ph-list .settings-body > .ui2-set-page > section, .ph-page .settings-body > .ui2-set-page > section { padding: 16px; margin: 0 0 14px; border: 0; border-radius: 16px; background: var(--set-group); }
+.ph-list .settings-body > .ui2-set-page > section.hidden, .ph-page .settings-body > .ui2-set-page > section.hidden { display: none; }
+.ph-page .ui2-sec-head h2 { font-size: 13px; letter-spacing: 0; text-transform: none; color: var(--text); font-weight: 700; }
+.ph-page .ui2-settings input[type="checkbox"], .ph-page input[type="checkbox"] { background: var(--border-strong); }
+.ph-page input[type="checkbox"]:checked { background: var(--accent); }
+.ph-page select, .ph-page input[type="text"], .ph-page input[type="number"], .ph-page textarea { background-color: var(--bg); border-color: var(--border); }
 .ui2-phone .ui2-settings .row { flex-wrap: wrap; }
 .ui2-phone .ui2-settings .field.narrow { flex: 1 1 100%; max-width: none; }
 .ui2-phone .ui2-range { max-width: none; }

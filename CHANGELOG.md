@@ -5,6 +5,9 @@ minor releases can change behavior.
 
 ## Unreleased
 
+### Changed
+- The **Dark** theme is one step darker everywhere (background, panels, cards, lines).
+
 ### Phones (new interface)
 - **Same look as on computers:** the title bar of a view's frame (big italic title, accent line),
   flat panels, the computer's view styles. Bottom tabs: **Map, People, Party, Insights, Menu**,
@@ -13,9 +16,10 @@ minor releases can change behavior.
 - **Menu** tab: the computer's big menu (Activity, Logbook, VRChat, Shared lists, Servers,
   Settings), with Sync now and the sync log.
 - **Profiles open full screen** (the computer's profile); the back gesture closes them.
-- **Settings** work like a phone's own: a list of pages first, then one page at a time with a
-  "‹ Settings" bar; the back gesture goes back to the list. Search shows its matches right under
-  the search box.
+- **Settings** look like Discord's: a list of pages first (grouped rows, grey icons, small section
+  titles, you at the top), then one page at a time with its name in the bar and each section as a
+  card; the back gesture goes back to the list. Search shows its matches right under the search box.
+  The row you tapped last no longer stays highlighted.
 - **People:** one friend per row (full name, status, rank, time online, mutuals, banner as a strip
   on the right). No more "drag onto the sidebar" hint. Search and filters are in the title bar.
 - **Map:** "fit" and "Map options" as round buttons at the bottom right (pinch zooms); map options

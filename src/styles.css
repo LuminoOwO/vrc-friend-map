@@ -1,12 +1,12 @@
 :root {
   --here: #ff6bcb;
-  --bg: #0b1015;
-  --panel: #111920;
-  --panel-2: #16212a;
-  --card: #18242e;
-  --card-hover: #1e2d39;
-  --border: #233240;
-  --border-strong: #31455a;
+  --bg: #070b0f;
+  --panel: #0b1116;
+  --panel-2: #10181f;
+  --card: #131c24;
+  --card-hover: #18242e;
+  --border: #1b2733;
+  --border-strong: #273748;
   --text: #e6edf3;
   --muted: #8a9aa8;
   --accent: #19c3b1;
@@ -20,15 +20,15 @@
   --warn: #ffcf7a;
   --gold: #ffd34d;
   --danger-text: #ff9a9a;
-  --glow: #0f1820;
-  --node-bg: #22313d;
-  --profile-bg: #0e1216;
-  --pcard: #181c21;
-  --chip-bg: #262c33;
+  --glow: #0a1117;
+  --node-bg: #1a2631;
+  --profile-bg: #090c0f;
+  --pcard: #12161a;
+  --chip-bg: #1d2228;
   /* map canvas */
-  --canvas-card: #151e26;
+  --canvas-card: #10171e;
   --canvas-label: #e6edf3;
-  --canvas-outline: rgba(11, 16, 21, 0.85);
+  --canvas-outline: rgba(7, 11, 15, 0.85);
   --canvas-sub: #a9b8c4;
   --canvas-dim: #7d8b97;
   --canvas-line: 160, 190, 210;

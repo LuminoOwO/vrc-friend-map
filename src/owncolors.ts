@@ -46,7 +46,7 @@ export function ownColorVars(c: OwnColors, current: (v: string) => string): Reco
     const x = current(v).trim();
     return HEX.test(x) ? x : fallback;
   };
-  const bg = c.bg || now("--bg", "#0b1015");
+  const bg = c.bg || now("--bg", "#070b0f");
   const text = c.text || now("--text", "#e6edf3");
   if (c.accent) {
     const dark = luminance(c.accent) > 0.4;
