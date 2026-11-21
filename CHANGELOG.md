@@ -12,6 +12,10 @@ minor releases can change behavior.
   do on vrchat.com if your account may be hacked (change the password, turn on two-factor).
 
 ### Changed
+- **Keyboard:** every popup and dialog (profiles, worlds, Settings, search everything, filters,
+  the classic dialogs) takes the focus when it opens, keeps Tab inside it, and gives the focus
+  back to the button that opened it when it closes. Views on computers take the focus too and
+  give it back to their menu item. Esc closes "search everything" from anywhere in it.
 - **vfm-server's admin page in the app's look:** its dark colours and teal accent, a menu on the
   left (Overview, Logger, VRChat login, People, Invites, Bans, Admins, Settings) with counts and
   the logger's state, one page at a time (the address remembers which), and "At a glance" on the

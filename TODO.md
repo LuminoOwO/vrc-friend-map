@@ -273,7 +273,9 @@ tray. On hold: Discord rich presence.
     Map · People · Party · Insights · Menu, profiles / settings (Discord style) / filters full
     screen, 44 px touch targets, haptics.
 - [ ] **Accessibility:** text size, reduced motion, colorblind-safe status colors, full
-  keyboard navigation.
+  keyboard navigation. (2026-11-21: every control has a name, focus rings show, dialogs take,
+  keep and return the focus (`src/focustrap.ts`). Still open: arrow keys in lists and menus, a
+  keyboard way around the map itself besides Ctrl+K, a screen-reader pass.)
 - [x] **Easier server connections.** (Invite links done; the server settings are sorted by purpose in the beta UI.) (Owner, 2026-11-18: setting one up is confusing.) Joining
   should be one step: the admin page makes an invite link that holds the address and the invite
   code, and the app opens it (paste or share) and joins. In the app, the server settings start

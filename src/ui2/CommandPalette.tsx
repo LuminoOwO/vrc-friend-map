@@ -80,7 +80,13 @@ export function CommandPalette({ onClose }: { onClose: () => void }) {
     i.run();
   };
   return (
-    <div className="modal-backdrop top ui2-palette-wrap" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      className="modal-backdrop top ui2-palette-wrap"
+      role="presentation"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      // Esc closes it wherever the focus is inside (not only in the search box).
+      onKeyDown={(e) => e.key === "Escape" && onClose()}
+    >
       <div className="ui2-palette" role="dialog" aria-label="Search everything">
         <div className="ui2-search">
           <Icon name="search" size={16} />
