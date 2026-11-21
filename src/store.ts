@@ -952,6 +952,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.13.0": "the new interface for everyone (classic stays in Settings), a phone layout in the same look with Party and Menu tabs and full-screen profiles, a darker Dark theme, a smoother map and loading placeholders.",
   "0.12.4": "switching between the classic and the beta UI works again (each device keeps its own choice), and the Linux fixes for focus, the mouse wheel and dropdowns.",
   "0.12.3": "Linux: the app no longer takes the keyboard focus back from other windows, the mouse wheel works where it didn't, and dropdown lists open inside the app in its own look.",
   "0.12.2": "much less CPU on Linux (also in the tray), the map no longer shifts every few seconds, synced settings don't snap back, Android 17 reaches a server at home, an easier time zone picker, and in the beta UI Sharing & servers on one page.",

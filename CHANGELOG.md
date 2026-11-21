@@ -3,10 +3,7 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
-## Unreleased
-
-### Changed
-- The **Dark** theme is one step darker everywhere (background, panels, cards, lines).
+## 0.13.0 (2026-11-21)
 
 ### Phones (new interface)
 - **Same look as on computers:** the title bar of a view's frame (big italic title, accent line),
@@ -76,6 +73,7 @@ minor releases can change behavior.
 - Settings → About shows the build (commit) next to the version, so you can tell a test build apart.
 
 ### Changed
+- The **Dark** theme is one step darker everywhere (background, panels, cards, lines).
 - **Loading looks like loading:** text that's still on its way shows as shimmering bars
   (profiles, worlds, groups, events, the logbook), pictures fade in once loaded with a
   shimmering frame until then, and lists (Online now, Activity, notifications, your devices,
