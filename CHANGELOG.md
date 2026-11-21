@@ -30,6 +30,9 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **Profiles open much faster**, most of all on phones: guessing someone's time zone checked
+  hundreds of place and country names against every text (bio, status, each group) the slow way.
+  Same results, about 12 times less work (measured on a slowed-down phone: 1.4 s → 0.12 s).
 - **Even less CPU in the tray:** the slowly turning map now sleeps until the window is back
   (it checked twice a second), and the list animations stop checking positions meanwhile. While
   hidden, the page now does about 25 times less work than before (measured: 2 ms per 10 s).

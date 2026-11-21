@@ -153,7 +153,26 @@ function flagsIn(text: string): string[] {
 }
 
 const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-const wordRe = (w: string) => new RegExp(`(?:^|[^\\p{L}\\p{N}])${esc(w)}(?:$|[^\\p{L}\\p{N}])`, "iu");
+// Compiled once per word: building these for every text was most of the time a profile took to
+// open on a phone (hundreds of place and country words × bio, status and every group name).
+const wordCache = new Map<string, RegExp>();
+const wordRe = (w: string) => {
+  let re = wordCache.get(w);
+  if (!re) {
+    re = new RegExp(`(?:^|[^\\p{L}\\p{N}])${esc(w)}(?:$|[^\\p{L}\\p{N}])`, "iu");
+    wordCache.set(w, re);
+  }
+  return re;
+};
+const abbrCache = new Map<string, RegExp>();
+const abbrRe = (ab: string) => {
+  let re = abbrCache.get(ab);
+  if (!re) {
+    re = new RegExp(`(?:^|[^A-Za-z])${ab.toUpperCase()}(?:$|[^A-Za-z])`);
+    abbrCache.set(ab, re);
+  }
+  return re;
+};
 
 type Adder = (tz: string, score: number, reason: string) => void;
 
@@ -174,7 +193,7 @@ export function hintsInText(text: string, source: string, add: Adder, weight = 1
   }
   // abbreviations (only as whole words, upper case in the original to avoid "est" in words)
   for (const [ab, tz, label, w] of ABBR) {
-    if (new RegExp(`(?:^|[^A-Za-z])${ab.toUpperCase()}(?:$|[^A-Za-z])`).test(text)) add(tz, w * weight, `${source}: "${ab.toUpperCase()}" (${label})`);
+    if (abbrRe(ab).test(text)) add(tz, w * weight, `${source}: "${ab.toUpperCase()}" (${label})`);
   }
   // flags
   for (const iso of flagsIn(text)) {
@@ -182,9 +201,12 @@ export function hintsInText(text: string, source: string, add: Adder, weight = 1
     if (c) c.zones.forEach((z, i) => add(z, (i === 0 ? 3 : 1.5) * weight, `${source}: ${c.name} flag`));
   }
   // places first (more specific), then countries
-  for (const [w, tz, label] of PLACES) if (wordRe(w).test(lower)) add(tz, 3.5 * weight, `${source}: "${label}"`);
+  // A plain "is it in there at all" first: a word can only match where it appears, and that check
+  // is far cheaper than the full word-boundary one.
+  const has = (w: string) => lower.includes(w.toLowerCase()) && wordRe(w).test(lower);
+  for (const [w, tz, label] of PLACES) if (has(w)) add(tz, 3.5 * weight, `${source}: "${label}"`);
   for (const c of COUNTRIES) {
-    const hit = c.words.find((w) => w.length > 2 && wordRe(w).test(lower));
+    const hit = c.words.find((w) => w.length > 2 && has(w));
     if (hit) c.zones.forEach((z, i) => add(z, (i === 0 ? 2.5 : 1.2 / i) * weight, `${source}: "${hit}"`));
   }
 }

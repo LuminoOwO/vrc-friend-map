@@ -342,6 +342,9 @@ tray. On hold: Discord rich presence.
 - [x] **More themes, and your own colors** (pick the main colors yourself). (8 themes + own colors done 2026-11-20)
 - [ ] **Keep the main thread free on every platform:** move heavy work off it so the window
   stays responsive (the Linux spinning is fixed; this is the general version).
+  (2026-11-21: measured long tasks per action in the browser, normal and 4x slowed phone. Fixed
+  the worst: opening a profile (time zone hints) 1.4 s → 0.12 s on the slow phone. Left: Party and
+  Settings ~250 ms on the slow phone, mostly layout, not script; nothing over 60 ms on a PC.)
 - [ ] **A general check of every feature on every platform** (very late, before 1.0).
 - [ ] **Split the server's sync part from the rest:** the part that syncs between your own
   devices should be able to run on its own (e.g. a public sync server), separate from sharing

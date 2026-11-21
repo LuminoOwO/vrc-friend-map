@@ -64,3 +64,17 @@ describe("time of day and the zone list", () => {
     expect(zoneEntry("Asia/Kolkata", at)?.offset).toBe("UTC+5:30");
   });
 });
+
+describe("time zone hints, fast path", () => {
+  it("finds places and countries in any case, as whole words only", () => {
+    const top = (text: string) => guessTimezones({ texts: [{ source: "bio", text }] })[0]?.tz;
+    expect(top("living in BERLIN rn")).toBe("Europe/Berlin");
+    expect(top("München ❤")).toBe("Europe/Berlin");
+    expect(top("Tokyo / Osaka")).toBe("Asia/Tokyo");
+    // Inside another word: no match.
+    expect(top("parisian vibes only")).toBeUndefined();
+    // The same answers on repeat (cached checks keep no state between texts).
+    expect(top("living in BERLIN rn")).toBe("Europe/Berlin");
+    expect(top("parisian vibes only")).toBeUndefined();
+  });
+});
