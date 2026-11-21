@@ -47,7 +47,7 @@ export function ColorPicker({
               key={c}
               className={`color-cell ${c === value.toLowerCase() ? "current" : ""} ${used ? "used" : ""}`}
               style={{ background: c }}
-              title={used ? tr("colors.cUsedByUsedOther", { c, used, value: used === 1 ? "" : "s" }) : c}
+              title={used ? tr("colors.cUsedByUsedOther", { c, count: used }) : c}
               onClick={() => {
                 onPick(c);
                 onClose();

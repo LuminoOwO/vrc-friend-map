@@ -41,8 +41,7 @@ export function SuggestedGroups() {
       </div>
       {!supported ? (
         <p className="muted small">
-          Groups are suggested from VRChat's log files, which only exist on the PC that runs VRChat. Use the desktop app on that PC for
-          suggestions.
+          {tr("groups.groupsAreSuggestedFromVrchat")}
         </p>
       ) : !enabled && !demo && !useLive ? (
         <p className="muted small">
@@ -109,7 +108,7 @@ function SuggestionItem({ s, circleName }: { s: Suggestion; circleName?: string 
         <span className="suggestion-text">
           <b>{title}</b>
           <span className="muted small">
-            {s.match ? tr("groups.lengthValueWhoHangOut", { length: s.match.add.length, value: s.match.add.length === 1 ? "person" : "people" }) : tr("groups.lengthPeople", { length: all.length })}
+            {s.match ? tr("groups.lengthValueWhoHangOut", { count: s.match.add.length }) : tr("groups.lengthPeople", { length: all.length })}
             ~{fmtHours(s.hours * 3600)} together on ~{Math.round(s.days)} days
             {s.worlds[0] ? tr("groups.oftenInValue", { value: s.worlds[0] }) : ""}
           </span>

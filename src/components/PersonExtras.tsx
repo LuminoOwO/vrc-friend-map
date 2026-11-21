@@ -119,7 +119,7 @@ export function LocalTime({ id, name }: { id: string; name: string }) {
     );
   }
   const diff = tz.tz ? differenceFromMe(tz.tz) : null;
-  const diffText = diff === null ? "" : diff === 0 ? tr("personExtras.sameAsYou") : tr("personExtras.valueHValue2You", { value: Math.abs(diff), value2: diff > 0 ? "ahead of" : "behind" });
+  const diffText = diff === null ? "" : diff === 0 ? tr("personExtras.sameAsYou") : tr(diff > 0 ? "personExtras.hoursAhead" : "personExtras.hoursBehind", { count: Math.abs(diff) });
   const verified = tz.how === "set" || tz.how === "confirmed" || tz.how === "shared";
   return (
     <div className="profile-block local-time" data-flip-fade>

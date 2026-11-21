@@ -15,8 +15,7 @@ export function AccountsSection() {
     <>
       <h3>{tr("accounts.yourOtherAccounts")}</h3>
       <p className="small muted">
-        Log in with your other VRChat accounts too: their friends join the map, cards and search, each with a small mark for which of your accounts knows
-        them, and friends of more than one of your accounts stand out. Logins stay on this device.
+        {tr("accounts.logInWithYourOther")}
       </p>
       {a.list.map((acc) => {
         const live = accountLive(acc.id);
@@ -74,8 +73,7 @@ export function AccountsSection() {
       <label className="check">
         <input id="acc-actas" type="checkbox" checked={a.actAs} onChange={(e) => updateSettings({ accounts: { ...a, actAs: e.target.checked } })} />
         <span>
-          Act as any of my accounts: on a profile, pick which account sends a friend request, unfriends, blocks or mutes. Off: those always use your main
-          account.
+          {tr("accounts.actAsAnyOfMy")}
         </span>
       </label>
     </>

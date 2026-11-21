@@ -99,8 +99,7 @@ export function Diagnostics() {
           </dl>
           {gpu?.software && (
             <p className="small">
-              The web engine draws without the graphics card here, so big windows get slow. Try Graphics → “Prefer the graphics card”, or
-              update your graphics driver.
+              {tr("diagnostics.theWebEngineDrawsWithout")}
             </p>
           )}
           <div className="row">

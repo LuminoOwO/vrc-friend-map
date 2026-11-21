@@ -531,7 +531,6 @@
     "starThisFriend": "Star this friend",
     "nicknameNick": "Nickname: {{nick}}",
     "sameAsYou": "same as you",
-    "valueHValue2You": "{{value}} h {{value2}} you",
     "whyAndOtherOptions": "Why, and other options",
     "valueValue2": "{{value}} ({{value2}})",
     "notSeenOnlineYet": "not seen online yet",
@@ -567,7 +566,9 @@
     "tzConfirmed": "You confirmed this suggestion.",
     "tzShared": "{{name}} shares their time zone through the app.",
     "tzSuggested": "A guess until you confirm it.",
-    "askToInvite": "Ask {{name}} to invite you"
+    "askToInvite": "Ask {{name}} to invite you",
+    "hoursAhead": "{{count}} h ahead of you",
+    "hoursBehind": "{{count}} h behind you"
   },
   "content": {
     "couldnTLoadThisWorld": "Couldn't load this world.",
@@ -794,7 +795,6 @@
     "valueH": "{{value}} h",
     "syncing2": "Syncing…",
     "syncAllNow": "Sync all now",
-    "peopleValueWithYouFriend": "{{people}} {{value}} with you (friend lists show under Shared lists).",
     "nothingSharedWithYouYet": "Nothing shared with you yet.",
     "hideKey": "Hide key",
     "copyKeyToAnotherDevice": "Copy key to another device",
@@ -836,7 +836,9 @@
     "whatYouUploadThenDoesn": "What you upload then doesn't say who it's for: the server only sees that you shared something, not with whom, and your friends' apps find out themselves whether it's for them. The server can still see whose items each app downloads. Needs encryption. Friends need version 0.12.0 or newer of the app to get it; on older ones it disappears until they update.",
     "theServerWatchesYourFriends": "The server watches your friends' locations through VRChat's live feed (like this app does while open), around the clock, and counts who is in the same instance as whom. Private and invite-only instances are hidden by VRChat. To pair, it gets your VRChat login (sealed so only that server can open it); logging out of this app keeps it running. Its history comes back to this app signed and encrypted for you.",
     "encDefaultWhy": "{{why}} A server can still force encryption on or off; then the other side of its switch is greyed out. Changing this resets the switch on every server to the new default.",
-    "liveWith": "Live with {{devices}}: changes and your own notification sounds go across within seconds."
+    "liveWith": "Live with {{devices}}: changes and your own notification sounds go across within seconds.",
+    "peopleValueWithYouFriend_one": "{{count}} person shares with you (friend lists show under Shared lists).",
+    "peopleValueWithYouFriend_other": "{{count}} people share with you (friend lists show under Shared lists)."
   },
   "logbook": {
     "youDidnTPlayThis": "You didn't play this day.",
@@ -1068,7 +1070,8 @@
     "copyABackup": "Copy a backup",
     "backupRestored": "Backup restored",
     "templateNeeds": " The template needs {hours}.",
-    "bioTooLong": " Your bio would get longer than 512 characters, so it's left alone."
+    "bioTooLong": " Your bio would get longer than 512 characters, so it's left alone.",
+    "circlesStarsNicknamesTimeZones": "Circles, stars, nicknames, time zones, block reasons, invite messages, world notes, settings and your own sounds in one file, encrypted with a password you choose. Not in it: your VRChat login, server keys, and your age notes (those never leave this device)."
   },
   "diagnostics": {
     "diagnostics": "Diagnostics",
@@ -1092,7 +1095,8 @@
     "webkitgtk": "WebKitGTK",
     "webview2Chromium": "WebView2 (Chromium)",
     "wkwebviewSafari": "WKWebView (Safari)",
-    "androidWebviewChromium": "Android WebView (Chromium)"
+    "androidWebviewChromium": "Android WebView (Chromium)",
+    "theWebEngineDrawsWithout": "The web engine draws without the graphics card here, so big windows get slow. Try Graphics → “Prefer the graphics card”, or update your graphics driver."
   },
   "here": {
     "nobodyElseIsHereRight": "Nobody else is here right now.",
@@ -1104,21 +1108,24 @@
     "showPeopleWhoArenT": "Show people who aren't friends yet on the map",
     "picturesAndProfilesLoadOne": "Pictures and profiles load one by one, a few seconds apart, to go easy on VRChat",
     "minsMin": "{{mins}} min",
-    "countMutualValue": "{{count}} mutual{{value}}",
-    "mutualFriendValueInCommon": "{{mutual}} friend{{value}} in common",
     "insideOfCapacitySlotsTaken": "{{inside}} of {{capacity}} slots taken",
     "insideInTheInstance": "{{inside}} in the instance",
     "byBy": " (by {{by}})",
     "showOverTheMapInstead": "Show over the map instead",
     "putItInTheSidebar": "Put it in the sidebar",
     "countWithYou": "{{count}} with you",
-    "lengthFriendValue": " · {{length}} friend{{value}}",
     "blockedBlockedHidden": " · {{blocked}} blocked, hidden",
     "nameNotAFriendYet": "{{name}} (not a friend yet)",
     "onlyTheHeading": "Only the heading",
     "hideAButtonStays": "Hide (a button stays)",
     "nowFirstProfileLimit": " (now: first {{PROFILE_LIMIT}})",
-    "nowPlaying": "now playing"
+    "nowPlaying": "now playing",
+    "countMutualValue_one": "{{count}} mutual",
+    "countMutualValue_other": "{{count}} mutuals",
+    "mutualFriendValueInCommon_one": "{{count}} friend in common",
+    "mutualFriendValueInCommon_other": "{{count}} friends in common",
+    "lengthFriendValue_one": " · {{count}} friend",
+    "lengthFriendValue_other": " · {{count}} friends"
   },
   "viewer": {
     "showInFolder": "Show in folder",
@@ -1254,7 +1261,8 @@
     "noHintsInTheirProfile": "No hints in their profile",
     "linkedPages": "Linked pages: {{count}} read",
     "needLogin": ", {{count}} need a login",
-    "unreachable": ", {{count}} unreachable"
+    "unreachable": ", {{count}} unreachable",
+    "goesToThePeopleYou": "Goes to the people you share with on your servers (Shared lists → servers → “My notes about people”). “Keep your distance” carries no reason. Notes saying someone is under 18 can't be shared."
   },
   "serversPanel": {
     "exchange": "Exchange:",
@@ -1270,7 +1278,6 @@
     "loggerPaired": " · logger paired",
     "checking": "Checking…",
     "addServer": "Add server",
-    "peopleValueWithYou": "{{people}} {{value}} with you.",
     "nobodySharesWithYouYet": "Nobody shares with you yet.",
     "noServersYet": "No servers yet.",
     "syncing": "Syncing…",
@@ -1278,7 +1285,9 @@
     "manageServers": "Manage servers",
     "serverSettings": "Server settings",
     "shareAutomaticallyThroughServers": "Share automatically through servers",
-    "stepByStepSetupGuide": "Step-by-step setup guide"
+    "stepByStepSetupGuide": "Step-by-step setup guide",
+    "peopleValueWithYou_one": "{{count}} person shares with you.",
+    "peopleValueWithYou_other": "{{count}} people share with you."
   },
   "update": {
     "savedInstallItWith": "Saved. Install it with:",
@@ -1326,7 +1335,8 @@
     "friendsAddedRemoved": "Friends added / removed",
     "wasHereWhenYouArrived": "was here when you arrived",
     "clearTheActivityLogOn": "Clear the activity log on this device?",
-    "invites": "Invites"
+    "invites": "Invites",
+    "joinsLeavesAndWorldChanges": "Joins, leaves and world changes need the game log (Settings → Game logs, “Show who's in my instance right now”), on the PC that runs VRChat. Friends coming online and going offline show up either way."
   },
   "groups": {
     "suggestedGroups": "Suggested groups",
@@ -1343,7 +1353,6 @@
     "addToValue": "Add to {{value}}",
     "hidePeople": "Hide people",
     "showPeople": "Show people",
-    "lengthValueWhoHangOut": "{{length}} {{value}} who hang out with them · ",
     "lengthPeople": "{{length}} people · ",
     "oftenInValue": " · often in {{value}}",
     "alsoSpendsALotOf": "Also spends a lot of time with another group",
@@ -1355,7 +1364,10 @@
     "betweenFriends": "{{lead}} between friends (their live locations while this app is open)",
     "betweenFriendsPairs": "{{lead}} between friends (their live locations while this app is open, {{pairs}} pairs so far)",
     "and": " and",
-    "colon": ":"
+    "colon": ":",
+    "groupsAreSuggestedFromVrchat": "Groups are suggested from VRChat's log files, which only exist on the PC that runs VRChat. Use the desktop app on that PC for suggestions.",
+    "lengthValueWhoHangOut_one": "{{count}} person who hangs out with them · ",
+    "lengthValueWhoHangOut_other": "{{count}} people who hang out with them · "
   },
   "chooser": {
     "makeCirclesFirstOnThe": "Make circles first (on the map or in the sidebar).",
@@ -1381,7 +1393,9 @@
     "askBeforeISendOr": "Ask before I send or accept a friend request when there are concerns",
     "alsoReadThePagesThey": "Also read the pages they link to",
     "readSocialNetworkProfilesBluesky": "Read social network profiles (Bluesky, Instagram, TikTok, Steam, Reddit, Mastodon…)",
-    "xTwitterThroughFxtwitter": "X / Twitter through FxTwitter"
+    "xTwitterThroughFxtwitter": "X / Twitter through FxTwitter",
+    "forAdultsWhoDRather": "For adults who'd rather not have minors on their friend list. A profile's “Age” part shows hints from what the person wrote (bio, pronouns, status, links), your own note, and notes friends shared. VRChat's 18+ badge isn't counted: verified accounts get sold.",
+    "linkedPagesOnlyPublicWebsites": "Linked pages: only public websites (never your own network), read once and kept for a week. Each site sees your IP address, like when you open it yourself. Also used for guessing friends' time zones."
   },
   "syncLog": {
     "syncLog": "Sync log",
@@ -1420,15 +1434,18 @@
     "nFriends": "{{n}} friends",
     "notLoadedYet": "not loaded yet",
     "liveUpdatesItsOwnConnection": "Live updates (its own connection to VRChat; off: its friends' status refreshes with each sync)",
-    "notificationsForItsFriendsYour": "Notifications for its friends (your usual rules; needs live updates)"
+    "notificationsForItsFriendsYour": "Notifications for its friends (your usual rules; needs live updates)",
+    "logInWithYourOther": "Log in with your other VRChat accounts too: their friends join the map, cards and search, each with a small mark for which of your accounts knows them, and friends of more than one of your accounts stand out. Logins stay on this device.",
+    "actAsAnyOfMy": "Act as any of my accounts: on a profile, pick which account sends a friend request, unfriends, blocks or mutes. Off: those always use your main account."
   },
   "colors": {
     "circleColor": "Circle color",
     "anyColor": "Any color",
     "pickUnused": "Pick unused",
     "custom": "Custom…",
-    "cUsedByUsedOther": "{{c}} · used by {{used}} other circle{{value}}",
-    "dottedAnotherCircleUsesIt": "Dotted = another circle uses it."
+    "dottedAnotherCircleUsesIt": "Dotted = another circle uses it.",
+    "cUsedByUsedOther_one": "{{c}} · used by {{count}} other circle",
+    "cUsedByUsedOther_other": "{{c}} · used by {{count}} other circles"
   },
   "groupsModal": {
     "youReInIt": "you're in it",
@@ -1548,14 +1565,16 @@
     "logs247": "Logs 24/7",
     "syncing2": "Syncing…",
     "syncAllNow": "Sync all now",
-    "peopleValueWithYou": "{{people}} {{value}} with you.",
     "nothingSharedWithYouYet": "Nothing shared with you yet.",
     "mMinutes": "{{m}} minutes",
     "valueHours": "{{value}} hours",
     "addAServer": "Add a server",
     "advancedYourKeyAndFriends": "Advanced: your key and friends' keys",
     "serversThatCanTellThe": "Servers that can tell the app about changes get them within seconds; the rest are checked every",
-    "evenWhereAServerAllows": "Even where a server allows it. Recommended; a server that only takes unencrypted uploads then gets nothing."
+    "evenWhereAServerAllows": "Even where a server allows it. Recommended; a server that only takes unencrypted uploads then gets nothing.",
+    "aVfmServerPassesYour": "A vfm-server passes your friend list and who spends time with whom to the friends you pick, keeps your devices in sync, and can watch your friends around the clock. Encrypted, the server itself can't read any of it.",
+    "peopleValueWithYou_one": "{{count}} person shares with you.",
+    "peopleValueWithYou_other": "{{count}} people share with you."
   },
   "palette": {
     "nothingFound": "Nothing found.",
@@ -1623,8 +1642,7 @@
     "notAFriend": "not a friend"
   },
   "online2": {
-    "esc": "ESC",
-    "valueFlagValue2": "{{value}}{{flag}} {{value2}}"
+    "esc": "ESC"
   },
   "servers2": {
     "openSharingServersSettings": "Open Sharing & servers settings"
@@ -1687,7 +1705,6 @@
     "restartTheAppForThis": "Restart the app for this to take effect.",
     "localData": "Local data",
     "demoDataIsnTSaved": "Demo data isn't saved. Your real circles and cache are untouched.",
-    "storeBackups": "store/backups",
     "runningInABrowserData": "Running in a browser: data is kept in this browser's local storage.",
     "about": "About",
     "esc": "ESC",
@@ -1794,7 +1811,6 @@
     "couldnTSaveE2": "Couldn't save: {{e2}}",
     "searchSettings": "Search settings",
     "searchSettingsEGTheme": "Search settings (e.g. theme, fps, sound, blocked)",
-    "phListValue": "ph-list {{value}}",
     "couldnTSaveTheGraphics": "Couldn't save the graphics setting: {{error}}",
     "couldnTRestartError": "Couldn't restart: {{error}}",
     "onlyNeededOnLinuxX11": "Only needed on Linux (X11).",
@@ -1863,7 +1879,10 @@
     "connect": "Connect",
     "advanced": "Advanced",
     "loggedInAs": "Logged in as {{name}}.",
-    "unknownName": "unknown"
+    "unknownName": "unknown",
+    "writesAShortLineAt": "Writes a short line at the top of your VRChat note on people with red flags (why you blocked them, friends' shared blocks and removals), so you see it in game on their profile. Your own note text moves below it and is never changed. Nothing about age goes there.",
+    "notRecommendedTheAppChanges": "Not recommended: the app changes quickly right now, and new versions bring fixes, also for security and for changes on VRChat's side. You'll only hear about updates when you press Check now.",
+    "updatingDownloadsTheNewVersion": "Updating downloads the new version from the GitHub release, checks it against the release's checksums and installs it the way this copy was installed (installer, AppImage, .deb / .rpm with your password, tarball). Flatpak, Android and iPhone get a download or the release page instead."
   },
   "syncMsg": {
     "valueWaitingValue2S": "{{value}}, waiting {{value2}} s",

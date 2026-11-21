@@ -65,8 +65,7 @@ function NotesLineSection() {
     <>
       <h3>{tr("settings.redFlagsInVrchatNotes")}</h3>
       <p className="small muted">
-        Writes a short line at the top of your VRChat note on people with red flags (why you blocked them, friends' shared blocks and removals),
-        so you see it in game on their profile. Your own note text moves below it and is never changed. Nothing about age goes there.
+        {tr("settings.writesAShortLineAt")}
       </p>
       <label className="field narrow">
         <span>{tr("settings.lineInTheNote")}</span>
@@ -389,7 +388,7 @@ export function SettingsModal() {
 
   return (
     <div
-      className={`modal-backdrop ${beta ? "ui2-settings" : ""} ${phone ? (phoneList ? tr("settings.phListValue", { value: scores ? "searching" : "" }) : "ph-page") : ""}`}
+      className={`modal-backdrop ${beta ? "ui2-settings" : ""} ${phone ? (phoneList ? `ph-list ${scores ? "searching" : ""}` : "ph-page") : ""}`}
       onMouseDown={(e) => e.target === e.currentTarget && close()}
     >
       <div className="modal settings-modal" role="dialog" aria-label={tr("settings.settings")}>
@@ -758,7 +757,7 @@ export function SettingsModal() {
             <>
               <p className="small">
                 Stored in <code>{info.data_dir}</code>. Image cache: {(info.image_cache_bytes / 1024 / 1024).toFixed(1)} MB. Before an update
-                changes the format of your data, a copy is saved in <code>{tr("settings.storeBackups")}</code>.
+                changes the format of your data, a copy is saved in <code>store/backups</code>.
               </p>
               <div className="row">
                 <button className="btn" onClick={() => backend.clearImageCache().then(() => backend.storageInfo().then(setInfo))}>
@@ -1378,8 +1377,7 @@ function UpdatesSection() {
       </label>
       {!u.check && (
         <p className="small warn">
-          Not recommended: the app changes quickly right now, and new versions bring fixes, also for security and for changes on VRChat's side. You'll only
-          hear about updates when you press Check now.
+          {tr("settings.notRecommendedTheAppChanges")}
         </p>
       )}
       <div className="row">
@@ -1401,9 +1399,7 @@ function UpdatesSection() {
         )}
       </div>
       <p className="small muted">
-        Updating downloads the new version from the GitHub release, checks it against the release's checksums and installs it the way this copy
-        was installed (installer, AppImage, .deb / .rpm with your password, tarball). Flatpak, Android and iPhone get a download or the
-        release page instead.
+        {tr("settings.updatingDownloadsTheNewVersion")}
       </p>
     </>
   );

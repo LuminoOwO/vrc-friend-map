@@ -121,8 +121,7 @@ export function BackupSection() {
     <>
       <h4 className="sub-h">{tr("extras.backupToAnotherDevice")}</h4>
       <p className="small muted">
-        Circles, stars, nicknames, time zones, block reasons, invite messages, world notes, settings and your own sounds in one file, encrypted with a password
-        you choose. Not in it: your VRChat login, server keys, and your age notes (those never leave this device).
+        {tr("extras.circlesStarsNicknamesTimeZones")}
       </p>
       <label className="field narrow">
         <span>{tr("extras.password8CharactersOrMore")}</span>

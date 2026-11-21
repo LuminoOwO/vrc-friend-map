@@ -117,7 +117,7 @@ export function ServersPanel() {
 
       <div className="row servers-foot">
         <span className="small muted grow">
-          {servers.length ? (people ? tr("serversPanel.peopleValueWithYou", { people, value: people === 1 ? "person shares" : "people share" }) : tr("serversPanel.nobodySharesWithYouYet")) : tr("serversPanel.noServersYet")}
+          {servers.length ? (people ? tr("serversPanel.peopleValueWithYou", { count: people }) : tr("serversPanel.nobodySharesWithYouYet")) : tr("serversPanel.noServersYet")}
         </span>
         {servers.length > 0 && (
           <button className="btn small" disabled={busy || demo} onClick={() => syncAllServers({ manual: true })}>

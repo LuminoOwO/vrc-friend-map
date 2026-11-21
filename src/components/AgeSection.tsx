@@ -9,8 +9,7 @@ export function AgeSection() {
     <>
       <h3>{tr("ageSettings.ageHints")}</h3>
       <p className="small muted">
-        For adults who'd rather not have minors on their friend list. A profile's “Age” part shows hints from what the person wrote (bio,
-        pronouns, status, links), your own note, and notes friends shared. VRChat's 18+ badge isn't counted: verified accounts get sold.
+        {tr("ageSettings.forAdultsWhoDRather")}
       </p>
       <label className="check">
         <input type="checkbox" checked={a.enabled} onChange={(e) => set({ enabled: e.target.checked })} />
@@ -57,8 +56,7 @@ export function AgeSection() {
         </div>
       )}
       <p className="small muted">
-        Linked pages: only public websites (never your own network), read once and kept for a week. Each site sees your IP address, like when
-        you open it yourself. Also used for guessing friends' time zones.
+        {tr("ageSettings.linkedPagesOnlyPublicWebsites")}
       </p>
       <p className="small muted">
         Your notes and the hints stay on this device. Notes saying someone is under 18 are never shared, synced or exported, so this can't turn

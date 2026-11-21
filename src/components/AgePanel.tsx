@@ -127,8 +127,7 @@ export function AgePanel({ id }: { id: string }) {
             </select>
           </label>
           <p className="small muted">
-            Goes to the people you share with on your servers (Shared lists → servers → “My notes about people”). “Keep your distance” carries no
-            reason. Notes saying someone is under 18 can't be shared.
+            {tr("age.goesToThePeopleYou")}
           </p>
           {fromFriends.length > 0 && (
             <div className="age-friends">

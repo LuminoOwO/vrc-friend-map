@@ -146,8 +146,7 @@ export function ServersPage() {
   return (
     <div className="ui2-servers">
       <p className="small muted">
-        A vfm-server passes your friend list and who spends time with whom to the friends you pick, keeps your devices in sync, and can watch your
-        friends around the clock. Encrypted, the server itself can't read any of it.
+        {tr("serversPage.aVfmServerPassesYour")}
       </p>
 
       <section>
@@ -173,7 +172,7 @@ export function ServersPage() {
           <button className="btn small" onClick={() => syncAllServers({ manual: true })} disabled={busy || !sharing.servers.length || demo}>
             <Icon name="refresh" size={14} /> {busy ? tr("serversPage.syncing2") : tr("serversPage.syncAllNow")}
           </button>
-          <span className="small muted">{people ? tr("serversPage.peopleValueWithYou", { people, value: people === 1 ? "person shares" : "people share" }) : tr("serversPage.nothingSharedWithYouYet")}</span>
+          <span className="small muted">{people ? tr("serversPage.peopleValueWithYou", { count: people }) : tr("serversPage.nothingSharedWithYouYet")}</span>
         </div>
       </section>
 

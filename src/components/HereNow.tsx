@@ -30,12 +30,12 @@ function detailLine(id: string, friend: boolean, cache: Cache): string {
     const mutual = cache.mutuals[id];
     const p = presenceOf(f, cache.presence);
     const bits = [f.statusDescription || presenceLabel(f, p)];
-    if (mutual && !mutual.hidden) bits.push(tr("here.countMutualValue", { count: mutual.count, value: mutual.count === 1 ? "" : "s" }));
+    if (mutual && !mutual.hidden) bits.push(tr("here.countMutualValue", { count: mutual.count }));
     return bits.filter(Boolean).join(" · ");
   }
   const mutual = cache.mutuals[id]?.count ?? 0;
   const bits = ["Not a friend yet"];
-  if (mutual) bits.push(tr("here.mutualFriendValueInCommon", { mutual, value: mutual === 1 ? "" : "s" }));
+  if (mutual) bits.push(tr("here.mutualFriendValueInCommon", { count: mutual }));
   if (f?.statusDescription) bits.push(f.statusDescription);
   return bits.join(" · ");
 }
@@ -143,7 +143,7 @@ export function HereNow({ inSidebar = false }: { inSidebar?: boolean }) {
   const summary = (
     <span className="here-summary">
       {count === 0 ? "just you" : tr("here.countWithYou", { count })}
-      {people.friends.length > 0 && count > 0 ? tr("here.lengthFriendValue", { length: people.friends.length, value: people.friends.length === 1 ? "" : "s" }) : ""}
+      {people.friends.length > 0 && count > 0 ? tr("here.lengthFriendValue", { count: people.friends.length }) : ""}
       {!showBlocked && people.blocked > 0 ? tr("here.blockedBlockedHidden", { blocked: people.blocked }) : ""}
     </span>
   );

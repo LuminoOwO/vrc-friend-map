@@ -191,7 +191,7 @@ export function WorldPopup({ spotKey, onClose }: { spotKey: string; onClose: () 
             <h2>{title}</h2>
             <span className="muted">
               {world?.authorName ? t("online.by", { name: world.authorName }) : spotKey === "private" ? t("online.privateNote") : ""}
-              {loc ? tr("online2.valueFlagValue2", { value: world?.authorName ? " · " : "", flag: loc.flag, value2: loc.region.toUpperCase() }) : ""}
+              {loc ? `${world?.authorName ? " · " : ""}${loc.flag} ${loc.region.toUpperCase()}` : ""}
             </span>
           </span>
           {loc && (

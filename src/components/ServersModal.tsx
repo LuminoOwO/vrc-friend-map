@@ -273,7 +273,7 @@ export function ServersModal() {
               <Icon name="refresh" size={16} /> {busy ? tr("serversModal.syncing2") : tr("serversModal.syncAllNow")}
             </button>
             <span className="small muted">
-              {people ? tr("serversModal.peopleValueWithYouFriend", { people, value: people === 1 ? "person shares" : "people share" }) : tr("serversModal.nothingSharedWithYouYet")}
+              {people ? tr("serversModal.peopleValueWithYouFriend", { count: people }) : tr("serversModal.nothingSharedWithYouYet")}
             </span>
           </div>
         </section>

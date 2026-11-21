@@ -185,8 +185,7 @@ export function ActivityView() {
       </div>
       {!liveOn && !demo && (
         <p className="small muted activity-note">
-          Joins, leaves and world changes need the game log (Settings → Game logs, “Show who's in my instance right now”), on the PC that
-          runs VRChat. Friends coming online and going offline show up either way.
+          {tr("activityView.joinsLeavesAndWorldChanges")}
         </p>
       )}
       {groups.has("list") && logSince ? <p className="small muted activity-note">Friends added and removed are kept since {fmtDate(logSince)}; everything else for {4} days.</p> : null}
