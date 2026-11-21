@@ -1,6 +1,7 @@
 // Which features work where. Settings uses this to hide (or grey out, with
 // the reason) what can't work on this device; see Settings → Appearance →
 // "Hide features not available on this platform".
+import { t as tr } from "./i18n";
 import { isMobile, isTauri } from "./backend";
 
 const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
@@ -29,32 +30,32 @@ export type Feature =
 
 /** Why a feature can't work here, or null when it can. */
 export function unavailable(f: Feature): string | null {
-  const web = !isTauri ? "Not in the browser version." : null;
+  const web = !isTauri ? tr("platformMsg.notInTheBrowserVersion") : null;
   switch (f) {
     case "tray":
     case "closeWindow":
-      return web ?? (isMobile ? "Only on computers." : null);
+      return web ?? (isMobile ? tr("platformMsg.onlyOnComputers") : null);
     case "wheelFix":
-      return web ?? (isLinux ? null : "Only needed on Linux (X11).");
+      return web ?? (isLinux ? null : tr("platformMsg.onlyNeededOnLinuxX11"));
     case "gameLogs":
-      return web ?? (isIOS ? "iPhones can't read VRChat's files." : null);
+      return web ?? (isIOS ? tr("platformMsg.iphonesCanTReadVrchat") : null);
     case "haptics":
-      return isMobile ? null : "Only on phones.";
+      return isMobile ? null : tr("platformMsg.onlyOnPhones");
     case "installUpdates":
-      return web ?? (isIOS ? "iPhone apps update by installing a new IPA." : null);
+      return web ?? (isIOS ? tr("platformMsg.iphoneAppsUpdateByInstalling") : null);
     case "silentSystemNotify":
-      return web ?? (isLinux ? null : "Only on Linux.");
+      return web ?? (isLinux ? null : tr("platformMsg.onlyOnLinux"));
     case "vrOverlay":
     case "steam":
     case "launchGame":
-      return web ?? (isMobile ? "Only on computers (where VRChat runs on PC)." : null);
+      return web ?? (isMobile ? tr("platformMsg.onlyOnComputersWhereVrchat") : null);
     case "mpris":
-      return web ?? (isLinux ? null : "Only on Linux (MPRIS).");
+      return web ?? (isLinux ? null : tr("platformMsg.onlyOnLinuxMpris"));
     case "discord":
-      return web ?? (isMobile ? "Only on computers." : null);
+      return web ?? (isMobile ? tr("platformMsg.onlyOnComputers") : null);
     case "backgroundService":
     case "widget":
-      return isAndroid && isTauri ? null : "Only in the Android app.";
+      return isAndroid && isTauri ? null : tr("platformMsg.onlyInTheAndroidApp");
   }
 }
 

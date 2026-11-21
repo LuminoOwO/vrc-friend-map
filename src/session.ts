@@ -1,3 +1,4 @@
+import { t as tr } from "./i18n";
 import { backend } from "./backend";
 import { makeDemo } from "./demo";
 import { initLogs, stopLogScans } from "./logs";
@@ -44,7 +45,7 @@ export async function logoutAll(wipeCache: boolean, message = "Logged out.") {
     await backend.storeWrite("cache", JSON.stringify(emptyCache()));
   }
   const note = loggers.length
-    ? ` Your logger on ${loggers.map((s) => s.info?.name ?? s.url).join(", ")} keeps running with this VRChat login; unpair it in Settings → Servers to stop it.`
+    ? tr("sessionMsg.yourLoggerOnValueKeeps", { value: loggers.map((s) => s.info?.name ?? s.url).join(", ") })
     : "";
   setState({ mode: "login", session: null, selectedId: null, settingsOpen: false, serversOpen: false, loginMessage: message + note, live: { connected: false, message: "" } });
 }
@@ -67,7 +68,7 @@ export async function logoutEverywhere() {
   // Devices met directly get your changes within 3 seconds.
   if (knownPeers().length) await new Promise((r) => setTimeout(r, 4000));
   await flushSaves();
-  const where = servers.length || knownPeers().length ? " Your other devices log out at their next sync." : "";
+  const where = servers.length || knownPeers().length ? tr("sessionMsg.yourOtherDevicesLogOut") : "";
   await logoutAll(false, "Logged out everywhere." + where);
 }
 

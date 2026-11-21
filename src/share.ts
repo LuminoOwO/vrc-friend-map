@@ -2,6 +2,7 @@
 // number of servers, download what friends share with you from all of them.
 // Encryption and signatures happen in Rust (src-tauri/src/share.rs); this
 // file decides what to send where, and merges what comes back.
+import { t as tr } from "./i18n";
 import { describeError, isNetworkError, logSync, wasInterrupted } from "./synclog";
 import { versionMismatch, type Mismatch } from "./compat";
 import { REASON_IDS } from "./personal";
@@ -64,7 +65,7 @@ export function encryptionSwitch(policy: EncPolicy | undefined, def: EncDefault,
   const suggested = def === "on" ? true : def === "off" ? false : p === "recommended";
   const on = choice ?? suggested;
   const from =
-    choice !== null ? "You set this for this server." : def === "server" ? "Following the server's suggestion (your default: server-based)." : `Following your default (always ${def}).`;
+    choice !== null ? tr("shareMsg.youSetThisForThis") : def === "server" ? tr("shareMsg.followingTheServerSSuggestion") : tr("shareMsg.followingYourDefaultAlwaysDef", { def });
   return { on, locked: null, warn: false, source: choice !== null ? "yours" : "default", why: `${POLICY_TEXT[p]} ${from} ${on ? ON_TEXT : OFF_TEXT}` };
 }
 
@@ -251,7 +252,7 @@ async function fetchLogger(id: string) {
   const status = await backend.share.loggerStatus(s.url).catch(() => null);
   if (status) {
     const expired = status.expired === true;
-    if (expired && !s.loggerExpired) showToast(`${serverName(s)}: the server's VRChat login expired. Log in again under Servers.`);
+    if (expired && !s.loggerExpired) showToast(tr("shareMsg.valueTheServerSVrchat", { value: serverName(s) }));
     if (expired !== !!s.loggerExpired) updateServer(id, { loggerExpired: expired });
   }
   const st = await backend.share.loggerStats(s.url);
@@ -511,11 +512,11 @@ export function maxPairs(lists: PairTime[][]): PairTime[] {
 }
 
 function describe(kinds: string[], r: PublishResult | null, waiting: number, changed: string[]): string {
-  if (!kinds.length) return "Not sharing anything here.";
-  const what = kinds.map((k) => (k === "friends" ? "friend list" : "activity")).join(" and ");
-  let t = `Shared your ${what} with ${r?.recipients ?? 0} ${r?.recipients === 1 ? "person" : "people"}${r?.sealed ? " (encrypted)" : " (not encrypted)"}.`;
-  if (waiting) t += ` ${waiting} more will get it once they join this server.`;
-  if (changed.length) t += ` ${changed.length} left out: their key changed (check in the server's settings).`;
+  if (!kinds.length) return tr("shareMsg.notSharingAnythingHere");
+  const what = kinds.length > 1 ? tr("shareMsg.friendListAndActivity") : kinds[0] === "friends" ? tr("shareMsg.friendList") : tr("shareMsg.activity");
+  let t = tr("shareMsg.shared", { what, count: r?.recipients ?? 0 }) + (r?.sealed ? tr("shareMsg.encrypted") : tr("shareMsg.notEncryptedDot"));
+  if (waiting) t += tr("shareMsg.waiting", { count: waiting });
+  if (changed.length) t += tr("shareMsg.leftOut", { count: changed.length });
   return t;
 }
 
@@ -536,7 +537,7 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
   if (mismatch) {
     updateServer(id, { lastNote: mismatch.text });
     logSync({ area: serverName(s), step: "Sync", result: "failed", detail: mismatch.text });
-    if (opts.manual) showToast(`${serverName(s)}: ${mismatch.short}`);
+    if (opts.manual) showToast(tr("shareMsg.valueShort", { value: serverName(s), short: mismatch.short }));
     return;
   }
   const notes: string[] = [];
@@ -546,14 +547,14 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
     const wanted = s.upload ? (["friends", "activity"] as const).filter((k) => (k === "friends" ? s!.shareFriends : s!.shareActivity)) : [];
     const blocked = wanted.length > 0 && sw.warn && !s.ackUnencrypted;
     if (wanted.length > 0 && !sw.on && getState().settings.sharing.neverUnencrypted) {
-      notes.push("Nothing uploaded: this server would get it unencrypted, and you chose to never send anything unencrypted.");
+      notes.push(tr("shareMsg.nothingUploadedThisServerWould"));
     } else if (blocked) {
       if (opts.manual) {
         // Ask; the dialog calls syncServer again after you confirm.
         setState({ confirmUnencrypted: id });
         return;
       }
-      notes.push("Waiting for you to confirm uploading without encryption (press Sync now).");
+      notes.push(tr("shareMsg.waitingForYouToConfirm"));
     } else {
       const to = recipients(s);
       let last: PublishResult | null = null;
@@ -563,7 +564,7 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
         const payload = kind === "friends" ? friendsPayload(s) : activityPayload(s);
         const max = s.info.maxItemBytes || 1 << 20;
         if (payload.length * 1.4 > max) {
-          notes.push(`Your ${kind === "friends" ? "friend list" : "activity"} is bigger than this server takes (${Math.round(max / 1024)} KB).`);
+          notes.push(tr(kind === "friends" ? "shareMsg.tooBigFriends" : "shareMsg.tooBigActivity", { kb: Math.round(max / 1024) }));
           continue;
         }
         const key = `${id}|${kind}`;
@@ -625,13 +626,13 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
       setShared(data);
       const people = new Set(inbox.filter((i) => i.owner !== me && !i.error).map((i) => i.owner)).size;
       notes.push(`${people} ${people === 1 ? "person shares" : "people share"} with you here${fresh ? ` (${fresh} new)` : ""}.`);
-      if (problems) notes.push(`${problems} item${problems === 1 ? "" : "s"} couldn't be used (changed keys or damaged).`);
+      if (problems) notes.push(tr("shareMsg.problems", { count: problems }));
     }
 
     // ---- your other devices ----
     s = getState().settings.sharing.servers.find((x) => x.id === id) ?? s;
     if (s.syncMine && s.registered) {
-      if (!sw.on) notes.push("Your devices don't sync here: that needs end-to-end encryption on this server.");
+      if (!sw.on) notes.push(tr("shareMsg.yourDevicesDonTSync"));
       else {
         try {
           const n = await syncDevices(s);
@@ -639,7 +640,7 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
         } catch (e) {
           const msg = errText(e);
           logSync({ area: serverName(s), step: "Your devices", result: "failed", ...describeError(msg) });
-          notes.push(/unknown kind/.test(msg) ? "Syncing your devices needs a newer vfm-server here (ask its owner to update)." : `Device sync: ${msg}`);
+          notes.push(/unknown kind/.test(msg) ? tr("shareMsg.syncingYourDevicesNeedsA") : tr("shareMsg.deviceSyncMsg", { msg }));
         }
       }
     }
@@ -653,7 +654,7 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
         const msg = errText(e);
         logSync({ area: serverName(s), step: "Logger", result: "failed", ...describeError(msg) });
         if (/isn't paired|someone else/.test(msg)) updateServer(id, { loggerOwner: false });
-        notes.push(`Logger: ${msg}`);
+        notes.push(tr("shareMsg.loggerMsg", { msg }));
       }
     }
     updateServer(id, { lastSync: Date.now(), lastError: "", failedSyncs: 0, lastNote: notes.join(" ") });
@@ -669,7 +670,7 @@ export async function syncServer(id: string, opts: SyncOptions = {}): Promise<vo
     const before = getState().settings.sharing.servers.find((x) => x.id === id)?.failedSyncs ?? 0;
     updateServer(id, { lastSync: Date.now(), lastError: msg, failedSyncs: before + 1, lastNote: notes.join(" ") });
     if (/not registered/.test(msg)) updateServer(id, { registered: false });
-    if (opts.manual) showToast(`${serverName(s)}: ${msg}`);
+    if (opts.manual) showToast(tr("shareMsg.valueMsg", { value: serverName(s), msg }));
   }
 }
 
@@ -693,7 +694,7 @@ async function syncDevices(s: ShareServer): Promise<string> {
     await backend.share.publish(s.url, "self", JSON.stringify(payload), [], true);
   }
   updateLocal((l) => ({ ...l, selfBase: merged }));
-  return changedHere ? "Took over changes from your other devices." : "";
+  return changedHere ? tr("shareMsg.tookOverChangesFromYour") : "";
 }
 
 /** Synced interface settings, keeping this device's own choices: which UI (classic or new) and

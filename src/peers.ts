@@ -7,6 +7,7 @@
 // What goes along: your circles, notes and settings (merged like the server
 // sync does) and your own notification sounds (ones a device doesn't have yet).
 
+import { t as tr } from "./i18n";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { backend, isTauri } from "./backend";
 import { customSounds, loadCustomSounds, onCustomSounds, restoreCustomSounds } from "./notifications";
@@ -50,7 +51,7 @@ const myDevice = () => getState().local.deviceId ?? "";
 
 function deviceName(): string {
   const ua = navigator.userAgent;
-  return /Android/.test(ua) ? "Android phone" : /iPhone|iPad/.test(ua) ? "iPhone / iPad" : /Windows/.test(ua) ? "Windows PC" : /Mac/.test(ua) ? "Mac" : "Linux PC";
+  return /Android/.test(ua) ? tr("peersMsg.androidPhone") : /iPhone|iPad/.test(ua) ? tr("peersMsg.iphoneIpad") : /Windows/.test(ua) ? tr("peersMsg.windowsPc") : /Mac/.test(ua) ? "Mac" : tr("peersMsg.linuxPc");
 }
 
 /** Who a message is for and whether to take it: not our own, not for another device. */
@@ -132,7 +133,7 @@ async function handle(raw: unknown, via: string) {
   known.seen = Date.now();
   if (m.type === "self") {
     const r = takeSelfFromDevice(m.data);
-    if (r?.changedHere) logSync({ area: known.name, step: "Your devices (live)", result: "ok", detail: "Took over changes from your other device." });
+    if (r?.changedHere) logSync({ area: known.name, step: "Your devices (live)", result: "ok", detail: tr("peersMsg.tookOverChangesFromYour") });
     if (r?.sendBack) await sendSelf(known);
   } else if (m.type === "want") {
     const ids = new Set(Array.isArray(m.ids) ? m.ids : []);

@@ -9,6 +9,7 @@
 //    encrypted with a key only your devices know.
 // Also: screen refresh rate above 60 Hz, the home-screen widget, links shared
 // to the app, and reading VRChat's logs with root (rooted phones, Quest).
+import { t as tr } from "./i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { isTauri } from "./backend";
 import { isAndroid } from "./platform";
@@ -30,7 +31,7 @@ export async function applyBackgroundMode() {
   const p = getState().settings.phone;
   const mode = p.background === "visible" || p.background === "quiet" ? p.background : "off";
   try {
-    await call("setBackground", { mode, text: mode === "quiet" ? "Quietly keeping in touch" : "Live friend updates and invites" });
+    await call("setBackground", { mode, text: mode === "quiet" ? tr("phoneMsg.quietlyKeepingInTouch") : tr("phoneMsg.liveFriendUpdatesAndInvites") });
   } catch (e) {
     logSync({ area: "Phone", step: "Background", result: "failed", detail: String(e) });
   }
@@ -71,13 +72,13 @@ export function updateWidget() {
     .filter((f) => f && s.cache.presence[f.id] !== "offline")
     .map((f) => {
       const world = f.location.startsWith("wrld_") ? s.cache.worlds?.[f.location.split(":")[0]]?.name : null;
-      return `★ ${s.local.nicknames?.[f.id] || f.displayName}${world ? ` · ${world}` : s.cache.presence[f.id] === "web" ? " · website" : ""}`;
+      return `★ ${s.local.nicknames?.[f.id] || f.displayName}${world ? ` · ${world}` : s.cache.presence[f.id] === "web" ? tr("phoneMsg.website") : ""}`;
     })
     .slice(0, 12);
   const key = lines.join("\n");
   if (key === widgetKey) return;
   widgetKey = key;
-  void call("setWidget", { title: starred.length ? "Starred friends online" : "Star friends to see them here", lines }).catch(() => {});
+  void call("setWidget", { title: starred.length ? tr("phoneMsg.starredFriendsOnline") : tr("phoneMsg.starFriendsToSeeThem"), lines }).catch(() => {});
 }
 
 // ---------- push (UnifiedPush) ----------
@@ -124,10 +125,10 @@ export async function pollAndroid() {
         // Your PC learns about it through device sync.
         pushTargets: { ...(l.pushTargets ?? {}), [l.deviceId ?? "phone"]: { endpoint: r.endpoint, key: l.push!.key, t: Date.now(), name: "Android phone" } },
       }));
-      logSync({ area: "Phone", step: "Push", result: "ok", detail: "Registered with the push distributor" });
+      logSync({ area: "Phone", step: "Push", result: "ok", detail: tr("phoneMsg.registeredWithThePushDistributor") });
     }
     if (r.pushError) logSync({ area: "Phone", step: "Push", result: "failed", detail: r.pushError });
-    for (const text of r.shared) if (!openVrchatLink(text)) showToast("That shared text has no VRChat link in it.");
+    for (const text of r.shared) if (!openVrchatLink(text)) showToast(tr("phoneMsg.thatSharedTextHasNo"));
   } catch {
     // older APK without the plugin
   }
@@ -181,7 +182,7 @@ export async function rootLogs(): Promise<string> {
   const [dir, n] = await invoke<[string, number]>("android_root_logs");
   const ls = getState().settings.logs;
   if (!ls.dirs.includes(dir)) updateSettings({ logs: { ...ls, dirs: [...ls.dirs, dir] } });
-  return `${n} log file${n === 1 ? "" : "s"} copied`;
+  return tr("phoneMsg.logsCopied", { count: n });
 }
 
 // ---------- start ----------

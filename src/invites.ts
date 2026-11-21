@@ -3,6 +3,7 @@
 // "request" for asking someone for an invite); a slot can be changed once an
 // hour. The app shows them as invite templates and keeps a copy for one-click
 // sending (local.inviteTemplates).
+import { t as tr } from "./i18n";
 import { backend } from "./backend";
 import { getState, updateLocal } from "./store";
 import type { InviteTemplate } from "./types";
@@ -69,7 +70,7 @@ export async function loadSlots(kind: Kind): Promise<MessageSlot[]> {
 /** Change one saved message (VRChat allows it once an hour per slot). */
 export async function saveSlot(kind: Kind, slot: number, message: string): Promise<string | null> {
   const me = getState().cache.me?.id;
-  if (!me) return "not logged in";
+  if (!me) return tr("invitesMsg.notLoggedIn");
   const r = await vrcWrite("PUT", `/message/${me}/${kind}/${slot}`, { message: message.slice(0, 64) }, "Save invite message");
   if (r.status < 200 || r.status >= 300) return `${r.status} ${errorText(r)}`.trim();
   await loadSlots(kind).catch(() => {});

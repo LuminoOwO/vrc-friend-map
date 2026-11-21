@@ -3,6 +3,7 @@
 // device); here: which ones show on the map, their own live connections,
 // notifications for their friends, and adding / removing them.
 
+import { t as tr } from "./i18n";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { backend, isTauri } from "./backend";
 import { getState, showToast, subscribeState, updateCache, updateSettings } from "./store";
@@ -75,7 +76,7 @@ export async function startAccounts() {
         if (e.payload.message !== "Login cancelled") showToast(e.payload.message);
         return;
       }
-      showToast(`Added ${e.payload.message}`);
+      showToast(tr("accountsMsg.addedMessage", { message: e.payload.message }));
       const list = await refreshList();
       const added = list.find((a) => a.name === e.payload.message) ?? list[list.length - 1];
       if (added) void fetchAccountFriends(added.id).catch((err) => showToast(String(err)));

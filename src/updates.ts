@@ -1,6 +1,7 @@
 // Update check (GitHub's latest release) and installing from inside the app.
 // The Rust side (src-tauri/src/updater.rs) picks the right file for how this
 // copy was installed, checks it against the release's SHA256SUMS and installs.
+import { t as tr } from "./i18n";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { isTauri } from "./backend";
@@ -56,17 +57,17 @@ let lastCheck = 0;
 
 export async function checkForUpdate(manual = false): Promise<UpdateInfo | null> {
   if (!isTauri) {
-    if (manual) showToast("Update checks work in the app, not in the browser demo.");
+    if (manual) showToast(tr("updatesMsg.updateChecksWorkInThe"));
     return null;
   }
   try {
     const info = await invoke<UpdateInfo>("update_check");
     lastCheck = Date.now();
     if (info.newer && (manual || info.latest !== getState().settings.updates.skipped)) setState({ update: info });
-    else if (manual) showToast(info.newer ? `Version ${info.latest} is available (you skipped it).` : `You have the newest version (${info.current}).`);
+    else if (manual) showToast(info.newer ? tr("updatesMsg.versionLatestIsAvailableYou", { latest: info.latest }) : tr("updatesMsg.youHaveTheNewestVersion", { current: info.current }));
     return info;
   } catch (e) {
-    if (manual) showToast(`Couldn't check for updates: ${e instanceof Error ? e.message : String(e)}`);
+    if (manual) showToast(tr("updatesMsg.couldnTCheckForUpdates", { value: e instanceof Error ? e.message : String(e) }));
     return null;
   }
 }

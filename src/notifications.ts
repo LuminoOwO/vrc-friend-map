@@ -3,6 +3,7 @@
 // rules, per person, circles, mute), then plays the action's sound followed by
 // the person's own tune, and shows a system notification when the app is in
 // the background (or always, as chosen).
+import { t as tr } from "./i18n";
 import { backend, isTauri } from "./backend";
 import { playParts, type SoundPart } from "./notify";
 import { getState, showToast, updateNotify } from "./store";
@@ -26,19 +27,19 @@ export const EVENT_LABEL: Record<NotifyEvent, string> = {
 function message(event: NotifyEvent, name: string, world?: string): string {
   switch (event) {
     case "added":
-      return `${name} is now your friend`;
+      return tr("notifyMsg.nameIsNowYourFriend", { name });
     case "removed":
-      return `${name} is no longer your friend`;
+      return tr("notifyMsg.nameIsNoLongerYour", { name });
     case "online":
-      return `${name} came online`;
+      return tr("notifyMsg.nameCameOnline", { name });
     case "offline":
-      return `${name} went offline`;
+      return tr("notifyMsg.nameWentOffline", { name });
     case "joined":
-      return `${name} joined ${world ? world : "your instance"}`;
+      return world ? tr("notifyMsg.joinedWorld", { name, world }) : tr("notifyMsg.joinedHere", { name });
     case "left":
-      return `${name} left ${world ? world : "your instance"}`;
+      return world ? tr("notifyMsg.leftWorld", { name, world }) : tr("notifyMsg.leftHere", { name });
     case "anniversary":
-      return `${world ?? "Today"}: you and ${name} became friends`;
+      return world ? tr("notifyMsg.becameFriendsAt", { world, name }) : tr("notifyMsg.becameFriendsToday", { name });
     case "gathering":
       return `${name} are together${world ? ` in ${world}` : ""}`;
     case "slotOpen":
@@ -46,7 +47,7 @@ function message(event: NotifyEvent, name: string, world?: string): string {
     case "invite":
       return `${name} invited you${world ? ` to ${world}` : ""}`;
     case "requestInvite":
-      return `${name} asks you for an invite`;
+      return tr("notifyMsg.nameAsksYouForAn", { name });
   }
 }
 
@@ -332,7 +333,7 @@ export function muteFor(ms: number | "forever" | 0) {
 }
 
 export function muteLabel(n: NotifySettings = getState().settings.notify): string {
-  if (n.muteUntil === -1) return "Muted until you unmute";
+  if (n.muteUntil === -1) return tr("notifyMsg.mutedUntilYouUnmute");
   if (n.muteUntil > Date.now()) {
     const d = new Date(n.muteUntil);
     const time = d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });

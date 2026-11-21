@@ -1864,5 +1864,126 @@
     "advanced": "Advanced",
     "loggedInAs": "Logged in as {{name}}.",
     "unknownName": "unknown"
+  },
+  "syncMsg": {
+    "valueWaitingValue2S": "{{value}}, waiting {{value2}} s",
+    "vrchatAskedUsToSlow": "VRChat asked us to slow down, waiting…",
+    "valueNameSSessionExpired": "{{value}}: {{name}}'s session expired",
+    "valueRetrying": "{{value}}, retrying",
+    "theAppWentToThe": "The app went to the background; trying again when it's back.",
+    "loadingFriends": "Loading friends…",
+    "otherAccount": "Other account",
+    "valueFriends": "{{value}} friends",
+    "loadingFavoriteGroups": "Loading favorite groups…",
+    "profilesTrustRankJoinDate": "Profiles (trust rank, join date)",
+    "mutualFriends": "Mutual friends",
+    "updatedValue": "Updated {{value}}",
+    "nameIsNowYourFriend": "{{name}} is now your friend",
+    "nameIsNoLongerOn": "{{name}} is no longer on your friends list",
+    "loadingOffline": "Loading offline friends… {{count}}",
+    "loadingOnline": "Loading online friends… {{count}}",
+    "phaseFriends": "Friends list",
+    "phaseAccount": "{{name}}'s friends",
+    "phaseFavorites": "Favorites",
+    "phaseRefreshing": "Refreshing"
+  },
+  "shareMsg": {
+    "youSetThisForThis": "You set this for this server.",
+    "followingTheServerSSuggestion": "Following the server's suggestion (your default: server-based).",
+    "followingYourDefaultAlwaysDef": "Following your default (always {{def}}).",
+    "valueTheServerSVrchat": "{{value}}: the server's VRChat login expired. Log in again under Servers.",
+    "notSharingAnythingHere": "Not sharing anything here.",
+    "valueShort": "{{value}}: {{short}}",
+    "nothingUploadedThisServerWould": "Nothing uploaded: this server would get it unencrypted, and you chose to never send anything unencrypted.",
+    "waitingForYouToConfirm": "Waiting for you to confirm uploading without encryption (press Sync now).",
+    "yourDevicesDonTSync": "Your devices don't sync here: that needs end-to-end encryption on this server.",
+    "syncingYourDevicesNeedsA": "Syncing your devices needs a newer vfm-server here (ask its owner to update).",
+    "deviceSyncMsg": "Device sync: {{msg}}",
+    "loggerMsg": "Logger: {{msg}}",
+    "valueMsg": "{{value}}: {{msg}}",
+    "tookOverChangesFromYour": "Took over changes from your other devices.",
+    "friendList": "friend list",
+    "activity": "activity",
+    "friendListAndActivity": "friend list and activity",
+    "shared_one": "Shared your {{what}} with {{count}} person",
+    "shared_other": "Shared your {{what}} with {{count}} people",
+    "encrypted": " (encrypted).",
+    "notEncryptedDot": " (not encrypted).",
+    "waiting_one": " {{count}} more will get it once they join this server.",
+    "waiting_other": " {{count}} more will get it once they join this server.",
+    "leftOut": " {{count}} left out: their key changed (check in the server's settings).",
+    "tooBigFriends": "Your friend list is bigger than this server takes ({{kb}} KB).",
+    "tooBigActivity": "Your activity is bigger than this server takes ({{kb}} KB).",
+    "problems_one": "{{count}} item couldn't be used (changed keys or damaged).",
+    "problems_other": "{{count}} items couldn't be used (changed keys or damaged)."
+  },
+  "notifyMsg": {
+    "nameIsNowYourFriend": "{{name}} is now your friend",
+    "nameIsNoLongerYour": "{{name}} is no longer your friend",
+    "nameCameOnline": "{{name}} came online",
+    "nameWentOffline": "{{name}} went offline",
+    "nameAsksYouForAn": "{{name}} asks you for an invite",
+    "mutedUntilYouUnmute": "Muted until you unmute",
+    "joinedWorld": "{{name}} joined {{world}}",
+    "joinedHere": "{{name}} joined your instance",
+    "leftWorld": "{{name}} left {{world}}",
+    "leftHere": "{{name}} left your instance",
+    "becameFriendsAt": "{{world}}: you and {{name}} became friends",
+    "becameFriendsToday": "Today: you and {{name}} became friends"
+  },
+  "platformMsg": {
+    "notInTheBrowserVersion": "Not in the browser version.",
+    "onlyOnComputers": "Only on computers.",
+    "onlyNeededOnLinuxX11": "Only needed on Linux (X11).",
+    "iphonesCanTReadVrchat": "iPhones can't read VRChat's files.",
+    "onlyOnPhones": "Only on phones.",
+    "iphoneAppsUpdateByInstalling": "iPhone apps update by installing a new IPA.",
+    "onlyOnLinux": "Only on Linux.",
+    "onlyOnComputersWhereVrchat": "Only on computers (where VRChat runs on PC).",
+    "onlyOnLinuxMpris": "Only on Linux (MPRIS).",
+    "onlyInTheAndroidApp": "Only in the Android app."
+  },
+  "sessionMsg": {
+    "yourLoggerOnValueKeeps": " Your logger on {{value}} keeps running with this VRChat login; unpair it in Settings → Servers to stop it.",
+    "yourOtherDevicesLogOut": " Your other devices log out at their next sync."
+  },
+  "peersMsg": {
+    "androidPhone": "Android phone",
+    "iphoneIpad": "iPhone / iPad",
+    "windowsPc": "Windows PC",
+    "linuxPc": "Linux PC",
+    "tookOverChangesFromYour": "Took over changes from your other device."
+  },
+  "updatesMsg": {
+    "updateChecksWorkInThe": "Update checks work in the app, not in the browser demo.",
+    "versionLatestIsAvailableYou": "Version {{latest}} is available (you skipped it).",
+    "youHaveTheNewestVersion": "You have the newest version ({{current}}).",
+    "couldnTCheckForUpdates": "Couldn't check for updates: {{value}}"
+  },
+  "backupMsg": {
+    "fromValueValue2AndSettings": "From {{value}}: {{value2}}, and settings."
+  },
+  "invitesMsg": {
+    "notLoggedIn": "not logged in"
+  },
+  "accountsMsg": {
+    "addedMessage": "Added {{message}}"
+  },
+  "phoneMsg": {
+    "quietlyKeepingInTouch": "Quietly keeping in touch",
+    "liveFriendUpdatesAndInvites": "Live friend updates and invites",
+    "website": " · website",
+    "starredFriendsOnline": "Starred friends online",
+    "starFriendsToSeeThem": "Star friends to see them here",
+    "registeredWithThePushDistributor": "Registered with the push distributor",
+    "thatSharedTextHasNo": "That shared text has no VRChat link in it.",
+    "logsCopied_one": "{{count}} log file copied",
+    "logsCopied_other": "{{count}} log files copied"
+  },
+  "compat": {
+    "needsANewerApp": "Needs a newer app",
+    "thisServerNeedsAppVersion": "This server needs app version {{minApp}} or newer (you have {{app}}). Update the app to sync with it again.",
+    "serverTooOld": "Server too old",
+    "thisServerRunsVfmServer": "This server runs vfm-server {{version}}; this app needs {{MIN_SERVER}} or newer. Ask its owner to update it."
   }
 }

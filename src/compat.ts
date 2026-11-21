@@ -2,6 +2,7 @@
 // (`min_app` in its info); the app knows the oldest server it works with. When they don't fit,
 // the app says what to update and stops syncing with that server until then, instead of
 // failing in odd ways.
+import { t as tr } from "./i18n";
 
 /** The oldest vfm-server this app works with. Raise it when the app starts to need something new from servers. */
 export const MIN_SERVER = "0.12.0";
@@ -24,11 +25,11 @@ export interface Mismatch {
 /** Whether this app and a server fit together; null when they do. */
 export function versionMismatch(app: string, server: { version: string; minApp?: string }): Mismatch | null {
   if (server.minApp && newerVersion(server.minApp, app))
-    return { short: "Needs a newer app", text: `This server needs app version ${server.minApp} or newer (you have ${app}). Update the app to sync with it again.` };
+    return { short: tr("compat.needsANewerApp"), text: tr("compat.thisServerNeedsAppVersion", { minApp: server.minApp, app }) };
   if (newerVersion(MIN_SERVER, server.version))
     return {
-      short: "Server too old",
-      text: `This server runs vfm-server ${server.version}; this app needs ${MIN_SERVER} or newer. Ask its owner to update it.`,
+      short: tr("compat.serverTooOld"),
+      text: tr("compat.thisServerRunsVfmServer", { version: server.version, MIN_SERVER }),
     };
   return null;
 }

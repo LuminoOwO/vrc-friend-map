@@ -1,6 +1,7 @@
 // Sync engine: pulls data from the VRChat API through the Rust client, which
 // spaces requests out (>= 1 s apart) and backs off on 429. Profiles and mutuals
 // are cached and only refetched when older than the configured age.
+import { t as tr } from "./i18n";
 import { addActivity, noteFriend } from "./activity";
 import { addNewFriendsToPicks } from "./selection";
 import { notifyEvent, removedByMe } from "./notifications";
@@ -39,13 +40,13 @@ async function api(path: string, query?: Record<string, string | number | boolea
     const r = await backend.vrcGet(path, query, account);
     if (r.status === 429) {
       const wait = (r.retry_after ?? 30) * 1000;
-      logSync({ area: "VRChat", step: path, result: "info", detail: `${httpLine(path, 429)}, waiting ${Math.round(wait / 1000)} s`, status: 429 });
-      setSync({ backoffUntil: Date.now() + wait, message: "VRChat asked us to slow down, waiting…" });
+      logSync({ area: "VRChat", step: path, result: "info", detail: tr("syncMsg.valueWaitingValue2S", { value: httpLine(path, 429), value2: Math.round(wait / 1000) }), status: 429 });
+      setSync({ backoffUntil: Date.now() + wait, message: tr("syncMsg.vrchatAskedUsToSlow") });
       continue; // the Rust side holds the next request until the backoff ends
     }
     if (r.status === 401 && account) {
       const name = getState().settings.accounts.list.find((a) => a.id === account)?.name ?? "another account";
-      logSync({ area: "VRChat", step: path, result: "failed", detail: `${httpLine(path, 401)}: ${name}'s session expired`, status: 401 });
+      logSync({ area: "VRChat", step: path, result: "failed", detail: tr("syncMsg.valueNameSSessionExpired", { value: httpLine(path, 401), name }), status: 401 });
       throw new AccountExpired(`${name}: the VRChat session expired. Remove the account and add it again.`);
     }
     if (r.status === 401) {
@@ -53,7 +54,7 @@ async function api(path: string, query?: Record<string, string | number | boolea
       throw new SessionExpired("Your VRChat session expired. Log in again.");
     }
     if (r.status >= 500) {
-      logSync({ area: "VRChat", step: path, result: "info", detail: `${httpLine(path, r.status)}, retrying`, status: r.status });
+      logSync({ area: "VRChat", step: path, result: "info", detail: tr("syncMsg.valueRetrying", { value: httpLine(path, r.status) }), status: r.status });
       await sleep(4000 * (attempt + 1));
       continue;
     }
@@ -78,7 +79,7 @@ function handleError(e: unknown) {
   if (msg === "stopped") return;
   if (isNetworkError(e) && wasInterrupted()) {
     // Cut off by going to the background: not a failure, try again later.
-    logSync({ area: "VRChat", step: "Sync", result: "interrupted", detail: "The app went to the background; trying again when it's back." });
+    logSync({ area: "VRChat", step: "Sync", result: "interrupted", detail: tr("syncMsg.theAppWentToThe") });
     setSync({ running: false, error: "" });
     whenVisible(() => setTimeout(() => void syncAll(), 1500));
     return;
@@ -133,14 +134,14 @@ async function fetchFriendPages(offline: boolean, gen: number, account?: string)
     const r = await api("/auth/user/friends", { offline, n: 100, offset }, account);
     const page: Friend[] = Array.isArray(r.data) ? r.data : [];
     out.push(...page);
-    setSync({ message: `Loading ${offline ? "offline" : "online"} friends… ${out.length}` });
+    setSync({ message: tr(offline ? "syncMsg.loadingOffline" : "syncMsg.loadingOnline", { count: out.length }) });
     if (page.length < 100) break;
   }
   return out;
 }
 
 async function fetchFriends(me: Me, gen: number) {
-  setSync({ phase: "Friends list", message: "Loading friends…" });
+  setSync({ phase: tr("syncMsg.phaseFriends"), message: tr("syncMsg.loadingFriends") });
   const online = await fetchFriendPages(false, gen);
   const offline = await fetchFriendPages(true, gen);
   const onlineSet = new Set(me.onlineFriends);
@@ -177,8 +178,8 @@ async function fetchFriends(me: Me, gen: number) {
 
 /** One of your extra accounts' friend list (online and offline), mixed into the map. */
 export async function fetchAccountFriends(account: string, gen = generation) {
-  const name = getState().settings.accounts.list.find((a) => a.id === account)?.name ?? "Other account";
-  setSync({ phase: `${name}'s friends`, message: "Loading friends…" });
+  const name = getState().settings.accounts.list.find((a) => a.id === account)?.name ?? tr("syncMsg.otherAccount");
+  setSync({ phase: tr("syncMsg.phaseAccount", { name }), message: tr("syncMsg.loadingFriends") });
   const online = await fetchFriendPages(false, gen, account);
   const offline = await fetchFriendPages(true, gen, account);
   const friends: Record<string, Friend> = {};
@@ -192,7 +193,7 @@ export async function fetchAccountFriends(account: string, gen = generation) {
     presence[f.id] = "offline";
   }
   updateCache((c) => applyAlts({ ...c, alts: { ...c.alts, [account]: { friends, presence, fetchedAt: Date.now() } } }, shownAccounts(), yourAccounts()));
-  logSync({ area: "VRChat", step: `${name}'s friends`, result: "ok", detail: `${Object.keys(friends).length} friends` });
+  logSync({ area: "VRChat", step: `${name}'s friends`, result: "ok", detail: tr("syncMsg.valueFriends", { value: Object.keys(friends).length }) });
 }
 
 async function fetchShownAccounts(gen: number) {
@@ -247,7 +248,7 @@ export function recordFriendChanges(current: string[], prevFriends: Record<strin
 }
 
 async function fetchFavorites() {
-  setSync({ phase: "Favorites", message: "Loading favorite groups…" });
+  setSync({ phase: tr("syncMsg.phaseFavorites"), message: tr("syncMsg.loadingFavoriteGroups") });
   const groupsRes = await api("/favorite/groups", { type: "friend", n: 50 });
   const groups: { name: string; displayName: string }[] = Array.isArray(groupsRes.data) ? groupsRes.data : [];
   const names = new Map(groups.map((g) => [g.name, g.displayName || g.name]));
@@ -385,7 +386,7 @@ function staleIds(kind: "details" | "mutuals"): string[] {
 async function drainQueue(kind: "details" | "mutuals", gen: number) {
   const ids = staleIds(kind);
   if (!ids.length) return;
-  const label = kind === "details" ? "Profiles (trust rank, join date)" : "Mutual friends";
+  const label = kind === "details" ? tr("syncMsg.profilesTrustRankJoinDate") : tr("syncMsg.mutualFriends");
   setSync({ phase: label, done: 0, total: ids.length, message: "" });
   for (let i = 0; i < ids.length; i++) {
     await waitWhilePaused(gen);
@@ -415,8 +416,8 @@ export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
     }
     if (gen === generation) {
       resetSync();
-      setSync({ message: `Updated ${new Date().toLocaleTimeString()}` });
-      logSync({ area: "VRChat", step: opts.friendsOnly ? "Friends" : "Sync", result: "ok", detail: `${Object.keys(getState().cache.friends).length} friends` });
+      setSync({ message: tr("syncMsg.updatedValue", { value: new Date().toLocaleTimeString() }) });
+      logSync({ area: "VRChat", step: opts.friendsOnly ? "Friends" : "Sync", result: "ok", detail: tr("syncMsg.valueFriends", { value: Object.keys(getState().cache.friends).length }) });
     }
   } catch (e) {
     handleError(e);
@@ -546,7 +547,7 @@ export async function refreshPerson(id: string) {
     return;
   }
   const gen = ++generation;
-  setSync({ running: true, phase: "Refreshing", message: s.cache.friends[id]?.displayName ?? "", error: "" });
+  setSync({ running: true, phase: tr("syncMsg.phaseRefreshing"), message: s.cache.friends[id]?.displayName ?? "", error: "" });
   try {
     await fetchDetail(id);
     // The profile half (bio, links) shouldn't take the rest of the refresh down with it.
@@ -700,7 +701,7 @@ export function applyPipelineEvent(type: string, content: any, opts: { quiet?: b
       }));
       const notified = recordFriendChanges(Object.keys(getState().cache.friends).filter((x) => isMainFriend(getState().cache, x)), prevFriends);
       noteFriend("friend-add", id, friend.displayName);
-      if (!notified.has(id)) showToast(`${friend.displayName} is now your friend`);
+      if (!notified.has(id)) showToast(tr("syncMsg.nameIsNowYourFriend", { name: friend.displayName }));
       refreshPerson(id); // load their mutual friends so lines appear
       return;
     }
@@ -721,7 +722,7 @@ export function applyPipelineEvent(type: string, content: any, opts: { quiet?: b
       recordFriendChanges(Object.keys(getState().cache.friends).filter((x) => isMainFriend(getState().cache, x)), prevFriends);
       if (getState().selectedId === id && !getState().cache.friends[id]) setState({ selectedId: null });
       noteFriend("friend-remove", id, name);
-      if (!notifyEvent("removed", id, name)) showToast(`${name} is no longer on your friends list`);
+      if (!notifyEvent("removed", id, name)) showToast(tr("syncMsg.nameIsNoLongerOn", { name }));
       return;
     }
     case "friend-online":
