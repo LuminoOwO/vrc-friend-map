@@ -11,7 +11,8 @@ minor releases can change behavior.
   and Crowdin read directly; dates and numbers follow the chosen language. Translated so far: the
   menus, People, filters, Party, server button and map, into German, French, Spanish, Italian,
   Polish, Brazilian Portuguese and Russian (machine-made, marked as needing a check); the rest
-  stays English until done. `docs/translating.md` says how to help.
+  stays English until done. Until a language is complete, "Like the system" stays English; pick
+  a language by hand to try it. `docs/translating.md` says how to help.
 - **Log out everywhere** (Settings → My account): logs out this device and every other device of
   yours where the app syncs with it (through your servers, or directly at home); devices that are
   off log out at their next sync. VRChat has no way to end all sessions, so it also says what to

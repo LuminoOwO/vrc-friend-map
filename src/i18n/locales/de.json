@@ -32,7 +32,8 @@
     "title": "Sprache",
     "system": "Wie das System ({{name}})",
     "help": "Nur dieses Gerät. Fehlende Texte erscheinen auf Englisch.",
-    "machine": "{{name}} wurde maschinell übersetzt und muss noch von jemandem geprüft werden, der die Sprache spricht."
+    "machine": "{{name}} wurde maschinell übersetzt und muss noch von jemandem geprüft werden, der die Sprache spricht.",
+    "partial": "„Wie das System\" wechselt nur zu vollständig übersetzten Sprachen; wähle eine von Hand, um die anderen auszuprobieren."
   },
   "status": {
     "joinMe": "Join Me",

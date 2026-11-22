@@ -18,9 +18,15 @@ const codeOf = (path: string) => path.match(/\/([A-Za-z-]+)\.json$/)?.[1] ?? "";
 
 /** Languages with a file, by code ("de", "pt-BR"), English first. */
 export const LANGUAGES: string[] = ["en", ...Object.keys(loaders).map(codeOf).filter((c) => c && c !== "en").sort()];
+const ALL = LANGUAGES;
 
 /** Languages whose text was machine-made and still needs a check by someone who speaks it. */
 export const MACHINE_TRANSLATED = new Set<string>(["de", "fr", "es", "it", "pl", "pt-BR", "ru"]);
+
+/** Languages with every text translated. "Like the system" only picks these (or English), so
+ *  nobody gets a half-translated app without choosing that language by hand. Add a language
+ *  here once its file covers all of en.json. */
+export const COMPLETE = new Set<string>([]);
 
 let lang = "en";
 let dict: Dict = en as Dict;
@@ -127,22 +133,29 @@ export function language(): string {
   return lang;
 }
 
-/** The best language for a setting: "system" follows the device's languages, else the code
- *  itself; a regional code falls back to its base ("de-AT" → "de"), then English. */
-export function resolveLanguage(setting: string | undefined, preferred: readonly string[] = typeof navigator !== "undefined" ? navigator.languages : []): string {
-  const wanted = !setting || setting === "system" ? preferred : [setting];
+/** The best language for a setting: "system" follows the device's languages (only complete
+ *  ones, see COMPLETE), else the code itself; a regional code falls back to its base
+ *  ("de-AT" → "de"), then English. `pool` overrides which languages "system" may pick. */
+export function resolveLanguage(
+  setting: string | undefined,
+  preferred: readonly string[] = typeof navigator !== "undefined" ? navigator.languages : [],
+  pool?: readonly string[],
+): string {
+  const system = !setting || setting === "system";
+  const wanted = system ? preferred : [setting];
+  const pickable = pool ?? (system ? ALL.filter((c) => c === "en" || COMPLETE.has(c)) : ALL);
   for (const w of wanted) {
-    if (LANGUAGES.includes(w)) return w;
+    if (pickable.includes(w)) return w;
     const [base, ...rest] = w.split("-");
     // Chinese: Traditional for Taiwan, Hong Kong, Macau and "Hant"; Simplified otherwise.
     if (base === "zh") {
       const hant = rest.some((r) => /^(TW|HK|MO|Hant)$/i.test(r));
       const pick = hant ? "zh-TW" : "zh-CN";
-      if (LANGUAGES.includes(pick)) return pick;
+      if (pickable.includes(pick)) return pick;
     }
-    if (LANGUAGES.includes(base)) return base;
+    if (pickable.includes(base)) return base;
     // Another region of the same language ("pt-PT" → "pt-BR"): better than English.
-    const same = LANGUAGES.find((c) => c.split("-")[0] === base);
+    const same = pickable.find((c) => c.split("-")[0] === base);
     if (same) return same;
   }
   return "en";

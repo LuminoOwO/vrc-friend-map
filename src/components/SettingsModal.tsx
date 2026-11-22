@@ -1,6 +1,6 @@
 import { t as tr, lazy, tx, language } from "../i18n";
 import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { LANGUAGES, MACHINE_TRANSLATED, languageName, resolveLanguage, useT } from "../i18n";
+import { COMPLETE, LANGUAGES, MACHINE_TRANSLATED, languageName, resolveLanguage, useT } from "../i18n";
 import { NO_OWN_COLORS, type OwnColors } from "../owncolors";
 import { scoreSection } from "../settingsSearch";
 import { backend, imgSrc, isMobile, type GraphicsInfo, type GraphicsMode } from "../backend";
@@ -216,6 +216,7 @@ function InterfaceSection() {
       </label>
       <p className="small muted">
         {t("language.help")}
+        {ui.language === "system" && LANGUAGES.some((c) => c !== "en" && !COMPLETE.has(c)) ? ` ${t("language.partial")}` : ""}
         {MACHINE_TRANSLATED.has(shownLang) ? ` ${t("language.machine", { name: languageName(shownLang) })}` : ""}
       </p>
       <label className="check">

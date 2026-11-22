@@ -32,7 +32,8 @@
     "title": "Language",
     "system": "Like the system ({{name}})",
     "help": "Only this device. Missing texts show in English.",
-    "machine": "{{name}} was translated by machine and still needs a check by someone who speaks it."
+    "machine": "{{name}} was translated by machine and still needs a check by someone who speaks it.",
+    "partial": "\"Like the system\" only switches to languages that are fully translated; pick one by hand to try the others."
   },
   "status": {
     "joinMe": "Join Me",

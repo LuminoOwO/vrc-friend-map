@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { language, LANGUAGES, lazy, resolveLanguage, setLanguage, t } from "../i18n";
+import { COMPLETE, language, LANGUAGES, lazy, resolveLanguage, setLanguage, t } from "../i18n";
 
 type Dict = { [k: string]: string | Dict };
 const files = import.meta.glob<{ default: Dict }>("../i18n/locales/*.json", { eager: true });
@@ -51,17 +51,22 @@ describe("translations", () => {
   });
   it("picks the language from the setting or the system", () => {
     expect(resolveLanguage("de", [])).toBe("de");
-    expect(resolveLanguage("system", ["de-AT", "en-US"])).toBe("de");
-    expect(resolveLanguage("system", ["xx", "en"])).toBe("en");
-    expect(resolveLanguage("system", ["xx"])).toBe("en");
+    expect(resolveLanguage("system", ["de-AT", "en-US"], LANGUAGES)).toBe("de");
+    expect(resolveLanguage("system", ["xx", "en"], LANGUAGES)).toBe("en");
+    expect(resolveLanguage("system", ["xx"], LANGUAGES)).toBe("en");
     expect(resolveLanguage("zz", [])).toBe("en");
     if (LANGUAGES.includes("zh-TW") && LANGUAGES.includes("zh-CN")) {
-      expect(resolveLanguage("system", ["zh-HK"])).toBe("zh-TW");
-      expect(resolveLanguage("system", ["zh-Hant-TW"])).toBe("zh-TW");
-      expect(resolveLanguage("system", ["zh"])).toBe("zh-CN");
-      expect(resolveLanguage("system", ["zh-SG"])).toBe("zh-CN");
+      expect(resolveLanguage("system", ["zh-HK"], LANGUAGES)).toBe("zh-TW");
+      expect(resolveLanguage("system", ["zh-Hant-TW"], LANGUAGES)).toBe("zh-TW");
+      expect(resolveLanguage("system", ["zh"], LANGUAGES)).toBe("zh-CN");
+      expect(resolveLanguage("system", ["zh-SG"], LANGUAGES)).toBe("zh-CN");
     }
-    if (LANGUAGES.includes("pt-BR")) expect(resolveLanguage("system", ["pt-PT"])).toBe("pt-BR");
+    if (LANGUAGES.includes("pt-BR")) expect(resolveLanguage("system", ["pt-PT"], LANGUAGES)).toBe("pt-BR");
+    // "Like the system" skips languages that aren't complete yet; picking one by hand still works.
+    for (const c of LANGUAGES.filter((c) => c !== "en" && !COMPLETE.has(c))) {
+      expect(resolveLanguage("system", [c])).toBe("en");
+      expect(resolveLanguage(c, [])).toBe(c);
+    }
     expect(LANGUAGES[0]).toBe("en");
     expect(LANGUAGES).toContain("de");
   });
