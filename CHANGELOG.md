@@ -86,6 +86,15 @@ minor releases can change behavior.
   do on vrchat.com if your account may be hacked (change the password, turn on two-factor).
 
 ### Changed
+- **Online times say how complete they are:** a note above every view (orange while no server
+  logger is set up, with "Set up a server"), "Data for N% of the shown time", "no data" written
+  in the striped areas, and the same on your profile's online times.
+- **Short-disconnect marks** in Online times are off by default (Options → "Mark short
+  disconnects"); joining short gaps still works the same.
+- **Loading states instead of things popping in:** profiles (badges, groups, mutual friends),
+  Groups & events and Media tiles, the group dialog and its members, world names in Online now,
+  sent friend requests, and your server's data in Online times.
+- The unfolded left menu's gradient also covers the notification bell.
 - **The layout follows the window size:** a computer window narrower than 760 px switches to
   the phone layout (back to the desktop one from 820 px); tablets get the desktop layout, and
   a phone turned sideways keeps the phone layout.
