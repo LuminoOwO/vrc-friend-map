@@ -705,3 +705,6 @@
 .insights-grid > .insight-card { margin: 0; }
 @media (max-width: 700px) { .insights-grid { grid-template-columns: 1fr; } }
 .ui2-phone .here-switch { display: none; }
+/* Phones keep only zoom-to-fit and Map options on the map (the toolbar groups' own rules are
+   more specific than the older "hide on small screens" ones, so they're repeated here). */
+.ui2-phone .graph-controls .mbar-view, .ui2-phone .graph-controls .here-switch, .ui2-phone .graph-controls .mbar .btn.small:not(.keep) { display: none; }

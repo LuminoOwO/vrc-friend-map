@@ -117,6 +117,8 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- Phones and narrow windows: the new map toolbar showed every map button again (ring, names,
+  "In this instance"); back to only the round fit and Map options buttons.
 - **Media: the link box was cut off** under the tabs on some window sizes; it has its own row.
 - **Friend groups button** on the map shows when the panel is open and closes it on a second
   click; **Escape** closes the panel too.

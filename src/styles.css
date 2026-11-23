@@ -328,7 +328,7 @@ textarea { width: 100%; resize: vertical; }
   .sync { order: 11; flex: 1 1 35%; margin-left: 0; max-width: none; }
   .brand.small { gap: 6px; }
   .legend { display: none; }
-  .graph-controls .btn.small, .graph-controls .mbar-view { display: none; }
+  .graph-controls .btn.small:not(.keep), .graph-controls .mbar .btn.small:not(.keep), .graph-controls .mbar-view { display: none; }
   .card-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
   .fcard-banner { height: 64px; }
   .fcard-icon { width: 46px; height: 46px; }
