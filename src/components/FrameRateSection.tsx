@@ -36,20 +36,27 @@ function FpsInput({ value, onChange, min = -1 }: { value: number; onChange: (v: 
 
 const meaning = (v: number, zero: string, minus: string) => (v === -1 ? minus : v === 0 ? zero : tr("frameRate.vFps", { v }));
 
-/** The screen's refresh rate, measured with requestAnimationFrame (rounded to a common value). */
+/** The screen's refresh rate, measured with requestAnimationFrame (rounded to a common value).
+ *  Averages the middle of many frame gaps: some engines (WebKitGTK) round frame times to whole
+ *  milliseconds, so single gaps read 16 or 17 ms on a 60 Hz screen and a median said "63 Hz". */
+export function hzFromFrameTimes(times: number[]): number {
+  const gaps = times.slice(1).map((t, i) => t - times[i]).filter((g) => g > 0).sort((a, b) => a - b);
+  if (gaps.length < 5) return 0;
+  // Drop the fastest and slowest fifth (hiccups, dropped frames), average the rest.
+  const mid = gaps.slice(Math.floor(gaps.length * 0.2), Math.ceil(gaps.length * 0.8));
+  const hz = 1000 / (mid.reduce((a, b) => a + b, 0) / mid.length);
+  const common = [30, 48, 50, 60, 72, 75, 90, 100, 120, 144, 160, 165, 170, 180, 200, 240, 280, 300, 360, 480, 500];
+  const near = common.find((c) => Math.abs(c - hz) < c * 0.03);
+  return near ?? Math.round(hz);
+}
+
 function measureHz(): Promise<number> {
   return new Promise((resolve) => {
     const times: number[] = [];
     const step = (t: number) => {
       times.push(t);
-      if (times.length < 40) requestAnimationFrame(step);
-      else {
-        const gaps = times.slice(1).map((t, i) => t - times[i]).sort((a, b) => a - b);
-        const hz = 1000 / gaps[Math.floor(gaps.length / 2)];
-        const common = [30, 48, 50, 60, 72, 75, 90, 100, 120, 144, 160, 165, 170, 180, 200, 240, 280, 300, 360, 480, 500];
-        const near = common.find((c) => Math.abs(c - hz) < c * 0.03);
-        resolve(near ?? Math.round(hz));
-      }
+      if (times.length < 120) requestAnimationFrame(step);
+      else resolve(hzFromFrameTimes(times.slice(10)));
     };
     requestAnimationFrame(step);
   });
