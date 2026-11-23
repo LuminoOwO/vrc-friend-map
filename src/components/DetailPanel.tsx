@@ -304,14 +304,14 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
       ) : (
         <span className="status-pill" data-flip="status">
           <span className="dot" style={{ background: sColor }} />
-          <span>{f.statusDescription || presenceLabel(f, p)}</span>
+          <span className="selectable">{f.statusDescription || presenceLabel(f, p)}</span>
         </span>
       )}
     </div>
   );
   const nameEl = (
     <h2>
-      <span data-flip="name">{f.displayName}</span>
+      <span className="selectable" data-flip="name">{f.displayName}</span>
       {supporter && (
         <span className="vrcplus-badge" data-flip-fade title={tr("profile.vrcSupporter")}>
           {tr("profile.vrc")}
@@ -340,7 +340,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
         </span>
       ) : (
         detail?.pronouns && (
-          <span className="muted" data-flip-fade>
+          <span className="muted selectable" data-flip-fade>
             {detail.pronouns}
           </span>
         )

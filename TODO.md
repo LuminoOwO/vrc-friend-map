@@ -47,6 +47,14 @@ Work through these in this order, one at a time; the rest of the file is the det
 6. ~~Sharing choices per account, not per device~~ (done)
 7. ~~Notice when the server's VRChat login expires~~ (done; renew from the app with a password: not started, owner to decide)
 8. Use the app without logging in to VRChat in it
+10. **A useful right-click menu (owner, 2026-11-23, one of the more important ones).** Right now
+   right-click shows the web view's own menu (at least in the Chromium build: "Inspect element",
+   Back, Reload…), which makes no sense in an app. Replace it everywhere with the app's own
+   menu: on a person (open profile, invite, request invite, join, add/remove from a friend group,
+   copy name/ID, block), on a world or group (open, launch, copy link), on a picture (show in
+   folder, save a copy, copy path), on selectable text (copy), on a text field (cut/copy/paste,
+   select all), on the map background (center, fit, layout options). Nothing on plain UI. Same
+   menu with a long press on phones. Keyboard: the Menu key and Shift+F10.
 9. ~~In gaps: Door / Knock sounds, the pause before a person's tune~~ (done, owner to listen)
 
 Not ranked yet: everything under "More (owner, 2026-11-20)", the rest of Round 8 (keyboard

@@ -41,7 +41,7 @@ function Modal({ title, onClose, children, wide }: { title: React.ReactNode; onC
     <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className={`modal content-modal ${wide ? "wide" : ""}`} role="dialog" onKeyDown={(e) => e.key === "Escape" && onClose()}>
         <div className="row between">
-          <h2>{title}</h2>
+          <h2 className="selectable">{title}</h2>
           <button className="icon-btn" aria-label={tr("content.close")} onClick={onClose} autoFocus>
             <Icon name="close" />
           </button>

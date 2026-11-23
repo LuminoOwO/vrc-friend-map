@@ -630,7 +630,7 @@ button.group-pill { background: none; color: inherit; cursor: pointer; font: inh
 .notice-inline { padding: 8px 12px; border-radius: 8px; background: var(--accent-soft); }
 code.fp { font-family: ui-monospace, monospace; font-size: 12.5px; padding: 2px 6px; border-radius: 6px; background: var(--accent-soft); }
 .secret-box { margin-top: 8px; padding: 8px 10px; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--warn) 50%, transparent); }
-code.secret { font-family: ui-monospace, monospace; font-size: 11px; word-break: break-all; flex: 1; user-select: all; }
+code.secret { -webkit-user-select: all; font-family: ui-monospace, monospace; font-size: 11px; word-break: break-all; flex: 1; user-select: all; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .via { font-size: 11.5px; color: var(--muted); }
 .key-check { font-size: 12.5px; display: flex; gap: 5px; align-items: center; margin: 6px 0; }
@@ -1346,3 +1346,12 @@ button.status-pill.editable:hover { border-color: var(--accent); }
 .map-options.embedded { position: static; width: auto; max-height: none; overflow: visible; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
 .mo-panel > .map-options.embedded { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 4px; margin-right: -4px; }
 .group-row.skel-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; pointer-events: none; }
+
+/* Text selection: the interface itself can't be selected (by dragging or Ctrl+A); people's and
+   places' own text can (names, status, pronouns, bios, world and group descriptions), and
+   anything you type. Mark more with .selectable. */
+html, body { -webkit-user-select: none; user-select: none; }
+input, textarea, [contenteditable]:not([contenteditable="false"]), .selectable, .bio {
+  -webkit-user-select: text;
+  user-select: text;
+}

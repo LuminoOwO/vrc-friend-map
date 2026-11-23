@@ -146,6 +146,11 @@ export default function App() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // Ctrl+A selects only inside a text field, never the whole interface.
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === "a") {
+        const el = e.target as HTMLElement | null;
+        if (!el?.closest?.("input, textarea, [contenteditable]:not([contenteditable='false'])")) e.preventDefault();
+      }
       if (e.key === "Escape") {
         const s = getState();
         if (s.viewer) return; // the image viewer closes itself
