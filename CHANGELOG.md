@@ -6,6 +6,8 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Your online times on your profile:** the last 7 days as bars, with totals for the week,
+  today and your longest session, and a link to Online times.
 - **Restore default settings** (Settings → My account): every option back to a fresh install,
   keeping your accounts, servers, folders, language and interface.
 - **Change your status and pronouns on your profile:** click the status pill to pick a status

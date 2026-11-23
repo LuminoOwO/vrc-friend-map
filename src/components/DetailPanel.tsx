@@ -11,6 +11,7 @@ import { removedByMe } from "../notifications";
 import { AgePanel } from "./AgePanel";
 import { ProfileEditor } from "./ProfileEditor";
 import { PronounsEdit, StatusEdit } from "./QuickEdit";
+import { MyOnlineTimes } from "./MyTimes";
 import { concernAbout } from "../age";
 import { PERSON_MODES, setPersonMode } from "./NotificationsSection";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -482,6 +483,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
               {relation !== "me" && <AgePanel id={id} />}
               {relation === "friend" && <LocalTime id={id} name={f.displayName} />}
               {relation === "friend" && <OnlineHistory id={id} name={f.displayName} online={p === "online"} />}
+              {relation === "me" && <MyOnlineTimes />}
               {relation !== "me" && <VrcNote id={id} />}
               {relation !== "me" && !demo && <PersonLog id={id} name={f.displayName} />}
               {relation === "friend" && !demo && <SafetyCode id={id} name={f.displayName} />}

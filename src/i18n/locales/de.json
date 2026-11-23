@@ -627,5 +627,17 @@
     "resetButton": "Standardeinstellungen wiederherstellen",
     "resetConfirm": "Ja, alle Einstellungen zurücksetzen",
     "resetDone": "Einstellungen auf Standard zurückgesetzt."
+  },
+  "myTimes": {
+    "title": "Deine Online-Zeiten",
+    "empty": "Noch nichts aufgezeichnet: Die App merkt sich, wann du in VRChat bist, solange sie läuft.",
+    "last7": "letzte 7 Tage",
+    "today": "heute",
+    "todayShort": "Heute",
+    "longest": "längste Sitzung",
+    "chart": "Wann du die letzten 7 Tage in VRChat warst",
+    "minutes": "{{n}} Min.",
+    "hours": "{{n}} Std.",
+    "open": "Online-Zeiten öffnen"
   }
 }

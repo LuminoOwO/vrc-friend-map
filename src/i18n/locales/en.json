@@ -2441,5 +2441,17 @@
     "save": "Save",
     "saving": "Saving…",
     "demo": "Demo: changed here only, not on VRChat."
+  },
+  "myTimes": {
+    "title": "Your online times",
+    "empty": "Nothing recorded yet: the app notes when you're in VRChat while it runs.",
+    "last7": "last 7 days",
+    "today": "today",
+    "todayShort": "Today",
+    "longest": "longest session",
+    "chart": "When you were in VRChat the last 7 days",
+    "minutes": "{{n}} min",
+    "hours": "{{n}} h",
+    "open": "Open Online times"
   }
 }

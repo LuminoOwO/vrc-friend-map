@@ -1321,3 +1321,19 @@ button.status-pill.editable:hover { border-color: var(--accent); }
 .open-link input { flex: 1 1 auto; min-width: 0; width: 100%; }
 .open-link .btn { flex: none; }
 .media-link-row .open-link { margin-left: 0; }
+/* Your profile: your online times, last 7 days (MyTimes.tsx). */
+.mytimes { display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.mytimes-stats { display: flex; gap: 22px; flex-wrap: wrap; }
+.mytimes-stats span { display: flex; flex-direction: column; }
+.mytimes-stats b { font-size: 18px; font-weight: 800; }
+.mytimes-stats small { color: var(--muted); font-size: 11.5px; }
+.mytimes-days { width: 100%; display: flex; flex-direction: column; gap: 5px; }
+.mytimes-row { display: grid; grid-template-columns: 44px 1fr 52px; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.mytimes-row.today .mytimes-day { color: var(--accent); font-weight: 700; }
+.mytimes-track { position: relative; height: 12px; border-radius: 6px; background: color-mix(in srgb, var(--tint, #fff) 6%, transparent); background-image: linear-gradient(90deg, transparent calc(25% - 1px), var(--border) 25%, transparent calc(25% + 1px), transparent calc(50% - 1px), var(--border) 50%, transparent calc(50% + 1px), transparent calc(75% - 1px), var(--border) 75%, transparent calc(75% + 1px)); }
+.mytimes-bar { position: absolute; top: 0; bottom: 0; border-radius: 6px; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #fff)); }
+.mytimes-now { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; border-radius: 1px; background: var(--gold, #f5c84c); }
+.mytimes-sum { text-align: right; font-variant-numeric: tabular-nums; }
+.mytimes-axis .mytimes-track { background: none; height: 14px; }
+.mytimes-axis .mytimes-track span { position: absolute; transform: translateX(-50%); font-size: 10.5px; }
+.mytimes-axis .mytimes-track span:first-child { transform: none; }
