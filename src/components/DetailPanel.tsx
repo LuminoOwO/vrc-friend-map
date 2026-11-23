@@ -45,6 +45,7 @@ import { applyPipelineEvent, fetchAccountFriends, freshenProfile, loadGroups, lo
 import type { Friend, Presence } from "../types";
 import { GroupsModal } from "./GroupsModal";
 import { Icon } from "./Icon";
+import { GroupPic } from "./GroupPic";
 import { customSounds, onCustomSounds, previewEvent } from "../notifications";
 import { SOUNDS } from "../notify";
 import { updateNotify } from "../store";
@@ -300,7 +301,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
       </span>
       {representing && (
         <button className="group-pill" data-flip-fade title={tr("profile.representingThisGroup")} onClick={() => open(`https://vrchat.com/home/group/${representing.groupId}`)}>
-          {representing.iconUrl && <img src={imgSrc(representing.iconUrl)} alt="" />}
+          <GroupPic url={representing.iconUrl} name={representing.name} />
           {representing.name}
         </button>
       )}
@@ -620,7 +621,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                           openImage({ url: g.iconUrl, title: tr("profile.groupNameIcon", { name: g.name }) });
                         }}
                       >
-                        {g.iconUrl ? <img src={imgSrc(g.iconUrl)} alt="" /> : g.name.slice(0, 1)}
+                        <GroupPic url={g.iconUrl} name={g.name} />
                       </span>
                       <span className="group-name">{g.name}</span>
                       {g.isRepresenting && (

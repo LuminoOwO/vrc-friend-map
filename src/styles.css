@@ -1281,3 +1281,16 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
 .here-switch.on .here-switch-label { color: var(--accent); }
 .here-switch-n { padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); font-weight: 700; font-size: 11px; }
 .pic-more { display: grid; place-items: center; color: var(--muted); font-weight: 700; font-size: 15px; }
+/* Default group picture (GroupPic): a colour from the name and its first letter. */
+.gpic-default { display: inline-grid; place-items: center; width: 100%; height: 100%; color: #fff; font-weight: 800; line-height: 1; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); user-select: none; }
+span.group-icon > .gpic-default { font-size: 16px; }
+.group-card-icon > .gpic-default { font-size: 24px; }
+.gpic-default.group-icon { font-size: 15px; }
+.gpic-default.face { font-size: 16px; }
+.group-pill .gpic-default { width: 16px; height: 16px; border-radius: 4px; font-size: 10px; }
+/* "View all" groups: search at the top. */
+.groups-search { display: flex; align-items: center; gap: 8px; margin: 12px 16px 0; padding: 0 10px; height: 36px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--panel-2); color: var(--muted); }
+.groups-search:focus-within { border-color: var(--accent); }
+.groups-search input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: none; color: var(--text); font: inherit; padding: 0; }
+.groups-search span { flex: none; }
+.groups-empty { margin: 14px 16px 0; }

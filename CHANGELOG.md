@@ -6,6 +6,10 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Search someone's groups:** "View all" on a profile has a search bar (name, short code,
+  description).
+- **Default group picture** (colour + first letter) for groups without an icon or whose icon
+  doesn't load, instead of a broken "?" box.
 - **Online times** in the menu, three ways to look at it:
   - **Timeline:** exact online sessions of everyone on a calendar you drag (through time and
     down the list), zoom with Ctrl + wheel or two fingers; point at a bar for the exact times

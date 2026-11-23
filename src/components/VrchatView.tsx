@@ -33,6 +33,7 @@ import {
 import { openVrchatLink } from "../vrclinks";
 import { EventList } from "./ContentDialogs";
 import { Icon } from "./Icon";
+import { GroupPic } from "./GroupPic";
 import { openImage } from "./ImageViewer";
 import { Range } from "./Range";
 import { SkelBlock } from "../ui2/smooth";
@@ -144,7 +145,7 @@ function MyGroups() {
           {groups?.map((g) => (
             <li key={g.groupId}>
               <button className="group-tile" onClick={() => setState({ openGroup: g.groupId })}>
-                {g.iconUrl ? <img src={imgSrc(g.iconUrl)} alt="" /> : <span className="face">{g.name[0]}</span>}
+                <GroupPic className="face" url={g.iconUrl} name={g.name} />
                 <span>{g.name}</span>
               </button>
             </li>

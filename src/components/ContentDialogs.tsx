@@ -31,6 +31,7 @@ import {
 } from "../vrccontent";
 import { parseLocation } from "./DetailPanel";
 import { Icon } from "./Icon";
+import { GroupPic } from "./GroupPic";
 import { openImage } from "./ImageViewer";
 import { setWorldNote } from "../worldnotes";
 import { SkelBlock } from "../ui2/smooth";
@@ -242,7 +243,7 @@ export function GroupDialog() {
     <Modal
       title={
         <>
-          {g?.iconUrl && <img className="group-icon" src={imgSrc(g.iconUrl)} alt="" />} {g?.name ?? "Group"} {g && <span className="muted small">{g.shortCode}.{g.discriminator}</span>}
+          {g && <GroupPic className="group-icon" url={g.iconUrl} name={g.name} />} {g?.name ?? "Group"} {g && <span className="muted small">{g.shortCode}.{g.discriminator}</span>}
         </>
       }
       onClose={close}

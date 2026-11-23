@@ -1509,6 +1509,9 @@
     "cUsedByUsedOther_other": "{{c}} · used by {{count}} other circles"
   },
   "groupsModal": {
+    "search": "Search groups",
+    "noMatch": "No group matches “{{q}}”.",
+    "shownOf": "{{shown}} of {{total}}",
     "youReInIt": "you're in it",
     "close": "Close",
     "openTheGroup": "Open the group",
