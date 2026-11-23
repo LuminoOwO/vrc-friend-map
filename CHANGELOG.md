@@ -86,6 +86,12 @@ minor releases can change behavior.
   do on vrchat.com if your account may be hacked (change the password, turn on two-factor).
 
 ### Changed
+- **Online times looks friendlier and zooms with buttons:** day names on top with today
+  highlighted, soft day bands instead of hard lines, rounded bars, the row under the pointer
+  lit, a "now" tag, lighter "nobody watching" shading, and −/+ zoom buttons on the chart (also
+  double-click). The technical options (joining short disconnects, row size, only people online)
+  sit behind an Options button. Clicking a bar no longer opens the profile; clicking the name
+  does. Also fixed an empty row under "You".
 - **Map options open in the side panel** instead of a box over it. Three buttons on the map
   switch the panel: **Overview** (the usual panel, also unfolds it), **Friend groups** and **Map
   options**; Escape goes back to the overview.

@@ -2418,7 +2418,7 @@
     "withServer_other": "with your {{count}} servers' loggers",
     "noServer": "only this device (a server's logger fills in when this device is off)",
     "empty": "No exact times yet: they're recorded from now on while the app runs (and around the clock by your server's logger after it's updated).",
-    "help": "Drag to move through time and down the list; Ctrl + wheel or two fingers to zoom; Shift + wheel to move in time; arrow keys and +/− work too. Point at a bar for exact times, click a name to open the profile.",
+    "help": "Drag to move through time and down the list. Zoom with − / +, Ctrl + wheel, a double-click or two fingers. Point at a bar for exact times; click a name to open the profile.",
     "label": "Online times timeline",
     "openProfile": "Click to open the profile",
     "disconnects_one": "{{count}} short disconnect joined",
@@ -2427,7 +2427,14 @@
     "offlineAt": "offline at {{time}}",
     "listAbout_one": "{{from}} – {{to}}: {{count}} session.",
     "listAbout_other": "{{from}} – {{to}}: {{count}} sessions.",
-    "earlier": "A week earlier"
+    "earlier": "A week earlier",
+    "nowTag": "now",
+    "zoom": "Zoom",
+    "zoomIn": "Zoom in (or Ctrl + wheel, double-click)",
+    "zoomOut": "Zoom out (or Ctrl + wheel, Shift + double-click)",
+    "spanHours": "{{n}} h",
+    "spanDays": "{{n}} days",
+    "options": "Options"
   },
   "quickEdit": {
     "status": "Status",

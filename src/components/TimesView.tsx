@@ -256,6 +256,7 @@ function ExactTimes({ list }: { list: boolean }) {
   const [density, setDensity] = useState<"comfy" | "compact" | "dense">("compact");
   const [sort, setSort] = useState<TSort>("time");
   const [q, setQ] = useState("");
+  const [showOpts, setShowOpts] = useState(false);
   const [hideIdle, setHideIdle] = useState(true);
   const data = useSessions(view);
   const gaps = useMemo(() => gapsIn(data.coverage, view.start, view.end), [data.coverage, view.start, view.end]);
@@ -308,6 +309,19 @@ function ExactTimes({ list }: { list: boolean }) {
         <button className="btn small" onClick={() => goto(view.end - view.start)} title={t("timeline.nowHelp")}>
           {t("timeline.now")}
         </button>
+        <select value={sort} onChange={(e) => setSort(e.target.value as TSort)} aria-label={t("times.sort")}>
+          <option value="time">{t("timeline.sortTime")}</option>
+          <option value="overlap">{t("times.sortOverlap")}</option>
+          <option value="online">{t("times.sortOnline")}</option>
+          <option value="name">{t("times.sortName")}</option>
+        </select>
+        <input type="search" value={q} placeholder={t("times.search")} aria-label={t("times.search")} onChange={(e) => setQ(e.target.value)} />
+        <button className={`btn small ${showOpts ? "active" : ""}`} aria-expanded={showOpts} onClick={() => setShowOpts(!showOpts)}>
+          <Icon name="sliders" size={14} /> {t("timeline.options")}
+        </button>
+      </div>
+      {showOpts && (
+        <div className="row times-controls times-options">
         <label className="times-opt">
           <span>{t("timeline.join")}</span>
           <select value={joinMin} onChange={(e) => setJoinMin(Number(e.target.value))} title={t("timeline.joinHelp")}>
@@ -318,12 +332,6 @@ function ExactTimes({ list }: { list: boolean }) {
             ))}
           </select>
         </label>
-        <select value={sort} onChange={(e) => setSort(e.target.value as TSort)} aria-label={t("times.sort")}>
-          <option value="time">{t("timeline.sortTime")}</option>
-          <option value="overlap">{t("times.sortOverlap")}</option>
-          <option value="online">{t("times.sortOnline")}</option>
-          <option value="name">{t("times.sortName")}</option>
-        </select>
         {!list && (
           <select value={density} onChange={(e) => setDensity(e.target.value as typeof density)} aria-label={t("timeline.density")}>
             <option value="comfy">{t("timeline.comfy")}</option>
@@ -334,8 +342,8 @@ function ExactTimes({ list }: { list: boolean }) {
         <label className="check small">
           <input type="checkbox" checked={hideIdle} onChange={(e) => setHideIdle(e.target.checked)} /> {t("timeline.hideIdle")}
         </label>
-        <input type="search" value={q} placeholder={t("times.search")} aria-label={t("times.search")} onChange={(e) => setQ(e.target.value)} />
-      </div>
+        </div>
+      )}
       <p className="small muted times-legend">
         <span>
           <span className="tl-key bar" /> {t("timeline.keyOnline")}

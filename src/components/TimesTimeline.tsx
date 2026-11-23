@@ -7,6 +7,7 @@
 import { language, useT } from "../i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Span } from "../onlinetimes";
+import { Icon } from "./Icon";
 
 export interface TimelineRow {
   id: string;
@@ -23,7 +24,8 @@ export interface TimelineView {
   end: number;
 }
 
-const HEAD = 38;
+const HEAD = 46;
+const DAY_ROW = 24;
 const MIN_SPAN = 2 * 3600e3;
 const MAX_SPAN = 62 * 864e5;
 const STEPS = [15 * 60e3, 30 * 60e3, 3600e3, 2 * 3600e3, 3 * 3600e3, 6 * 3600e3, 12 * 3600e3, 864e5, 2 * 864e5, 7 * 864e5];
@@ -32,6 +34,19 @@ function css(name: string, fallback: string): string {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
 }
+
+/** A colour as [r, g, b] (canvas normalises any CSS colour to #rrggbb when it can). */
+function rgbOf(ctx: CanvasRenderingContext2D, color: string): [number, number, number] {
+  ctx.fillStyle = "#000";
+  ctx.fillStyle = color;
+  const h = String(ctx.fillStyle);
+  const m = /^#([0-9a-f]{6})$/i.exec(h);
+  if (m) return [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16)) as [number, number, number];
+  const n = h.match(/[\d.]+/g)?.map(Number) ?? [25, 195, 177];
+  return [n[0], n[1], n[2]];
+}
+const rgba = (c: [number, number, number], a: number) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+const lighten = (c: [number, number, number], k: number) => rgba([0, 1, 2].map((i) => Math.round(c[i] + (255 - c[i]) * k)) as [number, number, number], 1);
 
 function fmtTime(t: number): string {
   return new Date(t).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" });
@@ -43,6 +58,11 @@ export function fmtDuration(ms: number): string {
   const m = Math.round(ms / 60e3);
   if (m < 60) return `${m} min`;
   return `${Math.floor(m / 60)} h${m % 60 ? ` ${m % 60} min` : ""}`;
+}
+
+function spanLabel(ms: number, t: ReturnType<typeof useT>): string {
+  const h = ms / 3600e3;
+  return h < 36 ? t("timeline.spanHours", { n: Math.round(h) }) : t("timeline.spanDays", { n: Math.round((h / 24) * 10) / 10 });
 }
 
 export function TimesTimeline({
@@ -66,6 +86,7 @@ export function TimesTimeline({
   const [size, setSize] = useState({ w: 800, h: 500 });
   const [scrollY, setScrollY] = useState(0);
   const [tip, setTip] = useState<{ x: number; y: number; text: string[] } | null>(null);
+  const [hoverId, setHoverId] = useState<string | null>(null);
   const viewRef = useRef(view);
   viewRef.current = view;
   const nameW = size.w < 560 ? 104 : 170;
@@ -100,13 +121,56 @@ export function TimesTimeline({
       accent: css("--accent", "#19c3b1"),
       warn: "#e8a33d",
     };
+    const acc = rgbOf(ctx, col.accent);
+    const txt = rgbOf(ctx, col.text);
     ctx.clearRect(0, 0, size.w, size.h);
     ctx.font = "12px system-ui, sans-serif";
+    ctx.textBaseline = "middle";
     const span = view.end - view.start;
-    const step = STEPS.find((s) => (s / span) * plotW >= 56) ?? STEPS[STEPS.length - 1];
+    const step = STEPS.find((s) => (s / span) * plotW >= 64) ?? STEPS[STEPS.length - 1];
     const top = HEAD + rowH; // below "you"
+    const tint = (a: number) => `rgba(140,160,180,${a})`;
 
-    // No data: striped columns.
+    // Days: soft alternating bands through the whole chart, today tinted, names on top.
+    const dayStart = (ms: number) => {
+      const d = new Date(ms);
+      d.setHours(0, 0, 0, 0);
+      return d.getTime();
+    };
+    const todayStart = dayStart(Date.now());
+    const days: { from: number; to: number }[] = [];
+    for (let d = dayStart(view.start); d < view.end; ) {
+      const next = new Date(d);
+      next.setDate(next.getDate() + 1);
+      days.push({ from: d, to: next.getTime() });
+      d = next.getTime();
+    }
+    days.forEach((d, i) => {
+      const x0 = Math.max(nameW, xOf(d.from));
+      const x1 = Math.min(size.w, xOf(d.to));
+      if (x1 <= x0) return;
+      const today = d.from === todayStart;
+      if (today || i % 2 === 0) {
+        ctx.fillStyle = today ? rgba(acc, 0.07) : tint(0.035);
+        ctx.fillRect(x0, 0, x1 - x0, size.h);
+      }
+      // Day name, centred in the visible part of the day.
+      const w = x1 - x0;
+      if (w < 34) return;
+      const date = new Date(d.from);
+      const label =
+        w > 150
+          ? date.toLocaleDateString(language(), { weekday: "long", day: "numeric", month: "short" })
+          : w > 80
+            ? fmtDay(d.from)
+            : date.toLocaleDateString(language(), { weekday: "short" });
+      ctx.font = `${today ? 700 : 600} 12px system-ui, sans-serif`;
+      ctx.fillStyle = today ? col.accent : col.text;
+      const tw = ctx.measureText(label).width;
+      ctx.fillText(label, Math.max(x0 + 6, Math.min(x1 - tw - 6, x0 + (w - tw) / 2)), DAY_ROW / 2 + 1);
+    });
+
+    // No data (nobody was watching): a light hatch.
     ctx.save();
     ctx.beginPath();
     ctx.rect(nameW, HEAD, plotW, size.h - HEAD);
@@ -115,102 +179,112 @@ export function TimesTimeline({
       const x0 = Math.max(nameW, xOf(g[0]));
       const x1 = Math.min(size.w, xOf(g[1]));
       if (x1 <= x0) continue;
-      ctx.fillStyle = "rgba(128,128,128,0.1)";
+      ctx.fillStyle = tint(0.05);
       ctx.fillRect(x0, HEAD, x1 - x0, size.h - HEAD);
-      ctx.strokeStyle = "rgba(160,160,160,0.28)";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let x = x0 - (size.h - HEAD); x < x1; x += 9) {
-        ctx.moveTo(x, size.h);
-        ctx.lineTo(x + (size.h - HEAD), HEAD);
-      }
       ctx.save();
       ctx.beginPath();
       ctx.rect(x0, HEAD, x1 - x0, size.h - HEAD);
       ctx.clip();
+      ctx.strokeStyle = tint(0.12);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let x = x0 - (size.h - HEAD); x < x1; x += 10) {
+        ctx.moveTo(x, size.h);
+        ctx.lineTo(x + (size.h - HEAD), HEAD);
+      }
       ctx.stroke();
       ctx.restore();
     }
     ctx.restore();
 
-    // Grid: hour/day lines and labels.
-    // Lines on local hours and midnights (getTimezoneOffset is UTC minus local, in minutes).
+    // Hours: faint lines and small labels under the day names.
     const off = new Date(view.start).getTimezoneOffset() * 60e3;
     const first = Math.ceil((view.start - off) / step) * step + off;
-    ctx.textBaseline = "middle";
+    ctx.font = "10.5px system-ui, sans-serif";
     for (let ms = first; ms <= view.end; ms += step) {
-      const aligned = ms;
-      const x = xOf(aligned);
+      const x = xOf(ms);
       if (x < nameW || x > size.w) continue;
-      const d = new Date(aligned);
+      const d = new Date(ms);
       const midnight = d.getHours() === 0 && d.getMinutes() === 0;
-      ctx.strokeStyle = midnight ? col.muted : col.border;
-      ctx.globalAlpha = midnight ? 0.55 : 1;
+      ctx.strokeStyle = midnight ? tint(0.22) : tint(0.08);
       ctx.beginPath();
-      ctx.moveTo(x + 0.5, HEAD - 6);
+      ctx.moveTo(x + 0.5, midnight ? 0 : HEAD - 4);
       ctx.lineTo(x + 0.5, size.h);
       ctx.stroke();
-      ctx.globalAlpha = 1;
-      ctx.fillStyle = midnight ? col.text : col.muted;
-      ctx.font = midnight ? "600 12px system-ui, sans-serif" : "11px system-ui, sans-serif";
-      const label = midnight || step >= 864e5 ? fmtDay(aligned) : fmtTime(aligned);
-      ctx.fillText(label, x + 4, midnight ? 12 : 27);
+      if (step < 864e5 && !midnight) {
+        const label = fmtTime(ms);
+        const tw = ctx.measureText(label).width;
+        ctx.fillStyle = col.muted;
+        ctx.fillText(label, x - tw / 2, DAY_ROW + (HEAD - DAY_ROW) / 2 - 1);
+      }
     }
-    // Day label at the left edge, so you always know which day you're looking at (unless a
-    // midnight label is right there).
-    const off2 = new Date(view.start).getTimezoneOffset() * 60e3;
-    const nextMidnight = Math.ceil((view.start - off2) / 864e5) * 864e5 + off2;
-    if (xOf(nextMidnight) - nameW > 110) {
-      ctx.fillStyle = col.bg;
-      ctx.fillRect(nameW + 1, 2, 104, 20);
-      ctx.fillStyle = col.text;
-      ctx.font = "600 12px system-ui, sans-serif";
-      ctx.fillText(fmtDay(view.start), nameW + 4, 12);
-    }
+    ctx.strokeStyle = tint(0.12);
+    ctx.beginPath();
+    ctx.moveTo(nameW, HEAD + 0.5);
+    ctx.lineTo(size.w, HEAD + 0.5);
+    ctx.stroke();
 
     // Rows (only the visible ones).
-    const drawRow = (r: TimelineRow, y: number, i: number) => {
-      if (i % 2 === 1) {
-        ctx.fillStyle = "rgba(128,128,128,0.04)";
+    const drawRow = (r: TimelineRow, y: number) => {
+      if (r.id === hoverId) {
+        ctx.fillStyle = tint(0.07);
         ctx.fillRect(0, y, size.w, rowH);
       }
-      const barH = Math.max(3, Math.min(rowH - 6, 14));
+      const barH = Math.max(3, Math.min(rowH - 6, 12));
       const by = y + (rowH - barH) / 2;
-      ctx.fillStyle = r.me ? col.accent : r.online ? col.accent : col.accent;
+      // A faint track so short sessions are easy to follow along the row.
+      ctx.fillStyle = tint(0.04);
+      ctx.fillRect(nameW, by + barH / 2 - 0.5, plotW, 1);
+      const grad = ctx.createLinearGradient(0, by, 0, by + barH);
+      grad.addColorStop(0, lighten(acc, 0.25));
+      grad.addColorStop(1, col.accent);
+      ctx.fillStyle = grad;
+      if (r.me) {
+        ctx.shadowColor = col.accent;
+        ctx.shadowBlur = 8;
+      }
       for (const s of r.spans) {
         if (s[1] < view.start || s[0] > view.end) continue;
         const x0 = Math.max(nameW, xOf(s[0]));
         const x1 = Math.min(size.w, xOf(s[1]));
-        const w = Math.max(1.5, x1 - x0);
-        ctx.globalAlpha = r.me ? 0.95 : 0.75;
+        const w = Math.max(3, x1 - x0);
+        ctx.globalAlpha = r.me || r.online || r.id === hoverId ? 1 : 0.78;
         ctx.beginPath();
-        ctx.roundRect(x0, by, w, barH, Math.min(4, barH / 2, w / 2));
+        ctx.roundRect(x0, by, w, barH, Math.min(barH / 2, w / 2));
         ctx.fill();
       }
+      ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
-      // Joined short disconnects.
+      // Joined short disconnects: a small notch.
       ctx.fillStyle = col.warn;
       for (const j of r.joined) {
         const x = xOf(j);
         if (x < nameW || x > size.w) continue;
-        ctx.fillRect(x - 1, by - 2, 2, barH + 4);
+        ctx.beginPath();
+        ctx.roundRect(x - 1, by - 2, 2, barH + 4, 1);
+        ctx.fill();
       }
-      // Name.
-      ctx.fillStyle = r.me ? col.accent : col.text;
-      ctx.font = `${r.me ? "700 " : ""}${rowH >= 20 ? 13 : 11}px system-ui, sans-serif`;
+      // Name column.
+      ctx.fillStyle = col.bg;
+      ctx.fillRect(0, y, nameW - 1, rowH);
+      if (r.id === hoverId) {
+        ctx.fillStyle = tint(0.07);
+        ctx.fillRect(0, y, nameW - 1, rowH);
+      }
       if (rowH >= 12) {
         ctx.save();
         ctx.beginPath();
-        ctx.rect(0, y, nameW - 8, rowH);
+        ctx.rect(0, y, nameW - 10, rowH);
         ctx.clip();
         if (r.online) {
           ctx.fillStyle = "#51e57e";
           ctx.beginPath();
-          ctx.arc(10, y + rowH / 2, 3.5, 0, Math.PI * 2);
+          ctx.arc(12, y + rowH / 2, 3.5, 0, Math.PI * 2);
           ctx.fill();
-          ctx.fillStyle = r.me ? col.accent : col.text;
         }
-        ctx.fillText(r.name, 20, y + rowH / 2);
+        ctx.fillStyle = r.me ? col.accent : r.online || r.id === hoverId ? col.text : rgba(txt, 0.78);
+        ctx.font = `${r.me ? "700 " : r.online ? "600 " : ""}${rowH >= 20 ? 13 : 11.5}px system-ui, sans-serif`;
+        ctx.fillText(r.name, 22, y + rowH / 2 + 0.5);
         ctx.restore();
       }
     };
@@ -220,36 +294,53 @@ export function TimesTimeline({
     ctx.clip();
     const firstRow = Math.max(0, Math.floor(sy / rowH));
     const lastRow = Math.min(rows.length - 1, Math.ceil((sy + size.h - top) / rowH));
-    for (let i = firstRow; i <= lastRow; i++) {
+    // "You" is pinned above, so the list starts with the first friend.
+    const lead = rows[0]?.me ? 1 : 0;
+    for (let i = firstRow + lead; i <= Math.min(rows.length - 1, lastRow + lead); i++) {
       if (rows[i].me) continue;
-      drawRow(rows[i], top + i * rowH - sy, i);
+      drawRow(rows[i], top + (i - lead) * rowH - sy);
     }
     ctx.restore();
     // You, pinned under the header.
     const me = rows.find((r) => r.me);
     ctx.fillStyle = col.bg;
     ctx.fillRect(0, HEAD, size.w, rowH);
-    if (me) drawRow(me, HEAD, 0);
-    ctx.strokeStyle = col.border;
+    ctx.fillStyle = rgba(acc, 0.06);
+    ctx.fillRect(0, HEAD, size.w, rowH);
+    if (me) drawRow(me, HEAD);
+    // Header background for the name column.
+    ctx.fillStyle = col.bg;
+    ctx.fillRect(0, 0, nameW - 1, HEAD);
+    ctx.strokeStyle = tint(0.14);
     ctx.beginPath();
     ctx.moveTo(0, top + 0.5);
     ctx.lineTo(size.w, top + 0.5);
-    ctx.moveTo(nameW - 0.5, HEAD);
+    ctx.moveTo(nameW - 0.5, 0);
     ctx.lineTo(nameW - 0.5, size.h);
     ctx.stroke();
 
-    // Now.
+    // Now: a line with a small "now" tag in the header.
     const nx = xOf(Date.now());
     if (nx >= nameW && nx <= size.w) {
       ctx.strokeStyle = col.warn;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(nx, HEAD - 8);
+      ctx.moveTo(nx, HEAD - 2);
       ctx.lineTo(nx, size.h);
       ctx.stroke();
       ctx.lineWidth = 1;
+      const label = t("timeline.nowTag");
+      ctx.font = "700 10px system-ui, sans-serif";
+      const tw = ctx.measureText(label).width + 10;
+      const lx = Math.max(nameW + 2, Math.min(size.w - tw - 2, nx - tw / 2));
+      ctx.fillStyle = col.warn;
+      ctx.beginPath();
+      ctx.roundRect(lx, DAY_ROW + 3, tw, 15, 7.5);
+      ctx.fill();
+      ctx.fillStyle = "#1a1206";
+      ctx.fillText(label, lx + 5, DAY_ROW + 10.5);
     }
-  }, [rows, gaps, view, size, sy, rowH, nameW, plotW, xOf]);
+  }, [rows, gaps, view, size, sy, rowH, nameW, plotW, xOf, hoverId, t]);
 
   // ---------- dragging, zooming ----------
   const pointers = useRef(new Map<number, { x: number; y: number }>());
@@ -284,12 +375,13 @@ export function TimesTimeline({
   const rowAt = (y: number): TimelineRow | null => {
     if (y >= HEAD && y < HEAD + rowH) return rows.find((r) => r.me) ?? null;
     if (y < HEAD + rowH) return null;
-    const i = Math.floor((y - HEAD - rowH + sy) / rowH);
+    const i = Math.floor((y - HEAD - rowH + sy) / rowH) + (rows[0]?.me ? 1 : 0);
     return rows[i] && !rows[i].me ? rows[i] : null;
   };
 
   const hover = (p: { x: number; y: number }) => {
     const r = rowAt(p.y);
+    setHoverId(r?.id ?? null);
     if (!r || p.x < nameW) {
       setTip(r && p.x < nameW ? { x: p.x, y: p.y, text: [r.name, t("timeline.openProfile")] } : null);
       return;
@@ -385,14 +477,32 @@ export function TimesTimeline({
           const d = drag.current;
           if (pointers.current.size === 0) {
             if (d && !d.moved) {
-              const r = rowAt(local(e).y);
-              if (r && !r.me) onOpen(r.id);
+              const p = local(e);
+              const r = rowAt(p.y);
+              if (r && !r.me && p.x < nameW) onOpen(r.id);
             }
             drag.current = null;
           }
         }}
-        onPointerLeave={() => !drag.current && setTip(null)}
+        onPointerLeave={() => {
+          if (drag.current) return;
+          setTip(null);
+          setHoverId(null);
+        }}
+        onDoubleClick={(e) => {
+          const p = local(e);
+          if (p.x > nameW) zoomAt(e.shiftKey ? 2 : 0.5, p.x);
+        }}
       />
+      <div className="tl-zoom" role="group" aria-label={t("timeline.zoom")}>
+        <button className="icon-btn" title={t("timeline.zoomOut")} onClick={() => zoomAt(1 / 0.6, nameW + plotW / 2)} disabled={view.end - view.start >= MAX_SPAN}>
+          <Icon name="minus" size={15} />
+        </button>
+        <span className="tl-zoom-label">{spanLabel(view.end - view.start, t)}</span>
+        <button className="icon-btn" title={t("timeline.zoomIn")} onClick={() => zoomAt(0.6, nameW + plotW / 2)} disabled={view.end - view.start <= MIN_SPAN}>
+          <Icon name="plus" size={15} />
+        </button>
+      </div>
       {tip && (
         <div className="tl-tip" style={{ left: Math.min(tip.x + 14, size.w - 260), top: Math.min(tip.y + 14, size.h - 70) }}>
           {tip.text.map((l, i) => (i === 0 ? <b key={i}>{l}</b> : <span key={i}>{l}</span>))}

@@ -597,7 +597,7 @@
     "withServer_other": "mit den Loggern deiner {{count}} Server",
     "noServer": "nur dieses Gerät (der Logger eines Servers füllt die Lücken, wenn dieses Gerät aus ist)",
     "empty": "Noch keine genauen Zeiten: Sie werden ab jetzt aufgezeichnet, während die App läuft (und rund um die Uhr vom Logger deines Servers, sobald er aktualisiert ist).",
-    "help": "Ziehen bewegt durch die Zeit und die Liste; Strg + Mausrad oder zwei Finger zoomen; Umschalt + Mausrad bewegt in der Zeit; Pfeiltasten und +/− gehen auch. Zeig auf einen Balken für genaue Zeiten, klick einen Namen für das Profil.",
+    "help": "Ziehen bewegt durch die Zeit und die Liste. Zoomen mit − / +, Strg + Mausrad, Doppelklick oder zwei Fingern. Auf einen Balken zeigen für genaue Zeiten; einen Namen anklicken öffnet das Profil.",
     "label": "Zeitleiste der Online-Zeiten",
     "openProfile": "Klick öffnet das Profil",
     "disconnects_one": "{{count}} kurzer Abbruch zusammengefasst",
@@ -606,7 +606,14 @@
     "offlineAt": "offline um {{time}}",
     "listAbout_one": "{{from}} – {{to}}: {{count}} Sitzung.",
     "listAbout_other": "{{from}} – {{to}}: {{count}} Sitzungen.",
-    "earlier": "Eine Woche früher"
+    "earlier": "Eine Woche früher",
+    "nowTag": "jetzt",
+    "zoom": "Zoom",
+    "zoomIn": "Vergrößern (oder Strg + Mausrad, Doppelklick)",
+    "zoomOut": "Verkleinern (oder Strg + Mausrad, Umschalt + Doppelklick)",
+    "spanHours": "{{n}} Std.",
+    "spanDays": "{{n}} Tage",
+    "options": "Optionen"
   },
   "quickEdit": {
     "status": "Status",
