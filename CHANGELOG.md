@@ -41,6 +41,9 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- "Why did you block …?" showed no name or picture for people who aren't your friends (most
+  blocks): it now uses the name VRChat sends with your block list, loads their picture, and has
+  an "Open profile" button.
 - **Profiles open much faster**, most of all on phones: guessing someone's time zone checked
   hundreds of place and country names against every text (bio, status, each group) the slow way.
   Same results, about 12 times less work (measured on a slowed-down phone: 1.4 s → 0.12 s).
