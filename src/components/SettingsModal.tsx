@@ -7,7 +7,7 @@ import { backend, imgSrc, isMobile, type GraphicsInfo, type GraphicsMode } from 
 import { iconUrl, STATUS_LABEL, statusColor } from "../model";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, logoutCarriers, logoutEverywhere, wipeEverything } from "../session";
-import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, updateUi, useApp } from "../store";
+import { flushSaves, resetSettings, setState, showToast, updatePeople, updateGroupSettings, updateLocal, updateLogSettings, updateMap, updateSettings, updateUi, useApp } from "../store";
 import { CloseSection, NotificationsSection } from "./NotificationsSection";
 import { WheelFixSection } from "./WheelFixSection";
 import { AgeSection } from "./AgeSection";
@@ -754,6 +754,9 @@ export function SettingsModal() {
         <Sec id="backup" cat="account" title={tr("settings.backupToAnotherDevice")} keys="backup export import restore move device encrypted password file">
           <BackupSection />
         </Sec>
+        <Sec id="reset" cat="account" title={tr("settings.resetTitle")} keys="reset restore default settings options factory start over">
+          <ResetSettings />
+        </Sec>
         <Sec id="data" cat="account" title={tr("settings.localData")} keys="storage cache delete backup folder">
           <h3>{tr("settings.localData")}</h3>
           {demo ? (
@@ -997,6 +1000,39 @@ interface SecCtx {
 const SecContext = createContext<SecCtx | null>(null);
 
 /** One settings section: shown in its category, or when it matches the search. */
+function ResetSettings() {
+  const [sure, setSure] = useState(false);
+  return (
+    <>
+      <h3>{tr("settings.resetTitle")}</h3>
+      <p className="small muted">{tr("settings.resetHelp")}</p>
+      <div className="row">
+        {!sure ? (
+          <button className="btn" onClick={() => setSure(true)}>
+            <Icon name="refresh" size={15} /> {tr("settings.resetButton")}
+          </button>
+        ) : (
+          <>
+            <button
+              className="btn danger"
+              onClick={() => {
+                resetSettings();
+                setSure(false);
+                showToast(tr("settings.resetDone"));
+              }}
+            >
+              {tr("settings.resetConfirm")}
+            </button>
+            <button className="btn" onClick={() => setSure(false)}>
+              {tr("quickEdit.cancel")}
+            </button>
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
 function Sec({ id, cat, title, keys, children, unavailable }: { id: string; cat: Cat; title: string; keys: string; children: React.ReactNode; unavailable?: string | null }) {
   const ctx = useContext(SecContext)!;
   const hide = useApp((s) => s.settings.ui.hideUnavailable);

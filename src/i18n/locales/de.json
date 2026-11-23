@@ -620,5 +620,12 @@
     "save": "Speichern",
     "saving": "Speichert…",
     "demo": "Demo: nur hier geändert, nicht bei VRChat."
+  },
+  "settings": {
+    "resetTitle": "Standardeinstellungen wiederherstellen",
+    "resetHelp": "Setzt alle Optionen wie bei einer neuen Installation zurück (Karte, Benachrichtigungen, Aussehen, Bildrate…). Bleibt: deine Konten, Server und Teilen, Spiel-Log- und Bilderordner, Sprache und Oberfläche. Deine Daten (Freunde, Notizen, Kreise, Logs) bleiben unberührt.",
+    "resetButton": "Standardeinstellungen wiederherstellen",
+    "resetConfirm": "Ja, alle Einstellungen zurücksetzen",
+    "resetDone": "Einstellungen auf Standard zurückgesetzt."
   }
 }

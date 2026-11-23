@@ -551,6 +551,22 @@ export function updateSettings(patch: Partial<Settings>, times?: Record<string, 
   if ("contact" in patch || "intervalMs" in patch) backend.setApiSettings(st.contact, st.intervalMs).catch(() => {});
 }
 
+/** Settings → Restore default settings: every option back to how a new install starts. Kept:
+ *  your accounts, servers and sharing, game log and picture folders, language and interface. */
+export function resetSettings() {
+  const cur = state.settings;
+  const d = defaultSettings();
+  updateSettings({
+    ...d,
+    contact: cur.contact,
+    sharing: cur.sharing,
+    accounts: cur.accounts,
+    lastVersion: cur.lastVersion,
+    logs: { ...d.logs, dirs: cur.logs.dirs, pictureDirs: cur.logs.pictureDirs },
+    ui: { ...d.ui, beta: cur.ui.beta, language: cur.ui.language },
+  });
+}
+
 export function updateMap(patch: Partial<MapSettings>) {
   updateSettings({ map: { ...state.settings.map, ...patch } });
 }

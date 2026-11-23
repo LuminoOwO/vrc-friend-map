@@ -1968,7 +1968,12 @@
     "nothingFoundForQueryTry": "Nothing found for “{{query}}”. Try a different word, like “colors”, “fps”, “sound” or “servers”.",
     "timeBetweenRequestsValueS": "Time between requests: {{value}} s",
     "vrcFriendMapAppVersion": "VRC Friend Map {{__APP_VERSION__}} (build {{__APP_BUILD__}}). Not affiliated with VRChat Inc.",
-    "offerSkippedAgain": "Offer {{skipped}} again"
+    "offerSkippedAgain": "Offer {{skipped}} again",
+    "resetTitle": "Restore default settings",
+    "resetHelp": "Puts every option back to how a new install starts (map, notifications, look, frame rate…). Kept: your accounts, servers and sharing, game log and picture folders, language and interface. Your data (friends, notes, circles, logs) isn't touched.",
+    "resetButton": "Restore default settings",
+    "resetConfirm": "Yes, restore all settings",
+    "resetDone": "Settings restored to their defaults."
   },
   "syncMsg": {
     "valueWaitingValue2S": "{{value}}, waiting {{value2}} s",

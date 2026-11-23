@@ -6,6 +6,8 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Restore default settings** (Settings → My account): every option back to a fresh install,
+  keeping your accounts, servers, folders, language and interface.
 - **Change your status and pronouns on your profile:** click the status pill to pick a status
   and write a status text (recent ones offered); click the pronouns (or "Add pronouns") for
   common choices or your own.
