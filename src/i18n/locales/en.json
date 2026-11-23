@@ -2434,7 +2434,9 @@
     "zoomOut": "Zoom out (or Ctrl + wheel, Shift + double-click)",
     "spanHours": "{{n}} h",
     "spanDays": "{{n}} days",
-    "options": "Options"
+    "options": "Options",
+    "showJoins": "Mark short disconnects",
+    "showJoinsHelp": "A small yellow mark where a short disconnect was joined (they're joined either way)"
   },
   "quickEdit": {
     "status": "Status",

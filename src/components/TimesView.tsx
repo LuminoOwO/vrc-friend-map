@@ -253,6 +253,22 @@ function ExactTimes({ list }: { list: boolean }) {
   const presence = useApp((s) => s.cache.presence);
   const [view, setView] = useState<TimelineView>(() => ({ start: Date.now() - 3 * 864e5 + 3 * 3600e3, end: Date.now() + 3 * 3600e3 }));
   const [joinMin, setJoinMin] = useState(5);
+  // The marks for joined disconnects: off unless you turn them on (remembered on this device).
+  const [showJoins, setShowJoinsState] = useState(() => {
+    try {
+      return localStorage.getItem("vfm.times.showJoins") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const setShowJoins = (v: boolean) => {
+    setShowJoinsState(v);
+    try {
+      localStorage.setItem("vfm.times.showJoins", v ? "1" : "0");
+    } catch {
+      /* only for this session */
+    }
+  };
   const [density, setDensity] = useState<"comfy" | "compact" | "dense">("compact");
   const [sort, setSort] = useState<TSort>("time");
   const [q, setQ] = useState("");
@@ -332,6 +348,11 @@ function ExactTimes({ list }: { list: boolean }) {
             ))}
           </select>
         </label>
+        {joinMin > 0 && (
+          <label className="check small" title={t("timeline.showJoinsHelp")}>
+            <input type="checkbox" checked={showJoins} onChange={(e) => setShowJoins(e.target.checked)} /> {t("timeline.showJoins")}
+          </label>
+        )}
         {!list && (
           <select value={density} onChange={(e) => setDensity(e.target.value as typeof density)} aria-label={t("timeline.density")}>
             <option value="comfy">{t("timeline.comfy")}</option>
@@ -351,9 +372,11 @@ function ExactTimes({ list }: { list: boolean }) {
         <span>
           <span className="tl-key gap" /> {t("timeline.keyGap")}
         </span>
-        <span>
-          <span className="tl-key join" /> {t("timeline.keyJoin")}
-        </span>
+        {showJoins && joinMin > 0 && (
+          <span>
+            <span className="tl-key join" /> {t("timeline.keyJoin")}
+          </span>
+        )}
         <span className="times-counts">
           {t("timeline.counts", { shown: rows.shown, count: rows.count })}
           {data.servers > 0 ? ` · ${t("timeline.withServer", { count: data.servers })}` : ` · ${t("timeline.noServer")}`}
@@ -364,7 +387,7 @@ function ExactTimes({ list }: { list: boolean }) {
       {list ? (
         <SessionList rows={rows.all} view={view} onView={setView} />
       ) : (
-        <TimesTimeline rows={rows.all} gaps={gaps} view={view} onView={setView} rowH={rowH} onOpen={(id) => setState({ selectedId: id })} />
+        <TimesTimeline rows={rows.all} gaps={gaps} view={view} onView={setView} rowH={rowH} showJoins={showJoins} onOpen={(id) => setState({ selectedId: id })} />
       )}
       {!list && <p className="small muted">{t("timeline.help")}</p>}
     </>

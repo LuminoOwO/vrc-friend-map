@@ -613,7 +613,9 @@
     "zoomOut": "Verkleinern (oder Strg + Mausrad, Umschalt + Doppelklick)",
     "spanHours": "{{n}} Std.",
     "spanDays": "{{n}} Tage",
-    "options": "Optionen"
+    "options": "Optionen",
+    "showJoins": "Kurze Abbrüche markieren",
+    "showJoinsHelp": "Eine kleine gelbe Markierung, wo ein kurzer Abbruch zusammengefasst wurde (zusammengefasst wird so oder so)"
   },
   "quickEdit": {
     "status": "Status",

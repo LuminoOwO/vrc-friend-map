@@ -71,6 +71,7 @@ export function TimesTimeline({
   view,
   onView,
   rowH,
+  showJoins = false,
   onOpen,
 }: {
   rows: TimelineRow[];
@@ -78,6 +79,8 @@ export function TimesTimeline({
   view: TimelineView;
   onView: (v: TimelineView) => void;
   rowH: number;
+  /** Draw a mark where a short disconnect was joined (off by default). */
+  showJoins?: boolean;
   onOpen: (id: string) => void;
 }) {
   const t = useT();
@@ -255,9 +258,9 @@ export function TimesTimeline({
       }
       ctx.shadowBlur = 0;
       ctx.globalAlpha = 1;
-      // Joined short disconnects: a small notch.
+      // Joined short disconnects: a small notch (only when asked for).
       ctx.fillStyle = col.warn;
-      for (const j of r.joined) {
+      for (const j of showJoins ? r.joined : []) {
         const x = xOf(j);
         if (x < nameW || x > size.w) continue;
         ctx.beginPath();
@@ -340,7 +343,7 @@ export function TimesTimeline({
       ctx.fillStyle = "#1a1206";
       ctx.fillText(label, lx + 5, DAY_ROW + 10.5);
     }
-  }, [rows, gaps, view, size, sy, rowH, nameW, plotW, xOf, hoverId, t]);
+  }, [rows, gaps, view, size, sy, rowH, showJoins, nameW, plotW, xOf, hoverId, t]);
 
   // ---------- dragging, zooming ----------
   const pointers = useRef(new Map<number, { x: number; y: number }>());
