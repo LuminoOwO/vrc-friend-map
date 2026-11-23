@@ -288,3 +288,7 @@
 .times-note.low b { color: #e8a33d; }
 .mytimes-cover { margin: -4px 0 8px; color: var(--muted); }
 .mytimes-cover.low { color: #e8a33d; }
+/* Typical week: the hour bars line up with the hours of the rows below (name column 170 px). */
+@media (min-width: 700px) {
+  .times-week .times-bars, .times-week .times-axis { margin-left: 154px; }
+}

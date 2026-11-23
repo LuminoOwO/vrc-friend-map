@@ -95,6 +95,11 @@ minor releases can change behavior.
   Groups & events and Media tiles, the group dialog and its members, world names in Online now,
   sent friend requests, and your server's data in Online times.
 - The unfolded left menu's gradient also covers the notification bell.
+- **Online times look the same in every view:** rows with pictures and names, sessions fill
+  the row and fade in and out (no more rounded bars). **Typical week** is now the same
+  timeline for the 24 hours of a weekday, shaded by how often someone is usually on (hours you
+  share in the accent colour; point at one for "usually online · you're usually on too"),
+  with the hour bars on top lined up with it.
 - **The layout follows the window size:** a computer window narrower than 760 px switches to
   the phone layout (back to the desktop one from 820 px); tablets get the desktop layout, and
   a phone turned sideways keeps the phone layout.

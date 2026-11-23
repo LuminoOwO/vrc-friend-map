@@ -6,7 +6,7 @@ import { language, useT, weekdayNames } from "../i18n";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { backend, imgSrc } from "../backend";
 import { useHistory } from "../history";
-import { iconUrl, presenceOf, statusColor } from "../model";
+import { iconUrl, presenceOf } from "../model";
 import { clipSpans, dayShares, demoSeen, demoSessions, gapsIn, joinShortGaps, overlapMs, totalMs, unionSpans, usualCounts, USUAL, weeklyOverlap, type Day, type Span } from "../onlinetimes";
 import { ME, onSessions, sessionsData, sessionsVersion } from "../sessions";
 import { fmtDuration, TimesTimeline, type TimelineRow, type TimelineView } from "./TimesTimeline";
@@ -63,17 +63,22 @@ function TypicalWeek() {
           : b.overlap - a.overlap || Number(b.online) - Number(a.online),
     );
   const showNow = day === "week" || day === today;
+  const meProfile = useApp((s) => s.cache.me?.profile);
+  // The same rows as the timeline: picture, name, and a band shaded by how often they're on.
+  const weekRows: TimelineRow[] = [
+    { id: ME, name: t("times.you"), me: true, spans: [], joined: [], heat: mine ?? new Array(24).fill(0), pic: meProfile ? imgSrc(iconUrl(meProfile)) : undefined },
+    ...shown.map(({ f, shares, online }) => ({
+      id: f.id,
+      name: shownName(f.id, f.displayName),
+      spans: [],
+      joined: [],
+      online,
+      heat: shares!,
+      shared: shares!.map((v, h) => v >= USUAL && (mine?.[h] ?? 0) >= USUAL),
+      pic: imgSrc(iconUrl(f)),
+    })),
+  ];
 
-  const strip = (shares: number[] | null, me = false) => (
-    <div className={`times-strip ${me ? "me" : ""}`}>
-      {Array.from({ length: 24 }, (_, h) => {
-        const v = shares?.[h] ?? 0;
-        const both = !me && v >= USUAL && (mine?.[h] ?? 0) >= USUAL;
-        return <span key={h} className={`times-cell ${both ? "both" : ""} ${h === hour ? "picked" : ""}`} style={{ opacity: v ? 0.12 + v * 0.88 : 0.06 }} />;
-      })}
-      {showNow && <span className="times-now" style={{ left: `calc(${(nowH + new Date().getMinutes() / 60) / 24} * 100%)` }} aria-hidden="true" />}
-    </div>
-  );
 
   return (
     <div className="times-week">
@@ -127,32 +132,15 @@ function TypicalWeek() {
         </p>
       </section>
 
-      <ul className="times-rows">
-        <li className="times-row me">
-          <span className="times-who">
-            <Icon name="user" size={16} /> <b>{t("times.you")}</b>
-          </span>
-          <span className="times-score" />
-          {mine ? strip(mine, true) : <span className="small muted">{t("times.youNoData")}</span>}
-        </li>
-        {shown.map(({ f, shares, overlap, online }) => {
-          const pic = imgSrc(iconUrl(f));
-          return (
-            <li key={f.id} className="times-row">
-              <button className="times-who" onClick={() => setState({ selectedId: f.id })}>
-                <span className="times-pic" style={{ borderColor: online ? statusColor(f, "online") : "transparent" }}>
-                  {pic ? <img src={pic} alt="" loading="lazy" /> : shownName(f.id, f.displayName).slice(0, 1)}
-                </span>
-                <span className="times-name">{shownName(f.id, f.displayName)}</span>
-              </button>
-              <span className="times-score" title={t("times.overlapTitle")}>
-                {overlap ? t("times.hoursWeek", { count: overlap }) : ""}
-              </span>
-              {strip(shares)}
-            </li>
-          );
-        })}
-      </ul>
+      <TimesTimeline
+        rows={weekRows}
+        gaps={[]}
+        view={{ start: 0, end: 864e5 }}
+        onView={() => {}}
+        rowH={28}
+        day={{ label: day === "week" ? t("times.week") : days[day], isToday: day === "week" || day === today }}
+        onOpen={(id) => setState({ selectedId: id })}
+      />
       <p className="small muted">
         {without > 0 && t("times.without", { count: without })} {t("times.about")}
       </p>
@@ -294,6 +282,7 @@ export function TimesView() {
 
 function ExactTimes({ list }: { list: boolean }) {
   const t = useT();
+  const meProfile = useApp((s) => s.cache.me?.profile);
   const friends = useApp((s) => s.cache.friends);
   const presence = useApp((s) => s.cache.presence);
   const [view, setView] = useState<TimelineView>(() => ({ start: Date.now() - 3 * 864e5 + 3 * 3600e3, end: Date.now() + 3 * 3600e3 }));
@@ -314,7 +303,7 @@ function ExactTimes({ list }: { list: boolean }) {
       /* only for this session */
     }
   };
-  const [density, setDensity] = useState<"comfy" | "compact" | "dense">("compact");
+  const [density, setDensity] = useState<"comfy" | "compact" | "dense">("comfy");
   const [sort, setSort] = useState<TSort>("time");
   const [q, setQ] = useState("");
   const [showOpts, setShowOpts] = useState(false);
@@ -324,13 +313,15 @@ function ExactTimes({ list }: { list: boolean }) {
   const gapEnd = Math.min(view.end, Date.now());
   const gaps = useMemo(() => (gapEnd > view.start ? gapsIn(data.coverage, view.start, gapEnd) : []), [data.coverage, view.start, gapEnd]);
   const covered = gapEnd > view.start ? 1 - totalMs(gaps) / (gapEnd - view.start) : 1;
-  const rowH = density === "comfy" ? 26 : density === "compact" ? 18 : 9;
+  const rowH = density === "comfy" ? 30 : density === "compact" ? 20 : 10;
 
   const rows = useMemo(() => {
     const join = joinMin * 60e3;
     const make = (id: string, name: string, me = false): TimelineRow => {
       const { spans, joined } = joinShortGaps(data.sessions[id] ?? [], join);
-      return { id, name, spans, joined, me, online: me ? false : presenceOf(friends[id], presence) === "online" };
+      const f = friends[id];
+      const pic = me ? (meProfile ? imgSrc(iconUrl(meProfile)) : undefined) : f ? imgSrc(iconUrl(f)) : undefined;
+      return { id, name, spans, joined, me, pic, online: me ? false : presenceOf(f, presence) === "online" };
     };
     const me = make(ME, t("times.you"), true);
     const mine = clipSpans(me.spans, view.start, view.end);

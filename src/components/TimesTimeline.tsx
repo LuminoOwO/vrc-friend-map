@@ -17,6 +17,18 @@ export interface TimelineRow {
   joined: number[];
   online?: boolean;
   me?: boolean;
+  /** Their picture (shown next to the name). */
+  pic?: string;
+  /** Typical week (day mode): how often they're usually on, per hour 0–23 (0–1). */
+  heat?: number[];
+  /** Day mode: hours you're both usually on. */
+  shared?: boolean[];
+}
+
+/** Day mode (Typical week): the 24 hours of one weekday instead of real dates. */
+export interface TimelineDay {
+  label: string;
+  isToday: boolean;
 }
 
 export interface TimelineView {
@@ -46,7 +58,6 @@ function rgbOf(ctx: CanvasRenderingContext2D, color: string): [number, number, n
   return [n[0], n[1], n[2]];
 }
 const rgba = (c: [number, number, number], a: number) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
-const lighten = (c: [number, number, number], k: number) => rgba([0, 1, 2].map((i) => Math.round(c[i] + (255 - c[i]) * k)) as [number, number, number], 1);
 
 function fmtTime(t: number): string {
   return new Date(t).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" });
@@ -72,6 +83,7 @@ export function TimesTimeline({
   onView,
   rowH,
   showJoins = false,
+  day,
   onOpen,
 }: {
   rows: TimelineRow[];
@@ -81,6 +93,8 @@ export function TimesTimeline({
   rowH: number;
   /** Draw a mark where a short disconnect was joined (off by default). */
   showJoins?: boolean;
+  /** Typical week: fixed hours of a day, rows shaded by `heat` (no dragging in time). */
+  day?: TimelineDay;
   onOpen: (id: string) => void;
 }) {
   const t = useT();
@@ -90,8 +104,25 @@ export function TimesTimeline({
   const [scrollY, setScrollY] = useState(0);
   const [tip, setTip] = useState<{ x: number; y: number; text: string[] } | null>(null);
   const [hoverId, setHoverId] = useState<string | null>(null);
-  const viewRef = useRef(view);
-  viewRef.current = view;
+  // Day mode shows 0:00–24:00 of a typical day (ms since midnight).
+  const vw: TimelineView = day ? { start: 0, end: 864e5 } : view;
+  const viewRef = useRef(vw);
+  viewRef.current = vw;
+  // Pictures for the name column, drawn once loaded.
+  const pics = useRef(new Map<string, HTMLImageElement | null>());
+  const [picTick, setPicTick] = useState(0);
+  const picOf = (url: string | undefined): HTMLImageElement | null => {
+    if (!url) return null;
+    const have = pics.current.get(url);
+    if (have !== undefined) return have && have.complete && have.naturalWidth ? have : null;
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => setPicTick((n) => n + 1);
+    img.onerror = () => pics.current.set(url, null);
+    img.src = url;
+    pics.current.set(url, img);
+    return null;
+  };
   const nameW = size.w < 560 ? 104 : 170;
   const plotW = Math.max(50, size.w - nameW);
   const maxScroll = Math.max(0, rows.length * rowH - (size.h - HEAD - rowH));
@@ -105,7 +136,7 @@ export function TimesTimeline({
     return () => ro.disconnect();
   }, []);
 
-  const xOf = useCallback((ms: number) => nameW + ((ms - view.start) / (view.end - view.start)) * plotW, [nameW, plotW, view]);
+  const xOf = useCallback((ms: number) => nameW + ((ms - vw.start) / (vw.end - vw.start)) * plotW, [nameW, plotW, vw.start, vw.end]);
 
   // ---------- drawing ----------
   useEffect(() => {
@@ -129,6 +160,7 @@ export function TimesTimeline({
     ctx.clearRect(0, 0, size.w, size.h);
     ctx.font = "12px system-ui, sans-serif";
     ctx.textBaseline = "middle";
+    const view = vw;
     const span = view.end - view.start;
     const step = STEPS.find((s) => (s / span) * plotW >= 64) ?? STEPS[STEPS.length - 1];
     const top = HEAD + rowH; // below "you"
@@ -148,7 +180,7 @@ export function TimesTimeline({
       days.push({ from: d, to: next.getTime() });
       d = next.getTime();
     }
-    days.forEach((d, i) => {
+    if (!day) days.forEach((d, i) => {
       const x0 = Math.max(nameW, xOf(d.from));
       const x1 = Math.min(size.w, xOf(d.to));
       if (x1 <= x0) return;
@@ -178,7 +210,7 @@ export function TimesTimeline({
     ctx.beginPath();
     ctx.rect(nameW, HEAD, plotW, size.h - HEAD);
     ctx.clip();
-    for (const g of gaps) {
+    for (const g of day ? [] : gaps) {
       const x0 = Math.max(nameW, xOf(g[0]));
       const x1 = Math.min(size.w, xOf(g[1]));
       if (x1 <= x0) continue;
@@ -217,11 +249,33 @@ export function TimesTimeline({
     }
     ctx.restore();
 
+    // Day mode: the weekday's name, and every hour (labels every 3).
+    if (day) {
+      ctx.font = "700 12px system-ui, sans-serif";
+      ctx.fillStyle = day.isToday ? col.accent : col.text;
+      const tw = ctx.measureText(day.label).width;
+      ctx.fillText(day.label, nameW + (plotW - tw) / 2, DAY_ROW / 2 + 1);
+      ctx.font = "10.5px system-ui, sans-serif";
+      for (let h = 0; h <= 24; h++) {
+        const x = xOf(h * 3600e3);
+        ctx.strokeStyle = h % 6 === 0 ? tint(0.16) : tint(0.06);
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, HEAD - 4);
+        ctx.lineTo(x + 0.5, size.h);
+        ctx.stroke();
+        if (h % 3 === 0 && h < 24) {
+          const d0 = new Date(2000, 0, 1, h);
+          const label = d0.toLocaleTimeString(language(), { hour: "numeric" });
+          ctx.fillStyle = col.muted;
+          ctx.fillText(label, x + 3, DAY_ROW + (HEAD - DAY_ROW) / 2 - 1);
+        }
+      }
+    }
     // Hours: faint lines and small labels under the day names.
     const off = new Date(view.start).getTimezoneOffset() * 60e3;
     const first = Math.ceil((view.start - off) / step) * step + off;
     ctx.font = "10.5px system-ui, sans-serif";
-    for (let ms = first; ms <= view.end; ms += step) {
+    for (let ms = first; !day && ms <= view.end; ms += step) {
       const x = xOf(ms);
       if (x < nameW || x > size.w) continue;
       const d = new Date(ms);
@@ -250,31 +304,39 @@ export function TimesTimeline({
         ctx.fillStyle = tint(0.07);
         ctx.fillRect(0, y, size.w, rowH);
       }
-      const barH = Math.max(3, Math.min(rowH - 6, 12));
-      const by = y + (rowH - barH) / 2;
-      // A faint track so short sessions are easy to follow along the row.
-      ctx.fillStyle = tint(0.04);
-      ctx.fillRect(nameW, by + barH / 2 - 0.5, plotW, 1);
-      const grad = ctx.createLinearGradient(0, by, 0, by + barH);
-      grad.addColorStop(0, lighten(acc, 0.25));
-      grad.addColorStop(1, col.accent);
-      ctx.fillStyle = grad;
-      if (r.me) {
-        ctx.shadowColor = col.accent;
-        ctx.shadowBlur = 8;
+      // Sessions fill the row and fade in and out at their ends.
+      const by = y + 1;
+      const barH = rowH - 2;
+      const strong = r.me || r.online || r.id === hoverId;
+      if (r.heat) {
+        // Typical week: one smooth band whose strength follows how often they're on.
+        const g = ctx.createLinearGradient(nameW, 0, nameW + plotW, 0);
+        const mut = rgbOf(ctx, col.muted);
+        r.heat.forEach((v, h) => {
+          const c = r.me || r.shared?.[h] ? acc : mut;
+          const a = v < 0.05 ? 0 : (r.me ? 0.2 : 0.12) + v * (r.me || r.shared?.[h] ? 0.7 : 0.45);
+          g.addColorStop((h + 0.5) / 24, rgba(c, a));
+        });
+        g.addColorStop(0, rgba(r.me || r.shared?.[0] ? acc : mut, r.heat[0] < 0.05 ? 0 : 0.12 + r.heat[0] * 0.5));
+        g.addColorStop(1, rgba(r.me || r.shared?.[23] ? acc : mut, r.heat[23] < 0.05 ? 0 : 0.12 + r.heat[23] * 0.5));
+        ctx.fillStyle = g;
+        ctx.fillRect(nameW, by, plotW, barH);
       }
       for (const s of r.spans) {
         if (s[1] < view.start || s[0] > view.end) continue;
         const x0 = Math.max(nameW, xOf(s[0]));
         const x1 = Math.min(size.w, xOf(s[1]));
-        const w = Math.max(3, x1 - x0);
-        ctx.globalAlpha = r.me || r.online || r.id === hoverId ? 1 : 0.78;
-        ctx.beginPath();
-        ctx.roundRect(x0, by, w, barH, Math.min(barH / 2, w / 2));
-        ctx.fill();
+        const w = Math.max(2, x1 - x0);
+        const fade = Math.min(14, w / 2);
+        const a = r.me ? 0.85 : strong ? 0.75 : 0.55;
+        const g = ctx.createLinearGradient(x0, 0, x0 + w, 0);
+        g.addColorStop(0, rgba(acc, 0));
+        g.addColorStop(fade / w, rgba(acc, a));
+        g.addColorStop(1 - fade / w, rgba(acc, a));
+        g.addColorStop(1, rgba(acc, 0));
+        ctx.fillStyle = g;
+        ctx.fillRect(x0, by, w, barH);
       }
-      ctx.shadowBlur = 0;
-      ctx.globalAlpha = 1;
       // Joined short disconnects: a small notch (only when asked for).
       ctx.fillStyle = col.warn;
       for (const j of showJoins ? r.joined : []) {
@@ -296,15 +358,48 @@ export function TimesTimeline({
         ctx.beginPath();
         ctx.rect(0, y, nameW - 10, rowH);
         ctx.clip();
-        if (r.online) {
+        // Picture (a letter until it has loaded), with a green dot when they're online.
+        const ps = Math.min(rowH - 4, 24);
+        let tx = 10;
+        if (ps >= 12) {
+          const cx = 8 + ps / 2;
+          const cy = y + rowH / 2;
+          const img = picOf(r.pic);
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(cx, cy, ps / 2, 0, Math.PI * 2);
+          ctx.clip();
+          if (img) ctx.drawImage(img, cx - ps / 2, cy - ps / 2, ps, ps);
+          else {
+            ctx.fillStyle = tint(0.18);
+            ctx.fillRect(cx - ps / 2, cy - ps / 2, ps, ps);
+            ctx.fillStyle = col.text;
+            ctx.font = `600 ${Math.round(ps * 0.45)}px system-ui, sans-serif`;
+            const l = r.name.slice(0, 1).toUpperCase();
+            ctx.fillText(l, cx - ctx.measureText(l).width / 2, cy + 0.5);
+          }
+          ctx.restore();
+          if (r.online) {
+            ctx.fillStyle = "#51e57e";
+            ctx.strokeStyle = col.bg;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx + ps * 0.36, cy + ps * 0.36, Math.max(3, ps * 0.16), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.lineWidth = 1;
+          }
+          tx = 8 + ps + 8;
+        } else if (r.online) {
           ctx.fillStyle = "#51e57e";
           ctx.beginPath();
-          ctx.arc(12, y + rowH / 2, 3.5, 0, Math.PI * 2);
+          ctx.arc(8, y + rowH / 2, 3, 0, Math.PI * 2);
           ctx.fill();
+          tx = 16;
         }
-        ctx.fillStyle = r.me ? col.accent : r.online || r.id === hoverId ? col.text : rgba(txt, 0.78);
-        ctx.font = `${r.me ? "700 " : r.online ? "600 " : ""}${rowH >= 20 ? 13 : 11.5}px system-ui, sans-serif`;
-        ctx.fillText(r.name, 22, y + rowH / 2 + 0.5);
+        ctx.fillStyle = r.me ? col.accent : r.online || r.id === hoverId ? col.text : rgba(txt, 0.85);
+        ctx.font = `${r.me ? "700 " : r.online ? "600 " : "500 "}${rowH >= 20 ? 13 : 11.5}px system-ui, sans-serif`;
+        ctx.fillText(r.name, tx, y + rowH / 2 + 0.5);
         ctx.restore();
       }
     };
@@ -340,7 +435,8 @@ export function TimesTimeline({
     ctx.stroke();
 
     // Now: a line with a small "now" tag in the header.
-    const nx = xOf(Date.now());
+    const nowD = new Date();
+    const nx = day ? (day.isToday ? xOf((nowD.getHours() * 60 + nowD.getMinutes()) * 60e3) : -1) : xOf(Date.now());
     if (nx >= nameW && nx <= size.w) {
       ctx.strokeStyle = col.warn;
       ctx.lineWidth = 2;
@@ -360,13 +456,14 @@ export function TimesTimeline({
       ctx.fillStyle = "#1a1206";
       ctx.fillText(label, lx + 5, DAY_ROW + 10.5);
     }
-  }, [rows, gaps, view, size, sy, rowH, showJoins, nameW, plotW, xOf, hoverId, t]);
+  }, [rows, gaps, vw.start, vw.end, size, sy, rowH, showJoins, nameW, plotW, xOf, hoverId, t, day, picTick]);
 
   // ---------- dragging, zooming ----------
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const drag = useRef<{ x: number; y: number; start: number; end: number; sy: number; moved: boolean; pinch?: number } | null>(null);
 
   const setRange = (start: number, end: number) => {
+    if (day) return;
     let s = start;
     let e = end;
     const len = Math.min(MAX_SPAN, Math.max(MIN_SPAN, e - s));
@@ -408,6 +505,14 @@ export function TimesTimeline({
     }
     const v = viewRef.current;
     const at = v.start + ((p.x - nameW) / plotW) * (v.end - v.start);
+    if (day && r.heat) {
+      const h = Math.max(0, Math.min(23, Math.floor(at / 3600e3)));
+      const val = r.heat[h] ?? 0;
+      const how = val >= 0.6 ? t("timeline.dayUsually") : val >= 0.35 ? t("timeline.dayOften") : val >= 0.1 ? t("timeline.daySometimes") : t("timeline.dayRarely");
+      const hh = (n: number) => new Date(2000, 0, 1, n).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" });
+      setTip({ x: p.x, y: p.y, text: [r.name, `${day.label} ${hh(h)} – ${hh((h + 1) % 24)}`, how + (r.shared?.[h] && !r.me ? ` · ${t("timeline.dayYouToo")}` : "")] });
+      return;
+    }
     const s = r.spans.find((x) => at >= x[0] - 60e3 && at <= x[1] + 60e3);
     if (s) {
       const joins = r.joined.filter((j) => j >= s[0] && j <= s[1]).length;
@@ -514,7 +619,7 @@ export function TimesTimeline({
           if (p.x > nameW) zoomAt(e.shiftKey ? 2 : 0.5, p.x);
         }}
       />
-      <div className="tl-zoom" role="group" aria-label={t("timeline.zoom")}>
+      {!day && <div className="tl-zoom" role="group" aria-label={t("timeline.zoom")}>
         <button className="icon-btn" title={t("timeline.zoomOut")} onClick={() => zoomAt(1 / 0.6, nameW + plotW / 2)} disabled={view.end - view.start >= MAX_SPAN}>
           <Icon name="minus" size={15} />
         </button>
@@ -522,7 +627,7 @@ export function TimesTimeline({
         <button className="icon-btn" title={t("timeline.zoomIn")} onClick={() => zoomAt(0.6, nameW + plotW / 2)} disabled={view.end - view.start <= MIN_SPAN}>
           <Icon name="plus" size={15} />
         </button>
-      </div>
+      </div>}
       {tip && (
         <div className="tl-tip" style={{ left: Math.min(tip.x + 14, size.w - 260), top: Math.min(tip.y + 14, size.h - 70) }}>
           {tip.text.map((l, i) => (i === 0 ? <b key={i}>{l}</b> : <span key={i}>{l}</span>))}

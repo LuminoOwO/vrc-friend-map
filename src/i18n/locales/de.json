@@ -621,7 +621,12 @@
     "noteServer": "Der Logger deines Servers füllt die Zeiten, in denen dieses Gerät aus ist. Gestreift: keiner von beiden hat zugeschaut.",
     "coverage": "Daten für {{pct}} % der gezeigten Zeit.",
     "setUpServer": "Server einrichten",
-    "serverLoading": "Lade die Zeiten deines Servers …"
+    "serverLoading": "Lade die Zeiten deines Servers …",
+    "dayUsually": "meist online",
+    "dayOften": "oft online",
+    "daySometimes": "manchmal online",
+    "dayRarely": "selten online",
+    "dayYouToo": "du bist dann meist auch da"
   },
   "quickEdit": {
     "status": "Status",

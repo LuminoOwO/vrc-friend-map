@@ -2444,7 +2444,12 @@
     "noteServer": "Your server's logger fills in the times this device is off. Striped areas: neither was watching.",
     "coverage": "Data for {{pct}}% of the shown time.",
     "setUpServer": "Set up a server",
-    "serverLoading": "Loading your server's times…"
+    "serverLoading": "Loading your server's times…",
+    "dayUsually": "usually online",
+    "dayOften": "often online",
+    "daySometimes": "sometimes online",
+    "dayRarely": "rarely online",
+    "dayYouToo": "you're usually on too"
   },
   "quickEdit": {
     "status": "Status",
