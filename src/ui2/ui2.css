@@ -449,6 +449,8 @@
 .ui2-profile .profile-hero-row .profile-icon { grid-area: icon; position: relative; left: auto; top: auto; align-self: end; width: 120px; height: 120px; border-width: 4px; box-shadow: 0 0 0 5px var(--profile-bg), 0 12px 30px rgba(0, 0, 0, 0.45); transition: transform 0.2s; }
 .ui2-profile .profile-hero-row .profile-icon.viewable:hover { transform: scale(1.03); }
 .ui2-profile .profile-hero-row h2 { grid-area: name; margin: 0; font-size: 28px; font-weight: 800; line-height: 1.15; }
+.ui2-profile .profile-hero-row h2 { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 10px; }
+.ui2-profile .profile-hero-row h2 .vrcplus-badge { flex: none; }
 .ui2-profile .profile-hero-row .status-pill { grid-area: status; position: static; justify-self: start; padding: 4px 12px; background: var(--card); border: 1px solid var(--border); }
 .ui2-profile .profile-hero-row .profile-sub { grid-area: sub; color: var(--muted); }
 .ui2-profile .profile-cols { padding: 18px 24px 24px; }
