@@ -21,6 +21,12 @@ errors or raw text keys.
 4. ~~Phones: Media → Pictures says pictures are looked for in "Pictures/VRChat (Windows) and the
    Proton folder (Linux)", which makes no sense on a phone (VRChat doesn't save pictures there).~~ (fixed)
 
+## Owner ideas (2026-11-23)
+
+- **More realtime profiles:** keep reloading profiles and other data in the background all the
+  time, slowly enough not to spam the VRChat API. Crowdsource where possible: friends share the
+  profiles (and other data) they fetched through the servers, so each app asks VRChat less.
+
 ## Priorities (owner, 2026-11-20)
 
 Work through these in this order, one at a time; the rest of the file is the detail.
