@@ -58,6 +58,9 @@ function rgbOf(ctx: CanvasRenderingContext2D, color: string): [number, number, n
   return [n[0], n[1], n[2]];
 }
 const rgba = (c: [number, number, number], a: number) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+/** `a` blended towards `b` by `k` (0–1). */
+const mixRgb = (a: [number, number, number], b: [number, number, number], k: number): [number, number, number] =>
+  [0, 1, 2].map((i) => Math.round(a[i] + (b[i] - a[i]) * k)) as [number, number, number];
 
 function fmtTime(t: number): string {
   return new Date(t).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" });
@@ -304,33 +307,47 @@ export function TimesTimeline({
         ctx.fillStyle = tint(0.07);
         ctx.fillRect(0, y, size.w, rowH);
       }
-      // Sessions: solid blocks filling the row, corners slightly rounded.
+      // Sessions: solid blocks filling the row, corners slightly rounded, with a little shading
+      // (lighter at the top, a fine highlight on top, a darker bottom edge) so they stand out.
       const by = y + 2;
       const barH = Math.max(2, rowH - 4);
       const radius = Math.min(4, barH / 3);
-      const strong = r.me || r.online || r.id === hoverId;
+      const block = (x: number, w: number, c: [number, number, number]) => {
+        const r0 = Math.min(radius, w / 2);
+        ctx.save();
+        ctx.beginPath();
+        ctx.roundRect(x, by, w, barH, r0);
+        ctx.clip();
+        const g = ctx.createLinearGradient(0, by, 0, by + barH);
+        g.addColorStop(0, rgba(mixRgb(c, [255, 255, 255], 0.22), 1));
+        g.addColorStop(0.55, rgba(c, 1));
+        g.addColorStop(1, rgba(mixRgb(c, [0, 0, 0], 0.18), 1));
+        ctx.fillStyle = g;
+        ctx.fillRect(x, by, w, barH);
+        if (barH >= 8) {
+          ctx.fillStyle = "rgba(255,255,255,0.28)";
+          ctx.fillRect(x, by, w, 1);
+          ctx.fillStyle = "rgba(0,0,0,0.28)";
+          ctx.fillRect(x, by + barH - 1, w, 1);
+        }
+        ctx.restore();
+      };
+      const bgc = rgbOf(ctx, col.bg);
       if (r.heat) {
-        // Typical week: one square per hour, stronger the more often they're on then.
+        // Typical week: one square per hour; the more often they're on, the stronger the colour.
         const mut = rgbOf(ctx, col.muted);
         const cw = plotW / 24;
         r.heat.forEach((v, h) => {
           if (v < 0.05) return;
-          const c = r.me || r.shared?.[h] ? acc : mut;
-          ctx.fillStyle = rgba(c, (r.me ? 0.25 : 0.15) + v * (r.me || r.shared?.[h] ? 0.75 : 0.5));
-          ctx.beginPath();
-          ctx.roundRect(nameW + h * cw + 1, by, Math.max(1, cw - 2), barH, Math.min(radius, (cw - 2) / 3));
-          ctx.fill();
+          const base = r.me || r.shared?.[h] ? acc : mut;
+          block(nameW + h * cw + 1, Math.max(1, cw - 2), mixRgb(bgc, base, 0.35 + v * 0.65));
         });
       }
-      ctx.fillStyle = rgba(acc, r.me ? 0.95 : strong ? 0.85 : 0.65);
       for (const s of r.spans) {
         if (s[1] < view.start || s[0] > view.end) continue;
         const x0 = Math.max(nameW, xOf(s[0]));
         const x1 = Math.min(size.w, xOf(s[1]));
-        const w = Math.max(2, x1 - x0);
-        ctx.beginPath();
-        ctx.roundRect(x0, by, w, barH, Math.min(radius, w / 2));
-        ctx.fill();
+        block(x0, Math.max(2, x1 - x0), acc);
       }
       // Joined short disconnects: a small notch (only when asked for).
       ctx.fillStyle = col.warn;
