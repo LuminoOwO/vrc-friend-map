@@ -382,7 +382,9 @@
   },
   "personExtras": {
     "them": "diese Person",
-    "openProfile": "Profil öffnen"
+    "openProfile": "Profil öffnen",
+    "pictureIn": "Bild in {{world}}",
+    "picture": "Bild"
   },
   "sections": {
     "blockedPeople": "Alle, die du blockiert hast, und warum: Grund hinzufügen, ändern oder löschen."

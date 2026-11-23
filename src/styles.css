@@ -1273,3 +1273,4 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
 .here-switch button { height: 26px; padding: 0 9px; border: 0; border-radius: 6px; background: none; color: var(--muted); font: inherit; cursor: pointer; white-space: nowrap; }
 .here-switch button:hover { color: var(--text); }
 .here-switch button.on { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }
+.pic-more { display: grid; place-items: center; color: var(--muted); font-weight: 700; font-size: 15px; }

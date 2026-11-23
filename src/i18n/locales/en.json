@@ -582,7 +582,9 @@
     "ageAgetext": "Age: {{ageText}}",
     "yourPicturesWithName": "Your pictures with {{name}}:",
     "them": "them",
-    "openProfile": "Open profile"
+    "openProfile": "Open profile",
+    "pictureIn": "Picture in {{world}}",
+    "picture": "Picture"
   },
   "content": {
     "couldnTLoadThisWorld": "Couldn't load this world.",

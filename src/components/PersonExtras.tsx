@@ -31,6 +31,7 @@ import { requestInvite } from "../invites";
 import { Icon } from "./Icon";
 import { usePersonLog } from "./LogbookView";
 import { pictureSrc } from "../logbook";
+import { openImage } from "./ImageViewer";
 
 export function StarButton({ id }: { id: string }) {
   const on = useApp((s) => s.local.starred?.includes(id) ?? false);
@@ -531,11 +532,35 @@ export function PersonLog({ id, name }: { id: string; name: string }) {
             <b>{tr("personExtras.yourPicturesWithName", { name })}</b> {data.pics.length}
           </p>
           <div className="pic-grid small-pics">
-            {data.pics.slice(0, 12).map((p) => (
-              <a key={p.path} className="pic" href={pictureSrc(p.path)} target="_blank" rel="noreferrer" title={p.worldName}>
+            {data.pics.slice(0, 12).map((p, i) => (
+              <button
+                key={p.path}
+                className="pic"
+                title={p.worldName}
+                aria-label={p.worldName ? tr("personExtras.pictureIn", { world: p.worldName }) : tr("personExtras.picture")}
+                onClick={() =>
+                  openImage(
+                    data.pics.map((x) => ({ url: x.path, title: [name, x.worldName].filter(Boolean).join(" – "), local: { src: pictureSrc(x.path), path: x.path } })),
+                    i,
+                  )
+                }
+              >
                 <img src={pictureSrc(p.path)} alt="" loading="lazy" />
-              </a>
+              </button>
             ))}
+            {data.pics.length > 12 && (
+              <button
+                className="pic pic-more"
+                onClick={() =>
+                  openImage(
+                    data.pics.map((x) => ({ url: x.path, title: [name, x.worldName].filter(Boolean).join(" – "), local: { src: pictureSrc(x.path), path: x.path } })),
+                    12,
+                  )
+                }
+              >
+                +{data.pics.length - 12}
+              </button>
+            )}
           </div>
         </>
       )}

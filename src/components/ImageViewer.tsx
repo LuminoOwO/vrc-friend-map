@@ -9,6 +9,9 @@ export interface ViewerItem {
   url: string;
   /** What it is, e.g. "Lumi – profile picture". Also the download's file name. */
   title: string;
+  /** A picture already on this device (your VRChat screenshots): shown from here, with
+   *  "Show in folder" instead of a download. */
+  local?: { src: string; path: string };
 }
 
 /** Open the fullscreen viewer. `items` can hold several images to flip through. */
@@ -55,7 +58,7 @@ export function ImageViewer() {
 
 function Viewer({ items, index }: { items: ViewerItem[]; index: number }) {
   const item = items[index];
-  const [src, setSrc] = useState(() => imgSrc(fullSize(item.url))!);
+  const [src, setSrc] = useState(() => item.local?.src ?? imgSrc(fullSize(item.url))!);
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
   const [view, setView] = useState({ s: 1, x: 0, y: 0 }); // scale and offset from the centre
   const [fit, setFit] = useState(1);
@@ -198,10 +201,18 @@ function Viewer({ items, index }: { items: ViewerItem[]; index: number }) {
           <button className="btn small" title={tr("viewer.actualSize")} onClick={() => setView({ s: 1, x: 0, y: 0 })}>
             1:1
           </button>
-          <button className="btn small primary" disabled={saving} onClick={download} title={tr("viewer.saveToDownloadsVrcFriend")}>
-            <Icon name="download" size={16} /> <span className="hide-sm">{saving ? tr("viewer.saving") : "Download"}</span>
-          </button>
-          {lastSaved && isTauri && !/android/i.test(navigator.userAgent) && (
+          {!item.local && (
+            <button className="btn small primary" disabled={saving} onClick={download} title={tr("viewer.saveToDownloadsVrcFriend")}>
+              <Icon name="download" size={16} /> <span className="hide-sm">{saving ? tr("viewer.saving") : "Download"}</span>
+            </button>
+          )}
+          {item.local && isTauri && !/android/i.test(navigator.userAgent) && (
+            <button className="btn small" onClick={() => backend.revealFile(item.local!.path).catch(() => showToast(tr("viewer.couldnTOpenTheFolder")))}>
+              <span className="hide-sm">{tr("viewer.showInFolder")}</span>
+              <Icon name="folder" size={16} />
+            </button>
+          )}
+          {!item.local && lastSaved && isTauri && !/android/i.test(navigator.userAgent) && (
             <button className="btn small" onClick={() => backend.revealFile(lastSaved).catch(() => showToast(tr("viewer.couldnTOpenTheFolder")))}>
               <span className="hide-sm">{tr("viewer.showInFolder")}</span>
               <Icon name="folder" size={16} />
@@ -232,6 +243,7 @@ function Viewer({ items, index }: { items: ViewerItem[]; index: number }) {
           style={{ transform: `translate(-50%, -50%) translate(${view.x}px, ${view.y}px) scale(${view.s})`, visibility: natural ? "visible" : "hidden" }}
           onLoad={(e) => setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}
           onError={() => {
+            if (item.local) return;
             const small = imgSrc(item.url)!;
             if (src !== small) setSrc(small);
           }}
