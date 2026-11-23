@@ -1,4 +1,5 @@
 const PATHS: Record<string, string> = {
+  edit: "M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4M13.5 6.5l4 4",
   heart: "M19.5 12.6l-7.5 7.4l-7.5 -7.4a5 5 0 1 1 7.5 -6.6a5 5 0 1 1 7.5 6.6",
   check: "M5 12l5 5l10 -10",
   chart: "M3 3v18h18M7 15l4 -4l3 3l5 -6",

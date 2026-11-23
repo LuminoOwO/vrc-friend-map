@@ -10,6 +10,7 @@ import { betaActive } from "../ui2/active";
 import { removedByMe } from "../notifications";
 import { AgePanel } from "./AgePanel";
 import { ProfileEditor } from "./ProfileEditor";
+import { PronounsEdit, StatusEdit } from "./QuickEdit";
 import { concernAbout } from "../age";
 import { PERSON_MODES, setPersonMode } from "./NotificationsSection";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -125,6 +126,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const here = useApp((s) => s.here);
   const [newCircle, setNewCircle] = useState("");
   const [groupsOpen, setGroupsOpen] = useState(false);
+  const [quick, setQuick] = useState<"status" | "pronouns" | null>(null);
   const [bioOpen, setBioOpen] = useState(false);
   const [instance, setInstance] = useState<{ users: number; capacity?: number } | null>(null);
   // Friends, people who aren't friends yet (instance mates, potential friends), or you.
@@ -268,10 +270,27 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
       >
         {icon ? <img src={icon} alt="" /> : <span>{f.displayName.slice(0, 1).toUpperCase()}</span>}
       </div>
-      <span className="status-pill" data-flip="status">
-        <span className="dot" style={{ background: sColor }} />
-        <span>{f.statusDescription || presenceLabel(f, p)}</span>
-      </span>
+      {relation === "me" ? (
+        <span className="qe-wrap">
+          <button
+            className="status-pill qe-anchor editable"
+            data-flip="status"
+            title={tr("quickEdit.clickToChange")}
+            aria-expanded={quick === "status"}
+            onClick={() => setQuick(quick === "status" ? null : "status")}
+          >
+            <span className="dot" style={{ background: sColor }} />
+            <span>{f.statusDescription || presenceLabel(f, p)}</span>
+            <Icon name="edit" size={12} />
+          </button>
+          {quick === "status" && <StatusEdit id={id} status={f.status} text={f.statusDescription ?? ""} onClose={() => setQuick(null)} />}
+        </span>
+      ) : (
+        <span className="status-pill" data-flip="status">
+          <span className="dot" style={{ background: sColor }} />
+          <span>{f.statusDescription || presenceLabel(f, p)}</span>
+        </span>
+      )}
     </div>
   );
   const nameEl = (
@@ -286,10 +305,29 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   );
   const subEl = (
     <div className="profile-sub">
-      {detail?.pronouns && (
-        <span className="muted" data-flip-fade>
-          {detail.pronouns}
+      {relation === "me" ? (
+        <span className="qe-wrap">
+          <button
+            className="qe-anchor qe-pronouns muted"
+            data-flip-fade
+            title={tr("quickEdit.clickToChange")}
+            aria-expanded={quick === "pronouns"}
+            onClick={() => setQuick(quick === "pronouns" ? null : "pronouns")}
+          >
+            {detail?.pronouns || (
+              <>
+                <Icon name="plus" size={12} /> {tr("quickEdit.addPronouns")}
+              </>
+            )}
+          </button>
+          {quick === "pronouns" && <PronounsEdit id={id} value={detail?.pronouns ?? ""} onClose={() => setQuick(null)} />}
         </span>
+      ) : (
+        detail?.pronouns && (
+          <span className="muted" data-flip-fade>
+            {detail.pronouns}
+          </span>
+        )
       )}
       {detail?.ageVerified && (
         <span className="verified" data-flip-fade title={tr("profile.ageVerifiedByVrchat")}>

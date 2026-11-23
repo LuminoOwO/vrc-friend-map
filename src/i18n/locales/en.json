@@ -2420,5 +2420,21 @@
     "listAbout_one": "{{from}} – {{to}}: {{count}} session.",
     "listAbout_other": "{{from}} – {{to}}: {{count}} sessions.",
     "earlier": "A week earlier"
+  },
+  "quickEdit": {
+    "status": "Status",
+    "statusText": "Status text ({{n}}/32)",
+    "statusTextPlaceholder": "What are you up to?",
+    "pronouns": "Pronouns",
+    "custom": "Your own ({{n}}/32)",
+    "customPlaceholder": "e.g. she/they, any",
+    "addPronouns": "Add pronouns",
+    "clickToChange": "Click to change",
+    "clear": "Clear",
+    "remove": "Remove",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving…",
+    "demo": "Demo: changed here only, not on VRChat."
   }
 }

@@ -6,6 +6,9 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Change your status and pronouns on your profile:** click the status pill to pick a status
+  and write a status text (recent ones offered); click the pronouns (or "Add pronouns") for
+  common choices or your own.
 - **Search someone's groups:** "View all" on a profile has a search bar (name, short code,
   description).
 - **Default group picture** (colour + first letter) for groups without an icon or whose icon

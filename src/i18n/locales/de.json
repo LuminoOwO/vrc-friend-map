@@ -604,5 +604,21 @@
     "listAbout_one": "{{from}} – {{to}}: {{count}} Sitzung.",
     "listAbout_other": "{{from}} – {{to}}: {{count}} Sitzungen.",
     "earlier": "Eine Woche früher"
+  },
+  "quickEdit": {
+    "status": "Status",
+    "statusText": "Statustext ({{n}}/32)",
+    "statusTextPlaceholder": "Was machst du gerade?",
+    "pronouns": "Pronomen",
+    "custom": "Eigene ({{n}}/32)",
+    "customPlaceholder": "z. B. sie/they, egal",
+    "addPronouns": "Pronomen hinzufügen",
+    "clickToChange": "Zum Ändern klicken",
+    "clear": "Leeren",
+    "remove": "Entfernen",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "saving": "Speichert…",
+    "demo": "Demo: nur hier geändert, nicht bei VRChat."
   }
 }
