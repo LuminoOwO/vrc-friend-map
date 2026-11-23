@@ -6,6 +6,21 @@ their round. The bigger, discussed list lives in GitHub issue #14.
 Rounds are in the suggested order (2026-11-16): all features first, the UI rework last so it
 can be designed around everything. Nothing here is started.
 
+## Bugs found in a test pass (2026-11-23)
+
+Found by clicking through the new features with the demo (PC 1400/1100 px wide, Pixel 7,
+English + German). Smoke test (every view, Settings tab, profile, inbox, who's here) had no
+errors or raw text keys.
+
+1. Online times: a lone "·" sits at the end of the legend line (it belongs before the counts,
+   which wrap to the next line).
+2. Map toolbar: the Friend groups button doesn't show that the panel is open, and clicking it
+   again doesn't close it.
+3. Friend groups panel: Escape doesn't close it (only the back arrow does), unlike every other
+   panel and dialog.
+4. Phones: Media → Pictures says pictures are looked for in "Pictures/VRChat (Windows) and the
+   Proton folder (Linux)", which makes no sense on a phone (VRChat doesn't save pictures there).
+
 ## Priorities (owner, 2026-11-20)
 
 Work through these in this order, one at a time; the rest of the file is the detail.
