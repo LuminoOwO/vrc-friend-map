@@ -328,19 +328,23 @@ export function TimesTimeline({
           block(nameW + h * cw + 1, Math.max(1, cw - 2), mixRgb(bgc, base, 0.35 + v * 0.65));
         });
       }
-      // Sessions closer together than a few pixels at this zoom are drawn as one block, so many
+      // Sessions closer together than ~16 px at this zoom are drawn as one block, so many
       // short sessions don't turn into a comb of thin lines. Zooming in separates them again.
-      const MERGE_PX = 6;
+      // Also always merge breaks under 15 minutes (a quick restart or rejoin).
+      const MERGE_PX = 16;
+      const MERGE_MS = 15 * 60e3;
+      let curEnd = 0;
       let cur: [number, number] | null = null;
       const vis = r.spans.filter((s) => s[1] >= view.start && s[0] <= view.end).sort((a, b) => a[0] - b[0]);
       for (const s of vis) {
         const x0 = Math.max(nameW, xOf(s[0]));
         const x1 = Math.min(size.w, xOf(s[1]));
-        if (cur && x0 - cur[1] < MERGE_PX) cur[1] = Math.max(cur[1], x1);
+        if (cur && (x0 - cur[1] < MERGE_PX || s[0] - curEnd < MERGE_MS)) cur[1] = Math.max(cur[1], x1);
         else {
           if (cur) block(cur[0], Math.max(2, cur[1] - cur[0]), acc);
           cur = [x0, x1];
         }
+        curEnd = Math.max(curEnd, s[1]);
       }
       if (cur) block(cur[0], Math.max(2, cur[1] - cur[0]), acc);
       // Joined short disconnects: a small notch (only when asked for).
