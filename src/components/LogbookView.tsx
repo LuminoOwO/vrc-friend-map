@@ -34,7 +34,7 @@ import { Icon } from "./Icon";
 import { Range } from "./Range";
 import { SkelBlock } from "../ui2/smooth";
 
-type Tab = "day" | "stats" | "videos" | "pictures" | "year";
+type Tab = "day" | "stats" | "videos" | "year";
 
 export function LogbookView() {
   const [tab, setTab] = useState<Tab>("day");
@@ -52,7 +52,6 @@ export function LogbookView() {
             ["day", tr("logbook.dayByDay")],
             ["stats", tr("logbook.rankings")],
             ["videos", tr("logbook.videoLinks")],
-            ["pictures", tr("logbook.pictures")],
             ["year", tr("logbook.yearInReview")],
           ] as [Tab, string][]
         ).map(([k, l]) => (
@@ -73,7 +72,6 @@ export function LogbookView() {
           {tab === "day" && <DayView visits={visits} />}
           {tab === "stats" && <Stats visits={visits} />}
           {tab === "videos" && <Videos visits={visits} />}
-          {tab === "pictures" && <Pictures visits={visits} />}
           {tab === "year" && <YearInReview visits={visits} />}
         </>
       )}
@@ -422,6 +420,18 @@ function Videos({ visits }: { visits: TimelineVisit[] }) {
 }
 
 // ---------- pictures ----------
+
+/** Media → Pictures: your screenshots, tagged with the world and people from your game logs
+ *  (shown untagged when there are no logs). */
+export function TaggedPictures() {
+  const [visits, setVisits] = useState<TimelineVisit[] | null>(null);
+  const lastScan = useApp((s) => s.logs.lastScan);
+  useEffect(() => {
+    allVisits(true).then(setVisits, () => setVisits([]));
+  }, [lastScan]);
+  if (!visits) return <SkelBlock lines={3} label={tr("logbook.loadingYourGameLogs")} />;
+  return <Pictures visits={visits} />;
+}
 
 function Pictures({ visits }: { visits: TimelineVisit[] }) {
   const extra = useApp((s) => s.settings.logs.pictureDirs);

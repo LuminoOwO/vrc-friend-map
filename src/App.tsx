@@ -201,7 +201,8 @@ export default function App() {
           {view === "activity" && <ActivityView />}
           {view === "insights" && <InsightsView />}
           {view === "logbook" && <LogbookView />}
-          {view === "vrchat" && <VrchatView />}
+          {view === "vrchat" && <VrchatView section="groups" />}
+          {view === "media" && <VrchatView section="media" />}
         </div>
         {selectedId && profileAs === "sidebar" && <DetailPanel id={selectedId} />}
       </div>

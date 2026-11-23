@@ -21,7 +21,9 @@
     "syncLog": "Sync-Protokoll",
     "classic": "Zurück zur klassischen Oberfläche",
     "views": "Ansichten",
-    "cards": "Karten"
+    "cards": "Karten",
+    "groups": "Gruppen & Events",
+    "media": "Medien"
   },
   "phone": {
     "searchFriends": "Freunde suchen",
@@ -478,5 +480,9 @@
     "translate": "Beim Übersetzen helfen",
     "privacy": "Deine Daten bleiben auf deinen Geräten und deinen eigenen Servern; die App spricht nur mit deinem Login mit VRChat.",
     "license": "Frei und quelloffen (MIT-Lizenz)."
+  },
+  "palette": {
+    "groupsEvents": "Gruppen & Events",
+    "media": "Medien: Bilder, Favoriten, Avatare, Welten"
   }
 }

@@ -21,7 +21,9 @@
     "syncLog": "Sync log",
     "classic": "Back to the classic interface",
     "views": "Views",
-    "cards": "Cards"
+    "cards": "Cards",
+    "groups": "Groups & events",
+    "media": "Media"
   },
   "phone": {
     "searchFriends": "Search friends",
@@ -1670,7 +1672,9 @@
     "friendGroupDetection": "Friend group detection",
     "serversAndSharing": "Servers and sharing",
     "updates": "Updates",
-    "localData": "Local data"
+    "localData": "Local data",
+    "groupsEvents": "Groups & events",
+    "media": "Media: pictures, favorites, avatars, worlds"
   },
   "parts": {
     "notifications": "Notifications",

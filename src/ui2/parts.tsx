@@ -34,7 +34,8 @@ export const RAIL: { key: View; label: string; icon: string }[] = [
   rail("activity", "menu.activity", "clock"),
   rail("insights", "menu.insights", "bulb"),
   rail("logbook", "menu.logbook", "calendar"),
-  rail("vrchat", "menu.vrchat", "world"),
+  rail("vrchat", "menu.groups", "flag"),
+  rail("media", "menu.media", "image"),
   rail("lists", "menu.lists", "share"),
 ];
 
@@ -51,7 +52,8 @@ export function ViewBody({ view }: { view: View }) {
       {view === "activity" && <ActivityView />}
       {view === "insights" && <InsightsView />}
       {view === "logbook" && <LogbookView />}
-      {view === "vrchat" && <VrchatView />}
+      {view === "vrchat" && <VrchatView section="groups" />}
+      {view === "media" && <VrchatView section="media" />}
     </>
   );
 }

@@ -17,7 +17,8 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: "activity", get label() { return t("menu.activity"); }, icon: "clock" },
   { key: "insights", get label() { return t("menu.insights"); }, icon: "bulb" },
   { key: "logbook", get label() { return t("menu.logbook"); }, icon: "calendar" },
-  { key: "vrchat", get label() { return t("menu.vrchat"); }, icon: "world" },
+  { key: "vrchat", get label() { return t("menu.groups"); }, icon: "flag" },
+  { key: "media", get label() { return t("menu.media"); }, icon: "image" },
 ];
 
 function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {

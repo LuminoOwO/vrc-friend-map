@@ -1,7 +1,7 @@
-// "VRChat" tab: your groups and their upcoming events, favorites (friend
-// groups, worlds, avatars), your avatars, prints / stickers / emojis /
-// gallery pictures (with uploading and cropping), world notes, and opening
-// any VRChat link.
+// "Groups & events": your groups and their upcoming events. "Media": your pictures
+// (screenshots, tagged with world and people), favorites (friend groups, worlds,
+// avatars), your avatars, prints / stickers / emojis / gallery pictures (with uploading
+// and cropping), world notes. Both can open any VRChat link.
 import { t as tr } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
@@ -36,39 +36,54 @@ import { Icon } from "./Icon";
 import { openImage } from "./ImageViewer";
 import { Range } from "./Range";
 import { SkelBlock } from "../ui2/smooth";
+import { TaggedPictures } from "./LogbookView";
 
-type Tab = "groups" | "favorites" | "avatars" | "files" | "worlds";
+type Tab = "pictures" | "favorites" | "avatars" | "files" | "worlds";
 
 const EMPTY_OBJ: Record<string, never> = {};
 
-export function VrchatView() {
-  const [tab, setTab] = useState<Tab>("groups");
+/** "groups": your groups and their events. "media": pictures, favorites, avatars, prints / stickers /
+ *  emojis, world notes. */
+export function VrchatView({ section }: { section: "groups" | "media" }) {
+  const [tab, setTab] = useState<Tab>("pictures");
   const demo = useApp((s) => s.demo);
+  if (section === "groups") {
+    return (
+      <div className="activity-view logbook">
+        <div className="row">
+          <span className="ui2-grow" />
+          <OpenLink />
+        </div>
+        {demo ? <p className="muted">{tr("vrchat.thisPartTalksToVrchat")}</p> : <MyGroups />}
+      </div>
+    );
+  }
   return (
     <div className="activity-view logbook">
       <div className="row">
         <div className="seg logbook-tabs" role="tablist">
           {(
             [
-              ["groups", tr("vrchat.groupsEvents")],
+              ["pictures", tr("logbook.pictures")],
               ["favorites", tr("vrchat.favorites")],
               ["avatars", tr("vrchat.avatars")],
               ["files", tr("vrchat.printsStickersEmojis")],
               ["worlds", tr("vrchat.worldNotes")],
             ] as [Tab, string][]
           ).map(([k, l]) => (
-            <button key={k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+            <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
               {l}
             </button>
           ))}
         </div>
         <OpenLink />
       </div>
-      {demo ? (
+      {tab === "pictures" ? (
+        <TaggedPictures />
+      ) : demo ? (
         <p className="muted">{tr("vrchat.thisPartTalksToVrchat")}</p>
       ) : (
         <>
-          {tab === "groups" && <MyGroups />}
           {tab === "favorites" && <Favorites />}
           {tab === "avatars" && <Avatars />}
           {tab === "files" && <Files />}
