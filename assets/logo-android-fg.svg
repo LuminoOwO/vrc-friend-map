@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-140 -140 792 792">
+  <!-- Android adaptive icon foreground (no background square; the background colour is #0b1116).
+       Regenerate every icon: npx tauri icon assets/icon-manifest.json
+       VRC Friend Map: you in the middle, friends around you drawn like the map's people (picture,
+       status ring), the lines between them, and a group outlined like the map's circles. -->
+  <defs>
+    <radialGradient id="glow" cx="0.3" cy="0.2" r="0.9">
+      <stop offset="0" stop-color="#19c3b1" stop-opacity="0.22"/>
+      <stop offset="0.6" stop-color="#19c3b1" stop-opacity="0.04"/>
+      <stop offset="1" stop-color="#19c3b1" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="youGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#19c3b1" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#19c3b1" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- a circle of friends, like the map's outlined groups -->
+  <rect x="300" y="56" width="164" height="378" rx="82" transform="rotate(2 382 245)" fill="#19c3b1" fill-opacity="0.10" stroke="#19c3b1" stroke-opacity="0.55" stroke-width="5"/>
+  <!-- lines between friends who know each other: teal, gold for close friends -->
+  <g stroke-linecap="round" fill="none">
+    <path d="M236 262 L118 146 M236 262 L374 126 M236 262 L388 362 M236 262 L132 394" stroke="#19c3b1" stroke-opacity="0.8" stroke-width="10"/>
+    <path d="M374 126 L388 362" stroke="#e8c45a" stroke-opacity="0.9" stroke-width="10"/>
+    <path d="M118 146 L374 126 M388 362 L132 394" stroke="#19c3b1" stroke-opacity="0.35" stroke-width="7"/>
+  </g>
+  <circle cx="236" cy="262" r="128" fill="url(#youGlow)"/>
+  <g>
+    <circle cx="118" cy="146" r="50.4" fill="#0b1116"/>
+    <circle cx="118" cy="146" r="40" fill="#16222c"/>
+    <clipPath id="c118146"><circle cx="118" cy="146" r="40"/></clipPath>
+    <g clip-path="url(#c118146)" fill="#9fe2ff" fill-opacity="0.92">
+      <circle cx="118" cy="140.4" r="12.0"/>
+      <ellipse cx="118" cy="177.2" rx="24.8" ry="20.0"/>
+    </g>
+    <circle cx="118" cy="146" r="40" fill="none" stroke="#42caff" stroke-width="8.8"/>
+  </g>
+  <g>
+    <circle cx="374" cy="126" r="54.84" fill="#0b1116"/>
+    <circle cx="374" cy="126" r="44" fill="#16222c"/>
+    <clipPath id="c374126"><circle cx="374" cy="126" r="44"/></clipPath>
+    <g clip-path="url(#c374126)" fill="#a8f3bf" fill-opacity="0.92">
+      <circle cx="374" cy="119.8" r="13.2"/>
+      <ellipse cx="374" cy="160.3" rx="27.3" ry="22.0"/>
+    </g>
+    <circle cx="374" cy="126" r="44" fill="none" stroke="#51e57e" stroke-width="9.7"/>
+  </g>
+  <g>
+    <circle cx="388" cy="362" r="61.5" fill="#0b1116"/>
+    <circle cx="388" cy="362" r="50" fill="#16222c"/>
+    <clipPath id="c388362"><circle cx="388" cy="362" r="50"/></clipPath>
+    <g clip-path="url(#c388362)" fill="#ffb3e4" fill-opacity="0.92">
+      <circle cx="388" cy="355.0" r="15.0"/>
+      <ellipse cx="388" cy="401.0" rx="31.0" ry="25.0"/>
+    </g>
+    <circle cx="388" cy="362" r="50" fill="none" stroke="#ff6bcb" stroke-width="11.0"/>
+  </g>
+  <g>
+    <circle cx="132" cy="394" r="46.0" fill="#0b1116"/>
+    <circle cx="132" cy="394" r="36" fill="#16222c"/>
+    <clipPath id="c132394"><circle cx="132" cy="394" r="36"/></clipPath>
+    <g clip-path="url(#c132394)" fill="#f6cf8f" fill-opacity="0.92">
+      <circle cx="132" cy="389.0" r="10.8"/>
+      <ellipse cx="132" cy="422.1" rx="22.3" ry="18.0"/>
+    </g>
+    <circle cx="132" cy="394" r="36" fill="none" stroke="#e8a33d" stroke-width="8.0"/>
+  </g>
+  <circle cx="236" cy="262" r="92" fill="none" stroke="#19c3b1" stroke-opacity="0.3" stroke-width="8"/>
+  <g>
+    <circle cx="236" cy="262" r="82.5" fill="#0b1116"/>
+    <circle cx="236" cy="262" r="70" fill="#0f2f2d"/>
+    <clipPath id="c236262"><circle cx="236" cy="262" r="70"/></clipPath>
+    <g clip-path="url(#c236262)" fill="#bafff6" fill-opacity="0.92">
+      <circle cx="236" cy="252.2" r="21.0"/>
+      <ellipse cx="236" cy="316.6" rx="43.4" ry="35.0"/>
+    </g>
+    <circle cx="236" cy="262" r="70" fill="none" stroke="#19c3b1" stroke-width="13.0"/>
+  </g>
+</svg>
