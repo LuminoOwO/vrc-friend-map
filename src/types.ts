@@ -816,6 +816,8 @@ export type NotifyEvent =
   | "slotOpen"
   /** Someone invited you to their instance. */
   | "invite"
+  /** Someone in your instance that a friend of yours has blocked (shared blocks; off by default). */
+  | "friendBlockedHere"
   /** Someone sent you a friend request. */
   | "friendRequest"
   /** Someone asks you for an invite. */

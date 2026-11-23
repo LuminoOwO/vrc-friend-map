@@ -331,6 +331,7 @@ const KIND_COLOR: Record<string, string> = {
   "friend-remove": "#f05a6a",
   invite: "#42caff",
   "request-invite": "#e8a33d",
+  "friend-blocked": "#f05a6a",
   quit: "#6f8291",
   crash: "#f05a6a",
 };
@@ -346,6 +347,7 @@ const KIND_ICONS: Record<string, string> = {
   "friend-remove": "trash",
   invite: "share",
   "request-invite": "user-plus",
+  "friend-blocked": "flag",
   quit: "close",
   crash: "close",
 };

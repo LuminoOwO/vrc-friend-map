@@ -406,7 +406,8 @@
     "showOnMap_other": "Blockierte Personen zeigen ({{count}})"
   },
   "events": {
-    "friendRequest": "Freundschaftsanfrage"
+    "friendRequest": "Freundschaftsanfrage",
+    "friendBlockedHere": "Jemand, den ein Freund blockiert hat, ist hier"
   },
   "notifyMsg": {
     "friendRequest": "{{name}} hat dir eine Freundschaftsanfrage geschickt",
@@ -415,7 +416,8 @@
     "slotOpenCount": "Ein Platz ist frei geworden, wo {{name}} ist ({{world}})",
     "slotOpen": "Ein Platz ist frei geworden, wo {{name}} ist",
     "invitedTo": "{{name}} hat dich nach {{world}} eingeladen",
-    "invited": "{{name}} hat dich eingeladen"
+    "invited": "{{name}} hat dich eingeladen",
+    "friendBlockedHere": "{{name}} ist in deiner Instanz: blockiert von {{by}}"
   },
   "inbox": {
     "title": "Benachrichtigungen",
@@ -434,7 +436,9 @@
   },
   "notify": {
     "startInTray": "Im Tray starten (das Fenster öffnet sich nicht)",
-    "startInTrayHelp": "Nur dieses Gerät. Das Fenster öffnest du über das Tray-Symbol. Gibt es auf diesem System kein Tray-Symbol, öffnet sich das Fenster wie gewohnt."
+    "startInTrayHelp": "Nur dieses Gerät. Das Fenster öffnest du über das Tray-Symbol. Gibt es auf diesem System kein Tray-Symbol, öffnet sich das Fenster wie gewohnt.",
+    "safety": "Sicherheit",
+    "safetyHelp": "Standardmäßig aus. Funktioniert mit Freunden, die ihre Blockierungen über einen deiner Server mit dir teilen (Teilen & Server → Warum ich Leute blockiert habe). Erscheint auch in der Aktivität unter „Von Freunden blockiert“."
   },
   "hereBar": {
     "title": "Wer ist hier",
@@ -516,5 +520,11 @@
     "pickTwo": "Wähle zwei verschiedene Listen.",
     "inBoth": "Auf beiden",
     "onlyIn": "Nur {{name}}"
+  },
+  "activityView": {
+    "safety": "Von Freunden blockiert"
+  },
+  "act": {
+    "friendBlocked": "{{name}} ist hier: blockiert von {{by}}"
   }
 }

@@ -22,6 +22,7 @@ export const EVENT_LABEL: Record<NotifyEvent, string> = lazy(() => ({
   gathering: tr("events.gathering"),
   slotOpen: tr("events.slotOpen"),
   friendRequest: tr("events.friendRequest"),
+  friendBlockedHere: tr("events.friendBlockedHere"),
   invite: tr("events.invite"),
   requestInvite: tr("events.requestInvite"),
 }));
@@ -48,6 +49,8 @@ function message(event: NotifyEvent, name: string, world?: string): string {
       return world ? tr("notifyMsg.slotOpenCount", { name, world }) : tr("notifyMsg.slotOpen", { name });
     case "friendRequest":
       return tr("notifyMsg.friendRequest", { name });
+    case "friendBlockedHere":
+      return tr("notifyMsg.friendBlockedHere", { name, by: world ?? "" });
     case "invite":
       return world ? tr("notifyMsg.invitedTo", { name, world }) : tr("notifyMsg.invited", { name });
     case "requestInvite":

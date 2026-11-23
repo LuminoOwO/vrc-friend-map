@@ -19,7 +19,8 @@ export type ActivityKind =
   | "friend-add"
   | "friend-remove"
   | "invite" // someone invited you (worldName: where to)
-  | "request-invite"; // someone asked you for an invite
+  | "request-invite" // someone asked you for an invite
+  | "friend-blocked"; // someone in your instance a friend has blocked (note: who blocked them)
 
 export interface ActivityEntry {
   key: string;
@@ -30,6 +31,8 @@ export interface ActivityEntry {
   worldId?: string;
   worldName?: string;
   location?: string;
+  /** Extra words for the line (friend-blocked: who blocked them, and why). */
+  note?: string;
   /** Already in the instance when you arrived. */
   initial?: boolean;
 }

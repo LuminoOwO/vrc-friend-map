@@ -1,6 +1,7 @@
 // Who's in your instance right now, from VRChat's log as it's written
 // (src-tauri/src/livelog.rs). Desktop only, nothing is asked of VRChat.
-import { addActivity, fromLive, loadActivity } from "./activity";
+import { addActivity, fromLive, loadActivity, type LiveEvent } from "./activity";
+import { friendBlocksAbout, reasonLabel } from "./personal";
 import { notifyEvent } from "./notifications";
 import { backend, isTauri } from "./backend";
 import { logDirs, logsSupported, naiveToDate } from "./logs";
@@ -27,6 +28,7 @@ export async function syncLive() {
   unlisten ??= await backend.onLive((here) => setState({ here }));
   unlistenEvents ??= await backend.onLiveEvents((ev) => {
     addActivity(ev.map(fromLive));
+    checkFriendBlocks(ev);
     // Friends joining or leaving your instance, as it happens (not the log's backlog).
     const s = getState();
     for (const e of ev) {
@@ -39,10 +41,34 @@ export async function syncLive() {
   try {
     await backend.liveStart(logDirs());
     setState({ here: await backend.liveSnapshot() });
-    addActivity((await backend.liveEvents(0).catch(() => [])).map(fromLive));
+    const backlog = await backend.liveEvents(0).catch(() => []);
+    addActivity(backlog.map(fromLive));
+    checkFriendBlocks(backlog);
   } catch {
     runningKey = "";
     setState({ here: null });
+  }
+}
+
+const blockFlagged = new Set<string>();
+
+/** Someone joined (or was already there): if friends who share their blocks with you blocked them,
+ *  an Activity line, and a notification if you turned that on (off by default). */
+export function checkFriendBlocks(ev: LiveEvent[]) {
+  const s = getState();
+  for (const e of ev) {
+    if (e.kind !== "join" || !e.id || s.cache.friends[e.id] || e.id === s.cache.me?.id) continue;
+    const blocks = friendBlocksAbout(e.id);
+    if (!blocks.length) continue;
+    const key = `${e.location || e.worldId}|${e.id}`;
+    if (blockFlagged.has(key)) continue;
+    blockFlagged.add(key);
+    const reasons = [...new Set(blocks.flatMap((b) => b.reasons))].map(reasonLabel).slice(0, 3);
+    const by = blocks.map((b) => b.by).join(", ") + (reasons.length ? ` (${reasons.join(", ")})` : "");
+    const t = naiveToDate(e.ts).getTime();
+    addActivity([{ key: `fb|${key}`, t, kind: "friend-blocked", userId: e.id, name: e.name, worldId: e.worldId, worldName: e.worldName || undefined, note: by }]);
+    // Only what's happening now (or since you arrived), not an old log's backlog.
+    if (Date.now() - t < 10 * 60_000) notifyEvent("friendBlockedHere", e.id, e.name, { world: by });
   }
 }
 

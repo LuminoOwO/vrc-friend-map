@@ -196,19 +196,19 @@ export const defaultMap = (): MapSettings => ({
 });
 
 export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
-export const NOTIFY_EVENTS: NotifyEvent[] = ["added", "removed", "online", "offline", "joined", "left", "anniversary", "gathering", "slotOpen", "friendRequest", "invite", "requestInvite"];
+export const NOTIFY_EVENTS: NotifyEvent[] = ["added", "removed", "online", "offline", "joined", "left", "anniversary", "gathering", "slotOpen", "friendRequest", "invite", "requestInvite", "friendBlockedHere"];
 const SOUNDS_REV = 2;
 export const defaultNotify = (): NotifySettings => ({
   soundsRev: SOUNDS_REV,
   enabled: true,
-  events: { added: true, removed: true, online: false, offline: false, joined: false, left: false, anniversary: true, gathering: true, slotOpen: true, friendRequest: true, invite: true, requestInvite: true },
+  events: { added: true, removed: true, online: false, offline: false, joined: false, left: false, anniversary: true, gathering: true, slotOpen: true, friendRequest: true, invite: true, requestInvite: true, friendBlockedHere: false },
   scope: "everyone",
   circleIds: [],
   people: {},
   sound: true,
   volume: 0.6,
   pause: 0.25,
-  actionSounds: { added: "sparkle", removed: "heartbreak", online: "bell", offline: "soft-fall", joined: "chime", left: "door", anniversary: "fanfare", gathering: "marimba", slotOpen: "coin", friendRequest: "sparkle", invite: "doorbell", requestInvite: "knock" },
+  actionSounds: { added: "sparkle", removed: "heartbreak", online: "bell", offline: "soft-fall", joined: "chime", left: "door", anniversary: "fanfare", gathering: "marimba", slotOpen: "coin", friendRequest: "sparkle", invite: "doorbell", requestInvite: "knock", friendBlockedHere: "bell" },
   personTune: true,
   system: "background",
   popupSeconds: 30,

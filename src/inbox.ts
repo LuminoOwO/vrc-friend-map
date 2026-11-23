@@ -8,7 +8,7 @@ import { getState, setState, type Popup } from "./store";
 import type { NotifyEvent } from "./types";
 
 /** Events kept in the notification center. */
-export const INBOX_EVENTS = new Set<NotifyEvent>(["friendRequest", "invite", "requestInvite", "added", "removed", "slotOpen"]);
+export const INBOX_EVENTS = new Set<NotifyEvent>(["friendRequest", "invite", "requestInvite", "added", "removed", "slotOpen", "friendBlockedHere"]);
 
 const MAX_POPUPS = 4;
 let popupSeq = Date.now();

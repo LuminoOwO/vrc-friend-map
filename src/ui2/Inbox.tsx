@@ -19,6 +19,7 @@ const ICON: Record<string, string> = {
   requestInvite: "user-plus",
   slotOpen: "users",
   blockAsk: "flag",
+  friendBlockedHere: "flag",
 };
 
 /** Open what a notification is about: the block question, or the person's profile. */

@@ -130,7 +130,7 @@ export function NotificationsSection() {
 
       <h4 className="sub-h">{tr("notify.when")}</h4>
       <div className="notify-events">
-        {NOTIFY_EVENTS.map((e: NotifyEvent) => (
+        {NOTIFY_EVENTS.filter((e) => !SAFETY_EVENTS.includes(e)).map((e: NotifyEvent) => (
           <div key={e} className="notify-event">
             <label className="check">
               <input type="checkbox" checked={n.events[e]} disabled={!n.enabled} onChange={(ev) => updateNotify({ events: { ...n.events, [e]: ev.target.checked } })} />
@@ -151,6 +151,31 @@ export function NotificationsSection() {
           </div>
         ))}
       </div>
+
+      <h4 className="sub-h">{tr("notify.safety")}</h4>
+      <div className="notify-events">
+        {SAFETY_EVENTS.map((e: NotifyEvent) => (
+          <div key={e} className="notify-event">
+            <label className="check">
+              <input type="checkbox" checked={n.events[e]} disabled={!n.enabled} onChange={(ev) => updateNotify({ events: { ...n.events, [e]: ev.target.checked } })} />
+              {EVENT_LABEL[e]}
+              {(e === "joined" || e === "left") && <span className="small muted"> {tr("notify.gameLogPc")}</span>}
+            </label>
+            <select
+              value={n.actionSounds[e]}
+              disabled={!n.enabled || !n.sound}
+              title={tr("notify.soundForThis")}
+              onChange={(ev) => updateNotify({ actionSounds: { ...n.actionSounds, [e]: ev.target.value } })}
+            >
+              {soundOptions}
+            </select>
+            <button className="icon-btn small" title={tr("notify.playTitle", { event: EVENT_LABEL[e], name: exampleName })} onClick={() => previewEvent(e, exampleName)}>
+              <Icon name="play" size={14} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <p className="small muted">{tr("notify.safetyHelp")}</p>
 
       <label className="field narrow">
         <span>{tr("notify.cameOnlineAndWentOffline")}</span>
@@ -354,6 +379,9 @@ export function NotificationsSection() {
 }
 
 /** Settings → Closing the window (desktop). */
+/** Notifications kept apart under "Safety" (off by default). */
+const SAFETY_EVENTS: NotifyEvent[] = ["friendBlockedHere"];
+
 export function CloseSection() {
   const closeAction = useApp((s) => s.settings.closeAction);
   const startInTray = useApp((s) => s.settings.startInTray);

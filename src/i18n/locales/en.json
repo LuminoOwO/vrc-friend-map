@@ -748,7 +748,9 @@
     "volumeValue": "Volume {{value}}%",
     "pauseBeforeThePersonS": "Pause before the person's tune: {{value}} s",
     "startInTray": "Start in the tray (the window doesn't open)",
-    "startInTrayHelp": "This device only. Open the window from the tray icon. Without a tray icon on this system, the window opens as usual."
+    "startInTrayHelp": "This device only. Open the window from the tray icon. Without a tray icon on this system, the window opens as usual.",
+    "safety": "Safety",
+    "safetyHelp": "Off by default. Works with friends who share their blocks with you through one of your servers (Sharing & servers → Why I blocked people). It also shows in Activity under \"Blocked by friends\"."
   },
   "serversModal": {
     "notAvailableInDemoMode": "Not available in demo mode.",
@@ -1386,7 +1388,8 @@
     "invites": "Invites",
     "joinsLeavesAndWorldChanges": "Joins, leaves and world changes need the game log (Settings → Game logs, “Show who's in my instance right now”), on the PC that runs VRChat. Friends coming online and going offline show up either way.",
     "friendsAddedAndRemovedAre": "Friends added and removed are kept since {{value}}; everything else for {{value2}} days.",
-    "nothingYetThingsShowUp": "Nothing yet. Things show up here as they happen, and stay for {{value}} days."
+    "nothingYetThingsShowUp": "Nothing yet. Things show up here as they happen, and stay for {{value}} days.",
+    "safety": "Blocked by friends"
   },
   "groups": {
     "suggestedGroups": "Suggested groups",
@@ -2030,7 +2033,8 @@
     "slotOpenCount": "A slot opened where {{name}} is ({{world}})",
     "slotOpen": "A slot opened where {{name}} is",
     "invitedTo": "{{name}} invited you to {{world}}",
-    "invited": "{{name}} invited you"
+    "invited": "{{name}} invited you",
+    "friendBlockedHere": "{{name}} is in your instance: blocked by {{by}}"
   },
   "platformMsg": {
     "notInTheBrowserVersion": "Not in the browser version.",
@@ -2180,7 +2184,8 @@
     "noLongerFriend": "{{name}} is no longer your friend",
     "invited": "{{name}} invited you",
     "invitedTo": "{{name}} invited you to {{world}}",
-    "askedInvite": "{{name}} asked you for an invite"
+    "askedInvite": "{{name}} asked you for an invite",
+    "friendBlocked": "{{name}} is here: blocked by {{by}}"
   },
   "events": {
     "added": "Became your friend",
@@ -2194,7 +2199,8 @@
     "slotOpen": "A slot opened (watched instance)",
     "invite": "Invited you",
     "requestInvite": "Asks you for an invite",
-    "friendRequest": "Friend request"
+    "friendRequest": "Friend request",
+    "friendBlockedHere": "Someone a friend blocked is here"
   },
   "sections": {
     "yourVrchatLoginOnThis": "Your VRChat login on this device.",

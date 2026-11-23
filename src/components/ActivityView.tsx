@@ -7,7 +7,7 @@ import { getState, setState, useApp } from "../store";
 import type { FriendLogEntry } from "../types";
 import { Icon } from "./Icon";
 
-type Group = "instance" | "online" | "moving" | "list" | "invites";
+type Group = "instance" | "online" | "moving" | "list" | "invites" | "safety";
 
 const GROUPS: { key: Group; label: string; kinds: ActivityKind[] }[] = lazy(() => [
   { key: "instance", label: tr("activityView.myInstance"), kinds: ["world", "join", "leave", "left", "quit", "crash"] },
@@ -15,6 +15,7 @@ const GROUPS: { key: Group; label: string; kinds: ActivityKind[] }[] = lazy(() =
   { key: "moving", label: tr("activityView.friendsChangingWorlds"), kinds: ["location"] },
   { key: "list", label: tr("activityView.friendsAddedRemoved"), kinds: ["friend-add", "friend-remove"] },
   { key: "invites", label: tr("activityView.invites"), kinds: ["invite", "request-invite"] },
+  { key: "safety", label: tr("activityView.safety"), kinds: ["friend-blocked"] },
 ]);
 
 export const KIND_ICON: Record<ActivityKind, string> = {
@@ -31,6 +32,7 @@ export const KIND_ICON: Record<ActivityKind, string> = {
   "friend-remove": "trash",
   invite: "share",
   "request-invite": "user-plus",
+  "friend-blocked": "flag",
 };
 
 export function timeOf(t: number) {
@@ -93,6 +95,8 @@ export function ActivityText({ e }: { e: ActivityEntry }) {
         return e.worldName ? tx("act.invitedTo", { name: who(e), world: world(e) }) : tx("act.invited", { name: who(e) });
       case "request-invite":
         return tx("act.askedInvite", { name: who(e) });
+      case "friend-blocked":
+        return tx("act.friendBlocked", { name: who(e), by: <b>{e.note ?? ""}</b> });
     }
   };
 
@@ -128,7 +132,7 @@ export function ActivityView() {
   const showBlocked = useApp((s) => s.settings.people.showBlocked);
   const demo = useApp((s) => s.demo);
   const liveOn = useApp((s) => s.settings.logs.enabled && s.settings.logs.live);
-  const [groups, setGroups] = useState<Set<Group>>(() => new Set<Group>(["instance", "online", "list", "invites"]));
+  const [groups, setGroups] = useState<Set<Group>>(() => new Set<Group>(["instance", "online", "list", "invites", "safety"]));
   const [arrivals, setArrivals] = useState(true);
   const [search, setSearch] = useState("");
 
