@@ -23,7 +23,8 @@
     "views": "Ansichten",
     "cards": "Karten",
     "groups": "Gruppen & Events",
-    "media": "Medien"
+    "media": "Medien",
+    "times": "Online-Zeiten"
   },
   "phone": {
     "searchFriends": "Freunde suchen",
@@ -487,7 +488,8 @@
   },
   "palette": {
     "groupsEvents": "Gruppen & Events",
-    "media": "Medien: Bilder, Favoriten, Avatare, Welten"
+    "media": "Medien: Bilder, Favoriten, Avatare, Welten",
+    "times": "Online-Zeiten: wann Freunde meist online sind"
   },
   "listView": {
     "view": "Liste ansehen",
@@ -534,5 +536,29 @@
     "mutual": "Gemeinsame Freunde",
     "help": "Die Leute in deiner VRChat-Instanz auf die Karte setzen: alle, oder nur die, die Freunde mit dir teilen",
     "notInGame": "Zeigt die Leute in deiner VRChat-Instanz auf der Karte, sobald du in VRChat bist (Spiel-Log, Computer)"
+  },
+  "times": {
+    "day": "Tag",
+    "week": "Ganze Woche",
+    "sort": "Sortieren",
+    "sortOverlap": "Meiste Überschneidung mit dir",
+    "sortOnline": "Gerade online zuerst",
+    "sortName": "Name",
+    "search": "Freunde suchen",
+    "summary": "Freunde, die pro Stunde meist online sind",
+    "barTitle_one": "{{hour}}:00 – {{count}} Freund meist online",
+    "barTitle_other": "{{hour}}:00 – {{count}} Freunde meist online",
+    "summaryHelp": "Balken: wie viele Freunde zu jeder Stunde meist online sind; die hellen sind deine eigenen üblichen Stunden. Klick auf eine Stunde zeigt, wer dann meist online ist.",
+    "pickedHour_one": "{{count}} Freund meist online um {{hour}}:00.",
+    "pickedHour_other": "{{count}} Freunde meist online um {{hour}}:00.",
+    "showAll": "Alle zeigen",
+    "you": "Du",
+    "youNoData": "Deine eigenen Zeiten erscheinen nach ein paar Tagen mit VRChat und der App.",
+    "overlapTitle": "Stunden pro Woche, in denen ihr beide meist online seid",
+    "hoursWeek_one": "{{count}} Std./Woche",
+    "hoursWeek_other": "{{count}} Std./Woche",
+    "without_one": "{{count}} Freund hat noch nicht genug Daten.",
+    "without_other": "{{count}} Freunde haben noch nicht genug Daten.",
+    "about": "Aus dem, was diese App beim Laufen gesehen hat (Ortszeit). Nur Freunde: VRChat sagt der App nur, wann deine Freunde online sind, niemand sonst – Freunde von Freunden lassen sich nicht zeigen."
   }
 }

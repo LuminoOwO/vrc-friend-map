@@ -19,6 +19,7 @@ import { LogbookView } from "../components/LogbookView";
 import { SharedLists } from "../components/SharedLists";
 import { FilterPopover } from "../components/TopBar";
 import { VrchatView } from "../components/VrchatView";
+import { TimesView } from "../components/TimesView";
 
 // `label` is read in the current language each time (components re-render with useT()).
 const rail = (key: View, text: string, icon: string) => ({
@@ -33,6 +34,7 @@ export const RAIL: { key: View; label: string; icon: string }[] = [
   rail("cards", "menu.people", "users"),
   rail("activity", "menu.activity", "clock"),
   rail("insights", "menu.insights", "bulb"),
+  rail("times", "menu.times", "chart"),
   rail("logbook", "menu.logbook", "calendar"),
   rail("vrchat", "menu.groups", "flag"),
   rail("media", "menu.media", "image"),
@@ -54,6 +56,7 @@ export function ViewBody({ view }: { view: View }) {
       {view === "logbook" && <LogbookView />}
       {view === "vrchat" && <VrchatView section="groups" />}
       {view === "media" && <VrchatView section="media" />}
+      {view === "times" && <TimesView />}
     </>
   );
 }

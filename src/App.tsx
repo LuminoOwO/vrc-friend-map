@@ -2,6 +2,7 @@ import { InsightsView } from "./components/InsightsView";
 import { useLanguage } from "./i18n";
 import { LogbookView } from "./components/LogbookView";
 import { VrchatView } from "./components/VrchatView";
+import { TimesView } from "./components/TimesView";
 import { GroupDialog, InstanceDialog, WorldDialog } from "./components/ContentDialogs";
 import { BlockReasonDialog } from "./components/PersonExtras";
 import { startBioCache, stopBioCache } from "./biocache";
@@ -203,6 +204,7 @@ export default function App() {
           {view === "logbook" && <LogbookView />}
           {view === "vrchat" && <VrchatView section="groups" />}
           {view === "media" && <VrchatView section="media" />}
+          {view === "times" && <TimesView />}
         </div>
         {selectedId && profileAs === "sidebar" && <DetailPanel id={selectedId} />}
       </div>

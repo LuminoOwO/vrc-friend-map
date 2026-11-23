@@ -26,6 +26,7 @@ const VIEWS: [View, string, string][] = lazy(() => [
   ["logbook", tr("palette.logbook"), "calendar"],
   ["vrchat", tr("palette.groupsEvents"), "flag"],
   ["media", tr("palette.media"), "image"],
+  ["times", tr("palette.times"), "chart"],
   ["lists", tr("palette.sharedLists"), "share"],
 ]);
 

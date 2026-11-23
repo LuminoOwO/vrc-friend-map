@@ -85,7 +85,7 @@ const PHONE_TABS: [PhoneTab, string, string][] = [
   ["insights", "menu.insights", "bulb"],
   ["menu", "menu.menu", "menu"],
 ];
-const SUB_TITLES: Partial<Record<View, string>> = { activity: "menu.activity", logbook: "menu.logbook", vrchat: "menu.groups", media: "menu.media", lists: "menu.lists" };
+const SUB_TITLES: Partial<Record<View, string>> = { activity: "menu.activity", logbook: "menu.logbook", vrchat: "menu.groups", media: "menu.media", times: "menu.times", lists: "menu.lists" };
 
 /** The back gesture runs `onBack` while `active` (one history entry; left another way, the entry
  *  stays but is neutralized, which is safer than calling history.back() ourselves). */
@@ -247,6 +247,7 @@ function MenuPage({ onOpen }: { onOpen: (v: View) => void }) {
     [t("menu.logbook"), "calendar", () => onOpen("logbook")],
     [t("menu.groups"), "flag", () => onOpen("vrchat")],
     [t("menu.media"), "image", () => onOpen("media")],
+    [t("menu.times"), "chart", () => onOpen("times")],
     [t("menu.lists"), "share", () => onOpen("lists")],
     [
       t("menu.servers"),

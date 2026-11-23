@@ -6,6 +6,13 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Online times** in the menu: when all your friends are usually online, for a day or the
+  whole week. Bars show how many friends are usually on at each hour (your own hours bright);
+  click one to see who. Every friend's day as 24 cells with the hours you share highlighted,
+  sorted by how much your times overlap ("12 h/week"). Only friends: VRChat doesn't tell the
+  app when anyone else is online.
+- **"In this instance" switch on the map:** Off · Everyone · Mutual friends puts the people in
+  your VRChat instance on the map (all of them, or only those who share friends with you).
 - **Shared friend lists:** "View list" shows everyone on a list (or the people you both know),
   with search; **Compare lists** puts any two (yours counts) side by side: on both, only in
   one, only in the other; **On my map** shows several lists on your own map at once, each in

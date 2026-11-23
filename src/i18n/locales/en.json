@@ -23,7 +23,8 @@
     "views": "Views",
     "cards": "Cards",
     "groups": "Groups & events",
-    "media": "Media"
+    "media": "Media",
+    "times": "Online times"
   },
   "phone": {
     "searchFriends": "Search friends",
@@ -1677,7 +1678,8 @@
     "updates": "Updates",
     "localData": "Local data",
     "groupsEvents": "Groups & events",
-    "media": "Media: pictures, favorites, avatars, worlds"
+    "media": "Media: pictures, favorites, avatars, worlds",
+    "times": "Online times: when friends are usually on"
   },
   "parts": {
     "notifications": "Notifications",
@@ -2346,5 +2348,29 @@
     "mutual": "Mutual friends",
     "help": "Put the people in your VRChat instance on the map: everyone, or only those who share friends with you",
     "notInGame": "Shows the people in your VRChat instance on the map once you're in VRChat (game log, computers)"
+  },
+  "times": {
+    "day": "Day",
+    "week": "Whole week",
+    "sort": "Sort",
+    "sortOverlap": "Most overlap with you",
+    "sortOnline": "Online now first",
+    "sortName": "Name",
+    "search": "Search friends",
+    "summary": "Friends usually online per hour",
+    "barTitle_one": "{{hour}}:00 – {{count}} friend usually online",
+    "barTitle_other": "{{hour}}:00 – {{count}} friends usually online",
+    "summaryHelp": "Bars: how many friends are usually online at each hour; the bright ones are your own usual hours. Click an hour to see who's usually on then.",
+    "pickedHour_one": "{{count}} friend usually online at {{hour}}:00.",
+    "pickedHour_other": "{{count}} friends usually online at {{hour}}:00.",
+    "showAll": "Show everyone",
+    "you": "You",
+    "youNoData": "Your own times show up after a few days with VRChat and the app running.",
+    "overlapTitle": "Hours a week you're both usually online",
+    "hoursWeek_one": "{{count}} h/week",
+    "hoursWeek_other": "{{count}} h/week",
+    "without_one": "{{count}} friend doesn't have enough data yet.",
+    "without_other": "{{count}} friends don't have enough data yet.",
+    "about": "From what this app has seen while running (local time). Only friends: VRChat tells the app when your friends are online, not anyone else, so friends of friends can't be shown."
   }
 }

@@ -211,3 +211,37 @@
 .ui2-profile .profile-actions .btn,
 .ui2-profile .mod-row .btn,
 .ui2-profile .person-extras .btn { border-radius: 6px; }
+
+/* Online times: bars per hour, then a row of 24 cells per friend. */
+.times-view { display: flex; flex-direction: column; gap: 14px; }
+.times-controls { flex-wrap: wrap; gap: 8px; }
+.times-controls input[type="search"] { flex: 1; min-width: 160px; }
+.times-summary { padding: 14px 16px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
+.times-summary p { margin: 6px 0 0; }
+.times-bars { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; height: 110px; align-items: end; }
+.times-bar { position: relative; height: 100%; padding: 0; border: 0; border-radius: 4px 4px 0 0; background: color-mix(in srgb, var(--tint) 4%, transparent); cursor: pointer; display: flex; align-items: flex-end; }
+.times-bar-fill { display: block; width: 100%; border-radius: 4px 4px 0 0; background: color-mix(in srgb, var(--accent) 38%, transparent); transition: height 0.25s; }
+.times-bar.mine .times-bar-fill { background: var(--accent); }
+.times-bar.picked { outline: 2px solid var(--text); outline-offset: 1px; }
+.times-bar.now::after { content: ""; position: absolute; left: 50%; top: -6px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--warn, #e8a33d); }
+.times-bar-n { position: absolute; left: 0; right: 0; bottom: 3px; text-align: center; font-size: 10px; font-weight: 700; color: var(--text); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7); }
+.times-axis { display: grid; grid-template-columns: repeat(24, 1fr); gap: 3px; margin-top: 4px; font-size: 10px; color: var(--muted); }
+.times-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.times-row { display: grid; grid-template-columns: minmax(140px, 220px) 72px 1fr; align-items: center; gap: 10px; padding: 3px 6px; border-radius: 6px; }
+.times-row:hover { background: color-mix(in srgb, var(--tint) 5%, transparent); }
+.times-row.me { position: sticky; top: 0; z-index: 1; background: var(--bg); border-bottom: 1px solid var(--border); padding-bottom: 6px; margin-bottom: 4px; }
+.times-who { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 0; border: 0; background: none; color: var(--text); font: inherit; font-size: 13.5px; text-align: left; cursor: pointer; }
+.times-pic { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid transparent; overflow: hidden; display: grid; place-items: center; background: var(--panel-2); font-size: 11px; }
+.times-pic img { width: 100%; height: 100%; object-fit: cover; }
+.times-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.times-score { font-size: 12px; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+.times-strip { position: relative; display: grid; grid-template-columns: repeat(24, 1fr); gap: 2px; height: 16px; }
+.times-cell { border-radius: 3px; background: var(--muted); }
+.times-cell.both { background: var(--accent); }
+.times-strip.me .times-cell { background: var(--accent); }
+.times-cell.picked { box-shadow: 0 0 0 1px var(--text); }
+.times-now { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--warn, #e8a33d); border-radius: 1px; pointer-events: none; }
+@media (max-width: 700px) {
+  .times-row { grid-template-columns: 1fr 64px; }
+  .times-row .times-strip { grid-column: 1 / -1; }
+}

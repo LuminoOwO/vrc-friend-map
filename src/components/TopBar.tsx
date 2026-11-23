@@ -19,6 +19,7 @@ const VIEWS: { key: View; label: string; icon: string }[] = [
   { key: "logbook", get label() { return t("menu.logbook"); }, icon: "calendar" },
   { key: "vrchat", get label() { return t("menu.groups"); }, icon: "flag" },
   { key: "media", get label() { return t("menu.media"); }, icon: "image" },
+  { key: "times", get label() { return t("menu.times"); }, icon: "chart" },
 ];
 
 function activeFilterCount(f: ReturnType<typeof defaultFilters>): number {

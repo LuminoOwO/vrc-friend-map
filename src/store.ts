@@ -34,7 +34,7 @@ import type {
   UiSettings,
 } from "./types";
 
-export type View = "graph" | "cards" | "lists" | "activity" | "insights" | "logbook" | "vrchat" | "media";
+export type View = "graph" | "cards" | "lists" | "activity" | "insights" | "logbook" | "vrchat" | "media" | "times";
 
 /** An in-app pop-up (top left): a notification, or "why did you block …?". */
 export interface Popup {
