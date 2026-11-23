@@ -201,3 +201,24 @@ describe("log out everywhere", () => {
     expect(mustLogOut(100, undefined)).toBe(true);
   });
 });
+
+describe("two servers, one a round behind", () => {
+  // Settings as two servers hold them: A already has this device's change, B still the old copy.
+  const old = { circles: [], dismissedGroups: [], shareNotes: {}, notifyPeople: {}, settings: { closeAction: "ask" } as never, settingsAt: { closeAction: 100 } } as SelfData;
+  const changed = { ...old, settings: { closeAction: "tray" } as never, settingsAt: { closeAction: 200 } } as SelfData;
+  const valueOf = (s: SelfData) => (s.settings as unknown as { closeAction: string }).closeAction;
+
+  it("one shared base: B's old copy looked like a change and flipped the setting back", () => {
+    const sharedBase = changed; // agreed with A just now
+    expect(valueOf(mergeSelf(sharedBase, changed, old))).toBe("ask");
+  });
+  it("a base per server: B's copy is what was agreed with B, so this device's change stays", () => {
+    const baseB = old; // last agreed with B
+    expect(valueOf(mergeSelf(baseB, changed, old))).toBe("tray");
+  });
+  it("no base for a server yet (settings left out): the newer change wins", () => {
+    const fallback = { ...changed, settings: undefined };
+    expect(valueOf(mergeSelf(fallback, changed, old))).toBe("tray");
+    expect(valueOf(mergeSelf(fallback, old, changed))).toBe("tray");
+  });
+});

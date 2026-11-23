@@ -935,6 +935,7 @@ export function normalizeLocal(raw: Raw | null): LocalData {
     shareNotes: (isObj(raw.shareNotes) ? raw.shareNotes : {}) as LocalData["shareNotes"],
     dismissedGroups: Array.isArray(raw.dismissedGroups) ? raw.dismissedGroups.filter(Array.isArray) : [],
     selfBase: isObj(raw.selfBase) ? (raw.selfBase as LocalData["selfBase"]) : null,
+    selfBases: isObj(raw.selfBases) ? Object.fromEntries(Object.entries(raw.selfBases as Record<string, unknown>).filter(([, v]) => isObj(v))) as LocalData["selfBases"] : {},
     betaHintSeen: raw.betaHintSeen === true,
     newUiSwitched: raw.newUiSwitched === true,
     settingsAt: isObj(raw.settingsAt) ? Object.fromEntries(Object.entries(raw.settingsAt as Record<string, unknown>).filter(([, t]) => typeof t === "number")) as Record<string, number> : {},

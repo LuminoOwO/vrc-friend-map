@@ -269,6 +269,9 @@ export interface LocalData {
   shareNotes: Record<string, ShareNote>;
   /** Device sync: the state this device and your others last agreed on. */
   selfBase?: import("./devicesync").SelfData | null;
+  /** The last state agreed with each server (by URL): each server keeps its own copy, so one
+   *  server's older copy must not look like a change compared with another server's. */
+  selfBases?: Record<string, import("./devicesync").SelfData>;
   /** When this device last logged in to VRChat (for "log out everywhere"). */
   loginAt?: number;
   /** The latest "log out everywhere" this device knows of (from any of your devices). */

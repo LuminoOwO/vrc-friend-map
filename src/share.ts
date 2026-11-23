@@ -683,7 +683,7 @@ async function syncDevices(s: ShareServer): Promise<string> {
   const own = inbox.find((i) => i.owner === me && i.kind === "self" && i.payload != null && !i.error);
   const theirs = own ? readSelf(own.payload) : null;
   const before = currentSelf();
-  const base = st.local.selfBase ?? null;
+  const base = serverBase(s.url);
   const mine = mineForMerge(before, base, theirs, ownSyncedKeys());
   const merged = theirs ? mergeSelf(base, mine, theirs) : mine;
   if (!sameSelf(merged, mine)) applySelf(merged);
@@ -693,8 +693,22 @@ async function syncDevices(s: ShareServer): Promise<string> {
     const payload: SelfPayload = { format: SELF_FORMAT, t: Date.now(), ...merged };
     await backend.share.publish(s.url, "self", JSON.stringify(payload), [], true);
   }
-  updateLocal((l) => ({ ...l, selfBase: merged }));
+  updateLocal((l) => ({ ...l, selfBase: merged, selfBases: { ...(l.selfBases ?? {}), [s.url]: merged } }));
   return changedHere ? tr("shareMsg.tookOverChangesFromYour") : "";
+}
+
+/**
+ * The last state agreed with this server. Each server has its own copy of your data, so each
+ * needs its own base: with one shared base, a server whose copy was a round behind looked like
+ * it had changed things back, and settings flipped back and forth between servers. A server
+ * without its own base yet uses the shared one minus settings: those then go by which change
+ * is newer (their change times), so an older copy can't win.
+ */
+function serverBase(url: string): SelfData | null {
+  const l = getState().local;
+  const own = l.selfBases?.[url];
+  if (own) return own;
+  return l.selfBase ? { ...l.selfBase, settings: undefined } : null;
 }
 
 /** Synced interface settings, keeping this device's own choices: which UI (classic or new) and
