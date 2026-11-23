@@ -850,6 +850,7 @@ pub fn run() {
             std::fs::create_dir_all(data_dir.join("store"))?;
             std::fs::create_dir_all(&image_dir)?;
             storage::prune_dir(&image_dir, 600 * 1024 * 1024);
+            pictures::set_thumb_dir(cache_dir.join("thumbs"));
             let api = api::ApiClient::new(data_dir.clone())?;
             app.manage(Arc::new(AppState {
                 api,

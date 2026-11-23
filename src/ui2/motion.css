@@ -83,7 +83,7 @@
 .lob-frame .activity-day,
 .lob-frame .lists-view > *,
 .lob-frame .group-list > *,
-.lob-frame .pic-grid > *,
+.lob-frame .pic-grid > :nth-child(-n+12),
 .lob-frame .group-tiles > * { animation: rise-in 0.45s var(--ease-out) backwards; }
 .lob-frame .card-grid > :nth-child(2), .lob-frame .insights > :nth-child(2), .lob-frame .activity-day:nth-child(2), .lob-frame .lists-view > :nth-child(2), .lob-frame .group-tiles > :nth-child(2), .lob-frame .pic-grid > :nth-child(2) { animation-delay: 0.03s; }
 .lob-frame .card-grid > :nth-child(3), .lob-frame .insights > :nth-child(3), .lob-frame .activity-day:nth-child(3), .lob-frame .lists-view > :nth-child(3), .lob-frame .group-tiles > :nth-child(3), .lob-frame .pic-grid > :nth-child(3) { animation-delay: 0.06s; }

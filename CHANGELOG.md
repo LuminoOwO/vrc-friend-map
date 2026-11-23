@@ -100,6 +100,9 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **Media → Pictures lagged when opened:** the grid loaded every full-size screenshot. It now
+  shows small previews the app makes once and keeps in its cache, draws 60 at a time as you
+  scroll, and no longer re-reads all game logs each time you open it.
 - **Settings flipped back and forth between servers:** each server keeps its own copy of your
   synced data, but the app compared all of them with one "last agreed" state, so a server a
   round behind looked like it had changed things back. Each server now has its own.

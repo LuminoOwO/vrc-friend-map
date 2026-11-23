@@ -30,7 +30,7 @@ import { dayPart, differenceFromMe, hourIn, timeIn, zoneEntry, zoneLabel, ZONE_L
 import { requestInvite } from "../invites";
 import { Icon } from "./Icon";
 import { usePersonLog } from "./LogbookView";
-import { pictureSrc } from "../logbook";
+import { pictureSrc, pictureThumb } from "../logbook";
 import { openImage } from "./ImageViewer";
 
 export function StarButton({ id }: { id: string }) {
@@ -545,7 +545,7 @@ export function PersonLog({ id, name }: { id: string; name: string }) {
                   )
                 }
               >
-                <img src={pictureSrc(p.path)} alt="" loading="lazy" />
+                <img src={pictureThumb(p.path)} alt="" loading="lazy" decoding="async" />
               </button>
             ))}
             {data.pics.length > 12 && (

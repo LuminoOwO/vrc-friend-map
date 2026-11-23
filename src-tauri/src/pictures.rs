@@ -13,6 +13,22 @@ use tauri::{Runtime, UriSchemeContext, UriSchemeResponder};
 
 /// Folders the protocol may serve from (set by `pictures_list`).
 static ALLOWED: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
+/// Where gallery previews are kept (the app's cache folder).
+static THUMB_DIR: Mutex<Option<PathBuf>> = Mutex::new(None);
+/// Previews made at once: decoding a 1080p screenshot takes ~8 MB, so a gallery of hundreds
+/// must not decode them all in parallel.
+static MAKING: (Mutex<usize>, std::sync::Condvar) = (Mutex::new(0), std::sync::Condvar::new());
+const MAX_MAKING: usize = 4;
+/// Width of a gallery preview (twice the grid cell, so it stays sharp on HiDPI screens).
+const THUMB_W: u32 = 480;
+
+pub fn set_thumb_dir(dir: PathBuf) {
+    let _ = std::fs::create_dir_all(&dir);
+    crate::storage::prune_dir(&dir, 200 * 1024 * 1024);
+    if let Ok(mut d) = THUMB_DIR.lock() {
+        *d = Some(dir);
+    }
+}
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Picture {
@@ -163,12 +179,82 @@ pub fn handle<R: Runtime>(
     responder: UriSchemeResponder,
 ) {
     let path = request.uri().path().to_string();
+    let thumb = request.uri().query().is_some_and(|q| q.split('&').any(|p| p == "thumb"));
     tauri::async_runtime::spawn_blocking(move || {
-        responder.respond(serve(&path).unwrap_or_else(|_| not_found()));
+        responder.respond(serve(&path, thumb).unwrap_or_else(|_| not_found()));
     });
 }
 
-fn serve(path: &str) -> Result<Response<Vec<u8>>, String> {
+fn image_response(ct: &str, bytes: Vec<u8>) -> Result<Response<Vec<u8>>, String> {
+    Response::builder()
+        .status(200)
+        .header(header::CONTENT_TYPE, ct)
+        .header(header::CACHE_CONTROL, "max-age=86400")
+        .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
+        .body(bytes)
+        .map_err(|e| e.to_string())
+}
+
+/// A small JPEG of `file`, made once and kept in the cache folder (keyed by path, size and
+/// change time, so an edited picture gets a new one).
+fn thumbnail(file: &Path) -> Result<Vec<u8>, String> {
+    use sha2::{Digest, Sha256};
+    let meta = std::fs::metadata(file).map_err(|e| e.to_string())?;
+    let mtime = meta
+        .modified()
+        .ok()
+        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let key = hex::encode(Sha256::digest(format!("{}|{}|{}|{}", file.display(), meta.len(), mtime, THUMB_W)));
+    let dir = THUMB_DIR.lock().ok().and_then(|d| d.clone());
+    let cached = dir.as_ref().map(|d| d.join(format!("{}.jpg", &key[..32])));
+    if let Some(c) = &cached {
+        if let Ok(b) = std::fs::read(c) {
+            return Ok(b);
+        }
+    }
+    let bytes = {
+        let (lock, cv) = &MAKING;
+        let mut n = lock.lock().map_err(|e| e.to_string())?;
+        while *n >= MAX_MAKING {
+            n = cv.wait(n).map_err(|e| e.to_string())?;
+        }
+        *n += 1;
+        drop(n);
+        let made = make_thumbnail(file);
+        if let Ok(mut n) = lock.lock() {
+            *n -= 1;
+        }
+        cv.notify_one();
+        made?
+    };
+    if let Some(c) = &cached {
+        let tmp = c.with_extension("tmp");
+        if std::fs::write(&tmp, &bytes).is_ok() {
+            let _ = std::fs::rename(&tmp, c);
+        }
+    }
+    Ok(bytes)
+}
+
+fn make_thumbnail(file: &Path) -> Result<Vec<u8>, String> {
+    let img = image::ImageReader::open(file)
+        .map_err(|e| e.to_string())?
+        .with_guessed_format()
+        .map_err(|e| e.to_string())?
+        .decode()
+        .map_err(|e| e.to_string())?;
+    let h = (img.height() as u64 * THUMB_W as u64 / img.width().max(1) as u64).max(1) as u32;
+    let small = if img.width() > THUMB_W { img.thumbnail(THUMB_W, h) } else { img };
+    let mut out = Vec::new();
+    image::codecs::jpeg::JpegEncoder::new_with_quality(&mut out, 82)
+        .encode_image(&small.to_rgb8())
+        .map_err(|e| e.to_string())?;
+    Ok(out)
+}
+
+fn serve(path: &str, thumb: bool) -> Result<Response<Vec<u8>>, String> {
     let decoded = percent_encoding::percent_decode_str(path.trim_start_matches('/'))
         .decode_utf8()
         .map_err(|e| e.to_string())?
@@ -181,6 +267,11 @@ fn serve(path: &str) -> Result<Response<Vec<u8>>, String> {
     if !ok || !is_picture(&file) {
         return Err("not allowed".into());
     }
+    if thumb {
+        if let Ok(b) = thumbnail(&file) {
+            return image_response("image/jpeg", b);
+        }
+    }
     let bytes = std::fs::read(&file).map_err(|e| e.to_string())?;
     let ct = match file
         .extension()
@@ -192,13 +283,7 @@ fn serve(path: &str) -> Result<Response<Vec<u8>>, String> {
         Some("webp") => "image/webp",
         _ => "image/jpeg",
     };
-    Response::builder()
-        .status(200)
-        .header(header::CONTENT_TYPE, ct)
-        .header(header::CACHE_CONTROL, "max-age=86400")
-        .header(header::ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-        .body(bytes)
-        .map_err(|e| e.to_string())
+    image_response(ct, bytes)
 }
 
 #[cfg(test)]
@@ -211,5 +296,20 @@ mod tests {
         assert_eq!(t, crate::gamelogs::parse_ts("2026.11.08 21:15:00"));
         assert_eq!((w, h), (Some(1920), Some(1080)));
         assert_eq!(parse_name("random.png"), (None, None, None));
+    }
+
+    #[test]
+    fn thumbnails_are_small_jpegs() {
+        let dir = std::env::temp_dir().join(format!("vfm-thumb-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let src = dir.join("VRChat_2026-11-08_21-15-00.123_1920x1080.png");
+        image::RgbImage::from_fn(1920, 1080, |x, y| image::Rgb([(x % 256) as u8, (y % 256) as u8, 90]))
+            .save(&src)
+            .unwrap();
+        let b = make_thumbnail(&src).unwrap();
+        let img = image::load_from_memory(&b).unwrap();
+        assert_eq!((img.width(), img.height()), (THUMB_W, 270));
+        assert_eq!(&b[..2], &[0xFF, 0xD8]);
+        std::fs::remove_dir_all(&dir).ok();
     }
 }

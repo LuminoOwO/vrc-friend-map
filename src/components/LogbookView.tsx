@@ -15,6 +15,7 @@ import {
   fmtClock,
   fmtDuration,
   pictureSrc,
+  pictureThumb,
   presentAt,
   rankings,
   sessions,
@@ -423,32 +424,58 @@ function Videos({ visits }: { visits: TimelineVisit[] }) {
 
 /** Media → Pictures: your screenshots, tagged with the world and people from your game logs
  *  (shown untagged when there are no logs). */
+/** The last gallery, so opening Media again shows it at once while it refreshes. */
+let lastPics: TaggedPicture[] | null = null;
+/** Pictures drawn at first; more follow as you scroll (hundreds of tiles at once stall the page). */
+const PIC_PAGE = 60;
+
 export function TaggedPictures() {
   const [visits, setVisits] = useState<TimelineVisit[] | null>(null);
   const lastScan = useApp((s) => s.logs.lastScan);
+  const firstScan = useRef(lastScan);
   useEffect(() => {
-    allVisits(true).then(setVisits, () => setVisits([]));
+    // The logs are only read again when a scan found something new since this page opened.
+    allVisits(lastScan !== firstScan.current).then(setVisits, () => setVisits([]));
   }, [lastScan]);
-  if (!visits) return <SkelBlock lines={3} label={tr("logbook.loadingYourGameLogs")} />;
+  if (!visits && !lastPics) return <SkelBlock lines={3} label={tr("logbook.loadingYourGameLogs")} />;
   return <Pictures visits={visits} />;
 }
 
-function Pictures({ visits }: { visits: TimelineVisit[] }) {
+function Pictures({ visits }: { visits: TimelineVisit[] | null }) {
   const extra = useApp((s) => s.settings.logs.pictureDirs);
-  const [pics, setPics] = useState<TaggedPicture[] | null>(null);
+  const [pics, setPics] = useState<TaggedPicture[] | null>(lastPics);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState<TaggedPicture | null>(null);
+  const [shown, setShown] = useState(PIC_PAGE);
+  const more = useRef<HTMLDivElement>(null);
   useEffect(() => {
+    if (!visits) return;
     if (!isTauri) return setPics([]);
     (async () => {
       const found = await backend.picturesDetect();
       const list: Picture[] = await backend.picturesList([...found, ...extra]);
-      setPics(tagPictures(list, visits));
+      const tagged = tagPictures(list, visits);
+      lastPics = tagged;
+      setPics(tagged);
     })().catch((e) => {
       showToast(tr("logbook.couldnTReadThePictures", { error: e }));
       setPics([]);
     });
   }, [extra, visits]);
+  const ql = q.toLowerCase();
+  const list = useMemo(
+    () => (pics ?? []).filter((p) => !q || (p.worldName ?? "").toLowerCase().includes(ql) || p.people.some((x) => shownName(x.id, x.name).toLowerCase().includes(ql))),
+    [pics, q, ql],
+  );
+  useEffect(() => setShown(PIC_PAGE), [q]);
+  // Draw the next page when the end of the grid comes near.
+  useEffect(() => {
+    const el = more.current;
+    if (!el) return;
+    const io = new IntersectionObserver((e) => e.some((x) => x.isIntersecting) && setShown((n) => n + PIC_PAGE), { rootMargin: "600px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [list, shown]);
   if (!pics) return <p className="muted">{tr("logbook.lookingForYourVrchatPictures")}</p>;
   if (!pics.length)
     return (
@@ -456,8 +483,6 @@ function Pictures({ visits }: { visits: TimelineVisit[] }) {
         {tr("logbook.noVrchatPicturesFoundThey")}
       </p>
     );
-  const ql = q.toLowerCase();
-  const list = pics.filter((p) => !q || (p.worldName ?? "").toLowerCase().includes(ql) || p.people.some((x) => shownName(x.id, x.name).toLowerCase().includes(ql)));
   return (
     <>
       <div className="row">
@@ -467,15 +492,16 @@ function Pictures({ visits }: { visits: TimelineVisit[] }) {
         </span>
       </div>
       <div className="pic-grid">
-        {list.slice(0, 400).map((p) => (
+        {list.slice(0, shown).map((p) => (
           <button key={p.path} className="pic" onClick={() => setOpen(p)} title={`${p.worldName ?? ""} ${naiveToDate(p.t).toLocaleString(language())}`}>
-            <img src={pictureSrc(p.path)} alt="" loading="lazy" />
+            <img src={pictureThumb(p.path)} alt="" loading="lazy" decoding="async" />
             <span className="pic-meta small">
               {p.worldName ?? "?"} · {p.people.length} people
             </span>
           </button>
         ))}
       </div>
+      {shown < list.length && <div ref={more} className="pic-more" aria-hidden />}
       {open && <PictureViewer p={open} onClose={() => setOpen(null)} />}
     </>
   );

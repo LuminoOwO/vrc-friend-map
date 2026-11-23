@@ -247,6 +247,11 @@ export function pictureSrc(path: string): string {
   return isTauri ? convertFileSrc(path, "vrcpic") : "";
 }
 
+/** A small preview of a picture (made once by the app and kept in its cache), for grids. */
+export function pictureThumb(path: string): string {
+  return isTauri ? `${convertFileSrc(path, "vrcpic")}?thumb` : "";
+}
+
 export interface VideoRow extends VideoEvent {
   world: string;
   worldName: string;
