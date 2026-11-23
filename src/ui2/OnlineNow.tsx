@@ -12,7 +12,7 @@ import { setWorldNote } from "../worldnotes";
 import type { Friend } from "../types";
 import { parseLocation } from "../components/DetailPanel";
 import { Icon } from "../components/Icon";
-import { useSmooth } from "./smooth";
+import { Skel, useSmooth } from "./smooth";
 
 export interface Spot {
   /** The full location ("wrld_…:123~…"), or "private", "traveling" or "web". */
@@ -103,7 +103,7 @@ function SpotRow({ spot, side, onOpen }: { spot: Spot; side: "left" | "right"; o
       <button className="ui2-spot" onClick={onOpen} aria-label={t("online.openOverview", { name: spotTitle(spot.key, world?.name) })}>
         <span className="ui2-spot-pic">{thumb ? <img src={thumb} alt="" loading="lazy" /> : <Icon name={spot.key === "private" ? "lock" : spot.key === "web" ? "globe" : "world"} size={16} />}</span>
         <span className="ui2-spot-text">
-          <b>{spotTitle(spot.key, world?.name)}</b>
+          <b>{spot.key.startsWith("wrld_") && !world?.name ? <Skel w="8em" /> : spotTitle(spot.key, world?.name)}</b>
           <span>
             {t("common.friends", { count: n })}
             {kind ? ` · ${kind.toLowerCase()}` : ""}

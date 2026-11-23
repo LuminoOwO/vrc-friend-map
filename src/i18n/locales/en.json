@@ -2443,7 +2443,8 @@
     "noteNoServer": "Online times are only complete when something watches all the time: your vfm-server's logger (around the clock, recommended) or this app never closed. Right now only this device records, so whenever it's off there's no data (striped).",
     "noteServer": "Your server's logger fills in the times this device is off. Striped areas: neither was watching.",
     "coverage": "Data for {{pct}}% of the shown time.",
-    "setUpServer": "Set up a server"
+    "setUpServer": "Set up a server",
+    "serverLoading": "Loading your server's times…"
   },
   "quickEdit": {
     "status": "Status",

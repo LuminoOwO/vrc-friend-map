@@ -34,7 +34,7 @@ import { Icon } from "./Icon";
 import { GroupPic } from "./GroupPic";
 import { openImage } from "./ImageViewer";
 import { setWorldNote } from "../worldnotes";
-import { SkelBlock } from "../ui2/smooth";
+import { Skel, SkelBlock } from "../ui2/smooth";
 
 function Modal({ title, onClose, children, wide }: { title: React.ReactNode; onClose: () => void; children: React.ReactNode; wide?: boolean }) {
   return (
@@ -249,7 +249,13 @@ export function GroupDialog() {
       onClose={close}
       wide
     >
-      {g === undefined && <SkelBlock />}
+      {g === undefined && (
+        <div aria-busy="true">
+          <Skel w="100%" h={140} block />
+          <Skel w="40%" h="1.4em" block />
+          <SkelBlock lines={4} />
+        </div>
+      )}
       {g === null && <p className="muted">{tr("content.couldnTLoadThisGroup")}</p>}
       {g && (
         <>
@@ -560,6 +566,13 @@ function GroupMembers({ g }: { g: GroupFull }) {
         <span className="small muted">{list ? tr("content.lengthOfLength2", { length: shown.length, length2: list.length }) : tr("content.loading")}</span>
       </div>
       <ul className="member-list">
+        {!list &&
+          !err &&
+          [60, 45, 70, 50, 65, 40].map((w, i) => (
+            <li key={`skel-${i}`} aria-busy="true">
+              <Skel w={`${w}%`} h="1.5em" />
+            </li>
+          ))}
         {shown.slice(0, 300).map((m) => (
           <li key={m.userId}>
             <PersonChip id={m.userId} name={m.displayName} />

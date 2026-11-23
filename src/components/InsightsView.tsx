@@ -15,6 +15,7 @@ import { setState, showToast, updateCache, updateSettings, useApp } from "../sto
 import { reloadSentFriendRequests } from "../sync";
 import { FriendGroupsList, openFriendGroups } from "../ui2/FriendGroups";
 import { Icon } from "./Icon";
+import { SkelBlock } from "../ui2/smooth";
 
 export function InsightsView() {
   return (
@@ -118,7 +119,7 @@ function PendingRequests() {
           <Icon name="refresh" size={14} />
         </button>
       </div>
-      {!list && <p className="small muted">{tr("insights.sentLoading")}</p>}
+      {!list && <SkelBlock lines={2} label={tr("insights.sentLoading")} />}
       {list && list.length === 0 && <p className="small muted">{tr("insights.noneWaiting")}</p>}
       {list && list.length > 0 && (
         <ul className="missed-list">

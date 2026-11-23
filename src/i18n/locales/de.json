@@ -620,7 +620,8 @@
     "noteNoServer": "Online-Zeiten sind nur vollständig, wenn etwas ständig zuschaut: der Logger deines vfm-Servers (rund um die Uhr, empfohlen) oder diese App, ohne je geschlossen zu werden. Gerade zeichnet nur dieses Gerät auf, also gibt es keine Daten, wann immer es aus ist (gestreift).",
     "noteServer": "Der Logger deines Servers füllt die Zeiten, in denen dieses Gerät aus ist. Gestreift: keiner von beiden hat zugeschaut.",
     "coverage": "Daten für {{pct}} % der gezeigten Zeit.",
-    "setUpServer": "Server einrichten"
+    "setUpServer": "Server einrichten",
+    "serverLoading": "Lade die Zeiten deines Servers …"
   },
   "quickEdit": {
     "status": "Status",

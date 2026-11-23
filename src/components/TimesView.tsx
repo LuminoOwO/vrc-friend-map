@@ -182,6 +182,7 @@ function useSessions(view: TimelineView) {
   useEffect(() => onSessions(() => setVersion(sessionsVersion())), []);
   const [remote, setRemote] = useState<{ sessions: Record<string, Span[]>; coverage: Span[] } | null>(null);
   const [remoteErr, setRemoteErr] = useState("");
+  const [remoteBusy, setRemoteBusy] = useState(false);
   // Ask the servers for whole days around what's shown, a moment after you stop dragging.
   const from = Math.floor(view.start / 864e5) * 864e5 - 864e5;
   const to = Math.ceil(view.end / 864e5) * 864e5;
@@ -189,6 +190,7 @@ function useSessions(view: TimelineView) {
   useEffect(() => {
     if (demo || !urls) return setRemote(null);
     let stop = false;
+    setRemoteBusy(true);
     const tm = setTimeout(async () => {
       const merged: { sessions: Record<string, Span[]>; coverage: Span[] } = { sessions: {}, coverage: [] };
       const errs: string[] = [];
@@ -204,6 +206,7 @@ function useSessions(view: TimelineView) {
       if (!stop) {
         setRemote(merged);
         setRemoteErr(errs.join("; "));
+        setRemoteBusy(false);
       }
     }, 500);
     return () => {
@@ -214,15 +217,15 @@ function useSessions(view: TimelineView) {
   return useMemo(() => {
     if (demo) {
       const d = demoSessions([...Object.keys(friends), ME]);
-      return { ...d, servers: 0, remoteErr: "" };
+      return { ...d, servers: 0, remoteErr: "", remoteBusy: false };
     }
     const local = sessionsData();
     const ids = new Set([...Object.keys(local.sessions), ...Object.keys(remote?.sessions ?? {})]);
     const sessions: Record<string, Span[]> = {};
     for (const id of ids) sessions[id] = unionSpans(local.sessions[id] ?? [], remote?.sessions[id] ?? []);
-    return { sessions, coverage: unionSpans(local.coverage, remote?.coverage ?? []), servers: servers.length, remoteErr };
+    return { sessions, coverage: unionSpans(local.coverage, remote?.coverage ?? []), servers: servers.length, remoteErr, remoteBusy };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [demo, friends, remote, version, remoteErr]);
+  }, [demo, friends, remote, version, remoteErr, remoteBusy]);
 }
 
 /**
@@ -427,6 +430,12 @@ function ExactTimes({ list }: { list: boolean }) {
           {t("timeline.counts", { shown: rows.shown, count: rows.count })}
           {data.servers > 0 ? ` · ${t("timeline.withServer", { count: data.servers })}` : ` · ${t("timeline.noServer")}`}
           {data.remoteErr && <span className="warn"> · {data.remoteErr}</span>}
+          {data.remoteBusy && (
+            <span className="times-busy">
+              {" "}
+              · <span className="skel" style={{ width: 10, height: 10, borderRadius: 5 }} /> {t("timeline.serverLoading")}
+            </span>
+          )}
         </span>
       </p>
       {noData && <p className="small muted">{t("timeline.empty")}</p>}
