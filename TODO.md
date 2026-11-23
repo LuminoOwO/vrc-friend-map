@@ -46,7 +46,7 @@ Work through these in this order, one at a time; the rest of the file is the det
 5. ~~The UI release~~ (done on main, 2026-11-20; goes out as 0.13.0)
 6. ~~Sharing choices per account, not per device~~ (done)
 7. ~~Notice when the server's VRChat login expires~~ (done; renew from the app with a password: not started, owner to decide)
-8. Use the app without logging in to VRChat in it
+8. Use the app without logging in to VRChat in it (for the server owner; see also Round 10)
 9. ~~In gaps: Door / Knock sounds, the pause before a person's tune~~ (done, owner to listen)
 10. **A useful right-click menu (owner, 2026-11-23, one of the more important ones).** Right now
    right-click shows the web view's own menu (at least in the Chromium build: "Inspect element",
@@ -56,6 +56,9 @@ Work through these in this order, one at a time; the rest of the file is the det
    folder, save a copy, copy path), on selectable text (copy), on a text field (cut/copy/paste,
    select all), on the map background (center, fit, layout options). Nothing on plain UI. Same
    menu with a long press on phones. Keyboard: the Menu key and Shift+F10.
+11. **Round 10: use it from a browser on a friend's server** (owner, 2026-11-23: the next big
+   feature): two installs (sync server, logger), accounts with logins from outside, the web app,
+   VRChat through the server without it seeing anything. Details in Round 10.
 
 Not ranked yet: everything under "More (owner, 2026-11-20)", the rest of Round 8 (keyboard
 navigation, translations), log out everywhere, the in-VR overlay, the renderer's CPU in the
@@ -392,7 +395,100 @@ tray. On hold: Discord rich presence.
 - [ ] **A general check of every feature on every platform** (very late, before 1.0).
 - [ ] **Split the server's sync part from the rest:** the part that syncs between your own
   devices should be able to run on its own (e.g. a public sync server), separate from sharing
-  with friends.
+  with friends. (Now part of Round 10, "Two installs".)
+
+## Round 10: use it from a browser, on a friend's server (owner, 2026-11-23)
+
+The next big feature. Goal: use VRC Friend Map from a web browser, like a website, with an
+account on a server, also from outside your home network. That is also the way in for iPhone
+users (no paid App Store release): use it on your own server or a trusted friend's. Safety
+first: a server owner should be able to do as little as possible with your account, ideally
+nothing even if they're malicious. Order below is the suggested build order.
+
+What "safe even from a malicious owner" can and can't mean (to write up as a short threat-model
+page in `docs/` before building, and keep in sync with the code):
+- **Can be made safe:** your VRChat password, 2FA codes and login token; everything the app
+  sends to and gets from VRChat; your synced data (settings, notes, circles, lists). The owner
+  only ever sees encrypted bytes.
+- **Can't be hidden from the owner:** that you use their server, when and how much (traffic
+  size and timing), your IP address. They can also stop serving you or delete your account.
+- **Only possible with trust:** watching your friends around the clock while you're offline
+  (Online times, activity while you're away). That needs a VRChat login on the server, so the
+  owner could use it. Off for guests unless they explicitly turn it on after a clear warning.
+- **The catch everything rests on:** whoever serves the web app's code controls it. If the
+  friend's server served the app, it could hand you a changed app that reads your password, and
+  nothing else here would help. So the app must never come from the friend's server (next items).
+
+- [ ] **Threat model first:** write `docs/security-model.md`: who can see what (you, the server
+  owner, VRChat, someone on the network), what each part protects, what it doesn't, and how to
+  check it. Get the owner's OK on it before building the rest.
+- [ ] **Two installs: a sync server and a logger.** They do very different jobs and shouldn't
+  share one install any more:
+  - **vfm-sync:** accounts, encrypted storage and device sync, sharing between friends, push,
+    and the VRChat relay (below). Can serve many people. Holds no VRChat login of its own.
+  - **vfm-logger:** watches one owner's friends around the clock with the owner's own VRChat
+    login (Online times, activity, the presence data). One owner per install. Hands its data to
+    that owner's apps only, encrypted for them, possibly through their sync server.
+  - Each its own binary, container image, config file and admin page; one `compose` example
+    that runs both for people who want both at home. Shared code stays in `crates/`.
+  - An upgrade path for today's servers (one install doing both): a guided split that keeps
+    the encryption keys, invites, accounts and logged data, and an app that talks to both.
+- [ ] **Accounts on the sync server, with logins from outside:** many people per server, by
+  invite (as today) or open sign-up if the owner allows it. Log in from any device:
+  - **Passkeys** (WebAuthn: Face ID, Windows Hello, a security key) as the main way: the server
+    only stores a public key, nothing a leak could replay.
+  - A password as fallback only with a protocol that never sends the password to the server
+    (OPAQUE or similar); never a plain password check on the server.
+  - Your data key never leaves your devices: derived from a recovery code or passkey (PRF
+    extension), so the owner can't read your data even with full disk access. Adding a new
+    device: approve it from one you already have (QR code), or use the recovery code.
+  - Per-account limits (storage, requests), the owner can disable or delete accounts, you can
+    delete your own (everything gone, also on the server). Sessions list with "log out others".
+  - Exposing it to the internet safely: HTTPS required (with a guide for a reverse proxy /
+    Let's Encrypt / Cloudflare Tunnel), rate limits and lockouts on login, no admin page from
+    outside unless the owner turns it on.
+- [ ] **The web app, served from one fixed place:** the same app as today, built for the
+  browser, installable on phones (also "Add to Home Screen" on iPhone).
+  - Served as a static site from the project's own address (GitHub Pages from each release
+    tag), **not** by the friend's server. The server is only an API it talks to. Reproducible
+    builds with the build's hash shown in the app and published with the release, so anyone can
+    check that the site runs exactly the released code.
+  - Your own server may also host a copy for itself, but the app shows clearly which copy you're
+    on and whether it matches a release.
+  - Everything that today needs the desktop shell gets a browser way or is hidden: storage in
+    the browser (IndexedDB, encrypted), no game logs, pictures or OSC (those need the desktop
+    app), notifications through web push from the sync server (encrypted payloads; iPhone
+    supports it for home-screen web apps).
+- [ ] **VRChat through the server, without the server seeing it:** browsers can't call
+  VRChat's API directly (CORS), so the traffic must go through the server. To keep the owner out:
+  - The browser opens a WebSocket to the sync server, which only forwards raw bytes to
+    `api.vrchat.cloud:443` / `pipeline.vrchat.cloud:443` (and nowhere else). The TLS connection
+    to VRChat runs **inside the app** (a TLS library compiled to WebAssembly, VRChat's
+    certificates checked against built-in roots), so the server only relays encrypted bytes.
+    Login, 2FA, the auth token and all data stay between you and VRChat.
+  - To check before building: a mature TLS library for WASM (e.g. rustls), speed on phones,
+    images that need your VRChat login, and that the WebSocket relay can't be used to reach
+    other hosts.
+  - **Risk to check with real use:** VRChat then sees many accounts coming from the server's
+    one IP address. Find out whether that triggers rate limits or account flags, and keep the
+    per-server number of users reasonable. Respect VRChat's terms for third-party tools.
+- [ ] **Logger for guests (only with trust):** a guest can ask the server's logger to watch their
+  friends too, which means giving the server a VRChat login. Off by default, several clear
+  warnings ("the owner of this server could use your VRChat account"), a separate VRChat session
+  that the guest can end at any time from the app, and shown on the guest's profile as long as
+  it's on. Without it, guests get Online times only from when their own app was open.
+- [ ] **Trust and warnings in the app:** when adding a server that isn't yours, the app explains
+  in plain words what the owner can and can't see (from the threat model), shows the server's key
+  fingerprint to compare with the owner in person or over chat (the app remembers it and warns
+  loudly if it ever changes), asks again before turning on anything that needs trust (the
+  guest logger), and shows which server holds what in Settings. A "safety check" page lists
+  everything you've allowed.
+- [ ] **Desktop and Android apps on the same accounts:** log in to a sync server account from
+  the installed apps too, so you can use the browser on an iPhone and the app on a PC with the
+  same data.
+- [ ] **Open questions for the owner:** open sign-up or invite only; one web address for
+  everyone (GitHub Pages) or each server hosting its own copy as well; whether guests may use
+  the logger at all; the name for the two installs.
 
 ## Open after the Lobby redesign (2026-11-20, evening)
 
