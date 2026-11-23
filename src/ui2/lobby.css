@@ -145,8 +145,9 @@
 /* Where panels lie over the map, so fitting and centering use only the free part (GraphView). */
 .lay-lobby { --map-inset-left: 92px; --map-inset-right: 390px; --map-inset-top: 16px; --map-inset-bottom: 60px; }
 .lay-lobby.party-folded { --map-inset-right: 44px; }
-/* The menu column starts below the notification center so they never overlap on short windows. */
-.lob-left { top: 72px; }
+/* The menu column keeps clear of the notification center with padding (not by starting lower),
+   so its unfolded gradient also runs behind the bell. */
+.lob-left { top: 0; padding-top: 72px; }
 /* The map's buttons wrap upwards instead of running under the menu when the window is narrow. */
 .lay-lobby .graph-controls { left: 112px; flex-wrap: wrap-reverse; justify-content: flex-end; row-gap: 6px; }
 /* Short windows: the menu gets tighter instead of being cut off. */
