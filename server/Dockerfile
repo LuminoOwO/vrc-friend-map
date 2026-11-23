@@ -2,7 +2,7 @@
 # From the repository root:
 #   docker build -f server/Dockerfile -t vfm-server .     (or: podman build …)
 #   docker run -d --name vfm-server --restart unless-stopped -p 8787:8787 -v vfm-data:/data vfm-server
-FROM rust:1-alpine AS build
+FROM docker.io/library/rust:1-alpine AS build
 RUN apk add --no-cache musl-dev
 WORKDIR /src
 COPY crates crates

@@ -127,6 +127,8 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **Building the server image from source with Podman** failed on the short image name
+  (`rust:1-alpine`); the Dockerfile names it in full.
 - Phones and narrow windows: the new map toolbar showed every map button again (ring, names,
   "In this instance"); back to only the round fit and Map options buttons.
 - **Media: the link box was cut off** under the tabs on some window sizes; it has its own row.
