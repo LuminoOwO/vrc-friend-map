@@ -11,6 +11,7 @@ import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, upd
 import { CloseSection, NotificationsSection } from "./NotificationsSection";
 import { WheelFixSection } from "./WheelFixSection";
 import { AgeSection } from "./AgeSection";
+import { AboutSection } from "./AboutSection";
 import { BlockedSection } from "./BlockedSection";
 import { checkForUpdate } from "../updates";
 import { wheelFixHere } from "../wheelfix";
@@ -785,9 +786,9 @@ export function SettingsModal() {
         <Sec id="updates" cat="account" title={tr("settings.updates")} keys="update upgrade new version download install release">
           <UpdatesSection />
         </Sec>
-        <Sec id="about" cat="account" title={tr("settings.about")} keys="version">
+        <Sec id="about" cat="account" title={tr("settings.about")} keys="version github source code release changelog bug report issue translate license">
           <h3>{tr("settings.about")}</h3>
-          <p className="small muted">{tr("settings.vrcFriendMapAppVersion", { __APP_VERSION__, __APP_BUILD__ })}</p>
+          <AboutSection />
         </Sec>
             </SecContext.Provider>
             </div>

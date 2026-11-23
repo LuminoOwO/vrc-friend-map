@@ -1228,3 +1228,15 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
   .blocked-row { flex-wrap: wrap; }
   .blocked-actions { width: 100%; justify-content: flex-end; }
 }
+
+/* Settings → About */
+.about { display: grid; gap: 12px; }
+.about-head { display: flex; align-items: center; gap: 14px; }
+.about-head > div { flex: 1; display: grid; gap: 2px; }
+.about-name { font-size: 20px; font-weight: 900; font-style: italic; letter-spacing: -0.01em; }
+.about-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px; }
+.about-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel-2); color: var(--text); font: inherit; font-size: 14px; text-align: left; cursor: pointer; }
+.about-link span { flex: 1; }
+.about-link:hover { border-color: var(--accent); }
+.about-link svg:last-child { color: var(--muted); }
+.about p { margin: 0; }

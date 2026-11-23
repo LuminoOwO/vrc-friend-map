@@ -2282,5 +2282,19 @@
     "count_other": "{{count}} groups",
     "connects": "connects groups {{groups}}",
     "showing": "Showing {{name}}"
+  },
+  "about": {
+    "version": "Version {{version}}, build {{build}}",
+    "copy": "Copy",
+    "copyTitle": "Copy the version, build and engine (handy for bug reports)",
+    "copied": "Copied",
+    "what": "A map of your VRChat friends and how they know each other, made by a VRChat player. Not affiliated with VRChat Inc.",
+    "source": "Source code on GitHub",
+    "releases": "Downloads and releases",
+    "changelog": "What's new (changelog)",
+    "report": "Report a problem or suggest something",
+    "translate": "Help translate",
+    "privacy": "Your data stays on your devices and your own servers; the app talks to VRChat only with your login.",
+    "license": "Free and open source (MIT licence)."
   }
 }

@@ -464,5 +464,19 @@
   "insights": {
     "reload": "Neu laden",
     "sentLoading": "Wird mit dem nächsten Abgleich geladen …"
+  },
+  "about": {
+    "version": "Version {{version}}, Build {{build}}",
+    "copy": "Kopieren",
+    "copyTitle": "Version, Build und Engine kopieren (praktisch für Fehlerberichte)",
+    "copied": "Kopiert",
+    "what": "Eine Karte deiner VRChat-Freunde und wie sie sich kennen, gemacht von einem VRChat-Spieler. Nicht mit VRChat Inc. verbunden.",
+    "source": "Quellcode auf GitHub",
+    "releases": "Downloads und Versionen",
+    "changelog": "Was ist neu (Changelog)",
+    "report": "Problem melden oder etwas vorschlagen",
+    "translate": "Beim Übersetzen helfen",
+    "privacy": "Deine Daten bleiben auf deinen Geräten und deinen eigenen Servern; die App spricht nur mit deinem Login mit VRChat.",
+    "license": "Frei und quelloffen (MIT-Lizenz)."
   }
 }
