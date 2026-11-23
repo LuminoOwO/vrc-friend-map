@@ -153,11 +153,11 @@ export function Popups() {
   const secs = useApp((s) => s.settings.notify.popupSeconds);
   if (!popups.length) return null;
   return (
-    <div className="popups" role="status" aria-live="polite">
+    <div className="npops" role="status" aria-live="polite">
       {[...popups].reverse().map((p: Popup) => (
-        <div key={p.id} className={`popup k-${p.kind}`} style={{ ["--life" as string]: `${secs}s` }} onMouseEnter={() => holdPopup(p.id, true)} onMouseLeave={() => holdPopup(p.id, false)}>
+        <div key={p.id} className={`npop k-${p.kind}`} style={{ ["--life" as string]: `${secs}s` }} onMouseEnter={() => holdPopup(p.id, true)} onMouseLeave={() => holdPopup(p.id, false)}>
           <button
-            className="popup-main"
+            className="npop-main"
             onClick={() => {
               dismissPopup(p.id);
               act(p.kind, p.userId);
@@ -169,10 +169,10 @@ export function Popups() {
               {p.kind === "blockAsk" && <span className="small muted">{tr("inbox.tapToAnswer")}</span>}
             </span>
           </button>
-          <button className="popup-close" aria-label={tr("common.close")} onClick={() => dismissPopup(p.id)}>
+          <button className="npop-close" aria-label={tr("common.close")} onClick={() => dismissPopup(p.id)}>
             <Icon name="close" size={14} />
           </button>
-          <span className="popup-life" aria-hidden="true" />
+          <span className="npop-life" aria-hidden="true" />
         </div>
       ))}
     </div>

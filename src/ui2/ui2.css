@@ -636,18 +636,18 @@
 .phone-inbox .inbox-btn.has { background: none; color: var(--accent); }
 .phone-inbox .inbox-drop { position: fixed; top: calc(var(--safe-top, 0px) + 64px); left: 12px; right: 12px; width: auto; }
 
-.popups { position: fixed; z-index: 1200; top: 16px; left: 112px; display: grid; gap: 8px; width: 380px; max-width: calc(100vw - 32px); pointer-events: none; }
-.popup { position: relative; display: flex; align-items: center; pointer-events: auto; background: var(--bg); border: 1px solid color-mix(in srgb, var(--tint) 12%, transparent); border-left: 3px solid var(--accent); border-radius: 8px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); overflow: hidden; animation: popup-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
-.popup.k-blockAsk { border-left-color: var(--danger, #ef5b5b); }
-.popup-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 6px 12px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-.popup-close { flex: none; align-self: flex-start; margin: 6px 6px 0 0; width: 26px; height: 26px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
-.popup-close:hover { color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
-.popup-life { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--accent); opacity: 0.6; transform-origin: left; animation: popup-life var(--life, 30s) linear forwards; }
-.popup:hover .popup-life { animation-play-state: paused; }
-@keyframes popup-in { from { opacity: 0; transform: translateY(-10px) scale(0.97); } }
-@keyframes popup-life { to { transform: scaleX(0); } }
-@media (prefers-reduced-motion: reduce) { .popup { animation: none; } }
-@media (max-width: 700px) { .popups { top: calc(var(--safe-top, 0px) + 64px); left: 12px; right: 12px; width: auto; } }
+.npops { position: fixed; z-index: 1200; top: 16px; left: 112px; display: grid; gap: 8px; width: 380px; max-width: calc(100vw - 32px); pointer-events: none; }
+.npop { position: relative; display: flex; align-items: center; pointer-events: auto; background: var(--bg); border: 1px solid color-mix(in srgb, var(--tint) 12%, transparent); border-left: 3px solid var(--accent); border-radius: 8px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); overflow: hidden; animation: npop-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.npop.k-blockAsk { border-left-color: var(--danger, #ef5b5b); }
+.npop-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 6px 12px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.npop-close { flex: none; align-self: flex-start; margin: 6px 6px 0 0; width: 26px; height: 26px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
+.npop-close:hover { color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
+.npop-life { position: absolute; left: 0; bottom: 0; height: 2px; width: 100%; background: var(--accent); opacity: 0.6; transform-origin: left; animation: npop-life var(--life, 30s) linear forwards; }
+.npop:hover .npop-life { animation-play-state: paused; }
+@keyframes npop-in { from { opacity: 0; transform: translateY(-10px) scale(0.97); } }
+@keyframes npop-life { to { transform: scaleX(0); } }
+@media (prefers-reduced-motion: reduce) { .npop { animation: none; } }
+@media (max-width: 700px) { .npops { top: calc(var(--safe-top, 0px) + 64px); left: 12px; right: 12px; width: auto; } }
 
 /* Who's here: faces, filter and list (Lobby bar and the "You are here" card). */
 .here-face2 { position: relative; display: grid; place-items: center; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--tint) 15%, transparent); background: var(--panel); color: var(--muted); font-size: 12px; font-weight: 700; box-sizing: border-box; }
