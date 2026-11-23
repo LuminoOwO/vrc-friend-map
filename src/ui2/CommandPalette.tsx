@@ -34,6 +34,7 @@ const SETTINGS: [string, string][] = lazy(() => [
   ["mapdisplay", tr("palette.mapAndProfiles")],
   ["framerate", tr("palette.frameRate")],
   ["age", tr("palette.ageHintsAndLinkedPages")],
+  ["blocked", tr("blocked.title")],
   ["redflags", tr("palette.redFlagsInVrchatNotes")],
   ["invites", tr("palette.inviteMessages")],
   ["bios", tr("palette.readingBiosInTheBackground")],

@@ -199,7 +199,14 @@ export interface Cache {
    */
   friendOf?: Record<string, string[]>;
   /** Your blocks, mutes, hidden avatars (VRChat "player moderations"), by user. */
-  moderations?: { byUser: Record<string, string[]>; fetchedAt: number };
+  moderations?: {
+    byUser: Record<string, string[]>;
+    fetchedAt: number;
+    /** Their display name as VRChat sent it with the moderation (works for anyone, friend or not). */
+    names?: Record<string, string>;
+    /** When you blocked them (VRChat's time, ISO). */
+    blockedAt?: Record<string, string>;
+  };
   lastFriendsSync: number;
 }
 

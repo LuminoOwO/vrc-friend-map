@@ -23,6 +23,8 @@ import {
 } from "../personal";
 import { fmtDate } from "../model";
 import { setState, showToast, useApp } from "../store";
+import { wantProfiles } from "../people";
+import { imgSrc } from "../backend";
 import { dayPart, differenceFromMe, hourIn, timeIn, zoneEntry, zoneLabel, ZONE_LIST } from "../tz";
 import { requestInvite } from "../invites";
 import { Icon } from "./Icon";
@@ -373,6 +375,7 @@ export function BlockReasonDialog() {
   const queue = useApp((s) => s.blockAsk);
   const id = queue[0];
   const person = useApp((s) => (id ? (s.cache.friends[id] ?? s.cache.others?.[id]) : null));
+  const modName = useApp((s) => (id ? s.cache.moderations?.names?.[id] : undefined));
   const age = useApp((s) => (id ? s.cache.ageHints?.[id] : undefined));
   const [picked, setPicked] = useState<string[]>([]);
   const [text, setText] = useState("");
@@ -380,10 +383,12 @@ export function BlockReasonDialog() {
     const cur = id ? blockReasonOf(id) : null;
     setPicked(cur?.reasons ?? []);
     setText(cur?.text ?? "");
+    // Usually not a friend: load their profile (picture, name) if the app hasn't yet.
+    if (id) wantProfiles([id]);
   }, [id]);
   if (!id) return null;
   const close = () => setState((s) => ({ blockAsk: s.blockAsk.slice(1) }));
-  const name = person?.displayName ?? "Them";
+  const name = person?.displayName ?? modName ?? tr("personExtras.them");
   const adult = age?.hints.filter((h) => h.dir === "adult").length ?? 0;
   const minor = age?.hints.filter((h) => h.dir === "minor").length ?? 0;
   const ageText = !age ? "" : adult && !minor ? tr("personExtras.hintsPointToOver18") : minor && !adult ? tr("personExtras.hintsPointToUnder18") : adult || minor ? tr("personExtras.mixedAgeHints") : tr("personExtras.noAgeHints");
@@ -392,10 +397,24 @@ export function BlockReasonDialog() {
     <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && close()}>
       <div className="modal block-reasons" role="dialog" aria-labelledby="block-title" onKeyDown={(e) => e.key === "Escape" && close()}>
         <div className="row">
-          {person?.iconUrl || person?.currentAvatarThumbnailImageUrl ? <img className="block-pic" src={person.iconUrl || person.currentAvatarThumbnailImageUrl} alt="" /> : null}
+          {person?.profilePicOverride || person?.iconUrl || person?.currentAvatarThumbnailImageUrl ? (
+            <img className="block-pic" src={imgSrc(person.profilePicOverride || person.iconUrl || person.currentAvatarThumbnailImageUrl)} alt="" />
+          ) : (
+            <span className="block-pic block-pic-empty" aria-hidden="true">
+              {name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
           <div>
             <h2 id="block-title">{tr("personExtras.whyDidYouBlockName", { name })}</h2>
             {ageText && <p className="small muted">{tr("personExtras.ageAgetext", { ageText })}</p>}
+            <button
+              className="btn small ghost"
+              onClick={() => {
+                setState((s) => ({ selectedId: id, blockAsk: s.blockAsk.slice(1) }));
+              }}
+            >
+              {tr("personExtras.openProfile")}
+            </button>
           </div>
         </div>
         {(["annoying", "harmful", "technical"] as const).map((g) => (

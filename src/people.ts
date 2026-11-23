@@ -318,6 +318,11 @@ export function moderationsOf(cache: Cache, id: string): string[] {
   return cache.moderations?.byUser[id] ?? [];
 }
 
+/** A name for anyone: friend, someone whose profile was loaded, or from your blocks/mutes. */
+export function displayNameOf(cache: Cache, id: string): string | undefined {
+  return cache.friends[id]?.displayName ?? cache.others?.[id]?.displayName ?? cache.moderations?.names?.[id];
+}
+
 export function isBlocked(cache: Cache, id: string): boolean {
   return moderationsOf(cache, id).includes("block");
 }
@@ -332,9 +337,13 @@ export function refreshModerations(force = false): Promise<void> {
       const r = await get("/auth/user/playermoderations");
       if (!r || r.status !== 200 || !Array.isArray(r.data)) return;
       const byUser: Record<string, string[]> = {};
-      for (const m of r.data as { type?: string; targetUserId?: string }[]) {
+      const names: Record<string, string> = {};
+      const blockedAt: Record<string, string> = {};
+      for (const m of r.data as { type?: string; targetUserId?: string; targetDisplayName?: string; created?: string }[]) {
         if (!m?.targetUserId || !m.type) continue;
         (byUser[m.targetUserId] ??= []).push(m.type);
+        if (typeof m.targetDisplayName === "string" && m.targetDisplayName) names[m.targetUserId] = m.targetDisplayName;
+        if (m.type === "block" && typeof m.created === "string") blockedAt[m.targetUserId] = m.created;
       }
       // Blocks made in game since last time: ask why (only after the first load).
       const before = getState().cache.moderations;
@@ -344,7 +353,7 @@ export function refreshModerations(force = false): Promise<void> {
           .map(([id]) => id);
         if (fresh.length) setState((st) => ({ blockAsk: [...new Set([...st.blockAsk, ...fresh])] }));
       }
-      updateCache((c) => ({ ...c, moderations: { byUser, fetchedAt: Date.now() } }));
+      updateCache((c) => ({ ...c, moderations: { byUser, fetchedAt: Date.now(), names: { ...(c.moderations?.names ?? {}), ...names }, blockedAt } }));
     } catch {
       /* try again later */
     } finally {
@@ -375,7 +384,14 @@ export async function setModeration(id: string, kind: "block" | "mute" | "hideAv
       if (on) cur.add(kind);
       else cur.delete(kind);
       byUser[id] = [...cur];
-      return { ...c, moderations: { byUser, fetchedAt: c.moderations?.fetchedAt ?? 0 } };
+      const name = c.friends[id]?.displayName ?? c.others?.[id]?.displayName;
+      const names = name ? { ...(c.moderations?.names ?? {}), [id]: name } : c.moderations?.names;
+      const blockedAt = { ...(c.moderations?.blockedAt ?? {}) };
+      if (kind === "block") {
+        if (on) blockedAt[id] = new Date().toISOString();
+        else delete blockedAt[id];
+      }
+      return { ...c, moderations: { ...c.moderations, byUser, fetchedAt: c.moderations?.fetchedAt ?? 0, names, blockedAt } };
     });
     if (kind === "block" && on) setState((st) => ({ blockAsk: [...new Set([...st.blockAsk, id])] }));
     return null;

@@ -376,5 +376,31 @@
   "hours": {
     "min": "{{count}} Min.",
     "h": "{{count}} Std."
+  },
+  "personExtras": {
+    "them": "diese Person",
+    "openProfile": "Profil öffnen"
+  },
+  "sections": {
+    "blockedPeople": "Alle, die du blockiert hast, und warum: Grund hinzufügen, ändern oder löschen."
+  },
+  "blocked": {
+    "title": "Blockierte Personen",
+    "about_one": "{{count}} Person blockiert, {{withReason}} mit Grund. Nur du siehst diese Gründe, außer du teilst sie mit Freunden (Teilen & Server).",
+    "about_other": "{{count}} Personen blockiert, {{withReason}} mit Grund. Nur du siehst diese Gründe, außer du teilst sie mit Freunden (Teilen & Server).",
+    "search": "Namen und Gründe suchen",
+    "none": "Du hast niemanden blockiert.",
+    "loading": "Deine Blockierungen werden von VRChat geladen …",
+    "unknown": "Unbekannter Name",
+    "notAnyMore": "nicht mehr blockiert",
+    "noReason": "Kein Grund angegeben",
+    "edit": "Ändern",
+    "add": "Grund hinzufügen",
+    "delete": "Grund löschen",
+    "deleteFor": "Grund für {{name}} löschen",
+    "deleteConfirm": "Grund für {{name}} löschen? Die Person bleibt blockiert.",
+    "more": "{{count}} weitere zeigen",
+    "showOnMap_one": "Blockierte Personen zeigen ({{count}})",
+    "showOnMap_other": "Blockierte Personen zeigen ({{count}})"
   }
 }

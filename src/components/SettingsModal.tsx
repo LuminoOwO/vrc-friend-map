@@ -11,6 +11,7 @@ import { flushSaves, setState, showToast, updatePeople, updateGroupSettings, upd
 import { CloseSection, NotificationsSection } from "./NotificationsSection";
 import { WheelFixSection } from "./WheelFixSection";
 import { AgeSection } from "./AgeSection";
+import { BlockedSection } from "./BlockedSection";
 import { checkForUpdate } from "../updates";
 import { wheelFixHere } from "../wheelfix";
 import { forgetObserved } from "../together";
@@ -699,6 +700,9 @@ export function SettingsModal() {
         <Sec id="age" cat="people" title={tr("settings.ageHints")} keys="age minor adult 18 underage kids safety notes vouch distance friend request warning">
           <AgeSection />
         </Sec>
+        <Sec id="blocked" cat="people" title={tr("blocked.title")} keys="blocked block list reasons why unblock delete edit people">
+          <BlockedSection />
+        </Sec>
         <Sec id="redflags" cat="people" title={tr("settings.redFlagsInVrchatNotes")} keys="block reasons red flag note in game vrchat notes removed blocked">
           <NotesLineSection />
         </Sec>
@@ -887,7 +891,7 @@ const BETA_OF: Record<string, string> = {
   interface: "appearance", display: "appearance", mapdisplay: "appearance",
   framerate: "performance", graphics: "performance", wheel: "performance",
   notify: "notify", phone: "notify", close: "notify",
-  age: "people", redflags: "people", bios: "people", people: "people",
+  age: "people", blocked: "people", redflags: "people", bios: "people", people: "people",
   invites: "invites",
   logs: "logs", groups: "logs",
   servers: "servers",
@@ -1355,7 +1359,7 @@ function PeopleSection() {
       </p>
       <label className="check">
         <input type="checkbox" checked={people.showBlocked} onChange={(e) => updatePeople({ showBlocked: e.target.checked })} />
-        Show people I've blocked{blocked ? ` (${blocked})` : ""}
+        {tr("blocked.showOnMap", { count: blocked })}
       </label>
     </>
   );

@@ -6,6 +6,9 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Blocked people** (Settings → People & safety): everyone you've blocked, newest first, with
+  the reason you gave; add, change or delete a reason, open their profile, search when the list
+  is long. Reasons of people you've since unblocked stay until you delete them.
 - **Languages:** Settings → Appearance → Language, "Like the system" by default, per device.
   All of the app's text (about 2,000 texts) now lives in `src/i18n/locales/` in a format Weblate
   and Crowdin read directly; dates and numbers follow the chosen language. Translated so far: the

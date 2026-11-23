@@ -11,6 +11,7 @@ export const SECTION_INFO: Record<string, { icon: string; about: string }> = laz
   framerate: { icon: "rocket", about: tr("sections.smoothnessAgainstBatteryAndFan") },
   graphics: { icon: "desktop", about: tr("sections.graphicsCardOrSoftwareDrawing") },
   age: { icon: "shield", about: tr("sections.hintsAboutWhoMightBe") },
+  blocked: { icon: "lock", about: tr("sections.blockedPeople") },
   redflags: { icon: "flag", about: tr("sections.aShortWarningLineIn") },
   invites: { icon: "share", about: tr("sections.yourSavedInviteAndRequest") },
   bios: { icon: "idcard", about: tr("sections.readsProfilesSlowlyInThe") },
