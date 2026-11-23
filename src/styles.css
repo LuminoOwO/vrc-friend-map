@@ -1296,7 +1296,11 @@ span.group-icon > .gpic-default { font-size: 16px; }
 .groups-empty { margin: 14px 16px 0; }
 /* Your own profile: status and pronouns change in place (QuickEdit). */
 .qe-wrap { position: relative; display: inline-flex; }
-button.status-pill.editable { font: inherit; color: inherit; cursor: pointer; }
+button.status-pill.editable { margin: 0; font-family: inherit; font-size: 13px; font-weight: 400; line-height: normal; color: var(--text); text-align: left; cursor: pointer; }
+/* The wrapper takes the pill's place (absolute in the classic profile, a grid cell in the new one). */
+.qe-wrap-status { position: absolute; left: 160px; top: -54px; }
+.qe-wrap-status > .status-pill { position: static; }
+@media (max-width: 700px) { .qe-wrap-status { left: 128px; top: -44px; } }
 button.status-pill.editable svg { opacity: 0; margin-left: 2px; transition: opacity 0.15s; }
 button.status-pill.editable:hover svg, button.status-pill.editable[aria-expanded="true"] svg { opacity: 0.7; }
 button.status-pill.editable:hover { border-color: var(--accent); }

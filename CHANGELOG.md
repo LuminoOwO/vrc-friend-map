@@ -127,6 +127,7 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **Your status pill on your profile** was bigger and out of place since it became clickable.
 - **Building the server image from source with Podman** failed on the short image name
   (`rust:1-alpine`); the Dockerfile names it in full.
 - Phones and narrow windows: the new map toolbar showed every map button again (ring, names,

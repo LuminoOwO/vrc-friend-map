@@ -272,7 +272,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
         {icon ? <img src={icon} alt="" /> : <span>{f.displayName.slice(0, 1).toUpperCase()}</span>}
       </div>
       {relation === "me" ? (
-        <span className="qe-wrap">
+        <span className="qe-wrap qe-wrap-status">
           <button
             className="status-pill qe-anchor editable"
             data-flip="status"
