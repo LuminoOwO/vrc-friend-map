@@ -176,3 +176,4 @@
   background-size: 200% 100%;
   animation: shimmer 1.3s linear infinite;
 }
+.skel-tile { display: block; width: 100%; border-radius: 8px; min-height: 24px; }

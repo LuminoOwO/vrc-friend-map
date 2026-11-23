@@ -49,6 +49,18 @@ export function watchImageLoads() {
   document.addEventListener("error", mark, true);
 }
 
+/** Shimmering tiles in place of a grid that's still loading, shaped like the real tiles
+ *  (`ratio` width/height, or a fixed `h`), so nothing jumps when they arrive. */
+export function SkelTiles({ n = 6, ratio, h, className = "" }: { n?: number; ratio?: number; h?: number | string; className?: string }) {
+  return (
+    <>
+      {Array.from({ length: n }, (_, i) => (
+        <span key={i} className={`skel skel-tile ${className}`} style={{ aspectRatio: ratio ? String(ratio) : undefined, height: h }} role="status" aria-label="Loading" />
+      ))}
+    </>
+  );
+}
+
 /** A few shimmering lines in place of a block that's still loading. */
 export function SkelBlock({ lines = 3, label }: { lines?: number; label?: string }) {
   const widths = ["94%", "82%", "68%", "88%", "60%"];

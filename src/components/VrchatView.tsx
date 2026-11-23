@@ -36,7 +36,7 @@ import { Icon } from "./Icon";
 import { GroupPic } from "./GroupPic";
 import { openImage } from "./ImageViewer";
 import { Range } from "./Range";
-import { SkelBlock } from "../ui2/smooth";
+import { Skel, SkelBlock, SkelTiles } from "../ui2/smooth";
 import { TaggedPictures } from "./LogbookView";
 
 type Tab = "pictures" | "favorites" | "avatars" | "files" | "worlds";
@@ -139,9 +139,10 @@ function MyGroups() {
     <div className="insights">
       <section className="insight-card">
         <h3>
-          <Icon name="users" size={16} /> Your groups ({groups?.length ?? "…"})
+          <Icon name="users" size={16} /> Your groups {groups ? `(${groups.length})` : <Skel w="2em" />}
         </h3>
         <ul className="group-tiles">
+          {!groups && <SkelTiles n={8} h={48} className="group-tile" />}
           {groups?.map((g) => (
             <li key={g.groupId}>
               <button className="group-tile" onClick={() => setState({ openGroup: g.groupId })}>
@@ -200,6 +201,15 @@ function Favorites() {
         </p>
       )}
       <div className="insights">
+        {(!groups || !favs) &&
+          !gErr &&
+          !fErr &&
+          [0, 1].map((i) => (
+            <section key={i} className="insight-card" aria-busy="true">
+              <Skel w="10em" h="1.1em" />
+              <SkelBlock lines={4} />
+            </section>
+          ))}
         {myGroups.map((g) => (
           <section key={g.name} className="insight-card">
             <div className="row between">
@@ -282,14 +292,16 @@ function Avatars() {
     <>
       {current && <p className="small">You're wearing: <b>{current}</b></p>}
       {(err1 || err2) && <p className="small warn">{err1 || err2}</p>}
-      <h3>Your uploaded avatars ({mine?.length ?? "…"})</h3>
+      <h3>Your uploaded avatars {mine ? `(${mine.length})` : <Skel w="2em" />}</h3>
       <div className="avatar-grid">
+        {!mine && !err1 && <SkelTiles n={6} ratio={4 / 3} />}
         {mine?.map((a) => (
           <AvatarCard key={a.id} a={a} onSelect={() => sel(a)} />
         ))}
       </div>
-      <h3>Favorite avatars ({favs?.length ?? "…"})</h3>
+      <h3>Favorite avatars {favs ? `(${favs.length})` : <Skel w="2em" />}</h3>
       <div className="avatar-grid">
+        {!favs && !err2 && <SkelTiles n={6} ratio={4 / 3} />}
         {favs?.map((a) => (
           <AvatarCard key={a.id} a={a} onSelect={() => sel(a)} />
         ))}
@@ -322,6 +334,7 @@ function Files() {
       </div>
       {err && <p className="small warn">{err}</p>}
       <div className="pic-grid file-grid">
+        {!files && !err && <SkelTiles n={8} ratio={1} />}
         {files?.map((f) => {
           const url = (f as VrcFile).imageUrl ?? (f as Print).imageUrl;
           return (
