@@ -61,22 +61,22 @@ export function VrchatView({ section }: { section: "groups" | "media" }) {
   }
   return (
     <div className="activity-view logbook">
-      <div className="row">
-        <div className="seg logbook-tabs" role="tablist">
-          {(
-            [
-              ["pictures", tr("logbook.pictures")],
-              ["favorites", tr("vrchat.favorites")],
-              ["avatars", tr("vrchat.avatars")],
-              ["files", tr("vrchat.printsStickersEmojis")],
-              ["worlds", tr("vrchat.worldNotes")],
-            ] as [Tab, string][]
-          ).map(([k, l]) => (
-            <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
-              {l}
-            </button>
-          ))}
-        </div>
+      <div className="seg logbook-tabs" role="tablist">
+        {(
+          [
+            ["pictures", tr("logbook.pictures")],
+            ["favorites", tr("vrchat.favorites")],
+            ["avatars", tr("vrchat.avatars")],
+            ["files", tr("vrchat.printsStickersEmojis")],
+            ["worlds", tr("vrchat.worldNotes")],
+          ] as [Tab, string][]
+        ).map(([k, l]) => (
+          <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? "on" : ""} onClick={() => setTab(k)}>
+            {l}
+          </button>
+        ))}
+      </div>
+      <div className="row media-link-row">
         <OpenLink />
       </div>
       {tab === "pictures" ? (

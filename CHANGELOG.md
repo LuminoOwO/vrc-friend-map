@@ -112,6 +112,7 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **Media: the link box was cut off** under the tabs on some window sizes; it has its own row.
 - **Friend groups button** on the map shows when the panel is open and closes it on a second
   click; **Escape** closes the panel too.
 - Online times: a stray "·" at the end of the legend.

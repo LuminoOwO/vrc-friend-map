@@ -1316,3 +1316,8 @@ button.status-pill.editable:hover { border-color: var(--accent); }
 .qe-chip:hover { border-color: var(--border-strong); }
 .qe-chip.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 20%, var(--panel-2)); }
 .qe-actions { display: flex; align-items: center; gap: 6px; }
+/* The link box shares the row with the tabs: it shrinks first, then moves to its own line. */
+.open-link { flex: 1 1 240px; max-width: 440px; min-width: 0; flex-wrap: nowrap; }
+.open-link input { flex: 1 1 auto; min-width: 0; width: 100%; }
+.open-link .btn { flex: none; }
+.media-link-row .open-link { margin-left: 0; }
