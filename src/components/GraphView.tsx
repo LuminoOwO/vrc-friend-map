@@ -2246,7 +2246,7 @@ export function GraphView() {
         <ListOverlayLegend lists={overlay.lists} />
       </div>
       <div className="graph-controls">
-        <div className="zoom-btns">
+        <div className="zoom-btns mbar">
           <button className="icon-btn" title={tr("map.zoomIn")} onClick={() => zoomBy(1.4)}>
             <Icon name="plus" />
           </button>
@@ -2257,35 +2257,39 @@ export function GraphView() {
             <Icon name="fit" />
           </button>
         </div>
-        <button
-          className="btn small"
-          title={tr("map.whatTheRingAroundEach")}
-          onClick={() => updateSettings({ ringMode: getState().settings.ringMode === "status" ? "trust" : "status" })}
-        >
-          Ring: {settings.ringMode === "status" ? "status" : "trust rank"}
-        </button>
-        {!card && (
+        <div className="mbar mbar-view">
           <button
             className="btn small"
-            title={tr("map.nameLabels")}
-            onClick={() => {
-              const order = ["auto", "always", "never"] as const;
-              const next = order[(order.indexOf(getState().settings.showLabels) + 1) % 3];
-              updateSettings({ showLabels: next });
-            }}
+            title={tr("map.whatTheRingAroundEach")}
+            onClick={() => updateSettings({ ringMode: getState().settings.ringMode === "status" ? "trust" : "status" })}
           >
-            {tr("map.namesShowlabels", { showLabels: settings.showLabels })}
+            Ring: {settings.ringMode === "status" ? "status" : "trust rank"}
           </button>
-        )}
+          {!card && (
+            <button
+              className="btn small"
+              title={tr("map.nameLabels")}
+              onClick={() => {
+                const order = ["auto", "always", "never"] as const;
+                const next = order[(order.indexOf(getState().settings.showLabels) + 1) % 3];
+                updateSettings({ showLabels: next });
+              }}
+            >
+              {tr("map.namesShowlabels", { showLabels: settings.showLabels })}
+            </button>
+          )}
+        </div>
         <HereSwitch />
-        {betaActive() && (
-          <button className="btn small" title={tr("fgroups.help")} onClick={() => (isMobile ? setState({ view: "insights" }) : openFriendGroups())}>
-            <Icon name="users" size={15} /> {tr("fgroups.button")}
+        <div className="mbar mbar-more">
+          {betaActive() && (
+            <button className="btn small" title={tr("fgroups.help")} onClick={() => (isMobile ? setState({ view: "insights" }) : openFriendGroups())}>
+              <Icon name="users" size={15} /> <span className="mbar-text">{tr("fgroups.button")}</span>
+            </button>
+          )}
+          <button className={`btn small keep ${optionsOpen ? "active" : ""}`} title={tr("map.mapOptions")} onClick={() => setOptionsOpen(!optionsOpen)}>
+            <Icon name="sliders" size={15} /> <span className="mbar-text">{tr("map.mapOptions")}</span>
           </button>
-        )}
-        <button className={`btn small keep ${optionsOpen ? "active" : ""}`} title={tr("map.mapOptions")} onClick={() => setOptionsOpen(!optionsOpen)}>
-          <Icon name="sliders" size={15} /> {tr("map.mapOptions")}
-        </button>
+        </div>
       </div>
       {optionsOpen && <MapOptions onClose={() => setOptionsOpen(false)} onFit={() => fit()} hasLogData={!!stats?.pairs.length} />}
       <Legend
@@ -2312,7 +2316,7 @@ function HereSwitch() {
     ["mutual", tr("hereSwitch.mutual")],
   ] as const;
   return (
-    <div className={`here-switch ${mode !== "off" ? "on" : ""}`} role="group" aria-label={tr("hereSwitch.label")} title={inGame ? tr("hereSwitch.help") : tr("hereSwitch.notInGame")}>
+    <div className={`here-switch mbar ${mode !== "off" ? "on" : ""}`} role="group" aria-label={tr("hereSwitch.label")} title={inGame ? tr("hereSwitch.help") : tr("hereSwitch.notInGame")}>
       <span className="here-switch-label">
         <Icon name="pin" size={14} /> {tr("hereSwitch.label")}
         {inGame && <span className="here-switch-n">{count}</span>}

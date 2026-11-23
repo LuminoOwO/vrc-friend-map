@@ -95,6 +95,7 @@
    (thumb reach); map options open as a bottom sheet. */
 .ui2-phone .graph-controls { top: auto; right: 12px; bottom: 14px; flex-direction: column-reverse; gap: 10px; z-index: 6; }
 .ui2-phone .zoom-btns .icon-btn:not(:last-child) { display: none; }
+.ui2-phone .graph-controls .mbar { display: contents; }
 .ui2-phone .graph-controls .icon-btn, .ui2-phone .graph-controls .btn.small.keep { width: 48px; height: 48px; min-height: 0; padding: 0; justify-content: center; border-radius: 50% !important; border: 1px solid var(--border-strong); background: color-mix(in srgb, var(--panel) 94%, transparent); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); font-size: 0; gap: 0; }
 .ui2-phone .graph-controls .btn.small.keep svg { width: 20px; height: 20px; }
 .ui2-phone .graph-controls .btn.small.keep.active { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }

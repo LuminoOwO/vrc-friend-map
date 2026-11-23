@@ -328,7 +328,7 @@ textarea { width: 100%; resize: vertical; }
   .sync { order: 11; flex: 1 1 35%; margin-left: 0; max-width: none; }
   .brand.small { gap: 6px; }
   .legend { display: none; }
-  .graph-controls .btn.small { display: none; }
+  .graph-controls .btn.small, .graph-controls .mbar-view { display: none; }
   .card-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
   .fcard-banner { height: 64px; }
   .fcard-icon { width: 46px; height: 46px; }
@@ -1265,12 +1265,17 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
 @media (max-width: 700px) { .compare-cols3 { grid-template-columns: 1fr; } }
 
 /* The map's "In this instance" switch. */
-.here-switch { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--panel-2); font-size: 12.5px; }
-.here-switch.on { border-color: var(--accent); }
-.here-switch-label { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px 0 6px; color: var(--muted); white-space: nowrap; }
+/* Map buttons: every group shares one frame and every control is the same height, so the
+   zoom buttons, toggles, the "In this instance" switch and the menus read as one toolbar. */
+.mbar { display: inline-flex; align-items: center; gap: 2px; height: 36px; padding: 2px; box-sizing: border-box; border-radius: 9px; border: 1px solid var(--border-strong); background: color-mix(in srgb, var(--panel) 94%, transparent); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); font-size: 12.5px; }
+.mbar > button, .mbar .icon-btn, .graph-controls .mbar .btn.small { height: 30px; min-height: 0; padding: 0 10px; border: 0; border-radius: 7px !important; background: none; color: var(--muted); font: inherit; font-size: 12.5px; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; white-space: nowrap; box-shadow: none; }
+.mbar .icon-btn { width: 30px; padding: 0; justify-content: center; }
+.mbar svg { flex: none; }
+.mbar > button:hover, .mbar .icon-btn:hover { background: var(--tint, var(--panel-2)); color: var(--text); }
+.mbar > button.on, .mbar > button.active { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }
+@media (max-width: 1520px) { .lay-lobby .mbar-more .mbar-text { display: none; } .lay-lobby .mbar-more > button { width: 30px; padding: 0; justify-content: center; } }
+.here-switch.on { border-color: color-mix(in srgb, var(--accent) 60%, var(--border-strong)); }
+.here-switch-label { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 8px; color: var(--muted); white-space: nowrap; border-right: 1px solid var(--border); height: 20px; margin-right: 2px; }
 .here-switch.on .here-switch-label { color: var(--accent); }
 .here-switch-n { padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); font-weight: 700; font-size: 11px; }
-.here-switch button { height: 26px; padding: 0 9px; border: 0; border-radius: 6px; background: none; color: var(--muted); font: inherit; cursor: pointer; white-space: nowrap; }
-.here-switch button:hover { color: var(--text); }
-.here-switch button.on { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }
 .pic-more { display: grid; place-items: center; color: var(--muted); font-weight: 700; font-size: 15px; }
