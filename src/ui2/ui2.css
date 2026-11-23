@@ -709,3 +709,12 @@
    more specific than the older "hide on small screens" ones, so they're repeated here). */
 .ui2-phone .graph-controls .mbar-view, .ui2-phone .graph-controls .here-switch, .ui2-phone .graph-controls .mbar .btn.small:not(.keep) { display: none; }
 .ui2-profile .profile-hero-row .qe-wrap-status { grid-area: status; position: relative; left: auto; top: auto; justify-self: start; }
+/* Computers: a narrow window keeps the profile a floating card with the same margins
+   (the full-screen sheet is for the phone layout). */
+@media (max-width: 900px) {
+  .ui2-desktop .profile-backdrop { padding: 4vh 2vw; }
+  .ui2-desktop .profile.popup { width: min(1100px, 96vw); min-height: 0; border: 1px solid var(--border); border-radius: 26px; }
+}
+/* Computers: the profile covers the left menu and the bell (they used to draw over it). */
+.ui2-desktop .profile-backdrop { z-index: 61; }
+.ui2-desktop .toast { z-index: 90; }

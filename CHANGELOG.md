@@ -127,6 +127,8 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **Profiles on narrow computer windows** stayed glued to the top edge (the phone sheet); they
+  keep their margins now. The left menu and the bell no longer draw over an open profile.
 - **Your status pill on your profile** was bigger and out of place since it became clickable.
 - **Building the server image from source with Podman** failed on the short image name
   (`rust:1-alpine`); the Dockerfile names it in full.
