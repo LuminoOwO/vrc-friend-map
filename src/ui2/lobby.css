@@ -119,3 +119,23 @@
 .lob-party-body { overflow: hidden; }
 /* The menu is for clicking, not for selecting text. */
 .lob-left, .lob-news, .lob-party-tab { user-select: none; -webkit-user-select: none; }
+
+/* Who's here, along the bottom (replaces the latest-activity bar). */
+.lob-herebar { position: absolute; z-index: 7; left: 0; right: 0; bottom: 0; height: 52px; display: flex; align-items: center; gap: 14px; padding: 0 18px 0 112px; background: linear-gradient(0deg, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.55)); border-top: 1px solid rgba(255, 255, 255, 0.07); user-select: none; -webkit-user-select: none; }
+.lob-herebar.idle { color: var(--muted); }
+.lob-herebar-label { flex: none; display: flex; align-items: center; gap: 8px; max-width: 34%; height: 36px; padding: 0 12px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px; background: rgba(255, 255, 255, 0.04); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.lob-herebar.idle .lob-herebar-label { border: 0; background: none; color: var(--muted); cursor: default; }
+.lob-herebar-label:hover, .lob-herebar-label.on { border-color: var(--accent); }
+.lob-herebar-label b { font-size: 11px; font-weight: 900; letter-spacing: 0.12em; text-transform: uppercase; font-style: italic; color: var(--accent); white-space: nowrap; }
+.lob-herebar-world { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.lob-herebar-count { flex: none; padding: 1px 7px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 25%, transparent); font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.lob-herebar-live { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 25%, transparent); }
+.lob-herebar-faces { flex: 1; min-width: 0; height: 52px; display: flex; align-items: center; gap: 4px; overflow: hidden; }
+.lob-herebar-face { flex: none; padding: 0; border: 0; background: none; cursor: pointer; border-radius: 50%; transition: transform 0.15s; }
+.lob-herebar-face:hover, .lob-herebar-face:focus-visible { transform: translateY(-2px) scale(1.08); }
+.lob-herebar-list { flex: none; display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; }
+.lob-herebar-list:hover, .lob-herebar-list.on { color: var(--text); border-color: var(--accent); }
+.lob-herebar-panel { position: absolute; z-index: 30; left: 112px; bottom: 60px; width: 420px; max-width: calc(100vw - 140px); max-height: 62vh; display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--panel-2); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55); }
+.lob-herebar-panel-head { display: flex; align-items: baseline; gap: 10px; padding: 0 4px; }
+.lob-herebar-panel .here-list2 { overflow-y: auto; }
+@media (max-width: 1100px) { .lob-herebar .here-filters { display: none; } .lob-herebar-panel .here-filters { display: flex; } }

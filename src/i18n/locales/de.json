@@ -433,5 +433,21 @@
   "notify": {
     "startInTray": "Im Tray starten (das Fenster öffnet sich nicht)",
     "startInTrayHelp": "Nur dieses Gerät. Das Fenster öffnest du über das Tray-Symbol. Gibt es auf diesem System kein Tray-Symbol, öffnet sich das Fenster wie gewohnt."
+  },
+  "hereBar": {
+    "title": "Wer ist hier",
+    "all": "Alle",
+    "friends": "Freunde",
+    "mutual": "Gemeinsame Freunde",
+    "filter": "Zeigen",
+    "mutualHelp": "Leute, die noch nicht deine Freunde sind, aber Freunde mit dir teilen",
+    "friend": "Freund",
+    "mutualCount_one": "{{count}} gemeinsamer Freund",
+    "mutualCount_other": "{{count}} gemeinsame Freunde",
+    "openList": "Alle in deiner Instanz",
+    "list": "Liste",
+    "noneMatch": "Niemand hier passt zu diesem Filter.",
+    "blockedHidden_one": "{{count}} blockierte Person ausgeblendet",
+    "blockedHidden_other": "{{count}} blockierte Personen ausgeblendet"
   }
 }

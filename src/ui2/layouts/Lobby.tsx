@@ -1,22 +1,21 @@
 // Layout "Lobby" (a video game's main menu), the new interface on computers: the map fills the
 // window; a menu on the left (icons only; the names slide out while you point at it); your party
 // on the right (you with your banner, where you are, the overview, Online now and Activity; it
-// folds away to a tab on the edge); the latest activity along the bottom. A view (or Settings)
+// folds away to a tab on the edge); who's in your instance along the bottom. A view (or Settings)
 // opens in a big frame; the map fades out and stops drawing behind it.
-import { t as tr, language } from "../../i18n";
-import { useEffect, useMemo, useState } from "react";
+import { t as tr } from "../../i18n";
+import { useEffect, useState } from "react";
 import { useT } from "../../i18n";
 import { imgSrc } from "../../backend";
 import { bannerUrl } from "../../model";
 import { setState, useApp, type View } from "../../store";
-import { ActivityText, friendLogEntries, useActivityLoaded } from "../../components/ActivityView";
 import { GraphView } from "../../components/GraphView";
 import { Icon } from "../../components/Icon";
 import { AppLogo } from "../AppLogo";
 import { Inbox } from "../Inbox";
+import { HereBar } from "../HereBar";
 import { MeButton, RAIL, ToolCluster, ViewBody, useOpenWorld } from "../parts";
 import { PanelSections, usePanelPrefs } from "../SidePanel";
-import { useSmooth } from "../smooth";
 
 export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
   const t = useT();
@@ -94,7 +93,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
           </div>
         </aside>
       )}
-      <News />
+      <HereBar />
     </div>
   );
 }
@@ -138,36 +137,3 @@ export function MeCard() {
   );
 }
 
-/** The latest few things that happened, along the bottom. */
-function News() {
-  const t = useT();
-  useActivityLoaded();
-  const smooth = useSmooth(400);
-  const activity = useApp((s) => s.activity);
-  const friendLog = useApp((s) => s.local.friendLog);
-  const items = useMemo(
-    () =>
-      [...activity.filter((e) => !e.initial), ...friendLogEntries(friendLog.slice(-10))]
-        .sort((a, b) => b.t - a.t)
-        .slice(0, 4),
-    [activity, friendLog],
-  );
-  return (
-    <footer className="lob-news" aria-label={t("party.latestActivity")}>
-      <span className="lob-news-live" aria-hidden="true" />
-      {/* Items that don't fit wrap onto a hidden second line: never cut off mid-word. */}
-      <div className="lob-news-items" ref={smooth}>
-        {items.map((e) => (
-          <span key={e.key} className="lob-news-item">
-            <span className="lob-news-time">{new Date(e.t).toLocaleTimeString(language(), { hour: "2-digit", minute: "2-digit" })}</span>
-            <ActivityText e={e} />
-          </span>
-        ))}
-        {!items.length && <span className="lob-news-item muted">{t("party.allQuiet")}</span>}
-      </div>
-      <button className="lob-news-all" onClick={() => setState({ view: "activity" })}>
-        All activity <Icon name="chevron-right" size={14} />
-      </button>
-    </footer>
-  );
-}

@@ -637,3 +637,24 @@
 @keyframes popup-life { to { transform: scaleX(0); } }
 @media (prefers-reduced-motion: reduce) { .popup { animation: none; } }
 @media (max-width: 700px) { .popups { top: calc(var(--safe-top, 0px) + 64px); left: 12px; right: 12px; width: auto; } }
+
+/* Who's here: faces, filter and list (Lobby bar and the "You are here" card). */
+.here-face2 { position: relative; display: grid; place-items: center; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.15); background: var(--panel); color: var(--muted); font-size: 12px; font-weight: 700; box-sizing: border-box; }
+.here-face2 img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.here-face2-badge { position: absolute; right: -4px; bottom: -4px; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 999px; background: var(--accent); color: #000; font-size: 9.5px; font-weight: 900; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--bg, #000); }
+.here-filters { flex: none; display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: rgba(255, 255, 255, 0.05); }
+.here-filter { display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: 0; border-radius: 7px; background: none; color: var(--muted); font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+.here-filter:hover { color: var(--text); }
+.here-filter.on { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }
+.here-filter-n { font-size: 11px; opacity: 0.7; font-variant-numeric: tabular-nums; }
+.here-list2 { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.here-list2 button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 6px; border: 0; border-radius: 8px; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.here-list2 button:hover, .here-list2 button:focus-visible { background: color-mix(in srgb, var(--text) 7%, transparent); }
+.here-list2-text { flex: 1; min-width: 0; display: grid; gap: 1px; }
+.here-list2-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; font-size: 14px; }
+.here-list2-time { flex: none; font-variant-numeric: tabular-nums; }
+.here-empty { margin: 6px 4px; }
+.ui2-where-here { display: grid; gap: 8px; margin-top: 8px; }
+.ui2-where-here .here-filters { justify-self: start; }
+.ui2-where-more { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; padding: 4px 6px; border-radius: 6px; cursor: pointer; }
+.ui2-where-more:hover { color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }

@@ -6,6 +6,12 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Who's here, along the bottom** (computers, replaces the latest-activity bar, which repeated
+  the side panel): your world and how many are there, everyone's picture (friends first, then
+  people who share friends with you, with the number on their picture), and a list that opens
+  above it. **Filter: All · Friends · Mutual friends** (people who aren't friends yet but share
+  friends with you). The same list and filter in the "You are here" card (also on phones), which
+  now also opens from the "+5" next to the faces.
 - **Start in the tray** (Settings → Notifications & sounds → Closing the window, computers,
   this device only): the app starts without opening its window; open it from the tray icon.
   Without a tray icon on the system, the window opens as usual.

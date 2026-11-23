@@ -2253,5 +2253,21 @@
     "popupsOff": "Off",
     "popupsHelp": "They come out under the notification center (top left); pointing at one keeps it. Click one to open it.",
     "blockAskPopup": "Ask \"Why did you block …?\" right away (otherwise it waits in the notification center)"
+  },
+  "hereBar": {
+    "title": "Who's here",
+    "all": "All",
+    "friends": "Friends",
+    "mutual": "Mutual friends",
+    "filter": "Show",
+    "mutualHelp": "People who aren't your friends yet but share friends with you",
+    "friend": "Friend",
+    "mutualCount_one": "{{count}} mutual friend",
+    "mutualCount_other": "{{count}} mutual friends",
+    "openList": "Everyone in your instance",
+    "list": "List",
+    "noneMatch": "Nobody here matches this filter.",
+    "blockedHidden_one": "{{count}} blocked person hidden",
+    "blockedHidden_other": "{{count}} blocked people hidden"
   }
 }

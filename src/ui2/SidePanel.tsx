@@ -2,7 +2,7 @@
 // overview tiles, Online now and Activity. Right or left (swap button), resizable (snaps back to
 // its default width, dragged very narrow it folds away), folds to a small "wing" on the edge.
 // Overview, Online now and Activity fold too. The layout is remembered on this device.
-import { t as tr, language } from "../i18n";
+import { language } from "../i18n";
 import { t } from "../i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { imgSrc } from "../backend";
@@ -16,6 +16,7 @@ import { ActivityText, friendLogEntries, useActivityLoaded } from "../components
 import { parseLocation } from "../components/DetailPanel";
 import { FilterChip, clearAll, statusToggle } from "../components/FilterChip";
 import { since, useInstanceSlots } from "../components/HereNow";
+import { filterHere, HereFilters, HereList, useHerePeople, type HereFilter } from "./HereBar";
 import { Icon } from "../components/Icon";
 import { OnlineNow, useSpots } from "./OnlineNow";
 import { useSmooth } from "./smooth";
@@ -123,7 +124,6 @@ function PartHead({ title, extra, open, onFold, action, dot }: { title: string; 
 
 /** Your instance as a card: the world's picture, its name, the instance, and everyone there. */
 export function WhereCard() {
-  const smooth = useSmooth<HTMLUListElement>();
   const smoothCard = useSmooth();
   const here = useApp((s) => s.here);
   const friends = useApp((s) => s.cache.friends);
@@ -184,7 +184,11 @@ export function WhereCard() {
               </button>
             );
           })}
-          {sorted.length > shown.length && <span className="small muted">+{sorted.length - shown.length}</span>}
+          {sorted.length > shown.length && (
+            <button className="ui2-where-more" title={t("party.everyoneHere")} onClick={() => setList(true)}>
+              +{sorted.length - shown.length}
+            </button>
+          )}
           <span className="ui2-grow" />
           <button className={`ui2-square ${list ? "on" : ""}`} aria-pressed={list} title={t("party.everyoneHere")} aria-label={t("party.everyoneHere")} onClick={() => setList(!list)}>
             <Icon name="users" size={18} />
@@ -193,25 +197,22 @@ export function WhereCard() {
             <Icon name="user-plus" size={18} />
           </button>
         </div>
-        {list && (
-          <ul className="ui2-where-list" ref={smooth}>
-            {sorted.map((p) => (
-              <li key={p.id}>
-                <button onClick={() => setState({ selectedId: p.id })}>
-                  <span className="ui2-avatar" style={{ width: 28, height: 28 }}>
-                    {faceOf(p.id) ? <img src={faceOf(p.id)} alt="" /> : p.name[0]}
-                  </span>
-                  <span className="ui2-grow ui2-ellipsis">{friends[p.id]?.displayName ?? p.name}</span>
-                  <span className="small muted">{isFriend(p.id) ? "friend" : tr("party2.notAFriend")}</span>
-                </button>
-              </li>
-            ))}
-            {sorted.length === 0 && <li className="small muted">{t("party.justYou")}</li>}
-          </ul>
-        )}
+        {list && <WhereList />}
         {inviting && <InviteHere location={here.location} here={new Set(players.map((p) => p.id))} />}
       </div>
     </section>
+  );
+}
+
+/** Everyone here, with the All / Friends / Mutual friends filter (src/ui2/HereBar.tsx). */
+function WhereList() {
+  const { people } = useHerePeople();
+  const [filter, setFilter] = useState<HereFilter>("all");
+  return (
+    <div className="ui2-where-here">
+      <HereFilters people={people} value={filter} onChange={setFilter} />
+      <HereList people={filterHere(people, filter)} />
+    </div>
   );
 }
 
