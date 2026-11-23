@@ -338,7 +338,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
         <Icon name="shield" size={14} /> {trust.label}
       </span>
       {representing && (
-        <button className="group-pill" data-flip-fade title={tr("profile.representingThisGroup")} onClick={() => open(`https://vrchat.com/home/group/${representing.groupId}`)}>
+        <button className="group-pill" data-flip-fade title={tr("profile.representingThisGroup")} onClick={() => setState({ openGroup: representing.groupId })}>
           <GroupPic url={representing.iconUrl} name={representing.name} />
           {representing.name}
         </button>
