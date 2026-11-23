@@ -3,7 +3,7 @@
 Versions follow [Semantic Versioning](https://semver.org). While the version is 0.x,
 minor releases can change behavior.
 
-## Unreleased
+## 0.14.0 (2026-11-23)
 
 ### Added
 - **Loading bar while the app loads from VRChat:** a small card at the top (lined up with the
@@ -99,7 +99,14 @@ minor releases can change behavior.
   the row as solid blocks with slightly rounded corners. **Typical week** is now the same
   timeline for the 24 hours of a weekday, one square per hour shaded by how often someone is on (hours you
   share in the accent colour; point at one for "usually online · you're usually on too"),
-  with the hour bars on top lined up with it.
+  with the hour bars on top lined up with it. Blocks are plain, full colour.
+- **Online times: close sessions merge:** sessions less than about 16 px apart at the current
+  zoom (or with a break under 15 minutes) are drawn as one block instead of a row of thin lines,
+  shaded lighter the more of it they were actually offline. Zoom in to see them apart. Faint
+  lines every 30 minutes behind the timeline.
+- **Interface text can't be selected any more** (by dragging or Ctrl+A); people's and places'
+  own text can: names, status, pronouns, bios, world and group titles and descriptions, and
+  anything you type. Ctrl+A only works inside text fields.
 - **The layout follows the window size:** a computer window narrower than 760 px switches to
   the phone layout (back to the desktop one from 820 px); tablets get the desktop layout, and
   a phone turned sideways keeps the phone layout.
@@ -144,6 +151,17 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **Online times showed "nobody watching" for days your server was running:** the server only
+  started keeping its "watching" record with this version; before that, it now works it out from
+  its friend activity log. The "no data" tooltip says what actually wasn't recording (no server
+  set up, server couldn't be reached, or app and server both off) and gives the end date when
+  it's on another day.
+- **A scrollbar ran across the picture viewer** in Media (WebKitGTK draws a page's scrollbar
+  above what's inside it); dialogs inside a page hide the scrollbars behind them, and "Save a
+  copy" looks like a button instead of a blue link.
+- **The left menu could stay open on the Online times page** after the pointer left the window;
+  it now closes whenever the pointer is anywhere else, and the timeline lets go of a drag whose
+  release happened outside the window.
 - **Profiles on narrow computer windows** stayed glued to the top edge (the phone sheet); they
   keep their margins now. The left menu and the bell no longer draw over an open profile.
 - **Your status pill on your profile** was bigger and out of place since it became clickable.

@@ -12,13 +12,13 @@ The app isn't code-signed, so Windows may say it's unrecognized: *More info → 
 
 ## Linux
 
-| File (example: 0.13.0 on x86_64) | For | Install |
+| File (example: 0.14.0 on x86_64) | For | Install |
 |---|---|---|
-| `vrc-friend-map_0.13.0_amd64.deb` | Debian, Ubuntu, Linux Mint, Pop!_OS | `sudo apt install ./vrc-friend-map_0.13.0_amd64.deb` |
-| `vrc-friend-map-0.13.0-1.x86_64.rpm` | Fedora, RHEL/Alma/Rocky, openSUSE | `sudo dnf install ./vrc-friend-map-0.13.0-1.x86_64.rpm` (openSUSE: `sudo zypper install …`) |
-| `vrc-friend-map-0.13.0-x86_64.flatpak` | any distro with Flatpak | `flatpak install --user ./vrc-friend-map-0.13.0-x86_64.flatpak` (gets the GNOME runtime from Flathub) |
-| `vrc-friend-map-0.13.0-x86_64.AppImage` | any distro | `chmod +x` it, then run it |
-| `vrc-friend-map-0.13.0-linux-x86_64.tar.gz` | Arch and any other distro | unpack, then `./install.sh` (per user, no root; `./install.sh --uninstall` removes it) |
+| `vrc-friend-map_0.14.0_amd64.deb` | Debian, Ubuntu, Linux Mint, Pop!_OS | `sudo apt install ./vrc-friend-map_0.14.0_amd64.deb` |
+| `vrc-friend-map-0.14.0-1.x86_64.rpm` | Fedora, RHEL/Alma/Rocky, openSUSE | `sudo dnf install ./vrc-friend-map-0.14.0-1.x86_64.rpm` (openSUSE: `sudo zypper install …`) |
+| `vrc-friend-map-0.14.0-x86_64.flatpak` | any distro with Flatpak | `flatpak install --user ./vrc-friend-map-0.14.0-x86_64.flatpak` (gets the GNOME runtime from Flathub) |
+| `vrc-friend-map-0.14.0-x86_64.AppImage` | any distro | `chmod +x` it, then run it |
+| `vrc-friend-map-0.14.0-linux-x86_64.tar.gz` | Arch and any other distro | unpack, then `./install.sh` (per user, no root; `./install.sh --uninstall` removes it) |
 
 ARM64 builds say `arm64` (deb) or `aarch64` (the others) instead of `amd64`/`x86_64`.
 Check the files with `sha256sum -c SHA256SUMS --ignore-missing`.
