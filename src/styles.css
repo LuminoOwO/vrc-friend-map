@@ -1344,3 +1344,4 @@ button.status-pill.editable:hover { border-color: var(--accent); }
 /* Map options as a side panel page: no box of its own, it scrolls with the panel. */
 .map-options.embedded { position: static; width: auto; max-height: none; overflow: visible; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
 .mo-panel > .map-options.embedded { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 4px; margin-right: -4px; }
+.group-row.skel-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; pointer-events: none; }

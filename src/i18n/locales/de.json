@@ -673,5 +673,9 @@
     "running": "Läuft seit {{s}} s",
     "why": "Anfragen kommen mit Abstand, damit VRChat dich nicht sperrt; der erste Start dauert am längsten.",
     "hideCard": "Ausblenden (eine kleine Fortschrittsanzeige bleibt)"
+  },
+  "profile": {
+    "unknown": "unbekannt",
+    "friendsYouShare": "Gemeinsame Freunde"
   }
 }

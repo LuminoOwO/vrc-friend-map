@@ -501,7 +501,9 @@
     "thinkTwice": "Think twice: {{reason}}.",
     "removedFromFriends": "{{name}} removed from your friends",
     "blocked": "{{name}} blocked",
-    "lastValue": "· last {{value}}"
+    "lastValue": "· last {{value}}",
+    "unknown": "unknown",
+    "friendsYouShare": "Friends you share"
   },
   "personExtras": {
     "snoozeNotifications": "Snooze notifications…",

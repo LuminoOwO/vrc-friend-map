@@ -123,6 +123,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const local = useApp((s) => s.local);
   const [editing, setEditing] = useState(false);
   const demo = useApp((s) => s.demo);
+  const mode = useApp((s) => s.mode);
   const stats = useApp((s) => s.logs.stats);
   const here = useApp((s) => s.here);
   const [newCircle, setNewCircle] = useState("");
@@ -150,6 +151,13 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   useLayoutEffect(() => {
     if (popup) playIntoProfile(id, rootRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const [patient, setPatient] = useState(true);
+  useEffect(() => {
+    setPatient(true);
+    const tm = setTimeout(() => setPatient(false), 15_000);
+    return () => clearTimeout(tm);
   }, [id]);
 
   useEffect(() => {
@@ -197,6 +205,13 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
   const groupList = groups ? [...groups.list].sort((a, b) => Number(!!b.isRepresenting) - Number(!!a.isRepresenting)) : [];
   const representing = groupList.find((g) => g.isRepresenting);
   const mutualGroups = groupList.filter((g) => g.mutual).length;
+  // Parts still on their way from VRChat (calls are spaced out): show their place instead of
+  // letting them pop in. Never in demo mode, where they don't load.
+  // At most for a while after opening, so a failed request doesn't shimmer forever.
+  const live = !demo && mode === "app" && patient;
+  const waitDetail = live && !detail;
+  const waitGroups = live && !groups;
+  const waitMutual = live && !mutual && relation === "friend";
   const mutualFriends = (mutual?.ids ?? []).map((m) => cache.friends[m]).filter(Boolean);
   const inLists = local.imports.filter((l) => listMemberIds(l, cache).includes(id));
   const time = personTime(stats, id);
@@ -380,6 +395,12 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
             <div className="profile-text">
               {!hero && nameEl}
               {!hero && subEl}
+              {waitMutual && mutualFriends.length === 0 && (
+                <div className="mutual-row" aria-busy="true">
+                  <Skel w="4.5em" h="1.4em" />
+                  <Skel w="9em" />
+                </div>
+              )}
               {(mutualFriends.length > 0 || mutualGroups > 0) && (
                 <div className="mutual-row">
                   <span className="face-stack" data-flip-fade>
@@ -497,7 +518,7 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
                   <dt data-flip-fade>
                     <Icon name="clock" size={15} /> {tr("profile.lastLogin")}
                   </dt>
-                  <dd data-flip-fade>{toTime(f.last_login) ? new Date(toTime(f.last_login)).toLocaleString(language()) : "unknown"}</dd>
+                  <dd data-flip-fade>{toTime(f.last_login) ? new Date(toTime(f.last_login)).toLocaleString(language()) : waitDetail ? <Skel w="9em" /> : tr("profile.unknown")}</dd>
                   <dt data-flip-fade>
                     <Icon name="calendar" size={15} /> {tr("profile.joinedVrchat")}
                   </dt>
@@ -627,6 +648,29 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
             </section>
           )}
 
+          {waitDetail && (
+            <section className="pcard" aria-busy="true">
+              <h3>{tr("profile.badges")}</h3>
+              <div className="badges">
+                <Skel w={64} h={40} />
+                <Skel w={64} h={40} />
+                <Skel w={64} h={40} />
+              </div>
+            </section>
+          )}
+          {waitGroups && (
+            <section className="pcard" aria-busy="true">
+              <h3>{tr("profile.groups")}</h3>
+              <ul className="group-list">
+                {[70, 55, 62].map((w) => (
+                  <li key={w} className="group-row skel-row">
+                    <Skel w={36} h={36} />
+                    <Skel w={`${w}%`} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {badges.length > 0 && (
             <section className="pcard">
               <h3>{tr("profile.badges")}</h3>
@@ -745,6 +789,16 @@ export function DetailPanel({ id, popup = false }: { id: string; popup?: boolean
             </section>
           )}
 
+          {waitMutual && (
+            <section className="pcard" aria-busy="true">
+              <h3>{tr("profile.friendsYouShare")}</h3>
+              <div className="mini-list">
+                {["6em", "8em", "5em", "7em", "6.5em"].map((w, i) => (
+                  <Skel key={i} w={w} h="1.6em" />
+                ))}
+              </div>
+            </section>
+          )}
           {mutualFriends.length > 0 && (
             <section className="pcard">
               <h3>
