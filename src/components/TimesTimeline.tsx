@@ -333,20 +333,31 @@ export function TimesTimeline({
       // Also always merge breaks under 15 minutes (a quick restart or rejoin).
       const MERGE_PX = 16;
       const MERGE_MS = 15 * 60e3;
-      let curEnd = 0;
-      let cur: [number, number] | null = null;
+      // A merged block is coloured by how much of its time they were actually online:
+      // fully online is the full colour, mostly offline fades toward the background.
+      // cur = [x0, x1, firstStart, lastEnd, onlineMs]
+      let cur: [number, number, number, number, number] | null = null;
+      const flush = (c: [number, number, number, number, number]) => {
+        const frac = c[3] > c[2] ? Math.min(1, c[4] / (c[3] - c[2])) : 1;
+        block(c[0], Math.max(2, c[1] - c[0]), frac >= 0.999 ? acc : mixRgb(bgc, acc, 0.3 + frac * 0.7));
+      };
       const vis = r.spans.filter((s) => s[1] >= view.start && s[0] <= view.end).sort((a, b) => a[0] - b[0]);
       for (const s of vis) {
         const x0 = Math.max(nameW, xOf(s[0]));
         const x1 = Math.min(size.w, xOf(s[1]));
-        if (cur && (x0 - cur[1] < MERGE_PX || s[0] - curEnd < MERGE_MS)) cur[1] = Math.max(cur[1], x1);
-        else {
-          if (cur) block(cur[0], Math.max(2, cur[1] - cur[0]), acc);
-          cur = [x0, x1];
+        const a = Math.max(s[0], view.start);
+        const b = Math.min(s[1], view.end);
+        if (cur && (x0 - cur[1] < MERGE_PX || s[0] - cur[3] < MERGE_MS)) {
+          // Count only the part not already covered (sessions may overlap).
+          cur[4] += Math.max(0, b - Math.max(a, cur[3]));
+          cur[1] = Math.max(cur[1], x1);
+          cur[3] = Math.max(cur[3], b);
+        } else {
+          if (cur) flush(cur);
+          cur = [x0, x1, a, b, b - a];
         }
-        curEnd = Math.max(curEnd, s[1]);
       }
-      if (cur) block(cur[0], Math.max(2, cur[1] - cur[0]), acc);
+      if (cur) flush(cur);
       // Joined short disconnects: a small notch (only when asked for).
       ctx.fillStyle = col.warn;
       for (const j of showJoins ? r.joined : []) {
