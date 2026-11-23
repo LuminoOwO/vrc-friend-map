@@ -12,14 +12,14 @@ Found by clicking through the new features with the demo (PC 1400/1100 px wide, 
 English + German). Smoke test (every view, Settings tab, profile, inbox, who's here) had no
 errors or raw text keys.
 
-1. Online times: a lone "·" sits at the end of the legend line (it belongs before the counts,
-   which wrap to the next line).
-2. Map toolbar: the Friend groups button doesn't show that the panel is open, and clicking it
-   again doesn't close it.
-3. Friend groups panel: Escape doesn't close it (only the back arrow does), unlike every other
-   panel and dialog.
-4. Phones: Media → Pictures says pictures are looked for in "Pictures/VRChat (Windows) and the
-   Proton folder (Linux)", which makes no sense on a phone (VRChat doesn't save pictures there).
+1. ~~Online times: a lone "·" sits at the end of the legend line (it belongs before the counts,
+   which wrap to the next line).~~ (fixed)
+2. ~~Map toolbar: the Friend groups button doesn't show that the panel is open, and clicking it
+   again doesn't close it.~~ (fixed)
+3. ~~Friend groups panel: Escape doesn't close it (only the back arrow does), unlike every other
+   panel and dialog.~~ (fixed)
+4. ~~Phones: Media → Pictures says pictures are looked for in "Pictures/VRChat (Windows) and the
+   Proton folder (Linux)", which makes no sense on a phone (VRChat doesn't save pictures there).~~ (fixed)
 
 ## Priorities (owner, 2026-11-20)
 

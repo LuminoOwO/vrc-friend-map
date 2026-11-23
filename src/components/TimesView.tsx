@@ -346,10 +346,11 @@ function ExactTimes({ list }: { list: boolean }) {
         <span>
           <span className="tl-key join" /> {t("timeline.keyJoin")}
         </span>
-        <span>·</span>
-        {t("timeline.counts", { shown: rows.shown, count: rows.count })}
-        {data.servers > 0 ? ` · ${t("timeline.withServer", { count: data.servers })}` : ` · ${t("timeline.noServer")}`}
-        {data.remoteErr && <span className="warn"> · {data.remoteErr}</span>}
+        <span className="times-counts">
+          {t("timeline.counts", { shown: rows.shown, count: rows.count })}
+          {data.servers > 0 ? ` · ${t("timeline.withServer", { count: data.servers })}` : ` · ${t("timeline.noServer")}`}
+          {data.remoteErr && <span className="warn"> · {data.remoteErr}</span>}
+        </span>
       </p>
       {noData && <p className="small muted">{t("timeline.empty")}</p>}
       {list ? (

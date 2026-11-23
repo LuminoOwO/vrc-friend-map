@@ -4,10 +4,10 @@
 // "Show on the map" switches to the map with the group lit. A lit group can be turned off with
 // the chip on the map.
 import { t as tr, useT } from "../i18n";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { bridges, clusters, friendGraph } from "../insights";
 import { shownName } from "../personal";
-import { createCircle, setState, useApp } from "../store";
+import { createCircle, getState, setState, useApp } from "../store";
 import { imgSrc } from "../backend";
 import { iconUrl } from "../model";
 import { Icon } from "../components/Icon";
@@ -131,10 +131,20 @@ export function FriendGroupsList({ phone = false }: { phone?: boolean }) {
 /** Computers: the side panel's temporary "Friend groups" page. */
 export function FriendGroupsPanel() {
   const t = useT();
-  const close = () => {
-    lightUp(null);
-    setState({ sidePanel: null });
-  };
+  const close = closeFriendGroups;
+  // Escape closes the page like other panels, unless something on top of it takes the key.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      const s = getState();
+      if (s.selectedId || s.settingsOpen || document.querySelector(".modal-backdrop, .profile-backdrop, .groups-backdrop, [role=dialog]")) return;
+      const el = document.activeElement;
+      if (el instanceof HTMLInputElement && el.value) return;
+      closeFriendGroups();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   return (
     <section className="fg-panel" aria-label={t("fgroups.title")}>
       <div className="fg-panel-head">
@@ -152,6 +162,11 @@ export function FriendGroupsPanel() {
 /** Opens the groups (side panel on computers). */
 export function openFriendGroups() {
   setState({ sidePanel: "groups", view: "graph", settingsOpen: false });
+}
+
+export function closeFriendGroups() {
+  lightUp(null);
+  setState({ sidePanel: null });
 }
 
 /** On the map while a group is kept lit: what's lit, and a way to turn it off. */

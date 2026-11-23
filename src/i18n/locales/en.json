@@ -933,6 +933,7 @@
     "yrMet": "{{people}} people met · {{added}} new friends",
     "yrLongest": "Longest session: {{time}} · best streak {{days}} days",
     "yrPics": "{{shots}} pictures · {{videos}} videos",
+    "noPicturesOnPhone": "Your VRChat pictures are on the computer you play on: open Media there to see them, tagged with the world and people.",
     "noVrchatPicturesFoundThey": "No VRChat pictures found. They're looked for in Pictures/VRChat (Windows) and the Proton folder (Linux); add your own folder in Settings → Game logs.",
     "steamCountedValue": "Steam counted {{value}}"
   },

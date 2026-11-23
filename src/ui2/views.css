@@ -252,6 +252,7 @@
 .times-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
 .times-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; }
 .times-legend > span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.times-legend > .times-counts { display: block; flex-basis: 100%; white-space: normal; }
 .tl-key { display: inline-block; width: 18px; height: 9px; border-radius: 3px; vertical-align: middle; }
 .tl-key.bar { background: var(--accent); opacity: 0.8; }
 .tl-key.gap { background: repeating-linear-gradient(135deg, rgba(128, 128, 128, 0.35) 0 2px, transparent 2px 6px); border: 1px solid rgba(128, 128, 128, 0.3); }

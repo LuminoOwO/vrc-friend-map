@@ -4,7 +4,7 @@
 // picture gallery tagged with world and people; a year in review.
 import { t as tr, weekdayNames, language } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { backend, isTauri } from "../backend";
+import { backend, isMobile, isTauri } from "../backend";
 import { popularWorlds, setDiary, useHistory } from "../history";
 import {
   allVideos,
@@ -480,7 +480,7 @@ function Pictures({ visits }: { visits: TimelineVisit[] | null }) {
   if (!pics.length)
     return (
       <p className="muted">
-        {tr("logbook.noVrchatPicturesFoundThey")}
+        {isMobile ? tr("logbook.noPicturesOnPhone") : tr("logbook.noVrchatPicturesFoundThey")}
       </p>
     );
   return (

@@ -28,7 +28,7 @@ import {
 import { addToCircle, getState, setState, updateMap, updateSettings, useApp } from "../store";
 import { nextInDirection, startPoint, type Dir } from "../mapkeys";
 import { betaActive } from "../ui2/active";
-import { openFriendGroups, SpotlightChip } from "../ui2/FriendGroups";
+import { closeFriendGroups, openFriendGroups, SpotlightChip } from "../ui2/FriendGroups";
 import { ListOverlayLegend } from "./ListViewer";
 import { useListOverlay } from "../listoverlay";
 import type { Cache, Circle, Filters, Friend, MapSettings, Presence } from "../types";
@@ -459,6 +459,7 @@ export function GraphView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme]);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const groupsPanel = useApp((s) => s.sidePanel === "groups");
 
   const cache = useApp((s) => s.cache);
   const circles = useApp((s) => s.local.circles);
@@ -2282,7 +2283,12 @@ export function GraphView() {
         <HereSwitch />
         <div className="mbar mbar-more">
           {betaActive() && (
-            <button className="btn small" title={tr("fgroups.help")} onClick={() => (isMobile ? setState({ view: "insights" }) : openFriendGroups())}>
+            <button
+              className={`btn small ${groupsPanel ? "active" : ""}`}
+              aria-pressed={groupsPanel}
+              title={tr("fgroups.help")}
+              onClick={() => (isMobile ? setState({ view: "insights" }) : groupsPanel ? closeFriendGroups() : openFriendGroups())}
+            >
               <Icon name="users" size={15} /> <span className="mbar-text">{tr("fgroups.button")}</span>
             </button>
           )}

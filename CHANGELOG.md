@@ -104,6 +104,10 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **Friend groups button** on the map shows when the panel is open and closes it on a second
+  click; **Escape** closes the panel too.
+- Online times: a stray "·" at the end of the legend.
+- Phones: Media → Pictures no longer talks about Windows and Proton folders.
 - **The left menu stayed open** when the pointer left the window over it; it now folds as soon
   as the pointer is off it (or the window loses focus).
 - **The VRC+ badge stuck to the name** on profiles; it now has space and is centred.
