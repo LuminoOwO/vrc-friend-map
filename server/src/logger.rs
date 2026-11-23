@@ -10,6 +10,7 @@
 //!   pair-code.json    one-time pairing code (vfm-server pair-code)
 //!   totals.json       time together per pair, per person, per world
 //!   hops-YYYY-MM.jsonl  raw location changes {"t":unix,"u":user,"l":location}
+//!   up-YYYY-MM.txt    one unix time per minute while connected (when the logger was watching)
 //! ```
 //!
 //! VRChat's guidance: one long-lived pipeline connection instead of polling,
@@ -700,6 +701,11 @@ impl Logger {
                 g.hops.push(json!({ "t": t, "u": id, "l": loc }).to_string());
             }
         }
+        // Went offline while the connection was down: say so, so their session ends.
+        let gone: Vec<String> = g.locs.keys().filter(|id| !locs.contains_key(*id)).cloned().collect();
+        for id in gone {
+            g.hops.push(json!({ "t": t, "u": id, "l": "offline" }).to_string());
+        }
         g.friends = friends;
         g.locs = locs;
         g.totals.names.extend(names);
@@ -814,6 +820,13 @@ impl Logger {
         if g.connected && gap > 0 && gap <= MAX_GAP_SECS {
             accumulate(&mut g, gap as f64, t);
         }
+        // Watching right now: one line a minute, so the app can tell "offline" from "not watched".
+        if g.connected && self.keep_months > 0 {
+            let (y, m) = year_month(t);
+            if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(self.dir.join(format!("up-{y:04}-{m:02}.txt"))) {
+                let _ = f.write_all(format!("{t}\n").as_bytes());
+            }
+        }
         // Raw hops: append once a minute (kinder to SD cards than per event).
         if !g.hops.is_empty() {
             let lines = std::mem::take(&mut g.hops);
@@ -835,6 +848,59 @@ impl Logger {
         }
     }
 
+    /// Who was online when, between `from` and `to` (unix seconds, at most 62 days), and when the
+    /// logger was watching: `{"coverage": [[start, end]], "sessions": {"usr_…": [[start, end]]}}`.
+    /// Sessions come from the location log; one still open when the watching stopped ends there.
+    pub fn presence(&self, from: i64, to: i64) -> Value {
+        let to = to.min(now());
+        let from = from.max(to - 62 * 86400);
+        // Months to read: the one before `from` too, for sessions already running then.
+        let mut months = Vec::new();
+        let (mut y, mut m) = year_month(from - 31 * 86400);
+        let (ty, tm) = year_month(to);
+        while (y, m) <= (ty, tm) {
+            months.push((y, m));
+            if m == 12 {
+                y += 1;
+                m = 1;
+            } else {
+                m += 1;
+            }
+        }
+        let start = from - 31 * 86400;
+        let mut ups: Vec<i64> = Vec::new();
+        let mut hops: Vec<(i64, String, String)> = Vec::new();
+        for (y, m) in &months {
+            if let Ok(text) = std::fs::read_to_string(self.dir.join(format!("up-{y:04}-{m:02}.txt"))) {
+                ups.extend(text.lines().filter_map(|l| l.trim().parse::<i64>().ok()).filter(|t| *t >= start && *t <= to));
+            }
+            if let Ok(text) = std::fs::read_to_string(self.dir.join(format!("hops-{y:04}-{m:02}.jsonl"))) {
+                for line in text.lines() {
+                    let Ok(v) = serde_json::from_str::<Value>(line) else { continue };
+                    let (Some(t), Some(u), Some(l)) = (v.get("t").and_then(Value::as_i64), v.get("u").and_then(Value::as_str), v.get("l").and_then(Value::as_str)) else { continue };
+                    if t >= start && t <= to {
+                        hops.push((t, u.to_string(), l.to_string()));
+                    }
+                }
+            }
+        }
+        ups.sort_unstable();
+        ups.dedup();
+        hops.sort_by_key(|h| h.0);
+        let coverage = presence_coverage(&ups);
+        let sessions = presence_sessions(&hops, &coverage, to);
+        let clip = |s: i64, e: i64| -> Option<[i64; 2]> { (e >= from && s <= to).then(|| [s.max(from), e.min(to)]) };
+        let coverage: Vec<[i64; 2]> = coverage.iter().filter_map(|(s, e)| clip(*s, *e)).collect();
+        let sessions: serde_json::Map<String, Value> = sessions
+            .into_iter()
+            .filter_map(|(id, list)| {
+                let l: Vec<[i64; 2]> = list.iter().filter_map(|(s, e)| clip(*s, *e)).collect();
+                (!l.is_empty()).then(|| (id, json!(l)))
+            })
+            .collect();
+        json!({ "coverage": coverage, "sessions": sessions })
+    }
+
     pub fn save_now(&self) {
         let mut g = self.inner.lock().unwrap();
         if g.dirty {
@@ -852,7 +918,13 @@ impl Logger {
         let Ok(rd) = std::fs::read_dir(&self.dir) else { return };
         for f in rd.flatten() {
             let name = f.file_name().to_string_lossy().to_string();
-            let Some(ym) = name.strip_prefix("hops-").and_then(|s| s.strip_suffix(".jsonl")) else { continue };
+            let Some(ym) = name
+                .strip_prefix("hops-")
+                .and_then(|s| s.strip_suffix(".jsonl"))
+                .or_else(|| name.strip_prefix("up-").and_then(|s| s.strip_suffix(".txt")))
+            else {
+                continue;
+            };
             let Some((fy, fm)) = ym.split_once('-') else { continue };
             if let (Ok(fy), Ok(fm)) = (fy.parse::<i64>(), fm.parse::<i64>()) {
                 if fy * 12 + fm - 1 < cutoff {
@@ -861,6 +933,53 @@ impl Logger {
             }
         }
     }
+}
+
+/// Minutes the logger was watching, joined into spans (a missed minute or two doesn't split them).
+fn presence_coverage(ups: &[i64]) -> Vec<(i64, i64)> {
+    let mut out: Vec<(i64, i64)> = Vec::new();
+    for &t in ups {
+        match out.last_mut() {
+            Some(last) if t - last.1 <= MAX_GAP_SECS => last.1 = t,
+            _ => out.push((t - TICK_SECS, t)),
+        }
+    }
+    out
+}
+
+/// Online sessions from location changes: online from the first place they're seen until
+/// "offline", or until the watching stopped (the end of that coverage span).
+fn presence_sessions(hops: &[(i64, String, String)], coverage: &[(i64, i64)], to: i64) -> HashMap<String, Vec<(i64, i64)>> {
+    let mut open: HashMap<String, i64> = HashMap::new();
+    let mut out: HashMap<String, Vec<(i64, i64)>> = HashMap::new();
+    let mut span = 0usize;
+    let close_all = |open: &mut HashMap<String, i64>, out: &mut HashMap<String, Vec<(i64, i64)>>, at: i64| {
+        for (id, s) in open.drain() {
+            if at > s {
+                out.entry(id).or_default().push((s, at));
+            }
+        }
+    };
+    for (t, u, l) in hops {
+        // Watching stopped before this: whoever was online, as far as we know, until then.
+        while span < coverage.len() && coverage[span].1 < *t {
+            close_all(&mut open, &mut out, coverage[span].1);
+            span += 1;
+        }
+        if l == "offline" || l.is_empty() {
+            if let Some(s) = open.remove(u) {
+                if *t > s {
+                    out.entry(u.clone()).or_default().push((s, *t));
+                }
+            }
+        } else {
+            open.entry(u.clone()).or_insert(*t);
+        }
+    }
+    // Still open: until the last minute watched (or `to` with no record of watching at all).
+    let end = coverage.last().map(|c| c.1.min(to)).unwrap_or(to);
+    close_all(&mut open, &mut out, end);
+    out
 }
 
 fn accumulate(g: &mut Inner, dt: f64, t: i64) {
@@ -931,6 +1050,28 @@ pub(crate) use self::constant_eq as tokens_equal;
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn presence_from_hops_and_watching() {
+        // Watched 1000–2000 and 3000–4000.
+        let ups: Vec<i64> = (1060..=2000).step_by(60).chain((3060..=4000).step_by(60)).collect();
+        let cov = super::presence_coverage(&ups);
+        assert_eq!(cov, vec![(1000, 1960), (3000, 3960)]);
+        let h = |t: i64, u: &str, l: &str| (t, u.to_string(), l.to_string());
+        let hops = vec![
+            h(1100, "usr_a", "wrld_1:1"),
+            h(1500, "usr_a", "wrld_2:1"), // moving doesn't split the session
+            h(1700, "usr_a", "offline"),
+            h(1800, "usr_b", "private"),  // still online when watching stopped
+            h(3100, "usr_b", "wrld_3:1"),
+            h(3500, "usr_b", "offline"),
+            h(3600, "usr_c", "wrld_1:1"), // still online now
+        ];
+        let s = super::presence_sessions(&hops, &cov, 5000);
+        assert_eq!(s["usr_a"], vec![(1100, 1700)]);
+        assert_eq!(s["usr_b"], vec![(1800, 1960), (3100, 3500)]);
+        assert_eq!(s["usr_c"], vec![(3600, 3960)]);
+    }
 
     fn logger() -> Arc<Logger> {
         let d = std::env::temp_dir().join(format!("vfm-logger-test-{}", crate::config::random_token(6)));

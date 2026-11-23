@@ -245,3 +245,26 @@
   .times-row { grid-template-columns: 1fr 64px; }
   .times-row .times-strip { grid-column: 1 / -1; }
 }
+
+/* Online times: modes, the draggable timeline, the sessions list. */
+.times-modes { align-self: flex-start; }
+.times-week { display: flex; flex-direction: column; gap: 14px; }
+.times-opt { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+.times-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 0; }
+.times-legend > span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.tl-key { display: inline-block; width: 18px; height: 9px; border-radius: 3px; vertical-align: middle; }
+.tl-key.bar { background: var(--accent); opacity: 0.8; }
+.tl-key.gap { background: repeating-linear-gradient(135deg, rgba(128, 128, 128, 0.35) 0 2px, transparent 2px 6px); border: 1px solid rgba(128, 128, 128, 0.3); }
+.tl-key.join { width: 3px; height: 13px; background: #e8a33d; }
+.tl { position: relative; height: max(380px, calc(100vh - 330px)); min-height: 300px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); overflow: hidden; outline: none; user-select: none; -webkit-user-select: none; }
+.tl:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+.tl canvas { display: block; }
+.tl-tip { position: absolute; z-index: 2; display: grid; gap: 2px; max-width: 260px; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--panel-2); font-size: 12.5px; pointer-events: none; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45); }
+.times-list ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.times-list-day { margin: 12px 0 4px; font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.times-list-row { display: grid; grid-template-columns: minmax(120px, 220px) 140px 1fr; gap: 12px; align-items: baseline; padding: 4px 6px; border-radius: 6px; }
+.times-list-row:hover { background: color-mix(in srgb, var(--tint) 5%, transparent); }
+.times-list-row.me .link-btn { color: var(--accent); font-weight: 700; }
+.times-list-time { font-variant-numeric: tabular-nums; }
+@media (max-width: 700px) { .times-list-row { grid-template-columns: 1fr auto; } .times-list-row > .small { grid-column: 1 / -1; } .tl { height: calc(100vh - 360px); } }
+.times-list-row .link-btn { justify-self: start; text-align: left; }

@@ -983,6 +983,19 @@ impl ShareState {
         .await
     }
 
+    /// Who was online when, and when the logger watched (`from`/`to` unix seconds), checked
+    /// against the server's pinned key.
+    pub async fn logger_presence(&self, url: &str, user: &str, from: i64, to: i64) -> Result<Value, String> {
+        let url = normalize_url(url)?;
+        let (sign_pk, _) = self.server_keys(&url).await?;
+        let id = self.identity(user).await?;
+        let path = format!("/v1/logger/presence?from={from}&to={to}");
+        let v = self.send(&url, reqwest::Method::GET, &path, None, Some((&id, user))).await?;
+        let env: Envelope = serde_json::from_value(v).map_err(|e| e.to_string())?;
+        let bytes = env.open(user, &id, &sign_pk).map_err(|e| e.to_string())?;
+        serde_json::from_slice(&bytes).map_err(|e| e.to_string())
+    }
+
     /// The logger's totals, checked against the server's pinned key.
     pub async fn logger_stats(&self, url: &str, user: &str) -> Result<Value, String> {
         let url = normalize_url(url)?;

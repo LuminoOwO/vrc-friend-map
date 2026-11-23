@@ -6,10 +6,19 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
-- **Online times** in the menu: when all your friends are usually online, for a day or the
-  whole week. Bars show how many friends are usually on at each hour (your own hours bright);
-  click one to see who. Every friend's day as 24 cells with the hours you share highlighted,
-  sorted by how much your times overlap ("12 h/week"). Only friends: VRChat doesn't tell the
+- **Online times** in the menu, three ways to look at it:
+  - **Timeline:** exact online sessions of everyone on a calendar you drag (through time and
+    down the list), zoom with Ctrl + wheel or two fingers; point at a bar for the exact times
+    ("Thu 19:12 – 22:10, 2 h 58 min"). Times nobody was watching (this device off and no server
+    logger) are striped, so "offline" and "no data" look different. Short disconnects (crashes,
+    dropped connections, restarts) are joined, up to a time you choose (off to 10 min), and
+    marked. Row height down to "dense" for hundreds of people; only people online in the range,
+    sorted by time online, overlap with you, online now or name.
+  - **Typical week:** usual hours per hour of the day, how many friends are usually on, sorted
+    by how much your times overlap ("12 h/week").
+  - **Sessions list:** the same sessions as text, by day.
+  Exact times are recorded from this version on while the app runs, and around the clock by
+  your vfm-server's logger once the server is updated. Only friends: VRChat doesn't tell the
   app when anyone else is online.
 - **"In this instance" switch on the map:** Off · Everyone · Mutual friends puts the people in
   your VRChat instance on the map (all of them, or only those who share friends with you).
@@ -89,6 +98,11 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **Settings flipped back and forth between servers:** each server keeps its own copy of your
+  synced data, but the app compared all of them with one "last agreed" state, so a server a
+  round behind looked like it had changed things back. Each server now has its own.
+- Pictures with someone on a profile didn't open (they tried to open a new window); they open
+  in the image viewer now.
 - Settings showed a 60 Hz screen as **63 Hz** (WebKitGTK rounds frame times to whole
   milliseconds); the app always ran at the screen's real rate, it was only the reading.
 - The app icons on every platform (Windows, macOS, Linux, Android, iOS) still showed the old

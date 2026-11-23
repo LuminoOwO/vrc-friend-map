@@ -296,6 +296,12 @@ async fn logger_status(state: AppStateRef<'_>, url: String) -> Result<serde_json
 }
 
 #[tauri::command]
+async fn logger_presence(state: AppStateRef<'_>, url: String, from: i64, to: i64) -> Result<serde_json::Value, String> {
+    let me = me_id(&state).await?;
+    state.share.logger_presence(&url, &me, from, to).await
+}
+
+#[tauri::command]
 async fn logger_stats(state: AppStateRef<'_>, url: String) -> Result<serde_json::Value, String> {
     let me = me_id(&state).await?;
     state.share.logger_stats(&url, &me).await
@@ -961,6 +967,7 @@ pub fn run() {
             logger_unpair,
             logger_status,
             logger_stats,
+            logger_presence,
             tray::tray_available,
             tray::tray_set_start_hidden,
             tray::window_started_hidden,

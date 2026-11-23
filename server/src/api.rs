@@ -270,6 +270,7 @@ pub fn router(app: Arc<App>) -> Router {
         .route("/v1/logger/pair", post(logger_pair).delete(logger_unpair))
         .route("/v1/logger/status", get(logger_status))
         .route("/v1/logger/stats", get(logger_stats))
+        .route("/v1/logger/presence", get(logger_presence))
         .merge(crate::admin::router())
         .layer(axum::extract::DefaultBodyLimit::max(8 * 1024 * 1024))
         .layer(axum::middleware::from_fn_with_state(Arc::clone(&app), peer_and_bans))
@@ -797,6 +798,27 @@ async fn logger_stats(State(app): State<Arc<App>>, headers: HeaderMap, method: M
     let user = authed(&app, &headers, &method, &uri, &body)?;
     require_logger_owner(&app, &user)?;
     let payload = serde_json::to_vec(&app.logger.stats()).unwrap();
+    let store = app.store.lock().unwrap();
+    let rec = store.users.users.get(&user).and_then(|u| u.identity.box_key()).ok_or_else(|| err(StatusCode::INTERNAL_SERVER_ERROR, "key missing"))?;
+    let env = Envelope::sealed(&store.identity, "server", "logger", now(), &payload, &[vfm_share::Recipient { user_id: user.clone(), box_pk: rec }]);
+    Ok(Json(env).into_response())
+}
+
+/// Who was online when, and when the logger was watching (`?from=&to=`, unix seconds), sealed to
+/// the owner and signed by the server.
+async fn logger_presence(State(app): State<Arc<App>>, headers: HeaderMap, method: Method, uri: Uri, body: Bytes) -> ApiResult {
+    let user = authed(&app, &headers, &method, &uri, &body)?;
+    require_logger_owner(&app, &user)?;
+    let q: std::collections::HashMap<String, String> = uri
+        .query()
+        .unwrap_or("")
+        .split('&')
+        .filter_map(|kv| kv.split_once('='))
+        .map(|(k, v)| (k.to_string(), v.to_string()))
+        .collect();
+    let to = q.get("to").and_then(|v| v.parse::<i64>().ok()).unwrap_or_else(now);
+    let from = q.get("from").and_then(|v| v.parse::<i64>().ok()).unwrap_or(to - 7 * 86400);
+    let payload = serde_json::to_vec(&app.logger.presence(from, to)).unwrap();
     let store = app.store.lock().unwrap();
     let rec = store.users.users.get(&user).and_then(|u| u.identity.box_key()).ok_or_else(|| err(StatusCode::INTERNAL_SERVER_ERROR, "key missing"))?;
     let env = Envelope::sealed(&store.identity, "server", "logger", now(), &payload, &[vfm_share::Recipient { user_id: user.clone(), box_pk: rec }]);

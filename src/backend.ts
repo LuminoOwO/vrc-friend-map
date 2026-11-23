@@ -411,6 +411,9 @@ export const backend = {
     loggerUnpair: (url: string, forget: boolean) => need<unknown>("logger_unpair", { url, forget }),
     loggerStatus: (url: string) => need<LoggerStatus>("logger_status", { url }),
     loggerStats: (url: string) => need<LoggerStats>("logger_stats", { url }),
+    /** From your server's logger: sessions and when it was watching (unix seconds). */
+    loggerPresence: (url: string, from: number, to: number) =>
+      need<{ coverage: [number, number][]; sessions: Record<string, [number, number][]> }>("logger_presence", { url, from, to }),
     /** Signed small calls: shared cache, logger heartbeat, push targets. */
     call: <T = unknown>(url: string, method: "GET" | "PUT" | "POST" | "DELETE", path: string, body?: unknown) => need<T>("share_call", { url, method, path, body: body ?? null }),
     setName: (name: string) => (isTauri ? invoke<void>("share_set_name", { name }) : Promise.resolve()),

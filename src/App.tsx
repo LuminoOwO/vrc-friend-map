@@ -7,6 +7,7 @@ import { GroupDialog, InstanceDialog, WorldDialog } from "./components/ContentDi
 import { BlockReasonDialog } from "./components/PersonExtras";
 import { startBioCache, stopBioCache } from "./biocache";
 import { startHistory, stopHistory } from "./history";
+import { startSessions } from "./sessions";
 import { startWatchers, stopWatchers } from "./watchers";
 import { startNotesLine, stopNotesLine } from "./notesline";
 import { startServerLink } from "./serverlink";
@@ -284,6 +285,7 @@ function LogsAndGroups() {
       startSharing();
       startBioCache();
       startHistory();
+      void startSessions();
       startWatchers();
       startNotesLine();
       startServerLink();

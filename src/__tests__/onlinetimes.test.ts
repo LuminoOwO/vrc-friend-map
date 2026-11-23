@@ -32,3 +32,27 @@ describe("online times", () => {
     expect(c[3]).toBe(0);
   });
 });
+
+import { clipSpans, gapsIn, joinShortGaps, overlapMs, totalMs, unionSpans } from "../onlinetimes";
+
+describe("exact sessions", () => {
+  const m = 60_000;
+  it("joins this device's and the server's spans", () => {
+    expect(unionSpans([[0, 10], [30, 40]], [[5, 20], [50, 60]])).toEqual([[0, 20], [30, 40], [50, 60]]);
+  });
+  it("closes short disconnects only", () => {
+    const r = joinShortGaps([[0, 10 * m], [12 * m, 30 * m], [60 * m, 90 * m]], 5 * m);
+    expect(r.spans).toEqual([[0, 30 * m], [60 * m, 90 * m]]);
+    expect(r.joined).toEqual([10 * m]);
+    expect(joinShortGaps([[0, 10], [12, 20]], 0).spans).toHaveLength(2);
+  });
+  it("clips, totals and overlaps", () => {
+    expect(clipSpans([[0, 100], [200, 300]], 50, 250)).toEqual([[50, 100], [200, 250]]);
+    expect(totalMs([[0, 10], [20, 25]])).toBe(15);
+    expect(overlapMs([[0, 100], [200, 300]], [[50, 250]])).toBe(100);
+  });
+  it("finds the times nobody was watching", () => {
+    expect(gapsIn([[10, 20], [15, 30], [50, 60]], 0, 100)).toEqual([[0, 10], [30, 50], [60, 100]]);
+    expect(gapsIn([[0, 100]], 0, 100)).toEqual([]);
+  });
+});
