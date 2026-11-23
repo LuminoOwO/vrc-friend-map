@@ -197,6 +197,23 @@ export function TimesTimeline({
       }
       ctx.stroke();
       ctx.restore();
+      // Say it in words where there's room, under the pinned "you" row.
+      if (x1 - x0 >= 70) {
+        const label = t("timeline.noDataTag");
+        ctx.font = "600 11px system-ui, sans-serif";
+        const w = ctx.measureText(label).width + 12;
+        const lx = (x0 + x1) / 2 - w / 2;
+        const ly = HEAD + rowH + 8;
+        ctx.fillStyle = col.bg;
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.roundRect(lx, ly, w, 18, 9);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = col.muted;
+        ctx.textBaseline = "middle";
+        ctx.fillText(label, lx + 6, ly + 9);
+      }
     }
     ctx.restore();
 

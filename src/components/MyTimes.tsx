@@ -2,7 +2,7 @@
 // records for you, src/sessions.ts), with totals and a link to the full Online times view.
 import { useEffect, useMemo, useState } from "react";
 import { t as tr, language } from "../i18n";
-import { clipSpans, demoSessions, totalMs, type Span } from "../onlinetimes";
+import { clipSpans, demoSessions, gapsIn, totalMs, type Span } from "../onlinetimes";
 import { ME, onSessions, sessionsData } from "../sessions";
 import { setState, useApp } from "../store";
 import { Icon } from "./Icon";
@@ -45,6 +45,7 @@ export function MyOnlineTimes() {
   return (
     <div className="profile-block mytimes" data-flip-fade>
       <h3>{tr("myTimes.title")}</h3>
+      <MyCoverage now={now} />
       {!spans.length ? (
         <p className="small muted">{tr("myTimes.empty")}</p>
       ) : (
@@ -99,5 +100,20 @@ export function MyOnlineTimes() {
         <Icon name="chart" size={14} /> {tr("myTimes.open")}
       </button>
     </div>
+  );
+}
+
+/** How much of the last 7 days anything was watching (this device; a server logger fills in
+ *  more, see Online times). Online times are only complete when something watches all the time. */
+function MyCoverage({ now }: { now: number }) {
+  const demo = useApp((s) => s.demo);
+  const loggers = useApp((s) => s.settings.sharing.servers.filter((x) => x.loggerOwner).length);
+  const from = now - 7 * DAY;
+  const cov = demo ? demoSessions([ME], now).coverage : sessionsData().coverage;
+  const pct = Math.round((1 - totalMs(gapsIn(cov, from, now)) / (now - from)) * 100);
+  return (
+    <p className={`small mytimes-cover ${pct < 90 ? "low" : ""}`}>
+      {tr("myTimes.coverage", { pct })} {loggers ? tr("myTimes.coverageServer") : tr("myTimes.coverageNoServer")}
+    </p>
   );
 }

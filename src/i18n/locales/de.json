@@ -615,7 +615,12 @@
     "spanDays": "{{n}} Tage",
     "options": "Optionen",
     "showJoins": "Kurze Abbrüche markieren",
-    "showJoinsHelp": "Eine kleine gelbe Markierung, wo ein kurzer Abbruch zusammengefasst wurde (zusammengefasst wird so oder so)"
+    "showJoinsHelp": "Eine kleine gelbe Markierung, wo ein kurzer Abbruch zusammengefasst wurde (zusammengefasst wird so oder so)",
+    "noDataTag": "keine Daten",
+    "noteNoServer": "Online-Zeiten sind nur vollständig, wenn etwas ständig zuschaut: der Logger deines vfm-Servers (rund um die Uhr, empfohlen) oder diese App, ohne je geschlossen zu werden. Gerade zeichnet nur dieses Gerät auf, also gibt es keine Daten, wann immer es aus ist (gestreift).",
+    "noteServer": "Der Logger deines Servers füllt die Zeiten, in denen dieses Gerät aus ist. Gestreift: keiner von beiden hat zugeschaut.",
+    "coverage": "Daten für {{pct}} % der gezeigten Zeit.",
+    "setUpServer": "Server einrichten"
   },
   "quickEdit": {
     "status": "Status",
@@ -650,7 +655,10 @@
     "chart": "Wann du die letzten 7 Tage in VRChat warst",
     "minutes": "{{n}} Min.",
     "hours": "{{n}} Std.",
-    "open": "Online-Zeiten öffnen"
+    "open": "Online-Zeiten öffnen",
+    "coverage": "Daten für {{pct}} % der letzten 7 Tage.",
+    "coverageServer": "Der Logger deines Servers ergänzt mehr unter Online-Zeiten.",
+    "coverageNoServer": "Nur, während diese App läuft; der Logger eines vfm-Servers zeichnet rund um die Uhr auf."
   },
   "loadBar": {
     "loading": "Lädt von VRChat",

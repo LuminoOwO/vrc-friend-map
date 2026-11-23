@@ -277,3 +277,14 @@
 .tl-zoom .icon-btn:disabled { opacity: 0.35; }
 .tl-zoom-label { min-width: 58px; text-align: center; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .times-options { padding: 8px 10px; border-radius: 10px; background: var(--panel); border: 1px solid var(--border); margin-top: -4px; }
+
+/* Online times: how complete the data is. */
+.times-note { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); font-size: 13px; }
+.times-note > svg { flex: none; margin-top: 2px; color: var(--accent); }
+.times-note.warn { border-color: color-mix(in srgb, #e8a33d 55%, var(--border)); background: color-mix(in srgb, #e8a33d 8%, var(--panel)); }
+.times-note.warn > svg { color: #e8a33d; }
+.times-note > div { display: grid; gap: 8px; justify-items: start; }
+.times-note p { margin: 0; line-height: 1.45; }
+.times-note.low b { color: #e8a33d; }
+.mytimes-cover { margin: -4px 0 8px; color: var(--muted); }
+.mytimes-cover.low { color: #e8a33d; }

@@ -2436,7 +2436,12 @@
     "spanDays": "{{n}} days",
     "options": "Options",
     "showJoins": "Mark short disconnects",
-    "showJoinsHelp": "A small yellow mark where a short disconnect was joined (they're joined either way)"
+    "showJoinsHelp": "A small yellow mark where a short disconnect was joined (they're joined either way)",
+    "noDataTag": "no data",
+    "noteNoServer": "Online times are only complete when something watches all the time: your vfm-server's logger (around the clock, recommended) or this app never closed. Right now only this device records, so whenever it's off there's no data (striped).",
+    "noteServer": "Your server's logger fills in the times this device is off. Striped areas: neither was watching.",
+    "coverage": "Data for {{pct}}% of the shown time.",
+    "setUpServer": "Set up a server"
   },
   "quickEdit": {
     "status": "Status",
@@ -2464,7 +2469,10 @@
     "chart": "When you were in VRChat the last 7 days",
     "minutes": "{{n}} min",
     "hours": "{{n}} h",
-    "open": "Open Online times"
+    "open": "Open Online times",
+    "coverage": "Data for {{pct}}% of the last 7 days.",
+    "coverageServer": "Your server's logger fills in more in Online times.",
+    "coverageNoServer": "Only while this app runs; a vfm-server's logger records around the clock."
   },
   "loadBar": {
     "loading": "Loading from VRChat",

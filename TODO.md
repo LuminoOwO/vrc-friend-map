@@ -6,6 +6,14 @@ their round. The bigger, discussed list lives in GitHub issue #14.
 Rounds are in the suggested order (2026-11-16): all features first, the UI rework last so it
 can be designed around everything. Nothing here is started.
 
+## Online times: say how complete the data is (owner, 2026-11-23)
+
+- [x] Make it very clear that Online times are only accurate with a vfm-server's logger running
+  24/7 (or the app running all the time), and show clearly where data is missing. (Done
+  2026-11-23: a note above all three views, orange without a server logger, with "Set up a
+  server"; "Data for N% of the shown time"; "no data" written in the striped areas; the same
+  on your profile's "Your online times".)
+
 ## Bugs found in a test pass (2026-11-23)
 
 Found by clicking through the new features with the demo (PC 1400/1100 px wide, Pixel 7,

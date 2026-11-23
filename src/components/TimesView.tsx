@@ -13,6 +13,7 @@ import { fmtDuration, TimesTimeline, type TimelineRow, type TimelineView } from 
 import { shownName } from "../personal";
 import { setState, useApp } from "../store";
 import { Icon } from "./Icon";
+import { openServers } from "./ServersModal";
 
 type Sort = "overlap" | "online" | "name";
 
@@ -224,6 +225,40 @@ function useSessions(view: TimelineView) {
   }, [demo, friends, remote, version, remoteErr]);
 }
 
+/**
+ * Online times are only complete if something watched all the time: your vfm-server's logger
+ * (around the clock), or this app never closed. Said plainly, with how much of the shown range
+ * has data. `servers`: how many loggers fill in (-1: not known here, e.g. Typical week).
+ */
+export function DataNote({ servers, covered }: { servers: number; covered?: number }) {
+  const t = useT();
+  const loggers = useApp((s) => s.settings.sharing.servers.filter((x) => x.loggerOwner).length);
+  const n = servers >= 0 ? servers : loggers;
+  const pct = covered === undefined ? null : Math.round(covered * 100);
+  const low = pct !== null && pct < 90;
+  return (
+    <div className={`times-note ${n ? "ok" : "warn"} ${low ? "low" : ""}`} role="note">
+      <Icon name={n ? "server" : "warn"} size={16} />
+      <div>
+        <p>
+          {n ? t("timeline.noteServer") : t("timeline.noteNoServer")}
+          {pct !== null && (
+            <>
+              {" "}
+              <b>{t("timeline.coverage", { pct })}</b>
+            </>
+          )}
+        </p>
+        {!n && (
+          <button className="btn small" onClick={() => openServers()}>
+            <Icon name="server" size={14} /> {t("timeline.setUpServer")}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function TimesView() {
   const t = useT();
   const [mode, setMode] = useState<Mode>("timeline");
@@ -242,7 +277,14 @@ export function TimesView() {
           </button>
         ))}
       </div>
-      {mode === "week" ? <TypicalWeek /> : <ExactTimes list={mode === "list"} />}
+      {mode === "week" ? (
+        <>
+          <DataNote servers={-1} />
+          <TypicalWeek />
+        </>
+      ) : (
+        <ExactTimes list={mode === "list"} />
+      )}
     </div>
   );
 }
@@ -275,7 +317,10 @@ function ExactTimes({ list }: { list: boolean }) {
   const [showOpts, setShowOpts] = useState(false);
   const [hideIdle, setHideIdle] = useState(true);
   const data = useSessions(view);
-  const gaps = useMemo(() => gapsIn(data.coverage, view.start, view.end), [data.coverage, view.start, view.end]);
+  // Missing data only up to now (the future isn't "missing").
+  const gapEnd = Math.min(view.end, Date.now());
+  const gaps = useMemo(() => (gapEnd > view.start ? gapsIn(data.coverage, view.start, gapEnd) : []), [data.coverage, view.start, gapEnd]);
+  const covered = gapEnd > view.start ? 1 - totalMs(gaps) / (gapEnd - view.start) : 1;
   const rowH = density === "comfy" ? 26 : density === "compact" ? 18 : 9;
 
   const rows = useMemo(() => {
@@ -365,6 +410,7 @@ function ExactTimes({ list }: { list: boolean }) {
         </label>
         </div>
       )}
+      <DataNote servers={data.servers} covered={covered} />
       <p className="small muted times-legend">
         <span>
           <span className="tl-key bar" /> {t("timeline.keyOnline")}
