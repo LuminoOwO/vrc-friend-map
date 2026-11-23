@@ -90,9 +90,12 @@ export function LoadBar() {
   const fmtEta = eta >= 90 ? t("loadBar.minutesLeft", { n: Math.round(eta / 60) }) : eta > 0 ? t("loadBar.secondsLeft", { n: eta }) : "";
   return (
     <div className="lb" role="status" aria-live="polite">
-      <div className={`lb-line ${pct == null ? "busy" : ""}`}>
-        <span style={pct == null ? undefined : { width: `${pct}%` }} />
-      </div>
+      {hidden && (
+        <button className="lb-mini" title={t("loadBar.showLog")} onClick={() => setHidden(false)}>
+          <span className="lb-spin" aria-hidden />
+          {pct != null ? `${Math.floor(pct)}%` : t("loadBar.loading")}
+        </button>
+      )}
       {!hidden && (
         <div className={`lb-card ${open ? "open" : ""}`}>
           <div className="lb-head">
@@ -112,7 +115,7 @@ export function LoadBar() {
             <button className="icon-btn tiny" aria-expanded={open} title={open ? t("loadBar.hideLog") : t("loadBar.showLog")} onClick={() => setOpen(!open)}>
               <Icon name={open ? "compress" : "expand"} size={13} />
             </button>
-            <button className="icon-btn tiny" title={t("loadBar.hide")} onClick={() => setHidden(true)}>
+            <button className="icon-btn tiny" title={t("loadBar.hideCard")} onClick={() => setHidden(true)}>
               <Icon name="close" size={13} />
             </button>
           </div>
@@ -140,6 +143,9 @@ export function LoadBar() {
               </p>
             </div>
           )}
+          <div className={`lb-line ${pct == null ? "busy" : ""}`}>
+            <span style={pct == null ? undefined : { width: `${pct}%` }} />
+          </div>
         </div>
       )}
     </div>

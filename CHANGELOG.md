@@ -6,10 +6,10 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
-- **Loading bar while the app loads from VRChat:** a thin bar across the top plus a small card
-  with the step, how far along, who is loading right now and roughly how long is left. Unfold it
-  for the steps (done / running) and a live log of everything loaded; hide it to keep only the
-  thin bar. Mostly for the first start, when everything still has to be fetched.
+- **Loading bar while the app loads from VRChat:** a small card at the top (lined up with the
+  panels) with the step, a progress line, who is loading right now and roughly how long is left.
+  Unfold it for the steps (done / running) and a live log of everything loaded; hide it to keep
+  a small progress pill. Mostly for the first start, when everything still has to be fetched.
 - **Your online times on your profile:** the last 7 days as bars, with totals for the week,
   today and your longest session, and a link to Online times.
 - **Restore default settings** (Settings → My account): every option back to a fresh install,

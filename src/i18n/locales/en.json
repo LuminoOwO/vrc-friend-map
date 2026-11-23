@@ -2472,10 +2472,10 @@
     "waiting": "VRChat asked to slow down, waiting",
     "showLog": "Show what's loading",
     "hideLog": "Hide the log",
-    "hide": "Hide (keeps the thin bar at the top)",
     "log": "Loading log",
     "loaded": "{{what}}",
     "running": "Running for {{s}} s",
-    "why": "Requests are spaced out so VRChat doesn't block you; the first start takes longest."
+    "why": "Requests are spaced out so VRChat doesn't block you; the first start takes longest.",
+    "hideCard": "Hide (a small progress pill stays)"
   }
 }
