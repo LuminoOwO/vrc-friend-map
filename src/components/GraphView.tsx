@@ -1350,6 +1350,20 @@ export function GraphView() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => requestDraw(), [named, starred, travel]);
 
+  /** The map's uncovered part: layouts set --map-inset-* (px) where panels lie over the canvas. */
+  function freeArea() {
+    const { w, h } = sizeRef.current;
+    const cs = containerRef.current ? getComputedStyle(containerRef.current) : null;
+    const px = (name: string) => Math.max(0, parseFloat(cs?.getPropertyValue(name) || "0") || 0);
+    let l = px("--map-inset-left");
+    let r = px("--map-inset-right");
+    const t = px("--map-inset-top");
+    const b = px("--map-inset-bottom");
+    // A narrow window: don't let the panels squeeze the map to nothing.
+    if (w - l - r < w * 0.4) l = r = 0;
+    return { w: Math.max(1, w - l - r), h: Math.max(1, h - t - b), l, r, t, b };
+  }
+
   function fit(animate = true) {
     const canvas = canvasRef.current;
     const zoom = zoomRef.current;
@@ -1361,9 +1375,11 @@ export function GraphView() {
     const x1 = d3.max(pts, (n) => n.x! + n.hw)!;
     const y0 = d3.min(pts, (n) => n.y! - n.hh)!;
     const y1 = d3.max(pts, (n) => n.y! + n.hh)!;
-    const { w, h } = sizeRef.current;
+    // Only the part of the window the map isn't covered in (menu, side panel, bottom bar).
+    const { w, h, l, t: top } = freeArea();
     const k = Math.min(2, 0.92 / Math.max((x1 - x0 + 60) / w, (y1 - y0 + 60) / h));
-    const tr = d3.zoomIdentity.translate(w / 2, h / 2).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+    const tr = d3.zoomIdentity.translate(l + w / 2, top + h / 2).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
+
     const sel = d3.select(canvas);
     if (animate) sel.transition().duration(500).call(zoom.transform, tr);
     else sel.call(zoom.transform, tr);
@@ -1374,7 +1390,8 @@ export function GraphView() {
     const canvas = canvasRef.current;
     const zoom = zoomRef.current;
     if (!canvas || !zoom) return;
-    d3.select(canvas).transition().duration(220).call(zoom.scaleBy, factor);
+    const a = freeArea();
+    d3.select(canvas).transition().duration(220).call(zoom.scaleBy, factor, [a.l + a.w / 2, a.t + a.h / 2]);
   }
   const zoomKeysRef = useRef({ zoomBy, fit });
   zoomKeysRef.current = { zoomBy, fit };
@@ -1812,12 +1829,12 @@ export function GraphView() {
       const zoom = zoomRef.current;
       if (!n || n.x == null || !canvas || !zoom) return;
       const t = transformRef.current;
-      const { w, h } = sizeRef.current;
+      const a = freeArea();
       const sx = t.applyX(n.x);
       const sy = t.applyY(n.y!);
       const margin = 60;
-      if (sx < margin || sx > w - margin || sy < margin || sy > h - margin) {
-        d3.select(canvas).transition().duration(400).call(zoom.translateTo, n.x, n.y!);
+      if (sx < a.l + margin || sx > a.l + a.w - margin || sy < a.t + margin || sy > a.t + a.h - margin) {
+        d3.select(canvas).transition().duration(400).call(zoom.translateTo, n.x, n.y!, [a.l + a.w / 2, a.t + a.h / 2]);
       }
     }, 60);
     return () => clearTimeout(timer);

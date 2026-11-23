@@ -139,3 +139,9 @@
 .lob-herebar-panel-head { display: flex; align-items: baseline; gap: 10px; padding: 0 4px; }
 .lob-herebar-panel .here-list2 { overflow-y: auto; }
 @media (max-width: 1100px) { .lob-herebar .here-filters { display: none; } .lob-herebar-panel .here-filters { display: flex; } }
+
+/* Where panels lie over the map, so fitting and centering use only the free part (GraphView). */
+.lay-lobby { --map-inset-left: 92px; --map-inset-right: 390px; --map-inset-top: 16px; --map-inset-bottom: 60px; }
+.lay-lobby.party-folded { --map-inset-right: 44px; }
+/* The menu column starts below the notification center so they never overlap on short windows. */
+.lob-left { top: 72px; }
