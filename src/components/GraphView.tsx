@@ -7,7 +7,8 @@ import { t as tr, lazy, language } from "../i18n";
 import { mapStats, noteFrame } from "../diag";
 import * as d3 from "d3";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { imgSrc, isMobile } from "../backend";
+import { imgSrc } from "../backend";
+import { usePhoneLayout } from "../layout";
 import { hexA } from "../colors";
 import { useDerived } from "../derived";
 import { useExtra, type OtherInfo } from "../people";
@@ -466,9 +467,10 @@ export function GraphView() {
   }, [theme]);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const sidePage = useApp((s) => s.sidePanel);
+  const phoneL = usePhoneLayout();
   const groupsPanel = sidePage === "groups";
   // The new interface on computers shows Map options in the side panel, not over the map.
-  const optionsInPanel = betaActive() && !isMobile;
+  const optionsInPanel = betaActive() && !phoneL;
 
   const cache = useApp((s) => s.cache);
   const circles = useApp((s) => s.local.circles);
@@ -2316,7 +2318,7 @@ export function GraphView() {
               className={`btn small ${groupsPanel ? "active" : ""}`}
               aria-pressed={groupsPanel}
               title={tr("fgroups.help")}
-              onClick={() => (isMobile ? setState({ view: "insights" }) : groupsPanel ? closeFriendGroups() : openFriendGroups())}
+              onClick={() => (phoneL ? setState({ view: "insights" }) : groupsPanel ? closeFriendGroups() : openFriendGroups())}
             >
               <Icon name="users" size={15} /> <span className="mbar-text">{tr("fgroups.button")}</span>
             </button>

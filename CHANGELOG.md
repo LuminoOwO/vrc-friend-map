@@ -86,6 +86,9 @@ minor releases can change behavior.
   do on vrchat.com if your account may be hacked (change the password, turn on two-factor).
 
 ### Changed
+- **The layout follows the window size:** a computer window narrower than 760 px switches to
+  the phone layout (back to the desktop one from 820 px); tablets get the desktop layout, and
+  a phone turned sideways keeps the phone layout.
 - **Online times looks friendlier and zooms with buttons:** day names on top with today
   highlighted, soft day bands instead of hard lines, rounded bars, the row under the pointer
   lit, a "now" tag, lighter "nobody watching" shading, and −/+ zoom buttons on the chart (also

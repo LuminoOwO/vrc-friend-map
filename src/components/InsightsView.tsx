@@ -4,7 +4,8 @@
 // friend list over time.
 import { t as tr, language } from "../i18n";
 import { useMemo, useState } from "react";
-import { imgSrc, isMobile } from "../backend";
+import { imgSrc } from "../backend";
+import { usePhoneLayout } from "../layout";
 import { dismissPreviousVisit, previousVisit, useHistory } from "../history";
 import { compare, driftingApart, friendGraph, listOverTime, shortestPath } from "../insights";
 import { iconUrl } from "../model";
@@ -144,20 +145,21 @@ function PendingRequests() {
 }
 
 function FriendGroups() {
+  const phoneL = usePhoneLayout();
   return (
     <section className="insight-card">
       <div className="row between">
         <h3>
           <Icon name="users" size={16} /> {tr("insights.friendGroupsOnYourMap")}
         </h3>
-        {!isMobile && (
+        {!phoneL && (
           <button className="btn small primary" onClick={openFriendGroups}>
             <Icon name="graph" size={14} /> {tr("fgroups.showOnMap")}
           </button>
         )}
       </div>
       <p className="small muted">{tr("insights.foundFromWhoIsFriends")}</p>
-      {isMobile && <FriendGroupsList phone />}
+      {phoneL && <FriendGroupsList phone />}
     </section>
   );
 }

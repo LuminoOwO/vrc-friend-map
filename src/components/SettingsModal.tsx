@@ -3,7 +3,8 @@ import { createContext, useContext, useEffect, useLayoutEffect, useRef, useState
 import { COMPLETE, LANGUAGES, MACHINE_TRANSLATED, languageName, resolveLanguage, useT } from "../i18n";
 import { NO_OWN_COLORS, type OwnColors } from "../owncolors";
 import { scoreSection } from "../settingsSearch";
-import { backend, imgSrc, isMobile, type GraphicsInfo, type GraphicsMode } from "../backend";
+import { backend, imgSrc, type GraphicsInfo, type GraphicsMode } from "../backend";
+import { usePhoneLayout } from "../layout";
 import { iconUrl, STATUS_LABEL, statusColor } from "../model";
 import { forgetLogHistory, logsSupported, naiveToDate, scanLogs } from "../logs";
 import { exitDemo, logoutAll, logoutCarriers, logoutEverywhere, wipeEverything } from "../session";
@@ -285,8 +286,9 @@ export function SettingsModal() {
   const sections = useRef(new Map<string, { cat: Cat; title: string; keys: string; el: HTMLElement | null }>());
   const bodyRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  const phoneL = usePhoneLayout();
   // Phones (new interface): a list of pages first, like a phone's own settings; one page at a time.
-  const phone = betaActive() && isMobile;
+  const phone = betaActive() && phoneL;
   const [phoneList, setPhoneList] = useState(true);
 
   useEffect(() => {

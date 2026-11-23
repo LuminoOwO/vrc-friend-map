@@ -10,7 +10,7 @@
 import { t as tr } from "../i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "../i18n";
-import { isMobile } from "../backend";
+import { usePhoneLayout } from "../layout";
 import { setState, updateFilters, updateUi, useApp, type View } from "../store";
 import { openServers } from "../components/ServersModal";
 import { useServersSummary } from "./ServerStatus";
@@ -37,6 +37,7 @@ import { Inbox } from "./Inbox";
 
 export function BetaApp({ children }: { children: React.ReactNode }) {
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const phone = usePhoneLayout();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
@@ -48,8 +49,8 @@ export function BetaApp({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
   return (
-    <div className={`ui2 ${isMobile ? "ui2-phone" : "ui2-desktop"}`}>
-      {isMobile ? <PhoneShell /> : <Desktop onPalette={() => setPaletteOpen(true)} />}
+    <div className={`ui2 ${phone ? "ui2-phone" : "ui2-desktop"}`}>
+      {phone ? <PhoneShell /> : <Desktop onPalette={() => setPaletteOpen(true)} />}
       {paletteOpen && <CommandPalette onClose={() => setPaletteOpen(false)} />}
       {children}
     </div>
