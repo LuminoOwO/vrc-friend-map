@@ -313,24 +313,10 @@ export function TimesTimeline({
       const barH = Math.max(2, rowH - 4);
       const radius = Math.min(4, barH / 3);
       const block = (x: number, w: number, c: [number, number, number]) => {
-        const r0 = Math.min(radius, w / 2);
-        ctx.save();
+        ctx.fillStyle = rgba(c, 1);
         ctx.beginPath();
-        ctx.roundRect(x, by, w, barH, r0);
-        ctx.clip();
-        const g = ctx.createLinearGradient(0, by, 0, by + barH);
-        g.addColorStop(0, rgba(mixRgb(c, [255, 255, 255], 0.22), 1));
-        g.addColorStop(0.55, rgba(c, 1));
-        g.addColorStop(1, rgba(mixRgb(c, [0, 0, 0], 0.18), 1));
-        ctx.fillStyle = g;
-        ctx.fillRect(x, by, w, barH);
-        if (barH >= 8) {
-          ctx.fillStyle = "rgba(255,255,255,0.28)";
-          ctx.fillRect(x, by, w, 1);
-          ctx.fillStyle = "rgba(0,0,0,0.28)";
-          ctx.fillRect(x, by + barH - 1, w, 1);
-        }
-        ctx.restore();
+        ctx.roundRect(x, by, w, barH, Math.min(radius, w / 2));
+        ctx.fill();
       };
       const bgc = rgbOf(ctx, col.bg);
       if (r.heat) {
@@ -620,6 +606,15 @@ export function TimesTimeline({
             }
             drag.current = null;
           }
+        }}
+        onPointerCancel={(e) => {
+          pointers.current.delete(e.pointerId);
+          if (pointers.current.size === 0) drag.current = null;
+        }}
+        onLostPointerCapture={(e) => {
+          // WebKitGTK can drop the pointerup when the button is let go outside the window.
+          pointers.current.delete(e.pointerId);
+          if (pointers.current.size === 0) drag.current = null;
         }}
         onPointerLeave={() => {
           if (drag.current) return;

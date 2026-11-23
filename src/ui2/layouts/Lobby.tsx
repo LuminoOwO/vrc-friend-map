@@ -4,7 +4,7 @@
 // folds away to a tab on the edge); who's in your instance along the bottom. A view (or Settings)
 // opens in a big frame; the map fades out and stops drawing behind it.
 import { t as tr } from "../../i18n";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useT } from "../../i18n";
 import { imgSrc } from "../../backend";
 import { bannerUrl } from "../../model";
@@ -60,15 +60,26 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
   // The menu opens while the pointer is on it. Not CSS :hover: WebKitGTK keeps :hover when the
   // pointer leaves the window over the menu, so it stayed open over the map.
   const [pointed, setPointed] = useState(false);
+  const leftRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const off = () => setPointed(false);
     const out = (e: MouseEvent) => !e.relatedTarget && off();
+    // Any pointer seen outside the menu closes it, even when a leave event got lost
+    // (WebKitGTK, or a page such as Online times holding the pointer for a drag).
+    const elsewhere = (e: PointerEvent) => {
+      const el = leftRef.current;
+      if (el && e.pointerType !== "touch" && !el.contains(e.target as Node)) off();
+    };
     document.addEventListener("mouseout", out);
+    document.addEventListener("pointermove", elsewhere, true);
     document.documentElement.addEventListener("mouseleave", off);
+    document.documentElement.addEventListener("pointerleave", off);
     window.addEventListener("blur", off);
     return () => {
       document.removeEventListener("mouseout", out);
+      document.removeEventListener("pointermove", elsewhere, true);
       document.documentElement.removeEventListener("mouseleave", off);
+      document.documentElement.removeEventListener("pointerleave", off);
       window.removeEventListener("blur", off);
     };
   }, []);
@@ -81,6 +92,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
       <div className="lob-shade" />
       <Inbox className="lob-inbox" />
       <div
+        ref={leftRef}
         className={`lob-left ${pointed ? "pointed" : ""}`}
         onPointerEnter={(e) => e.pointerType !== "touch" && setPointed(true)}
         onPointerMove={(e) => !pointed && e.pointerType !== "touch" && setPointed(true)}
