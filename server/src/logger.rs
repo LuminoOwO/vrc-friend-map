@@ -887,7 +887,18 @@ impl Logger {
         ups.sort_unstable();
         ups.dedup();
         hops.sort_by_key(|h| h.0);
-        let coverage = presence_coverage(&ups);
+        let mut coverage = presence_coverage(&ups);
+        // Before the logger kept its "watching" record (older versions), it was still logging:
+        // there, the location log itself shows when it was on.
+        let first_up = self.first_up().unwrap_or(i64::MAX);
+        let mut legacy = hop_coverage(hops.iter().map(|h| h.0).filter(|t| *t < first_up));
+        if !legacy.is_empty() {
+            for s in &mut legacy {
+                s.1 = s.1.min(first_up);
+            }
+            coverage.extend(legacy);
+            coverage.sort_unstable();
+        }
         let sessions = presence_sessions(&hops, &coverage, to);
         let clip = |s: i64, e: i64| -> Option<[i64; 2]> { (e >= from && s <= to).then(|| [s.max(from), e.min(to)]) };
         let coverage: Vec<[i64; 2]> = coverage.iter().filter_map(|(s, e)| clip(*s, *e)).collect();
@@ -899,6 +910,18 @@ impl Logger {
             })
             .collect();
         json!({ "coverage": coverage, "sessions": sessions })
+    }
+
+    /// The first minute ever recorded as watched, if any.
+    fn first_up(&self) -> Option<i64> {
+        let rd = std::fs::read_dir(&self.dir).ok()?;
+        let first = rd
+            .flatten()
+            .map(|f| f.file_name().to_string_lossy().to_string())
+            .filter(|n| n.starts_with("up-") && n.ends_with(".txt"))
+            .min()?;
+        let text = std::fs::read_to_string(self.dir.join(first)).ok()?;
+        text.lines().filter_map(|l| l.trim().parse::<i64>().ok()).min()
     }
 
     pub fn save_now(&self) {
@@ -942,6 +965,20 @@ fn presence_coverage(ups: &[i64]) -> Vec<(i64, i64)> {
         match out.last_mut() {
             Some(last) if t - last.1 <= MAX_GAP_SECS => last.1 = t,
             _ => out.push((t - TICK_SECS, t)),
+        }
+    }
+    out
+}
+
+/// Coverage worked out from logged location changes alone (no "watching" record): logged
+/// events less than three hours apart count as watched in between, quiet nights included.
+fn hop_coverage(times: impl Iterator<Item = i64>) -> Vec<(i64, i64)> {
+    const HOP_GAP_SECS: i64 = 3 * 3600;
+    let mut out: Vec<(i64, i64)> = Vec::new();
+    for t in times {
+        match out.last_mut() {
+            Some(last) if t - last.1 <= HOP_GAP_SECS => last.1 = last.1.max(t),
+            _ => out.push((t, t)),
         }
     }
     out
@@ -1071,6 +1108,13 @@ mod tests {
         assert_eq!(s["usr_a"], vec![(1100, 1700)]);
         assert_eq!(s["usr_b"], vec![(1800, 1960), (3100, 3500)]);
         assert_eq!(s["usr_c"], vec![(3600, 3960)]);
+    }
+
+    #[test]
+    fn coverage_from_hops_alone() {
+        // Events an hour apart are one watched span; a 5 h silence splits it.
+        let cov = super::hop_coverage([1000, 4600, 8200, 8200 + 5 * 3600].into_iter());
+        assert_eq!(cov, vec![(1000, 8200), (8200 + 5 * 3600, 8200 + 5 * 3600)]);
     }
 
     fn logger() -> Arc<Logger> {

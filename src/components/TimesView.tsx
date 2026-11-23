@@ -433,7 +433,7 @@ function ExactTimes({ list }: { list: boolean }) {
       {list ? (
         <SessionList rows={rows.all} view={view} onView={setView} />
       ) : (
-        <TimesTimeline rows={rows.all} gaps={gaps} view={view} onView={setView} rowH={rowH} showJoins={showJoins} onOpen={(id) => setState({ selectedId: id })} />
+        <TimesTimeline rows={rows.all} gaps={gaps} view={view} onView={setView} rowH={rowH} showJoins={showJoins} gapText={t(data.servers === 0 ? "timeline.noDataApp" : data.remoteErr ? "timeline.noDataUnreached" : "timeline.noDataBoth")} onOpen={(id) => setState({ selectedId: id })} />
       )}
       {!list && <p className="small muted">{t("timeline.help")}</p>}
     </>

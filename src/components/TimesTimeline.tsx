@@ -86,6 +86,7 @@ export function TimesTimeline({
   onView,
   rowH,
   showJoins = false,
+  gapText,
   day,
   onOpen,
 }: {
@@ -96,6 +97,8 @@ export function TimesTimeline({
   rowH: number;
   /** Draw a mark where a short disconnect was joined (off by default). */
   showJoins?: boolean;
+  /** What the striped "no data" parts mean here (who wasn't recording). */
+  gapText?: string;
   /** Typical week: fixed hours of a day, rows shaded by `heat` (no dragging in time). */
   day?: TimelineDay;
   onOpen: (id: string) => void;
@@ -273,6 +276,20 @@ export function TimesTimeline({
           ctx.fillText(label, x + 3, DAY_ROW + (HEAD - DAY_ROW) / 2 - 1);
         }
       }
+    }
+    // Every 30 minutes: a very faint line behind everything, while they're far enough apart.
+    const HALF = 30 * 60e3;
+    if ((HALF / (vw.end - vw.start)) * plotW >= 5) {
+      const offH = day ? 0 : new Date(vw.start).getTimezoneOffset() * 60e3;
+      ctx.strokeStyle = tint(0.035);
+      ctx.beginPath();
+      for (let ms = Math.ceil((vw.start - offH) / HALF) * HALF + offH; ms <= vw.end; ms += HALF) {
+        const x = xOf(ms);
+        if (x < nameW || x > size.w) continue;
+        ctx.moveTo(Math.round(x) + 0.5, HEAD);
+        ctx.lineTo(Math.round(x) + 0.5, size.h);
+      }
+      ctx.stroke();
     }
     // Hours: faint lines and small labels under the day names.
     const off = new Date(view.start).getTimezoneOffset() * 60e3;
@@ -549,7 +566,7 @@ export function TimesTimeline({
       return;
     }
     const g = gaps.find((x) => at >= x[0] && at <= x[1]);
-    setTip({ x: p.x, y: p.y, text: g ? [t("timeline.noData"), `${fmtDay(g[0])} ${fmtTime(g[0])} – ${fmtTime(g[1])}`] : [r.name, t("timeline.offlineAt", { time: `${fmtDay(at)} ${fmtTime(at)}` })] });
+    setTip({ x: p.x, y: p.y, text: g ? [gapText ?? t("timeline.noData"), `${fmtDay(g[0])} ${fmtTime(g[0])} – ${fmtDay(g[1]) !== fmtDay(g[0]) ? `${fmtDay(g[1])} ` : ""}${fmtTime(g[1])}`] : [r.name, t("timeline.offlineAt", { time: `${fmtDay(at)} ${fmtTime(at)}` })] });
   };
 
   return (
