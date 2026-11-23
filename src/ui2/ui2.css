@@ -601,7 +601,7 @@
 @keyframes inbox-ring { 0%, 70%, 100% { transform: rotate(0); } 75% { transform: rotate(14deg); } 82% { transform: rotate(-12deg); } 89% { transform: rotate(6deg); } }
 @media (prefers-reduced-motion: reduce) { .inbox-btn.has svg { animation: none; } }
 .inbox-count { position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--danger, #ef5b5b); color: #fff; font-size: 11px; font-weight: 800; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--bg, #000); }
-.inbox-drop { position: absolute; z-index: 80; top: calc(100% + 10px); left: 0; width: 380px; max-width: calc(100vw - 32px); max-height: min(560px, 75vh); display: flex; flex-direction: column; background: var(--panel-2); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55); overflow: hidden; }
+.inbox-drop { position: absolute; z-index: 80; top: calc(100% + 10px); left: 0; width: 380px; max-width: calc(100vw - 32px); max-height: min(560px, 75vh); display: flex; flex-direction: column; background: var(--panel-2); border: 1px solid var(--border-strong); border-radius: 8px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55); overflow: hidden; }
 .inbox-head { padding: 12px 16px 6px; }
 .inbox-head b { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .inbox-empty { padding: 10px 16px 14px; margin: 0; }
@@ -618,15 +618,26 @@
 .inbox-pic.k-blockAsk .inbox-pic-badge { background: var(--danger, #ef5b5b); color: #fff; }
 .inbox-foot { border: 0; border-top: 1px solid var(--border); background: none; color: var(--muted); font: inherit; font-size: 13px; padding: 10px 16px; text-align: left; cursor: pointer; }
 .inbox-foot:hover { color: var(--text); }
-/* Lobby (computers): the top-left corner, above the menu. */
-.lob-inbox { position: absolute; z-index: 60; top: 22px; left: 22px; }
+/* Lobby (computers): in the menu column, level with the panels' top edge; looks like a menu entry. */
+.lob-inbox { position: absolute; z-index: 60; top: 16px; left: 22px; }
+.lob-inbox .inbox-btn { width: 48px; height: 48px; border: 0; border-radius: 8px; background: none; box-shadow: none; backdrop-filter: none; color: rgba(255, 255, 255, 0.6); }
+.lob-inbox .inbox-btn svg { width: 26px; height: 26px; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8)); }
+.lob-inbox .inbox-btn::before { content: ""; position: absolute; left: -22px; top: 50%; width: 6px; height: 0; border-radius: 0 3px 3px 0; background: var(--accent); transform: translateY(-50%); transition: height 0.2s; }
+.lob-inbox .inbox-btn:hover { color: #fff; transform: none; }
+.lob-inbox .inbox-btn.has { background: none; color: var(--accent); }
+.lob-inbox .inbox-btn.on { color: var(--accent); }
+.lob-inbox .inbox-btn:hover::before, .lob-inbox .inbox-btn.on::before, .lob-inbox .inbox-btn.has::before { height: 70%; }
+.lob-inbox .inbox-count { top: 4px; right: 2px; }
+/* The list and the pop-ups open level with the panels' top, lined up with the view frame. */
+.lob-inbox .inbox-drop { top: 0; left: 90px; width: 380px; max-height: calc(100vh - 96px); border-radius: 8px; border-color: rgba(255, 255, 255, 0.12); background: var(--bg); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); }
 /* Phones: the left end of the title bar. */
 .phone-inbox { margin-right: 10px; }
-.phone-inbox .inbox-btn { width: 40px; height: 40px; border-radius: 12px; box-shadow: none; }
+.phone-inbox .inbox-btn { width: 40px; height: 40px; border: 0; border-radius: 8px; background: none; box-shadow: none; backdrop-filter: none; }
+.phone-inbox .inbox-btn.has { background: none; color: var(--accent); }
 .phone-inbox .inbox-drop { position: fixed; top: calc(var(--safe-top, 0px) + 64px); left: 12px; right: 12px; width: auto; }
 
-.popups { position: fixed; z-index: 1200; top: 22px; left: 84px; display: grid; gap: 8px; width: 360px; max-width: calc(100vw - 32px); pointer-events: none; }
-.popup { position: relative; display: flex; align-items: center; pointer-events: auto; background: var(--panel-2); border: 1px solid var(--border-strong); border-left: 3px solid var(--accent); border-radius: 12px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); overflow: hidden; animation: popup-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.popups { position: fixed; z-index: 1200; top: 16px; left: 112px; display: grid; gap: 8px; width: 380px; max-width: calc(100vw - 32px); pointer-events: none; }
+.popup { position: relative; display: flex; align-items: center; pointer-events: auto; background: var(--bg); border: 1px solid rgba(255, 255, 255, 0.12); border-left: 3px solid var(--accent); border-radius: 8px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); overflow: hidden; animation: popup-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
 .popup.k-blockAsk { border-left-color: var(--danger, #ef5b5b); }
 .popup-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 6px 12px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .popup-close { flex: none; align-self: flex-start; margin: 6px 6px 0 0; width: 26px; height: 26px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; }

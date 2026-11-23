@@ -11,7 +11,7 @@ import type { NotifyEvent } from "./types";
 export const INBOX_EVENTS = new Set<NotifyEvent>(["friendRequest", "invite", "requestInvite", "added", "removed", "slotOpen"]);
 
 const MAX_POPUPS = 4;
-let popupSeq = 0;
+let popupSeq = Date.now();
 const timers = new Map<number, ReturnType<typeof setTimeout>>();
 
 /** Show an in-app pop-up for a while (if pop-ups are on). */
