@@ -12,7 +12,7 @@
 .lob-shade { transition: opacity 0.3s; }
 /* The menu: icons only; on hover (or keyboard focus) it slides out with the names over the map. */
 .lob-left { position: absolute; z-index: 50; left: 0; top: 0; bottom: 48px; width: 92px; display: flex; flex-direction: column; justify-content: center; gap: 28px; padding: 0 22px; box-sizing: border-box; overflow: hidden; transition: width 0.28s cubic-bezier(0.2, 0.8, 0.2, 1); }
-.lob-left:hover, .lob-left:has(:focus-visible) { width: 440px; background: linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0, rgba(0, 0, 0, 0.78) 45%, rgba(0, 0, 0, 0.35) 75%, rgba(0, 0, 0, 0) 100%); }
+.lob-left.pointed, .lob-left:has(:focus-visible) { width: 440px; background: linear-gradient(90deg, rgba(0, 0, 0, 0.9) 0, rgba(0, 0, 0, 0.78) 45%, rgba(0, 0, 0, 0.35) 75%, rgba(0, 0, 0, 0) 100%); }
 .lob-logo { display: flex; align-items: center; gap: 14px; color: #fff; white-space: nowrap; }
 .lob-logo .app-logo { flex: none; border-radius: 12px; }
 .lob-logo-text { display: flex; flex-direction: column; line-height: 1; opacity: 0; transform: translateX(-10px); transition: opacity 0.2s, transform 0.3s; }
@@ -23,17 +23,17 @@
 .lob-item svg { flex: none; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.8)); }
 .lob-item > span { opacity: 0; transform: translateX(-12px); transition: opacity 0.18s, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
 .lob-item.lob-settings { margin-top: 44px; }
-.lob-left:hover .lob-logo-text, .lob-left:has(:focus-visible) .lob-logo-text, .lob-left:hover .lob-item > span, .lob-left:has(:focus-visible) .lob-item > span { opacity: 1; transform: none; }
-.lob-left:hover .lob-item:nth-child(2) > span { transition-delay: 0.02s; }
-.lob-left:hover .lob-item:nth-child(3) > span { transition-delay: 0.04s; }
-.lob-left:hover .lob-item:nth-child(4) > span { transition-delay: 0.06s; }
-.lob-left:hover .lob-item:nth-child(5) > span { transition-delay: 0.08s; }
-.lob-left:hover .lob-item:nth-child(6) > span { transition-delay: 0.1s; }
-.lob-left:hover .lob-item:nth-child(7) > span { transition-delay: 0.12s; }
-.lob-left:hover .lob-item:nth-child(8) > span { transition-delay: 0.14s; }
+.lob-left.pointed .lob-logo-text, .lob-left:has(:focus-visible) .lob-logo-text, .lob-left.pointed .lob-item > span, .lob-left:has(:focus-visible) .lob-item > span { opacity: 1; transform: none; }
+.lob-left.pointed .lob-item:nth-child(2) > span { transition-delay: 0.02s; }
+.lob-left.pointed .lob-item:nth-child(3) > span { transition-delay: 0.04s; }
+.lob-left.pointed .lob-item:nth-child(4) > span { transition-delay: 0.06s; }
+.lob-left.pointed .lob-item:nth-child(5) > span { transition-delay: 0.08s; }
+.lob-left.pointed .lob-item:nth-child(6) > span { transition-delay: 0.1s; }
+.lob-left.pointed .lob-item:nth-child(7) > span { transition-delay: 0.12s; }
+.lob-left.pointed .lob-item:nth-child(8) > span { transition-delay: 0.14s; }
 .lob-item::before { content: ""; position: absolute; left: -22px; top: 50%; width: 6px; height: 0; border-radius: 0 3px 3px 0; background: var(--accent); transform: translateY(-50%); transition: height 0.2s; }
 .lob-item:hover, .lob-item.on { color: #fff; }
-.lob-left:hover .lob-item:hover { transform: translateX(8px); }
+.lob-left.pointed .lob-item:hover { transform: translateX(8px); }
 .lob-item:hover::before, .lob-item.on::before { height: 70%; }
 .lob-item.on { color: var(--accent); }
 .lob-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }

@@ -50,6 +50,21 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
   }, [sidePanel]); // eslint-disable-line react-hooks/exhaustive-deps
   // Folding plays a slide-out first, then the panel goes away.
   const [leaving, setLeaving] = useState(false);
+  // The menu opens while the pointer is on it. Not CSS :hover: WebKitGTK keeps :hover when the
+  // pointer leaves the window over the menu, so it stayed open over the map.
+  const [pointed, setPointed] = useState(false);
+  useEffect(() => {
+    const off = () => setPointed(false);
+    const out = (e: MouseEvent) => !e.relatedTarget && off();
+    document.addEventListener("mouseout", out);
+    document.documentElement.addEventListener("mouseleave", off);
+    window.addEventListener("blur", off);
+    return () => {
+      document.removeEventListener("mouseout", out);
+      document.documentElement.removeEventListener("mouseleave", off);
+      window.removeEventListener("blur", off);
+    };
+  }, []);
   return (
     <div className={`lay-lobby ${covered ? "covered" : ""} ${prefs.collapsed ? "party-folded" : ""}`}>
       <h1 className="sr-only">{tr("lobby.vrcFriendMap")}</h1>
@@ -58,7 +73,12 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
       </div>
       <div className="lob-shade" />
       <Inbox className="lob-inbox" />
-      <div className="lob-left">
+      <div
+        className={`lob-left ${pointed ? "pointed" : ""}`}
+        onPointerEnter={(e) => e.pointerType !== "touch" && setPointed(true)}
+        onPointerMove={(e) => !pointed && e.pointerType !== "touch" && setPointed(true)}
+        onPointerLeave={() => setPointed(false)}
+      >
         <div className="lob-logo">
           <AppLogo size={48} />
           <span className="lob-logo-text">
