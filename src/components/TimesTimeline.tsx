@@ -307,8 +307,7 @@ export function TimesTimeline({
         ctx.fillStyle = tint(0.07);
         ctx.fillRect(0, y, size.w, rowH);
       }
-      // Sessions: solid blocks filling the row, corners slightly rounded, with a little shading
-      // (lighter at the top, a fine highlight on top, a darker bottom edge) so they stand out.
+      // Sessions: plain solid blocks filling the row, corners slightly rounded.
       const by = y + 2;
       const barH = Math.max(2, rowH - 4);
       const radius = Math.min(4, barH / 3);
@@ -329,12 +328,21 @@ export function TimesTimeline({
           block(nameW + h * cw + 1, Math.max(1, cw - 2), mixRgb(bgc, base, 0.35 + v * 0.65));
         });
       }
-      for (const s of r.spans) {
-        if (s[1] < view.start || s[0] > view.end) continue;
+      // Sessions closer together than a few pixels at this zoom are drawn as one block, so many
+      // short sessions don't turn into a comb of thin lines. Zooming in separates them again.
+      const MERGE_PX = 6;
+      let cur: [number, number] | null = null;
+      const vis = r.spans.filter((s) => s[1] >= view.start && s[0] <= view.end).sort((a, b) => a[0] - b[0]);
+      for (const s of vis) {
         const x0 = Math.max(nameW, xOf(s[0]));
         const x1 = Math.min(size.w, xOf(s[1]));
-        block(x0, Math.max(2, x1 - x0), acc);
+        if (cur && x0 - cur[1] < MERGE_PX) cur[1] = Math.max(cur[1], x1);
+        else {
+          if (cur) block(cur[0], Math.max(2, cur[1] - cur[0]), acc);
+          cur = [x0, x1];
+        }
       }
+      if (cur) block(cur[0], Math.max(2, cur[1] - cur[0]), acc);
       // Joined short disconnects: a small notch (only when asked for).
       ctx.fillStyle = col.warn;
       for (const j of showJoins ? r.joined : []) {
