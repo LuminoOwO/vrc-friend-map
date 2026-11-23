@@ -390,6 +390,12 @@ function drawLabel(ctx: CanvasRenderingContext2D, text: string, x: number, y: nu
   ctx.drawImage(sp.c, x - sp.w / 2 / k, y - sp.base / k, sp.w / k, sp.h / k);
 }
 
+/** Fits the map to the screen from outside (the Map options side panel). */
+let fitHook: (() => void) | null = null;
+export function fitMap() {
+  fitHook?.();
+}
+
 export function GraphView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -459,7 +465,10 @@ export function GraphView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [theme]);
   const [optionsOpen, setOptionsOpen] = useState(false);
-  const groupsPanel = useApp((s) => s.sidePanel === "groups");
+  const sidePage = useApp((s) => s.sidePanel);
+  const groupsPanel = sidePage === "groups";
+  // The new interface on computers shows Map options in the side panel, not over the map.
+  const optionsInPanel = betaActive() && !isMobile;
 
   const cache = useApp((s) => s.cache);
   const circles = useApp((s) => s.local.circles);
@@ -1417,6 +1426,12 @@ export function GraphView() {
   const zoomKeysRef = useRef({ zoomBy, fit });
   zoomKeysRef.current = { zoomBy, fit };
   useEffect(() => {
+    fitHook = () => zoomKeysRef.current.fit();
+    return () => {
+      fitHook = null;
+    };
+  }, []);
+  useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
       const t = e.target as HTMLElement | null;
@@ -2281,7 +2296,21 @@ export function GraphView() {
           )}
         </div>
         <HereSwitch />
-        <div className="mbar mbar-more">
+        <div className="mbar mbar-more" role={optionsInPanel ? "group" : undefined} aria-label={optionsInPanel ? tr("map.sidePanel") : undefined}>
+          {optionsInPanel && (
+            <button
+              className={`btn small ${!sidePage ? "active" : ""}`}
+              aria-pressed={!sidePage}
+              title={tr("map.showOverviewHelp")}
+              onClick={() => {
+                if (sidePage === "groups") closeFriendGroups();
+                else setState({ sidePanel: null });
+                window.dispatchEvent(new Event("vfm-show-panel"));
+              }}
+            >
+              <Icon name="cards" size={15} /> <span className="mbar-text">{tr("map.showOverview")}</span>
+            </button>
+          )}
           {betaActive() && (
             <button
               className={`btn small ${groupsPanel ? "active" : ""}`}
@@ -2292,12 +2321,26 @@ export function GraphView() {
               <Icon name="users" size={15} /> <span className="mbar-text">{tr("fgroups.button")}</span>
             </button>
           )}
-          <button className={`btn small keep ${optionsOpen ? "active" : ""}`} title={tr("map.mapOptions")} onClick={() => setOptionsOpen(!optionsOpen)}>
-            <Icon name="sliders" size={15} /> <span className="mbar-text">{tr("map.mapOptions")}</span>
-          </button>
+          {optionsInPanel ? (
+            <button
+              className={`btn small keep ${sidePage === "mapOptions" ? "active" : ""}`}
+              aria-pressed={sidePage === "mapOptions"}
+              title={tr("map.mapOptions")}
+              onClick={() => {
+                if (sidePage === "groups") closeFriendGroups();
+                setState({ sidePanel: sidePage === "mapOptions" ? null : "mapOptions" });
+              }}
+            >
+              <Icon name="sliders" size={15} /> <span className="mbar-text">{tr("map.mapOptions")}</span>
+            </button>
+          ) : (
+            <button className={`btn small keep ${optionsOpen ? "active" : ""}`} title={tr("map.mapOptions")} onClick={() => setOptionsOpen(!optionsOpen)}>
+              <Icon name="sliders" size={15} /> <span className="mbar-text">{tr("map.mapOptions")}</span>
+            </button>
+          )}
         </div>
       </div>
-      {optionsOpen && <MapOptions onClose={() => setOptionsOpen(false)} onFit={() => fit()} hasLogData={!!stats?.pairs.length} />}
+      {optionsOpen && !optionsInPanel && <MapOptions onClose={() => setOptionsOpen(false)} onFit={() => fit()} hasLogData={!!stats?.pairs.length} />}
       <Legend
         ringMode={settings.ringMode}
         thresholds={lineData.thresholds}

@@ -12,6 +12,8 @@ import { imgSrc } from "../backend";
 import { iconUrl } from "../model";
 import { Icon } from "../components/Icon";
 import { Range } from "../components/Range";
+import { MapOptions } from "../components/MapOptions";
+import { fitMap } from "../components/GraphView";
 
 /** Show these people on the map (everyone else dimmed); `label` keeps it until turned off. */
 export function lightUp(ids: string[] | null, label: string | null = null) {
@@ -155,6 +157,34 @@ export function FriendGroupsPanel() {
       </div>
       <p className="small muted">{t("fgroups.help")}</p>
       <FriendGroupsList />
+    </section>
+  );
+}
+
+/** Computers: Map options as a side panel page (instead of a box over the panel). */
+export function MapOptionsPanel() {
+  const t = useT();
+  const hasLogData = useApp((s) => !!s.logs.stats?.pairs.length);
+  const close = () => setState({ sidePanel: null });
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      const s = getState();
+      if (s.selectedId || s.settingsOpen || document.querySelector(".modal-backdrop, .profile-backdrop, .groups-backdrop, [role=dialog]")) return;
+      close();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+  return (
+    <section className="fg-panel mo-panel" aria-label={t("mapOptions.mapOptions")}>
+      <div className="fg-panel-head">
+        <button className="icon-btn small" aria-label={t("common.back")} title={t("common.back")} onClick={close}>
+          <Icon name="chevron-left" size={16} />
+        </button>
+        <h2>{t("mapOptions.mapOptions")}</h2>
+      </div>
+      <MapOptions embedded onClose={close} onFit={fitMap} hasLogData={hasLogData} />
     </section>
   );
 }

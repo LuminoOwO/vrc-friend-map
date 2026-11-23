@@ -1274,7 +1274,7 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
 .mbar .icon-btn { width: 30px; padding: 0; justify-content: center; }
 .mbar svg { flex: none; }
 .mbar > button:hover, .mbar .icon-btn:hover { background: var(--tint, var(--panel-2)); color: var(--text); }
-.mbar > button.on, .mbar > button.active { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }
+.mbar > button.on, .mbar > button.active, .graph-controls .mbar .btn.small.active { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }
 @media (max-width: 1520px) { .lay-lobby .mbar-more .mbar-text { display: none; } .lay-lobby .mbar-more > button { width: 30px; padding: 0; justify-content: center; } }
 .here-switch.on { border-color: color-mix(in srgb, var(--accent) 60%, var(--border-strong)); }
 .here-switch-label { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px 0 8px; color: var(--muted); white-space: nowrap; border-right: 1px solid var(--border); height: 20px; margin-right: 2px; }
@@ -1337,3 +1337,6 @@ button.status-pill.editable:hover { border-color: var(--accent); }
 .mytimes-axis .mytimes-track { background: none; height: 14px; }
 .mytimes-axis .mytimes-track span { position: absolute; transform: translateX(-50%); font-size: 10.5px; }
 .mytimes-axis .mytimes-track span:first-child { transform: none; }
+/* Map options as a side panel page: no box of its own, it scrolls with the panel. */
+.map-options.embedded { position: static; width: auto; max-height: none; overflow: visible; padding: 0; background: none; border: 0; border-radius: 0; box-shadow: none; }
+.mo-panel > .map-options.embedded { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding-right: 4px; margin-right: -4px; }

@@ -126,7 +126,7 @@ export interface AppState {
   /** Set while a spotlit group is kept (shown on the map with a way to turn it off). */
   spotlightLabel: string | null;
   /** Computers: a temporary page in the side panel instead of its usual sections. */
-  sidePanel: "groups" | null;
+  sidePanel: "groups" | "mapOptions" | null;
   /** Whether the block reasons dialog is showing (the first of blockAsk), or waiting in the notification center. */
   blockAskShown: boolean;
   /** Insights view: two people picked for "path" / "compare". */

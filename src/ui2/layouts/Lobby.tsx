@@ -14,7 +14,7 @@ import { Icon } from "../../components/Icon";
 import { AppLogo } from "../AppLogo";
 import { Inbox } from "../Inbox";
 import { HereBar } from "../HereBar";
-import { FriendGroupsPanel } from "../FriendGroups";
+import { FriendGroupsPanel, MapOptionsPanel } from "../FriendGroups";
 import { MeButton, RAIL, ToolCluster, ViewBody, useOpenWorld } from "../parts";
 import { PanelSections, usePanelPrefs } from "../SidePanel";
 
@@ -48,6 +48,12 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
   useEffect(() => {
     if (sidePanel && prefs.collapsed) updatePrefs({ collapsed: false });
   }, [sidePanel]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The map's "Overview" button brings the folded panel back.
+  useEffect(() => {
+    const show = () => prefs.collapsed && updatePrefs({ collapsed: false });
+    window.addEventListener("vfm-show-panel", show);
+    return () => window.removeEventListener("vfm-show-panel", show);
+  }, [prefs.collapsed, updatePrefs]);
   // Folding plays a slide-out first, then the panel goes away.
   const [leaving, setLeaving] = useState(false);
   // The menu opens while the pointer is on it. Not CSS :hover: WebKitGTK keeps :hover when the
@@ -115,7 +121,13 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
           </div>
           <MeCard />
           <div className="lob-party-body">
-            {sidePanel === "groups" ? <FriendGroupsPanel /> : <PanelSections prefs={{ ...prefs, side: "right" }} update={updatePrefs} onWorld={openWorld} />}
+            {sidePanel === "groups" ? (
+              <FriendGroupsPanel />
+            ) : sidePanel === "mapOptions" ? (
+              <MapOptionsPanel />
+            ) : (
+              <PanelSections prefs={{ ...prefs, side: "right" }} update={updatePrefs} onWorld={openWorld} />
+            )}
           </div>
         </aside>
       )}

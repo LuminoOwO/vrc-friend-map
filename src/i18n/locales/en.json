@@ -367,7 +367,10 @@
     "quest": "Quest",
     "web": "Web",
     "onWebsite": "on website",
-    "namesShowlabels": "Names: {{showLabels}}"
+    "namesShowlabels": "Names: {{showLabels}}",
+    "showOverview": "Overview",
+    "showOverviewHelp": "Show the side panel's overview (you, Online now, Activity)",
+    "sidePanel": "Side panel"
   },
   "trustShort": {
     "visitor": "Visitor",

@@ -41,7 +41,7 @@ function Slider({
   );
 }
 
-export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void; onFit: () => void; hasLogData: boolean }) {
+export function MapOptions({ onClose, onFit, hasLogData, embedded }: { onClose: () => void; onFit: () => void; hasLogData: boolean; embedded?: boolean }) {
   const map = useApp((s) => s.settings.map);
   const ringMode = useApp((s) => s.settings.ringMode);
   const showLabels = useApp((s) => s.settings.showLabels);
@@ -50,13 +50,15 @@ export function MapOptions({ onClose, onFit, hasLogData }: { onClose: () => void
   const round = map.nodeStyle === "dot" || map.nodeStyle === "icon";
 
   return (
-    <div className="map-options" role="dialog" aria-label={t("mapOptions.mapOptions")}>
-      <div className="map-options-head">
-        <b>{t("mapOptions.mapOptions")}</b>
-        <button className="icon-btn tiny" title={t("mapOptions.close")} onClick={onClose}>
-          <Icon name="close" size={14} />
-        </button>
-      </div>
+    <div className={embedded ? "map-options embedded" : "map-options"} role={embedded ? undefined : "dialog"} aria-label={t("mapOptions.mapOptions")}>
+      {!embedded && (
+        <div className="map-options-head">
+          <b>{t("mapOptions.mapOptions")}</b>
+          <button className="icon-btn tiny" title={t("mapOptions.close")} onClick={onClose}>
+            <Icon name="close" size={14} />
+          </button>
+        </div>
+      )}
 
       <MePinned />
       <div className="opt-group">

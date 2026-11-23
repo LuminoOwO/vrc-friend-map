@@ -82,6 +82,9 @@ minor releases can change behavior.
   do on vrchat.com if your account may be hacked (change the password, turn on two-factor).
 
 ### Changed
+- **Map options open in the side panel** instead of a box over it. Three buttons on the map
+  switch the panel: **Overview** (the usual panel, also unfolds it), **Friend groups** and **Map
+  options**; Escape goes back to the overview.
 - **No more "Log out" next to your name in Settings** (too easy to hit by accident); it stays
   in Settings → My account.
 - **The represented group** on a profile opens in the app, not on vrchat.com.
