@@ -3,6 +3,7 @@
 // friend lists your friends shared. Their profiles and mutual friends load
 // slowly in the background, only for people actually shown.
 import { useEffect, useMemo } from "react";
+import { queueBlockAsk } from "./inbox";
 import { backend, isTauri } from "./backend";
 import { othersHere } from "./live";
 import { getState, setState, updateCache, useApp } from "./store";
@@ -351,7 +352,7 @@ export function refreshModerations(force = false): Promise<void> {
         const fresh = Object.entries(byUser)
           .filter(([id, kinds]) => kinds.includes("block") && !(before.byUser[id] ?? []).includes("block") && !getState().local.blockReasons?.[id])
           .map(([id]) => id);
-        if (fresh.length) setState((st) => ({ blockAsk: [...new Set([...st.blockAsk, ...fresh])] }));
+        if (fresh.length) queueBlockAsk(fresh, names);
       }
       updateCache((c) => ({ ...c, moderations: { byUser, fetchedAt: Date.now(), names: { ...(c.moderations?.names ?? {}), ...names }, blockedAt } }));
     } catch {
@@ -393,7 +394,7 @@ export async function setModeration(id: string, kind: "block" | "mute" | "hideAv
       }
       return { ...c, moderations: { ...c.moderations, byUser, fetchedAt: c.moderations?.fetchedAt ?? 0, names, blockedAt } };
     });
-    if (kind === "block" && on) setState((st) => ({ blockAsk: [...new Set([...st.blockAsk, id])] }));
+    if (kind === "block" && on) queueBlockAsk([id], { [id]: displayNameOf(getState().cache, id) });
     return null;
   } catch (e) {
     return e instanceof Error ? e.message : String(e);

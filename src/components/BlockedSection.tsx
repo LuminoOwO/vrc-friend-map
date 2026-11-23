@@ -7,6 +7,7 @@ import { imgSrc } from "../backend";
 import { displayNameOf, refreshModerations, wantProfiles } from "../people";
 import { reasonLabel, setBlockReason } from "../personal";
 import { setState, useApp } from "../store";
+import { openBlockAsk } from "../inbox";
 import { Icon } from "./Icon";
 
 const PAGE = 30;
@@ -53,7 +54,7 @@ export function BlockedSection() {
     if (missing) wantProfiles(missing.split(","));
   }, [missing]);
 
-  const ask = (id: string) => setState((s) => ({ blockAsk: [id, ...s.blockAsk.filter((x) => x !== id)] }));
+  const ask = openBlockAsk;
   const withReason = rows.filter((r) => r.reason).length;
 
   return (

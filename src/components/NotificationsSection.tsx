@@ -313,6 +313,21 @@ export function NotificationsSection() {
           ? tr("notify.onPhonesNotificationsComeWhile")
           : tr("notify.notificationsKeepComingWhileThe")}
       </p>
+      <label className="field narrow">
+        <span>{tr("inbox.popupsSetting")}</span>
+        <select value={n.popupSeconds} onChange={(e) => updateNotify({ popupSeconds: Number(e.target.value) })}>
+          {[0, 10, 30, 60, 120].map((v) => (
+            <option key={v} value={v}>
+              {v ? tr("inbox.popupSeconds", { count: v }) : tr("inbox.popupsOff")}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="small muted">{tr("inbox.popupsHelp")}</p>
+      <label className="check">
+        <input type="checkbox" checked={n.blockAskPopup} onChange={(e) => updateNotify({ blockAskPopup: e.target.checked })} />
+        {tr("inbox.blockAskPopup")}
+      </label>
       {demo && (
         <button
           className="btn small"

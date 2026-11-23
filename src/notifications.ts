@@ -8,6 +8,7 @@ import { backend, isTauri } from "./backend";
 import { playParts, type SoundPart } from "./notify";
 import { getState, showToast, updateNotify } from "./store";
 import { recordMissed } from "./history";
+import { pushPopup } from "./inbox";
 import type { CustomSound, NotifyEvent, NotifySettings } from "./types";
 
 export const EVENT_LABEL: Record<NotifyEvent, string> = lazy(() => ({
@@ -20,6 +21,7 @@ export const EVENT_LABEL: Record<NotifyEvent, string> = lazy(() => ({
   anniversary: tr("events.anniversary"),
   gathering: tr("events.gathering"),
   slotOpen: tr("events.slotOpen"),
+  friendRequest: tr("events.friendRequest"),
   invite: tr("events.invite"),
   requestInvite: tr("events.requestInvite"),
 }));
@@ -41,11 +43,13 @@ function message(event: NotifyEvent, name: string, world?: string): string {
     case "anniversary":
       return world ? tr("notifyMsg.becameFriendsAt", { world, name }) : tr("notifyMsg.becameFriendsToday", { name });
     case "gathering":
-      return `${name} are together${world ? ` in ${world}` : ""}`;
+      return world ? tr("notifyMsg.togetherIn", { name, world }) : tr("notifyMsg.together", { name });
     case "slotOpen":
-      return `A slot opened where ${name} is${world ? ` (${world})` : ""}`;
+      return world ? tr("notifyMsg.slotOpenCount", { name, world }) : tr("notifyMsg.slotOpen", { name });
+    case "friendRequest":
+      return tr("notifyMsg.friendRequest", { name });
     case "invite":
-      return `${name} invited you${world ? ` to ${world}` : ""}`;
+      return world ? tr("notifyMsg.invitedTo", { name, world }) : tr("notifyMsg.invited", { name });
     case "requestInvite":
       return tr("notifyMsg.nameAsksYouForAn", { name });
   }
@@ -315,8 +319,13 @@ export function notifyEvent(event: NotifyEvent, userId: string, name: string, ex
     void drain();
   }
   const background = document.hidden || !document.hasFocus();
-  if (n.system === "always" || (n.system === "background" && background)) void systemNotify("VRC Friend Map", text);
-  else if (!background) showToast(text);
+  const system = n.system === "always" || (n.system === "background" && background);
+  if (system) void systemNotify("VRC Friend Map", text);
+  // In the app: a pop-up under the notification center (or the old short toast if pop-ups are off).
+  if (!document.hidden) {
+    if (n.popupSeconds > 0) pushPopup({ kind: event, userId, text });
+    else if (!system) showToast(text);
+  }
   return true;
 }
 

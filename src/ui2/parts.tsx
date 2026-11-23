@@ -1,13 +1,12 @@
 // Pieces every desktop layout of the new interface uses: the views, the bell, filters, you,
 // the profile popup, the layout picker, and the keys that work everywhere.
-import { t as tr, language } from "../i18n";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { t as tr } from "../i18n";
+import { createContext, useContext, useEffect, useState } from "react";
 import { t } from "../i18n";
 import { imgSrc } from "../backend";
 import { useDerived } from "../derived";
 import { iconUrl, STATUS_LABEL, statusColor } from "../model";
 import { getState, setState, useApp, type View } from "../store";
-import { useDismiss } from "./dismiss";
 import { capturePicture } from "../flip";
 import { ServerMenu } from "./ServerStatus";
 import { ActivityView } from "../components/ActivityView";
@@ -15,13 +14,11 @@ import { CardsView } from "../components/CardsView";
 import { DetailPanel } from "../components/DetailPanel";
 import { GraphView } from "../components/GraphView";
 import { Icon } from "../components/Icon";
-import { InsightsView, useUnreadMissed } from "../components/InsightsView";
-import { markAllRead, useHistory } from "../history";
+import { InsightsView } from "../components/InsightsView";
 import { LogbookView } from "../components/LogbookView";
 import { SharedLists } from "../components/SharedLists";
 import { FilterPopover } from "../components/TopBar";
 import { VrchatView } from "../components/VrchatView";
-import { useSmooth } from "./smooth";
 
 // `label` is read in the current language each time (components re-render with useT()).
 const rail = (key: View, text: string, icon: string) => ({
@@ -90,70 +87,6 @@ export function useViewKeys() {
   }, []);
 }
 
-/** Notifications bell: what you missed (muted, quiet hours) and the latest ones shown. */
-export function Bell() {
-  const smooth = useSmooth<HTMLUListElement>();
-  const [open, setOpen] = useState(false);
-  const close = useCallback(() => setOpen(false), []);
-  const ref = useDismiss(open, close);
-  const unread = useUnreadMissed();
-  const missed = useHistory((h) => h.missed);
-  const list = useMemo(() => [...missed].reverse().slice(0, 30), [missed]);
-  return (
-    <div className="ui2-drop-wrap" ref={ref}>
-      <button className={`ui2-top-icon ${open ? "on" : ""}`} title={tr("parts.notifications")} aria-label={unread ? tr("parts.notificationsUnreadNew", { unread }) : "Notifications"} aria-expanded={open} onClick={() => setOpen(!open)}>
-        <Icon name="bell" size={19} />
-        {unread > 0 && <span className="ui2-dot">{unread > 99 ? "99+" : unread}</span>}
-      </button>
-      {open && (
-        <div className="ui2-drop" role="dialog" aria-label={tr("parts.notifications")}>
-          <div className="ui2-drop-head">
-            <b>{tr("parts.notifications")}</b>
-            <span className="ui2-grow" />
-            {unread > 0 && (
-              <button className="btn small" onClick={markAllRead}>
-                {tr("parts.markRead")}
-              </button>
-            )}
-          </div>
-          {list.length === 0 ? (
-            <p className="small muted ui2-drop-empty">{tr("parts.nothingYet")}</p>
-          ) : (
-            <ul className="ui2-drop-list" ref={smooth}>
-              {list.map((m, i) => (
-                <li key={`${m.t}-${i}`}>
-                  <button
-                    className={m.why && !m.read ? "new" : ""}
-                    onClick={() => {
-                      setState({ selectedId: m.userId });
-                      close();
-                    }}
-                  >
-                    <span>{m.text}</span>
-                    <span className="small muted">
-                      {new Date(m.t).toLocaleString(language(), { weekday: "short", hour: "2-digit", minute: "2-digit" })}
-                      {m.why === "quiet" ? tr("parts.duringQuietHours") : m.why === "muted" ? tr("parts.whileMuted") : ""}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-          <button
-            className="ui2-drop-foot"
-            onClick={() => {
-              setState({ view: "insights" });
-              close();
-            }}
-          >
-            {tr("parts.allNotificationsInInsights")}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
-
 /** Map and People filters behind one button; a dot shows when any filter is on. */
 export function FilterButton() {
   const [open, setOpen] = useState(false);
@@ -210,7 +143,7 @@ export function ProfilePopup({ id }: { id: string }) {
 }
 
 
-/** The usual buttons: search everything, filters (Map and People), servers, bell, layout, settings. */
+/** The usual buttons: search everything, filters (Map and People), servers, settings (the notification center is apart, top left). */
 export function ToolCluster({ onPalette, className = "", filters = true }: { onPalette?: () => void; className?: string; filters?: boolean }) {
   const view = useApp((s) => s.view);
   return (
@@ -222,7 +155,6 @@ export function ToolCluster({ onPalette, className = "", filters = true }: { onP
       )}
       {filters && (view === "graph" || view === "cards") && <FilterButton />}
       <ServerMenu />
-      <Bell />
       <button className="ui2-top-icon" title={tr("parts.settingsCtrl")} aria-label={tr("parts.settings")} onClick={() => setState({ settingsOpen: true })}>
         <Icon name="settings" size={18} />
       </button>

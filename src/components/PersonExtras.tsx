@@ -24,6 +24,7 @@ import {
 import { fmtDate } from "../model";
 import { setState, showToast, useApp } from "../store";
 import { wantProfiles } from "../people";
+import { finishBlockAsk, laterBlockAsk, openBlockAsk } from "../inbox";
 import { imgSrc } from "../backend";
 import { dayPart, differenceFromMe, hourIn, timeIn, zoneEntry, zoneLabel, ZONE_LIST } from "../tz";
 import { requestInvite } from "../invites";
@@ -360,7 +361,7 @@ export function BlockFlags({ id, blocked }: { id: string; blocked: boolean }) {
           <span>
             {mine?.reasons.length ? tr("personExtras.youBlockedThemValue", { value: mine.reasons.map(reasonLabel).join(", ") }) : tr("personExtras.youBlockedThem")}
             {mine?.text && <span className="muted"> “{mine.text}”</span>}{" "}
-            <button className="btn link small" onClick={() => setState((s) => ({ blockAsk: [...new Set([...s.blockAsk, id])] }))}>
+            <button className="btn link small" onClick={() => openBlockAsk(id)}>
               {mine ? tr("personExtras.changeReasons") : tr("personExtras.addReasons")}
             </button>
           </span>
@@ -373,7 +374,8 @@ export function BlockFlags({ id, blocked }: { id: string; blocked: boolean }) {
 /** The dialog after blocking someone: pick reasons. */
 export function BlockReasonDialog() {
   const queue = useApp((s) => s.blockAsk);
-  const id = queue[0];
+  const shown = useApp((s) => s.blockAskShown);
+  const id = shown ? queue[0] : undefined;
   const person = useApp((s) => (id ? (s.cache.friends[id] ?? s.cache.others?.[id]) : null));
   const modName = useApp((s) => (id ? s.cache.moderations?.names?.[id] : undefined));
   const age = useApp((s) => (id ? s.cache.ageHints?.[id] : undefined));
@@ -387,15 +389,16 @@ export function BlockReasonDialog() {
     if (id) wantProfiles([id]);
   }, [id]);
   if (!id) return null;
-  const close = () => setState((s) => ({ blockAsk: s.blockAsk.slice(1) }));
+  const later = laterBlockAsk;
+  const close = finishBlockAsk;
   const name = person?.displayName ?? modName ?? tr("personExtras.them");
   const adult = age?.hints.filter((h) => h.dir === "adult").length ?? 0;
   const minor = age?.hints.filter((h) => h.dir === "minor").length ?? 0;
   const ageText = !age ? "" : adult && !minor ? tr("personExtras.hintsPointToOver18") : minor && !adult ? tr("personExtras.hintsPointToUnder18") : adult || minor ? tr("personExtras.mixedAgeHints") : tr("personExtras.noAgeHints");
   const toggle = (r: string) => setPicked((p) => (p.includes(r) ? p.filter((x) => x !== r) : [...p, r]));
   return (
-    <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && close()}>
-      <div className="modal block-reasons" role="dialog" aria-labelledby="block-title" onKeyDown={(e) => e.key === "Escape" && close()}>
+    <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && later()}>
+      <div className="modal block-reasons" role="dialog" aria-labelledby="block-title" onKeyDown={(e) => e.key === "Escape" && later()}>
         <div className="row">
           {person?.profilePicOverride || person?.iconUrl || person?.currentAvatarThumbnailImageUrl ? (
             <img className="block-pic" src={imgSrc(person.profilePicOverride || person.iconUrl || person.currentAvatarThumbnailImageUrl)} alt="" />
@@ -410,7 +413,8 @@ export function BlockReasonDialog() {
             <button
               className="btn small ghost"
               onClick={() => {
-                setState((s) => ({ selectedId: id, blockAsk: s.blockAsk.slice(1) }));
+                later();
+                setState({ selectedId: id });
               }}
             >
               {tr("personExtras.openProfile")}

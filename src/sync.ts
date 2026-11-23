@@ -645,10 +645,14 @@ export function applyPipelineEvent(type: string, content: any, opts: { quiet?: b
   const s = getState();
   if (s.demo || !content) return;
   if (type === "notification") {
-    // Invites and invite requests.
+    // Friend requests, invites and invite requests.
     const kind = content.type;
     const from = typeof content.senderUserId === "string" ? content.senderUserId : "";
     const name = s.cache.friends[from]?.displayName ?? content.senderUsername ?? "Someone";
+    if (kind === "friendRequest") {
+      if (from && !s.cache.friends[from]) notifyEvent("friendRequest", from, name);
+      return;
+    }
     if (kind !== "invite" && kind !== "requestInvite") return;
     if (kind === "invite") notifyEvent("invite", from, name, { world: content.details?.worldName });
     else notifyEvent("requestInvite", from, name);

@@ -6,6 +6,16 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Notification center, top left** (apart from the other buttons; on phones at the left of the
+  title bar): only what wants something from you or matters for longer: friend requests (new:
+  the app didn't notice them before), invites, invite requests, new and lost friends, a free
+  slot you watch, and "Why did you block …?". Who came online, joined or left is in Activity.
+- **Pop-ups in the app:** notifications come out next to the notification center and stay 30
+  seconds (Settings → Notifications: 10 s to 2 min, or off); pointing at one keeps it, clicking
+  opens it.
+- **"Why did you block …?" waits in the notification center** instead of popping up; clicking it
+  opens the question. A setting asks right away instead. Esc or clicking outside keeps it there;
+  Skip removes it.
 - **Blocked people** (Settings → People & safety): everyone you've blocked, newest first, with
   the reason you gave; add, change or delete a reason, open their profile, search when the list
   is long. Reasons of people you've since unblocked stay until you delete them.

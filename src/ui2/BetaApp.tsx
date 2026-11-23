@@ -29,6 +29,7 @@ import { ProfilePopup, ViewBody, WorldOpener, useViewKeys } from "./parts";
 import { LobbyLayout, MeCard } from "./layouts/Lobby";
 import { PanelSections, usePanelPrefs } from "./SidePanel";
 import { AppLogo } from "./AppLogo";
+import { Inbox } from "./Inbox";
 
 
 
@@ -170,10 +171,12 @@ function PhoneTop({ title, onBack, search }: { title: string; onBack?: () => voi
   return (
     <>
       <header className="ui2-phone-top">
-        {onBack && (
+        {onBack ? (
           <button className="ui2-top-btn back" aria-label={t("common.back")} onClick={onBack}>
             <Icon name="chevron-left" size={22} />
           </button>
+        ) : (
+          <Inbox className="phone-inbox" />
         )}
         {finding ? (
           <div className="ui2-phone-find">

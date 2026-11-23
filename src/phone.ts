@@ -158,7 +158,7 @@ export async function sealPush(keyB64: string, msg: object): Promise<string> {
   return b64(out);
 }
 
-const PUSHED: NotifyEvent[] = ["invite", "requestInvite", "online", "joined", "added", "removed", "gathering", "anniversary", "slotOpen"];
+const PUSHED: NotifyEvent[] = ["friendRequest", "invite", "requestInvite", "online", "joined", "added", "removed", "gathering", "anniversary", "slotOpen"];
 
 /** On the PC: forward a notification to your phones that use push mode. */
 export async function pushToPhones(event: NotifyEvent, title: string, body: string) {

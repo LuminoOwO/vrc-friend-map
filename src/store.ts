@@ -36,6 +36,16 @@ import type {
 
 export type View = "graph" | "cards" | "lists" | "activity" | "insights" | "logbook" | "vrchat";
 
+/** An in-app pop-up (top left): a notification, or "why did you block …?". */
+export interface Popup {
+  id: number;
+  kind: NotifyEvent | "blockAsk";
+  /** A person, or a world for "slotOpen". */
+  userId: string;
+  text: string;
+  t: number;
+}
+
 export interface Toast {
   id: number;
   text: string;
@@ -70,6 +80,8 @@ export interface AppState {
   hoverId: string | null;
   sync: SyncState;
   toast: Toast | null;
+  /** In-app pop-ups, newest last (src/inbox.ts). */
+  popups: Popup[];
   /** A message that stays until dismissed (version changes, data from a newer version). */
   notice: string | null;
   settingsOpen: boolean;
@@ -105,6 +117,8 @@ export interface AppState {
   met: MetPerson[];
   /** People you just blocked, waiting for you to pick reasons (block reasons dialog). */
   blockAsk: string[];
+  /** Whether the block reasons dialog is showing (the first of blockAsk), or waiting in the notification center. */
+  blockAskShown: boolean;
   /** Insights view: two people picked for "path" / "compare". */
   pickPair: [string | null, string | null];
   /** Map time travel: show the map as it was at this time (ms), or null for now. */
@@ -172,21 +186,23 @@ export const defaultMap = (): MapSettings => ({
 });
 
 export const defaultSounds = (): SoundSettings => ({ newFriend: true, sound: "chime", volume: 0.6 });
-export const NOTIFY_EVENTS: NotifyEvent[] = ["added", "removed", "online", "offline", "joined", "left", "anniversary", "gathering", "slotOpen", "invite", "requestInvite"];
+export const NOTIFY_EVENTS: NotifyEvent[] = ["added", "removed", "online", "offline", "joined", "left", "anniversary", "gathering", "slotOpen", "friendRequest", "invite", "requestInvite"];
 const SOUNDS_REV = 2;
 export const defaultNotify = (): NotifySettings => ({
   soundsRev: SOUNDS_REV,
   enabled: true,
-  events: { added: true, removed: true, online: false, offline: false, joined: false, left: false, anniversary: true, gathering: true, slotOpen: true, invite: true, requestInvite: true },
+  events: { added: true, removed: true, online: false, offline: false, joined: false, left: false, anniversary: true, gathering: true, slotOpen: true, friendRequest: true, invite: true, requestInvite: true },
   scope: "everyone",
   circleIds: [],
   people: {},
   sound: true,
   volume: 0.6,
   pause: 0.25,
-  actionSounds: { added: "sparkle", removed: "heartbreak", online: "bell", offline: "soft-fall", joined: "chime", left: "door", anniversary: "fanfare", gathering: "marimba", slotOpen: "coin", invite: "doorbell", requestInvite: "knock" },
+  actionSounds: { added: "sparkle", removed: "heartbreak", online: "bell", offline: "soft-fall", joined: "chime", left: "door", anniversary: "fanfare", gathering: "marimba", slotOpen: "coin", friendRequest: "sparkle", invite: "doorbell", requestInvite: "knock" },
   personTune: true,
   system: "background",
+  popupSeconds: 30,
+  blockAskPopup: false,
   muteUntil: 0,
   quiet: { enabled: false, from: "23:00", to: "08:00", days: [0, 1, 2, 3, 4, 5, 6], allowStarred: true, allowCircleIds: [] },
   circleRules: {},
@@ -373,6 +389,7 @@ let state: AppState = {
   hoverId: null,
   sync: idleSync(),
   toast: null,
+  popups: [],
   notice: null,
   settingsOpen: false,
   closeAsk: false,
@@ -393,6 +410,7 @@ let state: AppState = {
   here: null,
   met: [],
   blockAsk: [],
+  blockAskShown: false,
   pickPair: [null, null],
   timeTravel: null,
   openInstance: null,
@@ -564,6 +582,8 @@ function normalizeNotify(raw: unknown, oldSounds: Partial<SoundSettings> | undef
     actionSounds,
     personTune: typeof n.personTune === "boolean" ? n.personTune : d.personTune,
     system: oneOf(n.system, ["always", "background", "never"] as const, d.system),
+    popupSeconds: Math.round(num(n.popupSeconds, d.popupSeconds, 0, 600)),
+    blockAskPopup: typeof n.blockAskPopup === "boolean" ? n.blockAskPopup : d.blockAskPopup,
     muteUntil: typeof n.muteUntil === "number" ? n.muteUntil : 0,
     quiet: shaped(n.quiet, d.quiet, (q) => ({
       ...q,

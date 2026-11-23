@@ -812,6 +812,8 @@ export type NotifyEvent =
   | "slotOpen"
   /** Someone invited you to their instance. */
   | "invite"
+  /** Someone sent you a friend request. */
+  | "friendRequest"
   /** Someone asks you for an invite. */
   | "requestInvite";
 
@@ -842,6 +844,10 @@ export interface NotifySettings {
   personTune: boolean;
   /** System notifications: always, only while the app is in the background, or never. */
   system: "always" | "background" | "never";
+  /** In-app pop-ups (top left, under the notification center): seconds they stay; 0 = off. */
+  popupSeconds: number;
+  /** "Why did you block …?" right away; otherwise it waits in the notification center. */
+  blockAskPopup: boolean;
   /** Muted until this time (ms); 0 = not muted, -1 = until unmuted. */
   muteUntil: number;
   /** Do not disturb on a schedule (silent, kept in "missed notifications"). */

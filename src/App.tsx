@@ -33,6 +33,7 @@ import { HereNow } from "./components/HereNow";
 import { SharedLists } from "./components/SharedLists";
 import { Sidebar } from "./components/Sidebar";
 import { ToastView } from "./components/ToastView";
+import { Popups } from "./ui2/Inbox";
 import { TopBar } from "./components/TopBar";
 import { Icon } from "./components/Icon";
 import { applyThemeColors } from "./model";
@@ -73,6 +74,7 @@ function GlobalDialogs() {
       <CloseDialog />
       <UpdateDialog />
       <ToastView />
+      <Popups />
     </>
   );
 }

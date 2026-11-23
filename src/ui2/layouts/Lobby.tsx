@@ -13,6 +13,7 @@ import { ActivityText, friendLogEntries, useActivityLoaded } from "../../compone
 import { GraphView } from "../../components/GraphView";
 import { Icon } from "../../components/Icon";
 import { AppLogo } from "../AppLogo";
+import { Inbox } from "../Inbox";
 import { MeButton, RAIL, ToolCluster, ViewBody, useOpenWorld } from "../parts";
 import { PanelSections, usePanelPrefs } from "../SidePanel";
 import { useSmooth } from "../smooth";
@@ -51,6 +52,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
         <GraphView />
       </div>
       <div className="lob-shade" />
+      <Inbox className="lob-inbox" />
       <div className="lob-left">
         <div className="lob-logo">
           <AppLogo size={48} />

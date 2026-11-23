@@ -2015,7 +2015,14 @@
     "leftWorld": "{{name}} left {{world}}",
     "leftHere": "{{name}} left your instance",
     "becameFriendsAt": "{{world}}: you and {{name}} became friends",
-    "becameFriendsToday": "Today: you and {{name}} became friends"
+    "becameFriendsToday": "Today: you and {{name}} became friends",
+    "friendRequest": "{{name}} sent you a friend request",
+    "togetherIn": "{{name}} are together in {{world}}",
+    "together": "{{name}} are together",
+    "slotOpenCount": "A slot opened where {{name}} is ({{world}})",
+    "slotOpen": "A slot opened where {{name}} is",
+    "invitedTo": "{{name}} invited you to {{world}}",
+    "invited": "{{name}} invited you"
   },
   "platformMsg": {
     "notInTheBrowserVersion": "Not in the browser version.",
@@ -2178,7 +2185,8 @@
     "gathering": "Close friends gathering",
     "slotOpen": "A slot opened (watched instance)",
     "invite": "Invited you",
-    "requestInvite": "Asks you for an invite"
+    "requestInvite": "Asks you for an invite",
+    "friendRequest": "Friend request"
   },
   "sections": {
     "yourVrchatLoginOnThis": "Your VRChat login on this device.",
@@ -2228,5 +2236,20 @@
     "more": "Show {{count}} more",
     "showOnMap_one": "Show people I've blocked ({{count}})",
     "showOnMap_other": "Show people I've blocked ({{count}})"
+  },
+  "inbox": {
+    "title": "Notifications",
+    "titleCount_one": "Notifications: {{count}} new",
+    "titleCount_other": "Notifications: {{count}} new",
+    "empty": "Nothing here. Friend requests, invites and new or lost friends show up here; who came online or joined is in Activity.",
+    "whyBlocked": "Why did you block {{name}}?",
+    "tapToAnswer": "Click to answer",
+    "restInActivity": "Everything else is in Activity",
+    "popupsSetting": "Pop-ups in the app",
+    "popupSeconds_one": "Stay {{count}} second",
+    "popupSeconds_other": "Stay {{count}} seconds",
+    "popupsOff": "Off",
+    "popupsHelp": "They come out under the notification center (top left); pointing at one keeps it. Click one to open it.",
+    "blockAskPopup": "Ask \"Why did you block …?\" right away (otherwise it waits in the notification center)"
   }
 }

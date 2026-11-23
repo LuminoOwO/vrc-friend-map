@@ -402,5 +402,32 @@
     "more": "{{count}} weitere zeigen",
     "showOnMap_one": "Blockierte Personen zeigen ({{count}})",
     "showOnMap_other": "Blockierte Personen zeigen ({{count}})"
+  },
+  "events": {
+    "friendRequest": "Freundschaftsanfrage"
+  },
+  "notifyMsg": {
+    "friendRequest": "{{name}} hat dir eine Freundschaftsanfrage geschickt",
+    "togetherIn": "{{name}} sind zusammen in {{world}}",
+    "together": "{{name}} sind zusammen",
+    "slotOpenCount": "Ein Platz ist frei geworden, wo {{name}} ist ({{world}})",
+    "slotOpen": "Ein Platz ist frei geworden, wo {{name}} ist",
+    "invitedTo": "{{name}} hat dich nach {{world}} eingeladen",
+    "invited": "{{name}} hat dich eingeladen"
+  },
+  "inbox": {
+    "title": "Benachrichtigungen",
+    "titleCount_one": "Benachrichtigungen: {{count}} neu",
+    "titleCount_other": "Benachrichtigungen: {{count}} neu",
+    "empty": "Nichts hier. Freundschaftsanfragen, Einladungen und neue oder verlorene Freunde erscheinen hier; wer online kam oder beigetreten ist, steht unter Aktivität.",
+    "whyBlocked": "Warum hast du {{name}} blockiert?",
+    "tapToAnswer": "Zum Antworten klicken",
+    "restInActivity": "Alles andere steht unter Aktivität",
+    "popupsSetting": "Pop-ups in der App",
+    "popupSeconds_one": "{{count}} Sekunde lang",
+    "popupSeconds_other": "{{count}} Sekunden lang",
+    "popupsOff": "Aus",
+    "popupsHelp": "Sie erscheinen unter der Benachrichtigungszentrale (oben links); zeigst du darauf, bleiben sie. Klick öffnet sie.",
+    "blockAskPopup": "„Warum hast du … blockiert?“ sofort fragen (sonst wartet es in der Benachrichtigungszentrale)"
   }
 }
