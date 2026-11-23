@@ -6,6 +6,19 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Shared friend lists:** "View list" shows everyone on a list (or the people you both know),
+  with search; **Compare lists** puts any two (yours counts) side by side: on both, only in
+  one, only in the other; **On my map** shows several lists on your own map at once, each in
+  its colour (a dot next to everyone on it), optionally with their friends you don't know.
+- **Friend groups on the map:** a button on the map (and in Insights) opens them in the side
+  panel; pointing at a group lights it up on the map, clicking keeps it lit.
+- **Someone a friend blocked is in your instance:** an Activity line ("Blocked by friends"),
+  and a notification in its own "Safety" block in Settings → Notifications, off by default.
+  Works with friends who share their blocks with you through a server.
+- **Media** in the menu: your pictures (moved from the Logbook), favorites, avatars, prints,
+  stickers and emojis, world notes. The "VRChat" entry is now **Groups & events**.
+- **Settings → About:** links to the code on GitHub, releases, the changelog, reporting a
+  problem and helping translate; copy the version for bug reports.
 - **Who's here, along the bottom** (computers, replaces the latest-activity bar, which repeated
   the side panel): your world and how many are there, everyone's picture (friends first, then
   people who share friends with you, with the number on their picture), and a list that opens
@@ -42,6 +55,14 @@ minor releases can change behavior.
   do on vrchat.com if your account may be hacked (change the password, turn on two-factor).
 
 ### Changed
+- **Notification center** looks and sits like a menu entry, lined up with the panels.
+- **Blocked people** has its own tab in Settings.
+- **The map centers in the part the panels don't cover**, so the side panel no longer hides a
+  third of it.
+- **Insights** is tidier: cards in a grid, no notifications card (the bell has them); friend
+  requests you sent load by themselves.
+- **Logo** revised to look like the map's people and groups.
+- **Colours:** light overlays follow the theme instead of plain grey-white.
 - **The map works with the keyboard:** Tab to it, then the arrow keys move from person to
   person (starting from you; the hover card follows and the map pans along), Enter opens the
   profile, Esc lets go. Screen readers hear the name. Arrow keys (and Home/End) also move through
@@ -61,6 +82,10 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- Settings showed a 60 Hz screen as **63 Hz** (WebKitGTK rounds frame times to whole
+  milliseconds); the app always ran at the screen's real rate, it was only the reading.
+- The app icons on every platform (Windows, macOS, Linux, Android, iOS) still showed the old
+  logo.
 - "Why did you block …?" showed no name or picture for people who aren't your friends (most
   blocks): it now uses the name VRChat sends with your block list, loads their picture, and has
   an "Open profile" button.
