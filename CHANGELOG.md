@@ -100,6 +100,8 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **Dialogs slid under the side panel** (e.g. a picture in Media): everything opened from the
+  middle frame now sits above the panel; only the map stays under it.
 - **Media → Pictures lagged when opened:** the grid loaded every full-size screenshot. It now
   shows small previews the app makes once and keeps in its cache, draws 60 at a time as you
   scroll, and no longer re-reads all game logs each time you open it.
