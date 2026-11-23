@@ -14,6 +14,7 @@ import { Icon } from "../../components/Icon";
 import { AppLogo } from "../AppLogo";
 import { Inbox } from "../Inbox";
 import { HereBar } from "../HereBar";
+import { FriendGroupsPanel } from "../FriendGroups";
 import { MeButton, RAIL, ToolCluster, ViewBody, useOpenWorld } from "../parts";
 import { PanelSections, usePanelPrefs } from "../SidePanel";
 
@@ -21,6 +22,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
   const t = useT();
   const view = useApp((s) => s.view);
   const settingsOpen = useApp((s) => s.settingsOpen);
+  const sidePanel = useApp((s) => s.sidePanel);
   const [open, setOpen] = useState<View | null>(null);
   const openWorld = useOpenWorld();
   const [prefs, updatePrefs] = usePanelPrefs();
@@ -42,6 +44,10 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
     setOpen(v === "graph" ? null : v);
   };
   const covered = !!open || settingsOpen;
+  // A temporary side-panel page (friend groups) needs the panel out and the map uncovered.
+  useEffect(() => {
+    if (sidePanel && prefs.collapsed) updatePrefs({ collapsed: false });
+  }, [sidePanel]); // eslint-disable-line react-hooks/exhaustive-deps
   // Folding plays a slide-out first, then the panel goes away.
   const [leaving, setLeaving] = useState(false);
   return (
@@ -89,7 +95,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
           </div>
           <MeCard />
           <div className="lob-party-body">
-            <PanelSections prefs={{ ...prefs, side: "right" }} update={updatePrefs} onWorld={openWorld} />
+            {sidePanel === "groups" ? <FriendGroupsPanel /> : <PanelSections prefs={{ ...prefs, side: "right" }} update={updatePrefs} onWorld={openWorld} />}
           </div>
         </aside>
       )}

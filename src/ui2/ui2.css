@@ -669,3 +669,35 @@
 .ui2-where-here .here-filters { justify-self: start; }
 .ui2-where-more { border: 0; background: none; color: var(--muted); font: inherit; font-size: 13px; padding: 4px 6px; border-radius: 6px; cursor: pointer; }
 .ui2-where-more:hover { color: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent); }
+
+/* Friend groups: the side panel's temporary page, the list, and the chip on the map. */
+.fg-panel { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1; }
+.fg-panel-head { display: flex; align-items: center; gap: 8px; }
+.fg-panel-head h2 { margin: 0; font-size: 13px; font-weight: 900; letter-spacing: 0.22em; text-transform: uppercase; font-style: italic; color: var(--accent); }
+.fg-panel > p { margin: 0; }
+.fg { display: flex; flex-direction: column; gap: 8px; min-height: 0; flex: 1; }
+.fg-size { display: flex; align-items: center; gap: 8px; }
+.fg-size input { flex: 1; }
+.fg-count { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.fg-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; overflow-y: auto; min-height: 0; }
+.fg-panel .fg-list { flex: 1; }
+.fg-item { border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; background: rgba(255, 255, 255, 0.03); }
+.fg-item:hover, .fg-item.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.fg-main { display: grid; gap: 6px; width: 100%; padding: 8px 10px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.fg-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.fg-head b { font-size: 13px; }
+.fg-faces { display: flex; align-items: center; gap: 3px; }
+.fg-face { width: 24px; height: 24px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--panel); color: var(--muted); font-size: 11px; font-weight: 700; }
+.fg-face img { width: 100%; height: 100%; object-fit: cover; }
+.fg-actions { display: grid; gap: 6px; padding: 0 10px 10px; justify-items: start; }
+.fg-names { line-height: 1.4; }
+.fg-bridges summary { cursor: pointer; color: var(--muted); }
+.fg-bridges ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; }
+.spot-chip { position: absolute; z-index: 4; left: 50%; top: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 999px; border: 1px solid var(--accent); background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(8px); font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+.spot-chip button { display: grid; place-items: center; width: 22px; height: 22px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.spot-chip button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 10%, transparent); }
+
+/* Insights: cards in a grid instead of one long column. */
+.insights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; align-items: start; }
+.insights-grid > .insight-card { margin: 0; }
+@media (max-width: 700px) { .insights-grid { grid-template-columns: 1fr; } }

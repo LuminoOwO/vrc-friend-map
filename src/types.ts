@@ -173,6 +173,8 @@ export interface SharedRemoval {
 
 export interface Cache {
   me: Me | null;
+  /** Friend requests you sent that are still open (loaded with each sync, paced). */
+  sentRequests?: { list: { id: string; t: number }[]; fetchedAt: number };
   friends: Record<string, Friend>;
   presence: Record<string, Presence>;
   details: Record<string, UserDetail>;

@@ -427,11 +427,35 @@ export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
 
 let friendRequestsAt = 0;
 
+/** Friend requests you sent that are still open: every page (100 each), a short pause between
+ *  pages so VRChat isn't flooded; stops at "slow down". */
+async function loadSentFriendRequests() {
+  const list: { id: string; t: number }[] = [];
+  for (let offset = 0; offset < 2000; offset += 100) {
+    const r = await backend.vrcGet("/auth/user/notifications", { type: "friendRequest", sent: true, n: 100, offset });
+    if (r.status === 429) return;
+    if (r.status !== 200 || !Array.isArray(r.data)) return;
+    for (const n of r.data as { receiverUserId?: string; created_at?: string }[]) {
+      if (n?.receiverUserId?.startsWith("usr_")) list.push({ id: n.receiverUserId, t: Date.parse(n.created_at ?? "") || 0 });
+    }
+    if (r.data.length < 100) break;
+    await new Promise((res) => setTimeout(res, 1500));
+  }
+  const friends = getState().cache.friends;
+  updateCache((c) => ({ ...c, sentRequests: { list: list.filter((x) => !friends[x.id]), fetchedAt: Date.now() } }));
+}
+
+/** Reload the sent friend requests now (Insights' reload button). */
+export function reloadSentFriendRequests(): Promise<void> {
+  return loadSentFriendRequests().catch(() => {});
+}
+
 /** Friend requests that came while the app was closed: into the notification center, quietly
  *  (no sound or pop-up; they're not new). At most every 10 minutes. */
 async function loadPendingFriendRequests() {
   if (Date.now() - friendRequestsAt < 600_000) return;
   friendRequestsAt = Date.now();
+  void loadSentFriendRequests().catch(() => {});
   try {
     const r = await backend.vrcGet("/auth/user/notifications", { type: "friendRequest", n: 50 });
     if (r.status !== 200 || !Array.isArray(r.data)) return;

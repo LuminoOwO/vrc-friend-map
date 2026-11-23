@@ -1219,7 +1219,9 @@
     "mostlyYourCircleName": "mostly your circle “{{name}}”",
     "friendsInCommonLength": "Friends in common: {{length}}",
     "onlyValueLength": "Only {{value}}: {{length}}",
-    "groupValueLengthPeople": "Group {{value}} · {{length}} people"
+    "groupValueLengthPeople": "Group {{value}} · {{length}} people",
+    "reload": "Reload",
+    "sentLoading": "Loading with the next sync…"
   },
   "frameRate": {
     "frameRate": "Frame rate",
@@ -2269,5 +2271,16 @@
     "noneMatch": "Nobody here matches this filter.",
     "blockedHidden_one": "{{count}} blocked person hidden",
     "blockedHidden_other": "{{count}} blocked people hidden"
+  },
+  "fgroups": {
+    "title": "Friend groups",
+    "button": "Friend groups",
+    "showOnMap": "Show on the map",
+    "help": "Groups found from who is friends with whom. Point at one to see it on the map; click to keep it lit.",
+    "none": "No groups found yet (needs mutual friends to be loaded).",
+    "count_one": "{{count}} group",
+    "count_other": "{{count}} groups",
+    "connects": "connects groups {{groups}}",
+    "showing": "Showing {{name}}"
   }
 }

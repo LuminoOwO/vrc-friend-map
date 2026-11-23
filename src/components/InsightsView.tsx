@@ -1,30 +1,31 @@
-// Insights: what changed since you were last here, missed notifications,
-// pending friend requests, friend groups from the map (→ circles), bridges,
+// Insights: what changed since you were last here, friend groups (shown on the map),
+// friend requests you sent,
 // drifting apart, a path between two people, comparing two friends, and the
 // friend list over time.
 import { t as tr, language } from "../i18n";
 import { useMemo, useState } from "react";
-import { backend, imgSrc } from "../backend";
-import { clearMissed, dismissPreviousVisit, markAllRead, previousVisit, useHistory } from "../history";
-import { bridges, clusters, compare, driftingApart, friendGraph, listOverTime, shortestPath } from "../insights";
+import { imgSrc, isMobile } from "../backend";
+import { dismissPreviousVisit, previousVisit, useHistory } from "../history";
+import { compare, driftingApart, friendGraph, listOverTime, shortestPath } from "../insights";
 import { iconUrl } from "../model";
 import { setFriendRequest } from "../people";
 import { shownName } from "../personal";
-import { createCircle, setState, showToast, updateSettings, useApp } from "../store";
-import { EVENT_LABEL } from "../notifications";
+import { setState, showToast, updateCache, updateSettings, useApp } from "../store";
+import { reloadSentFriendRequests } from "../sync";
+import { FriendGroupsList, openFriendGroups } from "../ui2/FriendGroups";
 import { Icon } from "./Icon";
-import { Range } from "./Range";
 
 export function InsightsView() {
   return (
     <div className="activity-view insights">
       <SinceLastHere />
-      <Missed />
-      <PendingRequests />
-      <FriendGroups />
-      <PathAndCompare />
-      <Drifting />
-      <ListOverTime />
+      <div className="insights-grid">
+        <FriendGroups />
+        <PendingRequests />
+        <PathAndCompare />
+        <Drifting />
+        <ListOverTime />
+      </div>
     </div>
   );
 }
@@ -89,46 +90,51 @@ function SinceLastHere() {
   );
 }
 
-function Missed() {
-  const missed = useHistory((h) => h.missed);
-  const [all, setAll] = useState(false);
-  if (!missed.length) return null;
-  const list = [...missed].reverse().filter((m) => all || m.why);
-  const unread = missed.filter((m) => m.why && !m.read).length;
+function PendingRequests() {
+  const demo = useApp((s) => s.demo);
+  const sent = useApp((s) => s.cache.sentRequests);
+  const [busy, setBusy] = useState(false);
+  if (demo) return null;
+  const list = sent ? [...sent.list].sort((a, b) => a.t - b.t) : null;
   return (
-    <section className="insight-card" id="missed">
+    <section className="insight-card">
       <div className="row between">
         <h3>
-          <Icon name="bell" size={16} /> Notifications {unread > 0 && <span className="badge">{unread}</span>}
+          <Icon name="user-plus" size={16} /> {tr("insights.friendRequestsYouSent")}
+          {list && list.length > 0 && <span className="badge">{list.length}</span>}
         </h3>
-        <div className="row tight">
-          <label className="check small">
-            <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} /> {tr("insights.alsoTheOnesShown")}
-          </label>
-          {unread > 0 && (
-            <button className="btn small" onClick={markAllRead}>
-              {tr("insights.markRead")}
-            </button>
-          )}
-          <button className="btn small ghost" onClick={clearMissed}>
-            {tr("insights.clear")}
-          </button>
-        </div>
+        <button
+          className="icon-btn small"
+          title={tr("insights.reload")}
+          aria-label={tr("insights.reload")}
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            await reloadSentFriendRequests();
+            setBusy(false);
+          }}
+        >
+          <Icon name="refresh" size={14} />
+        </button>
       </div>
-      {list.length === 0 ? (
-        <p className="small muted">{tr("insights.nothingMissedEverythingWasShown")}</p>
-      ) : (
+      {!list && <p className="small muted">{tr("insights.sentLoading")}</p>}
+      {list && list.length === 0 && <p className="small muted">{tr("insights.noneWaiting")}</p>}
+      {list && list.length > 0 && (
         <ul className="missed-list">
-          {list.slice(0, 100).map((m, i) => (
-            <li key={`${m.t}-${i}`} className={m.read || !m.why ? "read" : ""}>
-              <span className="muted small">{new Date(m.t).toLocaleString(language(), { weekday: "short", hour: "2-digit", minute: "2-digit" })}</span>
-              <button className="link-btn" onClick={() => setState({ selectedId: m.userId })}>
-                {m.text}
+          {list.map((r) => (
+            <li key={r.id}>
+              <Face id={r.id} />
+              <span className="muted small">{r.t ? tr("insights.sentValue", { value: new Date(r.t).toLocaleDateString(language()) }) : ""}</span>
+              <button
+                className="btn small"
+                onClick={async () => {
+                  const e = await setFriendRequest(r.id, false);
+                  if (e) showToast(e);
+                  else updateCache((c) => ({ ...c, sentRequests: c.sentRequests && { ...c.sentRequests, list: c.sentRequests.list.filter((x) => x.id !== r.id) } }));
+                }}
+              >
+                {tr("insights.cancelRequest")}
               </button>
-              <span className="muted small">
-                {EVENT_LABEL[m.event]}
-                {m.why === "quiet" ? tr("insights.duringQuietHours") : m.why === "muted" ? tr("insights.whileMuted") : ""}
-              </span>
             </li>
           ))}
         </ul>
@@ -137,130 +143,21 @@ function Missed() {
   );
 }
 
-function PendingRequests() {
-  const demo = useApp((s) => s.demo);
-  const [list, setList] = useState<{ id: string; name: string; t: number }[] | null>(null);
-  const [err, setErr] = useState("");
-  const load = () => {
-    setErr("");
-    backend
-      .vrcGet("/auth/user/notifications", { type: "friendRequest", sent: true, n: 100 })
-      .then((r) => {
-        if (r.status !== 200 || !Array.isArray(r.data)) throw new Error(`VRChat: ${r.status}`);
-        const rows = (r.data as { receiverUserId?: string; senderUserId?: string; created_at?: string; details?: unknown }[])
-          .map((n) => ({ id: n.receiverUserId ?? "", name: "", t: Date.parse(n.created_at ?? "") || 0 }))
-          .filter((n) => n.id.startsWith("usr_"));
-        setList(rows);
-      })
-      .catch((e) => setErr(String(e instanceof Error ? e.message : e)));
-  };
-  if (demo) return null;
-  return (
-    <section className="insight-card">
-      <div className="row between">
-        <h3>
-          <Icon name="user-plus" size={16} /> {tr("insights.friendRequestsYouSent")}
-        </h3>
-        <button className="btn small" onClick={load}>
-          {list ? "Reload" : "Load"}
-        </button>
-      </div>
-      {err && <p className="small warn">{err}</p>}
-      {list && list.length === 0 && <p className="small muted">{tr("insights.noneWaiting")}</p>}
-      {list && list.length > 0 && (
-        <ul className="missed-list">
-          {list
-            .sort((a, b) => a.t - b.t)
-            .map((r) => (
-              <li key={r.id}>
-                <Face id={r.id} />
-                <span className="muted small">{r.t ? tr("insights.sentValue", { value: new Date(r.t).toLocaleDateString(language()) }) : ""}</span>
-                <button
-                  className="btn small"
-                  onClick={async () => {
-                    const e = await setFriendRequest(r.id, false);
-                    if (e) showToast(e);
-                    else setList((l) => (l ? l.filter((x) => x.id !== r.id) : l));
-                  }}
-                >
-                  {tr("insights.cancelRequest")}
-                </button>
-              </li>
-            ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
 function FriendGroups() {
-  const friends = useApp((s) => s.cache.friends);
-  const mutuals = useApp((s) => s.cache.mutuals);
-  const circles = useApp((s) => s.local.circles);
-  const [resolution, setResolution] = useState(1);
-  const g = useMemo(() => friendGraph({ friends, mutuals }), [friends, mutuals]);
-  const groups = useMemo(() => clusters(g, resolution, 3), [g, resolution]);
-  const br = useMemo(() => bridges(g, groups).slice(0, 12), [g, groups]);
-  if (!groups.length) return null;
-  const covered = (m: string[]) => circles.find((c) => m.filter((x) => c.members.includes(x)).length >= m.length * 0.7);
   return (
     <section className="insight-card">
       <div className="row between">
         <h3>
           <Icon name="users" size={16} /> {tr("insights.friendGroupsOnYourMap")}
         </h3>
-        <label className="small group-size" title={tr("insights.howBigTheGroupsAre")}>
-          <span className="muted">{tr("insights.bigger")}</span>
-          <Range min={0.5} max={2} step={0.1} value={resolution} onChange={(e) => setResolution(Number(e.target.value))} aria-label={tr("insights.groupSize")} />
-          <span className="muted">{tr("insights.smaller")}</span>
-          <output className="group-size-val">
-            {groups.length} {groups.length === 1 ? "group" : "groups"}
-          </output>
-        </label>
+        {!isMobile && (
+          <button className="btn small primary" onClick={openFriendGroups}>
+            <Icon name="graph" size={14} /> {tr("fgroups.showOnMap")}
+          </button>
+        )}
       </div>
       <p className="small muted">{tr("insights.foundFromWhoIsFriends")}</p>
-      <div className="group-list">
-        {groups.slice(0, 12).map((m, i) => {
-          const c = covered(m);
-          return (
-            <div key={i} className="group-item">
-              <div className="row between">
-                <b>
-                  {tr("insights.groupValueLengthPeople", { value: i + 1, length: m.length })}
-                </b>
-                {c ? (
-                  <span className="small muted">{tr("insights.mostlyYourCircleName", { name: c.name })}</span>
-                ) : (
-                  <button
-                    className="btn small"
-                    onClick={() => {
-                      const name = window.prompt(tr("insights.nameForTheNewCircle"), `${shownName(m[0])}'s group`);
-                      if (name) createCircle(name, m);
-                    }}
-                  >
-                    <Icon name="plus" size={14} /> {tr("insights.makeACircle")}
-                  </button>
-                )}
-              </div>
-              <People ids={m} max={8} />
-            </div>
-          );
-        })}
-      </div>
-      {br.length > 0 && (
-        <>
-          <h4>{tr("insights.bridges")}</h4>
-          <p className="small muted">{tr("insights.peopleWhoConnectTwoOr")}</p>
-          <ul className="missed-list">
-            {br.map((b) => (
-              <li key={b.id}>
-                <Face id={b.id} />
-                <span className="small muted">connects {b.groups.map((x) => `group ${x.index + 1} (${x.links})`).join(", ")}</span>
-              </li>
-            ))}
-          </ul>
-        </>
-      )}
+      {isMobile && <FriendGroupsList phone />}
     </section>
   );
 }

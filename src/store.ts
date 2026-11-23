@@ -117,6 +117,12 @@ export interface AppState {
   met: MetPerson[];
   /** People you just blocked, waiting for you to pick reasons (block reasons dialog). */
   blockAsk: string[];
+  /** People shown at full strength on the map (everyone else dimmed), e.g. a friend group pointed at. */
+  spotlight: string[] | null;
+  /** Set while a spotlit group is kept (shown on the map with a way to turn it off). */
+  spotlightLabel: string | null;
+  /** Computers: a temporary page in the side panel instead of its usual sections. */
+  sidePanel: "groups" | null;
   /** Whether the block reasons dialog is showing (the first of blockAsk), or waiting in the notification center. */
   blockAskShown: boolean;
   /** Insights view: two people picked for "path" / "compare". */
@@ -412,6 +418,9 @@ let state: AppState = {
   met: [],
   blockAsk: [],
   blockAskShown: false,
+  spotlight: null,
+  spotlightLabel: null,
+  sidePanel: null,
   pickPair: [null, null],
   timeTravel: null,
   openInstance: null,

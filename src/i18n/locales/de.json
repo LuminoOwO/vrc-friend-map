@@ -449,5 +449,20 @@
     "noneMatch": "Niemand hier passt zu diesem Filter.",
     "blockedHidden_one": "{{count}} blockierte Person ausgeblendet",
     "blockedHidden_other": "{{count}} blockierte Personen ausgeblendet"
+  },
+  "fgroups": {
+    "title": "Freundesgruppen",
+    "button": "Freundesgruppen",
+    "showOnMap": "Auf der Karte zeigen",
+    "help": "Gruppen, gefunden daraus, wer mit wem befreundet ist. Zeig auf eine, um sie auf der Karte zu sehen; Klick lässt sie leuchten.",
+    "none": "Noch keine Gruppen gefunden (gemeinsame Freunde müssen geladen sein).",
+    "count_one": "{{count}} Gruppe",
+    "count_other": "{{count}} Gruppen",
+    "connects": "verbindet Gruppen {{groups}}",
+    "showing": "Zeige {{name}}"
+  },
+  "insights": {
+    "reload": "Neu laden",
+    "sentLoading": "Wird mit dem nächsten Abgleich geladen …"
   }
 }

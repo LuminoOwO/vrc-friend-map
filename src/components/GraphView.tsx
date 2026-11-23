@@ -7,7 +7,7 @@ import { t as tr, lazy, language } from "../i18n";
 import { mapStats, noteFrame } from "../diag";
 import * as d3 from "d3";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { imgSrc } from "../backend";
+import { imgSrc, isMobile } from "../backend";
 import { hexA } from "../colors";
 import { useDerived } from "../derived";
 import { useExtra, type OtherInfo } from "../people";
@@ -28,6 +28,7 @@ import {
 import { addToCircle, getState, setState, updateSettings, useApp } from "../store";
 import { nextInDirection, startPoint, type Dir } from "../mapkeys";
 import { betaActive } from "../ui2/active";
+import { openFriendGroups, SpotlightChip } from "../ui2/FriendGroups";
 import type { Cache, Circle, Filters, Friend, MapSettings, Presence } from "../types";
 import { captureCard, capturePicture } from "../flip";
 import { FRESH_MS } from "../notify";
@@ -461,6 +462,7 @@ export function GraphView() {
   const circles = useApp((s) => s.local.circles);
   const settings = useApp((s) => s.settings);
   const selectedId = useApp((s) => s.selectedId);
+  const spotlight = useApp((s) => s.spotlight);
   const stats = useApp((s) => s.logs.stats);
   const minMinutes = useApp((s) => s.settings.groups.minMinutes);
   const map = settings.map;
@@ -535,8 +537,8 @@ export function GraphView() {
   const starred = useMemo(() => new Set(starredList ?? []), [starredList]);
   const travel = useMemo(() => (travelAt ? friendsAt(Object.keys(cache.friends), friendLog, travelAt) : null), [travelAt, cache.friends, friendLog]);
 
-  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById, named, starred, travel });
-  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById, named, starred, travel };
+  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById, named, starred, travel, spotlight });
+  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById, named, starred, travel, spotlight };
 
   // Frame-rate limit (Settings → Frame rate): the limit itself, and lower ones
   // while the window isn't focused or nobody has touched anything for a while.
@@ -1053,7 +1055,9 @@ export function GraphView() {
       otherNbrs.get(o)!.push(f);
       otherNbrs.get(f)!.push(o);
     }
-    const focusSet = focus ? new Set([focus, ...(neighbors.get(focus) ?? []), ...(otherNbrs.get(focus) ?? [])]) : null;
+    // A group shown from outside the map (e.g. a friend group being pointed at): only them at full strength.
+    const spot = !selectedId && viewRef.current.spotlight?.length ? new Set(viewRef.current.spotlight) : null;
+    const focusSet = spot ?? (focus ? new Set([focus, ...(neighbors.get(focus) ?? []), ...(otherNbrs.get(focus) ?? [])]) : null);
     placeMe();
     const hideMode = settings.dimMode === "hide";
     const style = map.nodeStyle;
@@ -1097,6 +1101,7 @@ export function GraphView() {
           if (!s || !d || s.x == null || d.x == null) continue;
           if (!visible(a) || !visible(b)) continue;
           if (focusSet && (a === focus || b === focus)) continue;
+          if (spot && spot.has(a) && spot.has(b)) continue;
           if ((s.x < vx0 && d.x < vx0) || (s.x > vx1 && d.x > vx1) || (s.y! < vy0 && d.y! < vy0) || (s.y! > vy1 && d.y! > vy1)) continue;
           if (!matched.has(a) || !matched.has(b)) continue;
           const p = paths[band(a, b)];
@@ -1155,6 +1160,46 @@ export function GraphView() {
             ctx.stroke(p);
           });
         }
+      }
+      if (spot) {
+        const lit = new Path2D();
+        for (const [a, b] of lineData.list) {
+          if (!spot.has(a) || !spot.has(b)) continue;
+          const s2 = nodesRef.current.get(a);
+          const d = nodesRef.current.get(b);
+          if (!s2 || !d || s2.x == null || d.x == null) continue;
+          lit.moveTo(s2.x, s2.y!);
+          lit.lineTo(d.x, d.y!);
+        }
+        ctx.strokeStyle = hexA(PAL.accent, 0.8);
+        ctx.lineWidth = (1.6 * map.lineWidth) / t.k;
+        ctx.stroke(lit);
+      }
+    }
+    // The spotlit group: a soft outline around everyone in it.
+    if (spot) {
+      const pts: [number, number][] = [];
+      for (const id of spot) {
+        const n = nodesRef.current.get(id);
+        if (n && n.x != null) pts.push([n.x, n.y!]);
+      }
+      const hull = pts.length >= 3 ? d3.polygonHull(pts) : null;
+      if (hull) {
+        const cx = d3.mean(hull, (q) => q[0])!;
+        const cy = d3.mean(hull, (q) => q[1])!;
+        const pad = 34 / Math.sqrt(t.k);
+        const grown = hull.map(([x, y]) => {
+          const dx = x - cx, dy = y - cy;
+          const len = Math.hypot(dx, dy) || 1;
+          return [x + (dx / len) * pad, y + (dy / len) * pad] as [number, number];
+        });
+        ctx.beginPath();
+        d3.line().curve(d3.curveCatmullRomClosed.alpha(0.5)).context(ctx)(grown);
+        ctx.fillStyle = hexA(PAL.accent, 0.08);
+        ctx.fill();
+        ctx.strokeStyle = hexA(PAL.accent, 0.55);
+        ctx.lineWidth = 2 / t.k;
+        ctx.stroke();
       }
     }
 
@@ -1782,7 +1827,7 @@ export function GraphView() {
   useEffect(() => {
     requestDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cache, circles, settings, selectedId, matched, lineData, fresh]);
+  }, [cache, circles, settings, selectedId, matched, lineData, fresh, spotlight]);
 
   // Canvas size, zoom and drag.
   useEffect(() => {
@@ -2159,6 +2204,7 @@ export function GraphView() {
           </button>
         </div>
       )}
+      <SpotlightChip />
       <div className="graph-controls">
         <div className="zoom-btns">
           <button className="icon-btn" title={tr("map.zoomIn")} onClick={() => zoomBy(1.4)}>
@@ -2189,6 +2235,11 @@ export function GraphView() {
             }}
           >
             {tr("map.namesShowlabels", { showLabels: settings.showLabels })}
+          </button>
+        )}
+        {betaActive() && (
+          <button className="btn small" title={tr("fgroups.help")} onClick={() => (isMobile ? setState({ view: "insights" }) : openFriendGroups())}>
+            <Icon name="users" size={15} /> {tr("fgroups.button")}
           </button>
         )}
         <button className={`btn small keep ${optionsOpen ? "active" : ""}`} title={tr("map.mapOptions")} onClick={() => setOptionsOpen(!optionsOpen)}>
