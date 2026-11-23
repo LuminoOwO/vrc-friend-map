@@ -68,7 +68,7 @@ export function Inbox({ className = "" }: { className?: string }) {
   const asks = useApp((s) => s.blockAsk);
   const cache = useApp((s) => s.cache);
   // Not memoized: history changes the same array in place.
-  const list = missed.filter((m) => INBOX_EVENTS.has(m.event)).reverse().slice(0, 40);
+  const list = missed.filter((m) => INBOX_EVENTS.has(m.event)).sort((a, b) => b.t - a.t).slice(0, 40);
   const label = count ? t("inbox.titleCount", { count }) : t("inbox.title");
   return (
     <div className={`inbox ${className}`} ref={ref}>

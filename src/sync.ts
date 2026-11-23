@@ -7,7 +7,7 @@ import { addNewFriendsToPicks } from "./selection";
 import { notifyEvent, removedByMe } from "./notifications";
 import { backend, type ApiResponse } from "./backend";
 import { celebrateNewFriends } from "./notify";
-import { noteNames, sawOnline } from "./history";
+import { history, noteNames, recordMissed, sawOnline } from "./history";
 import { cacheGet, cachePut } from "./serverlink";
 import { describeError, httpLine, isNetworkError, logSync, wasInterrupted, whenVisible } from "./synclog";
 import { getState, resetSync, setState, setSync, showToast, updateCache, updateLocal } from "./store";
@@ -409,6 +409,7 @@ export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
     await fetchFriends(me, gen);
     await fetchShownAccounts(gen);
     noteNames();
+    void loadPendingFriendRequests();
     if (!opts.friendsOnly) {
       await fetchFavorites();
       await drainQueue("details", gen);
@@ -421,6 +422,31 @@ export async function syncAll(opts: { friendsOnly?: boolean } = {}) {
     }
   } catch (e) {
     handleError(e);
+  }
+}
+
+let friendRequestsAt = 0;
+
+/** Friend requests that came while the app was closed: into the notification center, quietly
+ *  (no sound or pop-up; they're not new). At most every 10 minutes. */
+async function loadPendingFriendRequests() {
+  if (Date.now() - friendRequestsAt < 600_000) return;
+  friendRequestsAt = Date.now();
+  try {
+    const r = await backend.vrcGet("/auth/user/notifications", { type: "friendRequest", n: 50 });
+    if (r.status !== 200 || !Array.isArray(r.data)) return;
+    const st = getState();
+    const known = new Set(history().missed.filter((m) => m.event === "friendRequest").map((m) => m.userId));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    for (const n of r.data as any[]) {
+      const from = typeof n?.senderUserId === "string" ? n.senderUserId : "";
+      if (n?.type !== "friendRequest" || !from || known.has(from) || st.cache.friends[from]) continue;
+      const name = typeof n.senderUsername === "string" && n.senderUsername ? n.senderUsername : "Someone";
+      known.add(from);
+      recordMissed({ t: Date.parse(n.created_at ?? "") || Date.now(), event: "friendRequest", userId: from, name, text: tr("notifyMsg.friendRequest", { name }) });
+    }
+  } catch {
+    /* next sync */
   }
 }
 
