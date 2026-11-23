@@ -104,6 +104,8 @@ minor releases can change behavior.
   a row of tabs. Everything it can do stays the same.
 
 ### Fixed
+- **The left menu stayed open** when the pointer left the window over it; it now folds as soon
+  as the pointer is off it (or the window loses focus).
 - **The VRC+ badge stuck to the name** on profiles; it now has space and is centred.
 - **Dialogs slid under the side panel** (e.g. a picture in Media): everything opened from the
   middle frame now sits above the panel; only the map stays under it.
