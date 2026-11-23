@@ -14,6 +14,7 @@ import { Icon } from "../../components/Icon";
 import { AppLogo } from "../AppLogo";
 import { Inbox } from "../Inbox";
 import { HereBar } from "../HereBar";
+import { LoadBar } from "../LoadBar";
 import { FriendGroupsPanel, MapOptionsPanel } from "../FriendGroups";
 import { MeButton, RAIL, ToolCluster, ViewBody, useOpenWorld } from "../parts";
 import { PanelSections, usePanelPrefs } from "../SidePanel";
@@ -132,6 +133,7 @@ export function LobbyLayout({ onPalette }: { onPalette: () => void }) {
         </aside>
       )}
       <HereBar />
+      <LoadBar />
     </div>
   );
 }

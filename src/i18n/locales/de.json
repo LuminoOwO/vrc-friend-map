@@ -642,5 +642,19 @@
     "minutes": "{{n}} Min.",
     "hours": "{{n}} Std.",
     "open": "Online-Zeiten öffnen"
+  },
+  "loadBar": {
+    "loading": "Lädt von VRChat",
+    "minutesLeft": "noch etwa {{n}} Min.",
+    "secondsLeft": "noch etwa {{n}} s",
+    "paused": "pausiert",
+    "waiting": "VRChat bittet um Pause, wartet",
+    "showLog": "Zeigen, was lädt",
+    "hideLog": "Log ausblenden",
+    "hide": "Ausblenden (der dünne Balken oben bleibt)",
+    "log": "Lade-Log",
+    "loaded": "{{what}}",
+    "running": "Läuft seit {{s}} s",
+    "why": "Anfragen kommen mit Abstand, damit VRChat dich nicht sperrt; der erste Start dauert am längsten."
   }
 }

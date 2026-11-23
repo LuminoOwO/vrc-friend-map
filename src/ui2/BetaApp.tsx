@@ -19,6 +19,7 @@ import { syncAll } from "../sync";
 import { Icon } from "../components/Icon";
 import { useUnreadMissed } from "../components/InsightsView";
 import { SyncLogDialog } from "../components/SyncLogDialog";
+import { LoadBar } from "./LoadBar";
 import { FilterPopover } from "../components/TopBar";
 import { CommandPalette } from "./CommandPalette";
 import "./ui2.css";
@@ -133,6 +134,7 @@ function PhoneShell() {
   return (
     <WorldOpener.Provider value={setWorld}>
       <div className="ui2-phone-shell">
+        <LoadBar />
         <PhoneTop title={title} onBack={sub ? () => go("menu") : undefined} search={tab === "graph" || tab === "cards"} />
         <main className="ui2-phone-main">
           {page === "party" ? (

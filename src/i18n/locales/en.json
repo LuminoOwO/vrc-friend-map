@@ -2456,5 +2456,19 @@
     "minutes": "{{n}} min",
     "hours": "{{n}} h",
     "open": "Open Online times"
+  },
+  "loadBar": {
+    "loading": "Loading from VRChat",
+    "minutesLeft": "about {{n}} min left",
+    "secondsLeft": "about {{n}} s left",
+    "paused": "paused",
+    "waiting": "VRChat asked to slow down, waiting",
+    "showLog": "Show what's loading",
+    "hideLog": "Hide the log",
+    "hide": "Hide (keeps the thin bar at the top)",
+    "log": "Loading log",
+    "loaded": "{{what}}",
+    "running": "Running for {{s}} s",
+    "why": "Requests are spaced out so VRChat doesn't block you; the first start takes longest."
   }
 }
