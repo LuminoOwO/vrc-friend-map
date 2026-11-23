@@ -191,6 +191,7 @@ export const defaultMap = (): MapSettings => ({
   showFps: false,
   showMe: true,
   showOthers: "off",
+  hereOnMap: "off",
   hereView: "list",
   herePlace: "sidebar",
 });
@@ -752,6 +753,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
       showFps: typeof m.showFps === "boolean" ? m.showFps : d.map.showFps,
       showMe: typeof m.showMe === "boolean" ? m.showMe : d.map.showMe,
       showOthers: oneOf(m.showOthers, ["off", "here", "met", "all"] as const, d.map.showOthers),
+      hereOnMap: oneOf(m.hereOnMap, ["off", "all", "mutual"] as const, d.map.hereOnMap),
       hereView: oneOf(m.hereView, ["list", "compact", "hidden"] as const, d.map.hereView),
       herePlace: oneOf(m.herePlace, ["sidebar", "map"] as const, d.map.herePlace),
     },

@@ -1263,3 +1263,13 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
 .compare-col h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; }
 .compare-col ul { list-style: none; margin: 0; padding: 0; max-height: 320px; overflow-y: auto; display: grid; gap: 2px; }
 @media (max-width: 700px) { .compare-cols3 { grid-template-columns: 1fr; } }
+
+/* The map's "In this instance" switch. */
+.here-switch { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 8px; border: 1px solid var(--border-strong); background: var(--panel-2); font-size: 12.5px; }
+.here-switch.on { border-color: var(--accent); }
+.here-switch-label { display: inline-flex; align-items: center; gap: 5px; padding: 0 8px 0 6px; color: var(--muted); white-space: nowrap; }
+.here-switch.on .here-switch-label { color: var(--accent); }
+.here-switch-n { padding: 0 6px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); font-weight: 700; font-size: 11px; }
+.here-switch button { height: 26px; padding: 0 9px; border: 0; border-radius: 6px; background: none; color: var(--muted); font: inherit; cursor: pointer; white-space: nowrap; }
+.here-switch button:hover { color: var(--text); }
+.here-switch button.on { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }

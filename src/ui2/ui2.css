@@ -701,3 +701,4 @@
 .insights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; align-items: start; }
 .insights-grid > .insight-card { margin: 0; }
 @media (max-width: 700px) { .insights-grid { grid-template-columns: 1fr; } }
+.ui2-phone .here-switch { display: none; }

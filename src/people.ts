@@ -73,6 +73,7 @@ export function useExtra(): Extra {
   const stats = useApp((s) => s.logs.stats);
   const showMe = useApp((s) => s.settings.map.showMe);
   const levelSetting = useApp((s) => s.settings.map.showOthers);
+  const hereOnMap = useApp((s) => s.settings.map.hereOnMap);
   const showBlocked = useApp((s) => s.settings.people.showBlocked);
   const who = useApp((s) => s.filters.who);
   const mapLists = useApp((s) => s.mapLists);
@@ -111,8 +112,10 @@ export function useExtra(): Extra {
       if (name && !names.has(id)) names.set(id, name);
       return info.get(id)!;
     };
-    if (level !== "off")
+    // Everyone in your instance: from Map options, or the map's "In this instance" switch.
+    if (level !== "off" || (hereOnMap !== "off" && who !== "friends"))
       for (const p of hereNow) {
+        if (hereOnMap === "mutual" && level === "off" && !(cache.mutuals[p.id]?.ids ?? []).some((f) => friends[f])) continue;
         const i = add(p.id, p.name);
         if (i) i.here = true;
       }
@@ -177,11 +180,13 @@ export function useExtra(): Extra {
       for (const f of i.via) link(id, f);
     }
     return { me, anchors, others, info, otherEdges, here: hereSet };
-  }, [cache.friends, cache.others, cache.mutuals, cache.me, cache.moderations, local.imports, here, met, stats, showMe, level, showBlocked, who, mapLists, mapListStrangers]);
+  }, [cache.friends, cache.others, cache.mutuals, cache.me, cache.moderations, local.imports, here, met, stats, showMe, level, showBlocked, who, mapLists, mapListStrangers, hereOnMap]);
 
   // Load profiles (and mutuals) of the people shown; in your instance first.
   useEffect(() => {
     const ids = [...extra.info.entries()].sort((a, b) => Number(b[1].here) - Number(a[1].here)).map(([id]) => id);
+    // "Mutual friends" in your instance needs everyone's mutuals, also those not shown yet.
+    if (hereOnMap === "mutual") for (const p of othersHere(here, cache.me?.id)) if (!ids.includes(p.id)) ids.push(p.id);
     wantProfiles(ids);
   }, [extra.info]);
 

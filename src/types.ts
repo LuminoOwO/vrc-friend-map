@@ -370,6 +370,9 @@ export interface MapSettings {
   /** People who aren't friends: none, only those in your instance, plus people
    *  you've spent time with (game logs), plus friends of friends (shared lists). */
   showOthers: "off" | "here" | "met" | "all";
+  /** The map's "In this instance" switch: put everyone in your instance on the map, only those who
+   *  share friends with you, or leave it to showOthers. */
+  hereOnMap: "off" | "all" | "mutual";
   /** The "who's here" panel: full list, one row of pictures, or just a button. */
   hereView: "list" | "compact" | "hidden";
   /** Where "who's here" sits: at the top of the sidebar, or over the map. */

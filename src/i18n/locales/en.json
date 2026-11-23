@@ -2338,5 +2338,13 @@
     "pickTwo": "Pick two different lists.",
     "inBoth": "On both",
     "onlyIn": "Only {{name}}"
+  },
+  "hereSwitch": {
+    "label": "In this instance",
+    "off": "Off",
+    "all": "Everyone",
+    "mutual": "Mutual friends",
+    "help": "Put the people in your VRChat instance on the map: everyone, or only those who share friends with you",
+    "notInGame": "Shows the people in your VRChat instance on the map once you're in VRChat (game log, computers)"
   }
 }

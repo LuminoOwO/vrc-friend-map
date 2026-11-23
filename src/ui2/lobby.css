@@ -145,3 +145,16 @@
 .lay-lobby.party-folded { --map-inset-right: 44px; }
 /* The menu column starts below the notification center so they never overlap on short windows. */
 .lob-left { top: 72px; }
+/* The map's buttons wrap upwards instead of running under the menu when the window is narrow. */
+.lay-lobby .graph-controls { left: 112px; flex-wrap: wrap-reverse; justify-content: flex-end; row-gap: 6px; }
+/* Short windows: the menu gets tighter instead of being cut off. */
+.lob-left { justify-content: safe center; }
+@media (max-height: 820px) {
+  .lob-left { gap: 14px; }
+  .lob-item { height: 44px; }
+  .lob-item.lob-settings { margin-top: 14px; }
+}
+@media (max-height: 680px) {
+  .lob-logo { display: none; }
+  .lob-item { height: 38px; }
+}

@@ -526,5 +526,13 @@
   },
   "act": {
     "friendBlocked": "{{name}} ist hier: blockiert von {{by}}"
+  },
+  "hereSwitch": {
+    "label": "In dieser Instanz",
+    "off": "Aus",
+    "all": "Alle",
+    "mutual": "Gemeinsame Freunde",
+    "help": "Die Leute in deiner VRChat-Instanz auf die Karte setzen: alle, oder nur die, die Freunde mit dir teilen",
+    "notInGame": "Zeigt die Leute in deiner VRChat-Instanz auf der Karte, sobald du in VRChat bist (Spiel-Log, Computer)"
   }
 }

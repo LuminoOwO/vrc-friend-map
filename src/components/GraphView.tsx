@@ -25,7 +25,7 @@ import {
   TRUST_RANKS,
   trustRank,
 } from "../model";
-import { addToCircle, getState, setState, updateSettings, useApp } from "../store";
+import { addToCircle, getState, setState, updateMap, updateSettings, useApp } from "../store";
 import { nextInDirection, startPoint, type Dir } from "../mapkeys";
 import { betaActive } from "../ui2/active";
 import { openFriendGroups, SpotlightChip } from "../ui2/FriendGroups";
@@ -2277,6 +2277,7 @@ export function GraphView() {
             {tr("map.namesShowlabels", { showLabels: settings.showLabels })}
           </button>
         )}
+        <HereSwitch />
         {betaActive() && (
           <button className="btn small" title={tr("fgroups.help")} onClick={() => (isMobile ? setState({ view: "insights" }) : openFriendGroups())}>
             <Icon name="users" size={15} /> {tr("fgroups.button")}
@@ -2295,6 +2296,32 @@ export function GraphView() {
         sizeBy={map.nodeStyle === "icon" || map.nodeStyle === "dot" ? map.sizeBy : "same"}
         showStars={map.showStars}
       />
+    </div>
+  );
+}
+
+/** The map's "In this instance" switch: nobody extra, everyone in your instance, or only those
+ *  who share friends with you (their profiles and mutual friends load in the background). */
+function HereSwitch() {
+  const mode = useApp((s) => s.settings.map.hereOnMap);
+  const inGame = useApp((s) => !!s.here?.active && !s.here.closed);
+  const count = useApp((s) => (s.here?.active ? Math.max(0, s.here.players.length - 1) : 0));
+  const opts = [
+    ["off", tr("hereSwitch.off")],
+    ["all", tr("hereSwitch.all")],
+    ["mutual", tr("hereSwitch.mutual")],
+  ] as const;
+  return (
+    <div className={`here-switch ${mode !== "off" ? "on" : ""}`} role="group" aria-label={tr("hereSwitch.label")} title={inGame ? tr("hereSwitch.help") : tr("hereSwitch.notInGame")}>
+      <span className="here-switch-label">
+        <Icon name="pin" size={14} /> {tr("hereSwitch.label")}
+        {inGame && <span className="here-switch-n">{count}</span>}
+      </span>
+      {opts.map(([k, l]) => (
+        <button key={k} className={mode === k ? "on" : ""} aria-pressed={mode === k} onClick={() => updateMap({ hereOnMap: k })}>
+          {l}
+        </button>
+      ))}
     </div>
   );
 }
