@@ -1,4 +1,7 @@
 :root {
+  /* Light overlays (hover, subtle fills, thin lines) take their colour from the theme instead of
+     plain white, so they don't look grey next to the theme's tinted panels. */
+  --tint: color-mix(in srgb, var(--accent) 22%, var(--text));
   --here: #ff6bcb;
   --bg: #070b0f;
   --panel: #0b1116;
@@ -191,7 +194,7 @@ textarea { width: 100%; resize: vertical; }
 .circle-item:hover { background: var(--panel-2); }
 .circle-item.active { background: var(--accent-soft); }
 .circle-item.drop-hover { border-color: var(--accent); background: var(--accent-soft); }
-.swatch { width: 16px; height: 16px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.2); cursor: pointer; flex: none; padding: 0; }
+.swatch { width: 16px; height: 16px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--tint) 20%, transparent); cursor: pointer; flex: none; padding: 0; }
 .circle-name { flex: 1; text-align: left; background: none; border: none; cursor: pointer; padding: 2px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .circle-item .count { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; }
 .rename { flex: 1; padding: 3px 6px; }
@@ -344,7 +347,7 @@ textarea { width: 100%; resize: vertical; }
 .swatch-wrap { position: relative; display: inline-flex; }
 .color-pop { position: absolute; top: 22px; left: -6px; z-index: 30; width: 214px; padding: 10px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
 .color-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
-.color-cell { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.15); cursor: pointer; padding: 0; position: relative; }
+.color-cell { width: 26px; height: 26px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--tint) 15%, transparent); cursor: pointer; padding: 0; position: relative; }
 .color-cell:hover { transform: scale(1.1); }
 .color-cell.current { border-color: #fff; box-shadow: 0 0 0 2px var(--panel), 0 0 0 4px rgba(255,255,255,0.5); }
 .color-cell.used::after { content: ""; position: absolute; inset: 7px; border-radius: 50%; border: 2px dotted rgba(10,15,20,0.75); }
@@ -1212,7 +1215,7 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
 .graph-canvas:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 
 /* Block question without a picture, and the list of blocked people (Settings). */
-.block-pic-empty { display: inline-grid; place-items: center; flex: none; background: var(--panel-2, rgba(255,255,255,0.08)); color: var(--muted, #aaa); font-weight: 700; font-size: 22px; }
+.block-pic-empty { display: inline-grid; place-items: center; flex: none; background: var(--panel-2, color-mix(in srgb, var(--tint) 8%, transparent)); color: var(--muted, #aaa); font-weight: 700; font-size: 22px; }
 .block-pic.small { width: 38px; height: 38px; font-size: 16px; flex: none; }
 .blocked-search { width: 100%; margin: 6px 0 10px; }
 .blocked-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
@@ -1245,7 +1248,7 @@ html.app-hidden *, html.app-hidden *::before, html.app-hidden *::after { animati
 .map-top-chips { position: absolute; z-index: 4; top: calc(var(--map-inset-top, 0px) + 12px); left: calc(var(--map-inset-left, 0px) + (100% - var(--map-inset-left, 0px) - var(--map-inset-right, 0px)) / 2); transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; max-width: calc(100% - var(--map-inset-left, 0px) - var(--map-inset-right, 0px) - 24px); }
 .map-top-chips > * { pointer-events: auto; }
 .list-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--border-strong); background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(8px); font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
-.list-legend-item { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, 0.05); }
+.list-legend-item { display: inline-flex; align-items: center; gap: 6px; padding: 2px 4px 2px 8px; border-radius: 999px; background: color-mix(in srgb, var(--tint) 5%, transparent); }
 .list-legend-item button { display: grid; place-items: center; width: 20px; height: 20px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
 .list-legend-item button:hover { color: var(--text); }
 .list-legend-check { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }

@@ -4,10 +4,10 @@
    Scoped to .lob-frame (computers) and .ui2-phone-main (phones), so the classic interface keeps its look. */
 
 :is(.lob-frame, .ui2-phone-main) {
-  --v-panel: rgba(255, 255, 255, 0.035);
-  --v-panel-hover: rgba(255, 255, 255, 0.06);
-  --v-line: rgba(255, 255, 255, 0.09);
-  --v-line-strong: rgba(255, 255, 255, 0.16);
+  --v-panel: color-mix(in srgb, var(--tint) 3.5%, transparent);
+  --v-panel-hover: color-mix(in srgb, var(--tint) 6%, transparent);
+  --v-line: color-mix(in srgb, var(--tint) 9%, transparent);
+  --v-line-strong: color-mix(in srgb, var(--tint) 16%, transparent);
 }
 
 /* ---------- page and scrolling ---------- */
@@ -101,7 +101,7 @@
 :is(.lob-frame, .ui2-phone-main) textarea {
   border-radius: 6px;
   border: 1px solid var(--v-line-strong);
-  background-color: rgba(255, 255, 255, 0.04);
+  background-color: color-mix(in srgb, var(--tint) 4%, transparent);
   color: var(--text);
 }
 :is(.lob-frame, .ui2-phone-main) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]) { height: 36px; padding: 0 10px; box-sizing: border-box; }
@@ -133,7 +133,7 @@
 /* Names as chips (Insights, Logbook): one quiet style. */
 :is(.lob-frame, .ui2-phone-main) .face-btn {
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--tint) 5%, transparent);
   border: 1px solid transparent;
   padding: 3px 10px 3px 3px;
   transition: border-color 0.15s, background 0.15s;
@@ -159,11 +159,11 @@
   gap: 12px;
   min-height: 42px;
   padding: 6px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid color-mix(in srgb, var(--tint) 5%, transparent);
   font-size: 14px;
 }
 :is(.lob-frame, .ui2-phone-main) .act:last-child { border-bottom: 0; }
-:is(.lob-frame, .ui2-phone-main) .act:hover { background: rgba(255, 255, 255, 0.03); }
+:is(.lob-frame, .ui2-phone-main) .act:hover { background: color-mix(in srgb, var(--tint) 3%, transparent); }
 :is(.lob-frame, .ui2-phone-main) .act-time { width: 72px; font-size: 13px; }
 :is(.lob-frame, .ui2-phone-main) .act > svg {
   box-sizing: content-box;
@@ -171,7 +171,7 @@
   height: 14px;
   padding: 6px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.06);
+  background: color-mix(in srgb, var(--tint) 6%, transparent);
 }
 :is(.lob-frame, .ui2-phone-main) .act-join > svg, :is(.lob-frame, .ui2-phone-main) .act-online > svg, :is(.lob-frame, .ui2-phone-main) .act-friend-add > svg { background: color-mix(in srgb, var(--ok, #51e57e) 16%, transparent); }
 :is(.lob-frame, .ui2-phone-main) .act-leave > svg, :is(.lob-frame, .ui2-phone-main) .act-offline > svg, :is(.lob-frame, .ui2-phone-main) .act-friend-remove > svg, :is(.lob-frame, .ui2-phone-main) .act-crash > svg { background: color-mix(in srgb, var(--danger, #f87171) 16%, transparent); }
@@ -200,11 +200,11 @@
 
 /* ---------- the same palette in the profile and world popups ---------- */
 /* Before, the popups used the older, bluer card colour; now cards match the views' panels. */
-.profile.ui2-profile.popup { background: var(--bg); border-color: rgba(255, 255, 255, 0.12); border-radius: 10px; }
+.profile.ui2-profile.popup { background: var(--bg); border-color: color-mix(in srgb, var(--tint) 12%, transparent); border-radius: 10px; }
 .ui2-profile .pcard,
 .ui2-world-cards > * {
-  background: rgba(255, 255, 255, 0.035);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: color-mix(in srgb, var(--tint) 3.5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tint) 9%, transparent);
   border-radius: 8px;
 }
 .ui2-profile .profile-actions { gap: 6px; flex-wrap: wrap; }

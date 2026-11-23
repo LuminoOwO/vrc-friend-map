@@ -558,8 +558,8 @@
 .ui2-phone-party { gap: 14px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
 .ui2-phone-party .lob-me { position: relative; overflow: hidden; }
 .ui2-phone-party .lob-me .ui2-top-me { height: 64px; padding: 0 14px; }
-.ui2-phone-party .ui2-where { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); border-radius: 8px; }
-.ui2-phone-party .ui2-tiles .filter-chip, .ui2-phone-party .ui2-tiles .stat-static { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); }
+.ui2-phone-party .ui2-where { background: color-mix(in srgb, var(--tint) 4%, transparent); border-color: color-mix(in srgb, var(--tint) 10%, transparent); border-radius: 8px; }
+.ui2-phone-party .ui2-tiles .filter-chip, .ui2-phone-party .ui2-tiles .stat-static { background: color-mix(in srgb, var(--tint) 4%, transparent); border-color: color-mix(in srgb, var(--tint) 10%, transparent); }
 .ui2-phone-party .ui2-part, .ui2-phone-party .ui2-part.growable { flex: none !important; min-height: 0; }
 .ui2-phone-party .ui2-part.growable > .ui2-part-content { overflow: visible; }
 .ui2-phone-party .ui2-part-title { font-size: 12px; padding: 4px 2px 10px; }
@@ -629,7 +629,7 @@
 .lob-inbox .inbox-btn:hover::before, .lob-inbox .inbox-btn.on::before, .lob-inbox .inbox-btn.has::before { height: 70%; }
 .lob-inbox .inbox-count { top: 4px; right: 2px; }
 /* The list and the pop-ups open level with the panels' top, lined up with the view frame. */
-.lob-inbox .inbox-drop { top: 0; left: 90px; width: 380px; max-height: calc(100vh - 96px); border-radius: 8px; border-color: rgba(255, 255, 255, 0.12); background: var(--bg); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); }
+.lob-inbox .inbox-drop { top: 0; left: 90px; width: 380px; max-height: calc(100vh - 96px); border-radius: 8px; border-color: color-mix(in srgb, var(--tint) 12%, transparent); background: var(--bg); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6); }
 /* Phones: the left end of the title bar. */
 .phone-inbox { margin-right: 10px; }
 .phone-inbox .inbox-btn { width: 40px; height: 40px; border: 0; border-radius: 8px; background: none; box-shadow: none; backdrop-filter: none; }
@@ -637,7 +637,7 @@
 .phone-inbox .inbox-drop { position: fixed; top: calc(var(--safe-top, 0px) + 64px); left: 12px; right: 12px; width: auto; }
 
 .popups { position: fixed; z-index: 1200; top: 16px; left: 112px; display: grid; gap: 8px; width: 380px; max-width: calc(100vw - 32px); pointer-events: none; }
-.popup { position: relative; display: flex; align-items: center; pointer-events: auto; background: var(--bg); border: 1px solid rgba(255, 255, 255, 0.12); border-left: 3px solid var(--accent); border-radius: 8px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); overflow: hidden; animation: popup-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
+.popup { position: relative; display: flex; align-items: center; pointer-events: auto; background: var(--bg); border: 1px solid color-mix(in srgb, var(--tint) 12%, transparent); border-left: 3px solid var(--accent); border-radius: 8px; box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5); overflow: hidden; animation: popup-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2); }
 .popup.k-blockAsk { border-left-color: var(--danger, #ef5b5b); }
 .popup-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 6px 12px 12px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .popup-close { flex: none; align-self: flex-start; margin: 6px 6px 0 0; width: 26px; height: 26px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; display: grid; place-items: center; }
@@ -650,10 +650,10 @@
 @media (max-width: 700px) { .popups { top: calc(var(--safe-top, 0px) + 64px); left: 12px; right: 12px; width: auto; } }
 
 /* Who's here: faces, filter and list (Lobby bar and the "You are here" card). */
-.here-face2 { position: relative; display: grid; place-items: center; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.15); background: var(--panel); color: var(--muted); font-size: 12px; font-weight: 700; box-sizing: border-box; }
+.here-face2 { position: relative; display: grid; place-items: center; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--tint) 15%, transparent); background: var(--panel); color: var(--muted); font-size: 12px; font-weight: 700; box-sizing: border-box; }
 .here-face2 img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .here-face2-badge { position: absolute; right: -4px; bottom: -4px; min-width: 15px; height: 15px; padding: 0 3px; box-sizing: border-box; border-radius: 999px; background: var(--accent); color: #000; font-size: 9.5px; font-weight: 900; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--bg, #000); }
-.here-filters { flex: none; display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: rgba(255, 255, 255, 0.05); }
+.here-filters { flex: none; display: flex; gap: 2px; padding: 2px; border-radius: 9px; background: color-mix(in srgb, var(--tint) 5%, transparent); }
 .here-filter { display: flex; align-items: center; gap: 5px; height: 28px; padding: 0 10px; border: 0; border-radius: 7px; background: none; color: var(--muted); font: inherit; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
 .here-filter:hover { color: var(--text); }
 .here-filter.on { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--text); }
@@ -681,7 +681,7 @@
 .fg-count { font-size: 12px; font-weight: 700; white-space: nowrap; }
 .fg-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; overflow-y: auto; min-height: 0; }
 .fg-panel .fg-list { flex: 1; }
-.fg-item { border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; background: rgba(255, 255, 255, 0.03); }
+.fg-item { border: 1px solid color-mix(in srgb, var(--tint) 8%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--tint) 3%, transparent); }
 .fg-item:hover, .fg-item.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .fg-main { display: grid; gap: 6px; width: 100%; padding: 8px 10px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .fg-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
