@@ -29,6 +29,8 @@ import { addToCircle, getState, setState, updateSettings, useApp } from "../stor
 import { nextInDirection, startPoint, type Dir } from "../mapkeys";
 import { betaActive } from "../ui2/active";
 import { openFriendGroups, SpotlightChip } from "../ui2/FriendGroups";
+import { ListOverlayLegend } from "./ListViewer";
+import { useListOverlay } from "../listoverlay";
 import type { Cache, Circle, Filters, Friend, MapSettings, Presence } from "../types";
 import { captureCard, capturePicture } from "../flip";
 import { FRESH_MS } from "../notify";
@@ -463,6 +465,8 @@ export function GraphView() {
   const settings = useApp((s) => s.settings);
   const selectedId = useApp((s) => s.selectedId);
   const spotlight = useApp((s) => s.spotlight);
+  const overlay = useListOverlay();
+  const listDots = overlay.dots;
   const stats = useApp((s) => s.logs.stats);
   const minMinutes = useApp((s) => s.settings.groups.minMinutes);
   const map = settings.map;
@@ -537,8 +541,8 @@ export function GraphView() {
   const starred = useMemo(() => new Set(starredList ?? []), [starredList]);
   const travel = useMemo(() => (travelAt ? friendsAt(Object.keys(cache.friends), friendLog, travelAt) : null), [travelAt, cache.friends, friendLog]);
 
-  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById, named, starred, travel, spotlight });
-  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById, named, starred, travel, spotlight };
+  const viewRef = useRef({ cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById, named, starred, travel, spotlight, listDots });
+  viewRef.current = { cache, circles, settings, selectedId, matched, lineData, secsById, fresh, extra, othersById, named, starred, travel, spotlight, listDots };
 
   // Frame-rate limit (Settings → Frame rate): the limit itself, and lower ones
   // while the window isn't focused or nobody has touched anything for a while.
@@ -1278,6 +1282,22 @@ export function GraphView() {
       } else if (card) drawCard(ctx, n, f, ring, p, style === "fullcard", selected, t.k);
       else drawRound(ctx, n, f, ring, p, style, selected, alpha);
       ctx.globalAlpha = alpha;
+      // Shared lists shown on the map: a dot per list they're on, along the lower left edge.
+      const dots = viewRef.current.listDots.get(n.id);
+      if (dots) {
+        const r0 = Math.max(n.hw, n.hh);
+        const dr = Math.max(2.5, r0 * 0.2);
+        dots.slice(0, 4).forEach((c, i) => {
+          const a = Math.PI * (0.62 + i * 0.16);
+          ctx.beginPath();
+          ctx.arc(n.x! + Math.cos(a) * r0, n.y! + Math.sin(a) * r0, dr, 0, Math.PI * 2);
+          ctx.fillStyle = c;
+          ctx.fill();
+          ctx.lineWidth = Math.max(1, dr * 0.35);
+          ctx.strokeStyle = "rgba(0,0,0,0.75)";
+          ctx.stroke();
+        });
+      }
       const here = extra.here.has(n.id);
       if (n.kind || here) decorate(ctx, n, card, here);
       if (starred.has(n.id) && isMatch) {
@@ -1844,7 +1864,7 @@ export function GraphView() {
   useEffect(() => {
     requestDraw();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cache, circles, settings, selectedId, matched, lineData, fresh, spotlight]);
+  }, [cache, circles, settings, selectedId, matched, lineData, fresh, spotlight, listDots]);
 
   // Canvas size, zoom and drag.
   useEffect(() => {
@@ -2221,7 +2241,10 @@ export function GraphView() {
           </button>
         </div>
       )}
-      <SpotlightChip />
+      <div className="map-top-chips">
+        <SpotlightChip />
+        <ListOverlayLegend lists={overlay.lists} />
+      </div>
       <div className="graph-controls">
         <div className="zoom-btns">
           <button className="icon-btn" title={tr("map.zoomIn")} onClick={() => zoomBy(1.4)}>

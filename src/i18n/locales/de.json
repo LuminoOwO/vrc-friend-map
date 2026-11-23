@@ -484,5 +484,37 @@
   "palette": {
     "groupsEvents": "Gruppen & Events",
     "media": "Medien: Bilder, Favoriten, Avatare, Welten"
+  },
+  "listView": {
+    "view": "Liste ansehen",
+    "onMyMap": "Auf meiner Karte",
+    "onMyMapHelp": "Diese Liste gleichzeitig mit anderen auf deiner eigenen Karte zeigen: Alle darauf bekommen einen Punkt in der Farbe der Liste",
+    "onMap": "Listen auf der Karte",
+    "takeOff": "{{name}}s Liste von der Karte nehmen",
+    "strangers": "Ihre Freunde, die du nicht kennst",
+    "strangersHelp": "Auch die Leute auf diesen Listen, die du nicht kennst, auf die Karte setzen, neben den Besitzer der Liste (höchstens 150 pro Liste)",
+    "title": "{{name}}s Freundesliste",
+    "fullAbout_one": "{{count}} Person auf der Liste, davon {{known}} deine Freunde.",
+    "fullAbout_other": "{{count}} Personen auf der Liste, davon {{known}} deine Freunde.",
+    "hashedAbout": "Diese Liste zeigt nur Leute, die ihr beide kennt ({{known}}); die anderen bleiben verborgen.",
+    "search": "Namen suchen",
+    "all": "Alle",
+    "yourFriends": "Deine Freunde",
+    "notYourFriends": "Nicht deine Freunde",
+    "yourFriend": "dein Freund",
+    "you": "du",
+    "more": "{{count}} weitere",
+    "none": "Niemand passt.",
+    "compare": "Listen vergleichen",
+    "yourList": "Deine Freunde",
+    "first": "Erste Liste",
+    "second": "Zweite Liste",
+    "and": "und",
+    "bothOnMap": "Beide auf meiner Karte",
+    "bothOnMapHelp": "Beide Listen in ihren Farben auf deiner Karte zeigen",
+    "partial": "Eine Liste „nur Leute, die wir beide kennen“ lässt sich nur über Leute vergleichen, die du kennst.",
+    "pickTwo": "Wähle zwei verschiedene Listen.",
+    "inBoth": "Auf beiden",
+    "onlyIn": "Nur {{name}}"
   }
 }

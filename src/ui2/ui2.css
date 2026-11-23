@@ -693,7 +693,7 @@
 .fg-names { line-height: 1.4; }
 .fg-bridges summary { cursor: pointer; color: var(--muted); }
 .fg-bridges ul { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; }
-.spot-chip { position: absolute; z-index: 4; left: 50%; top: 16px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 999px; border: 1px solid var(--accent); background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(8px); font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
+.spot-chip { display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 999px; border: 1px solid var(--accent); background: color-mix(in srgb, var(--bg) 85%, transparent); backdrop-filter: blur(8px); font-size: 13px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4); }
 .spot-chip button { display: grid; place-items: center; width: 22px; height: 22px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
 .spot-chip button:hover { color: var(--text); background: color-mix(in srgb, var(--text) 10%, transparent); }
 

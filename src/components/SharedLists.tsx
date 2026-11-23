@@ -12,6 +12,8 @@ import type { ImportedList } from "../types";
 import { Icon } from "./Icon";
 import { PeopleChooser } from "./PeopleChooser";
 import { selectedIds } from "../selection";
+import { CompareLists, ListViewer } from "./ListViewer";
+import { toggleMapList } from "../listoverlay";
 
 const FORMAT = "vrc-friend-map/friends-v1";
 const MAX_ENTRIES = 20000;
@@ -147,6 +149,8 @@ export function SharedLists() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [openStrangers, setOpenStrangers] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
+  const mapLists = useApp((s) => s.mapLists);
   const friendCount = Object.keys(cache.friends).length;
 
   // Re-match hashed lists whenever our own friend list changes.
@@ -290,7 +294,9 @@ export function SharedLists() {
                         {list.owner.displayName}
                       </button>
                     ) : (
-                      list.owner.displayName
+                      <button className="btn link" onClick={() => setViewing(list.id)}>
+                        {list.owner.displayName}
+                      </button>
                     )}
                   </h3>
                   <span className="pill">{list.mode === "full" ? "full list" : "overlap only"}</span>
@@ -322,6 +328,17 @@ export function SharedLists() {
                   </div>
                 )}
                 <div className="row">
+                  <button className="btn small primary" onClick={() => setViewing(viewing === list.id ? null : list.id)} aria-pressed={viewing === list.id}>
+                    <Icon name="users" size={14} /> {tr("listView.view")}
+                  </button>
+                  <button
+                    className={`btn small ${mapLists.includes(list.id) ? "active" : ""}`}
+                    aria-pressed={mapLists.includes(list.id)}
+                    title={tr("listView.onMyMapHelp")}
+                    onClick={() => toggleMapList(list.id)}
+                  >
+                    <Icon name={mapLists.includes(list.id) ? "check" : "graph"} size={14} /> {tr("listView.onMyMap")}
+                  </button>
                   <button
                     className="btn small"
                     onClick={() => {
@@ -355,6 +372,9 @@ export function SharedLists() {
               </div>
             ))}
           </div>
+
+          {viewing && imports.find((l) => l.id === viewing) && <ListViewer list={imports.find((l) => l.id === viewing)!} onClose={() => setViewing(null)} />}
+          <CompareLists />
 
           {sets.lists.length > 1 && (
             <section className="panel">

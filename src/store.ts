@@ -119,6 +119,10 @@ export interface AppState {
   blockAsk: string[];
   /** People shown at full strength on the map (everyone else dimmed), e.g. a friend group pointed at. */
   spotlight: string[] | null;
+  /** Shared friend lists shown on your map at the same time (src/listoverlay.ts). */
+  mapLists: string[];
+  /** Also put the people on those lists you don't know on the map. */
+  mapListStrangers: boolean;
   /** Set while a spotlit group is kept (shown on the map with a way to turn it off). */
   spotlightLabel: string | null;
   /** Computers: a temporary page in the side panel instead of its usual sections. */
@@ -419,6 +423,8 @@ let state: AppState = {
   blockAsk: [],
   blockAskShown: false,
   spotlight: null,
+  mapLists: [],
+  mapListStrangers: false,
   spotlightLabel: null,
   sidePanel: null,
   pickPair: [null, null],

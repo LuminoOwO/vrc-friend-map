@@ -4,6 +4,7 @@
 // slowly in the background, only for people actually shown.
 import { useEffect, useMemo } from "react";
 import { queueBlockAsk } from "./inbox";
+import { STRANGERS_PER_LIST } from "./listoverlay";
 import { backend, isTauri } from "./backend";
 import { othersHere } from "./live";
 import { getState, setState, updateCache, useApp } from "./store";
@@ -74,6 +75,8 @@ export function useExtra(): Extra {
   const levelSetting = useApp((s) => s.settings.map.showOthers);
   const showBlocked = useApp((s) => s.settings.people.showBlocked);
   const who = useApp((s) => s.filters.who);
+  const mapLists = useApp((s) => s.mapLists);
+  const mapListStrangers = useApp((s) => s.mapListStrangers);
   // The filter overrides Map options: "only friends" shows nobody else, "friends of friends" everyone who qualifies.
   const level = who === "friends" ? "off" : who === "potential" && levelSetting === "off" ? "all" : levelSetting;
 
@@ -141,6 +144,22 @@ export function useExtra(): Extra {
         });
     }
 
+    // Lists shown on the map (src/listoverlay.ts): their people you don't know, next to the owner.
+    if (mapListStrangers && who !== "friends")
+      for (const lid of mapLists) {
+        const list = local.imports.find((l) => l.id === lid);
+        const owner = list?.owner.id;
+        if (!list || list.mode !== "full" || !owner || !friends[owner]) continue;
+        let n = 0;
+        for (const f of list.friends ?? []) {
+          if (n >= STRANGERS_PER_LIST) break;
+          const i = add(f.id, f.displayName);
+          if (!i) continue;
+          if (!i.via.includes(owner)) i.via.push(owner);
+          n++;
+        }
+      }
+
     // Only people who share at least one friend with you (from VRChat or a shared list).
     if (who === "potential")
       for (const [id, i] of [...info]) if (!i.via.length && !(cache.mutuals[id]?.ids ?? []).some((f) => friends[f])) info.delete(id);
@@ -158,7 +177,7 @@ export function useExtra(): Extra {
       for (const f of i.via) link(id, f);
     }
     return { me, anchors, others, info, otherEdges, here: hereSet };
-  }, [cache.friends, cache.others, cache.mutuals, cache.me, cache.moderations, local.imports, here, met, stats, showMe, level, showBlocked, who]);
+  }, [cache.friends, cache.others, cache.mutuals, cache.me, cache.moderations, local.imports, here, met, stats, showMe, level, showBlocked, who, mapLists, mapListStrangers]);
 
   // Load profiles (and mutuals) of the people shown; in your instance first.
   useEffect(() => {
