@@ -78,6 +78,8 @@ minor releases can change behavior.
   do on vrchat.com if your account may be hacked (change the password, turn on two-factor).
 
 ### Changed
+- **No more "Log out" next to your name in Settings** (too easy to hit by accident); it stays
+  in Settings → My account.
 - **The represented group** on a profile opens in the app, not on vrchat.com.
 - **Map buttons look like one toolbar:** zoom, ring, names, "In this instance", friend groups and
   map options share one height and frame; on narrower windows the last two show icons only.

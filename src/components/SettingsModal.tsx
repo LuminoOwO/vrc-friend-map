@@ -979,11 +979,6 @@ function AccountCard({ onOpen }: { onOpen: () => void }) {
           </span>
         </span>
       </button>
-      {!demo && me && (
-        <button className="settings-logout" onClick={() => logoutAll(false)} title={tr("settings.logOutKeepsYourData")}>
-          {tr("settings.logOut")}
-        </button>
-      )}
     </div>
   );
 }
