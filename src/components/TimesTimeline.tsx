@@ -304,38 +304,33 @@ export function TimesTimeline({
         ctx.fillStyle = tint(0.07);
         ctx.fillRect(0, y, size.w, rowH);
       }
-      // Sessions fill the row and fade in and out at their ends.
-      const by = y + 1;
-      const barH = rowH - 2;
+      // Sessions: solid blocks filling the row, corners slightly rounded.
+      const by = y + 2;
+      const barH = Math.max(2, rowH - 4);
+      const radius = Math.min(4, barH / 3);
       const strong = r.me || r.online || r.id === hoverId;
       if (r.heat) {
-        // Typical week: one smooth band whose strength follows how often they're on.
-        const g = ctx.createLinearGradient(nameW, 0, nameW + plotW, 0);
+        // Typical week: one square per hour, stronger the more often they're on then.
         const mut = rgbOf(ctx, col.muted);
+        const cw = plotW / 24;
         r.heat.forEach((v, h) => {
+          if (v < 0.05) return;
           const c = r.me || r.shared?.[h] ? acc : mut;
-          const a = v < 0.05 ? 0 : (r.me ? 0.2 : 0.12) + v * (r.me || r.shared?.[h] ? 0.7 : 0.45);
-          g.addColorStop((h + 0.5) / 24, rgba(c, a));
+          ctx.fillStyle = rgba(c, (r.me ? 0.25 : 0.15) + v * (r.me || r.shared?.[h] ? 0.75 : 0.5));
+          ctx.beginPath();
+          ctx.roundRect(nameW + h * cw + 1, by, Math.max(1, cw - 2), barH, Math.min(radius, (cw - 2) / 3));
+          ctx.fill();
         });
-        g.addColorStop(0, rgba(r.me || r.shared?.[0] ? acc : mut, r.heat[0] < 0.05 ? 0 : 0.12 + r.heat[0] * 0.5));
-        g.addColorStop(1, rgba(r.me || r.shared?.[23] ? acc : mut, r.heat[23] < 0.05 ? 0 : 0.12 + r.heat[23] * 0.5));
-        ctx.fillStyle = g;
-        ctx.fillRect(nameW, by, plotW, barH);
       }
+      ctx.fillStyle = rgba(acc, r.me ? 0.95 : strong ? 0.85 : 0.65);
       for (const s of r.spans) {
         if (s[1] < view.start || s[0] > view.end) continue;
         const x0 = Math.max(nameW, xOf(s[0]));
         const x1 = Math.min(size.w, xOf(s[1]));
         const w = Math.max(2, x1 - x0);
-        const fade = Math.min(14, w / 2);
-        const a = r.me ? 0.85 : strong ? 0.75 : 0.55;
-        const g = ctx.createLinearGradient(x0, 0, x0 + w, 0);
-        g.addColorStop(0, rgba(acc, 0));
-        g.addColorStop(fade / w, rgba(acc, a));
-        g.addColorStop(1 - fade / w, rgba(acc, a));
-        g.addColorStop(1, rgba(acc, 0));
-        ctx.fillStyle = g;
-        ctx.fillRect(x0, by, w, barH);
+        ctx.beginPath();
+        ctx.roundRect(x0, by, w, barH, Math.min(radius, w / 2));
+        ctx.fill();
       }
       // Joined short disconnects: a small notch (only when asked for).
       ctx.fillStyle = col.warn;

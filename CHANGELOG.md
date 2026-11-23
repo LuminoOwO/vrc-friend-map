@@ -96,8 +96,8 @@ minor releases can change behavior.
   sent friend requests, and your server's data in Online times.
 - The unfolded left menu's gradient also covers the notification bell.
 - **Online times look the same in every view:** rows with pictures and names, sessions fill
-  the row and fade in and out (no more rounded bars). **Typical week** is now the same
-  timeline for the 24 hours of a weekday, shaded by how often someone is usually on (hours you
+  the row as solid blocks with slightly rounded corners. **Typical week** is now the same
+  timeline for the 24 hours of a weekday, one square per hour shaded by how often someone is on (hours you
   share in the accent colour; point at one for "usually online · you're usually on too"),
   with the hour bars on top lined up with it.
 - **The layout follows the window size:** a computer window narrower than 760 px switches to
