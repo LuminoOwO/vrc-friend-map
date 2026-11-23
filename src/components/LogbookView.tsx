@@ -4,6 +4,7 @@
 // picture gallery tagged with world and people; a year in review.
 import { t as tr, weekdayNames, language } from "../i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { backend, isMobile, isTauri } from "../backend";
 import { popularWorlds, setDiary, useHistory } from "../history";
 import {
@@ -508,7 +509,9 @@ function Pictures({ visits }: { visits: TimelineVisit[] | null }) {
 }
 
 function PictureViewer({ p, onClose }: { p: TaggedPicture; onClose: () => void }) {
-  return (
+  // Rendered at the top of the page, outside the scrolling Media page: WebKitGTK paints a
+  // scroll area's overlay scrollbar above anything inside it, so it ran across the picture.
+  return createPortal(
     <div className="modal-backdrop top" role="presentation" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal pic-view" role="dialog" onKeyDown={(e) => e.key === "Escape" && onClose()}>
         <div className="row between">
@@ -539,7 +542,8 @@ function PictureViewer({ p, onClose }: { p: TaggedPicture; onClose: () => void }
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.querySelector(".ui2") ?? document.body,
   );
 }
 

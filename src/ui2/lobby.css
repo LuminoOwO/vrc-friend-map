@@ -51,6 +51,10 @@
 .lob-frame { position: absolute; z-index: 9; left: 112px; right: 400px; top: 16px; bottom: 64px; display: flex; flex-direction: column; overflow: hidden; border-radius: 8px; border: 1px solid color-mix(in srgb, var(--tint) 12%, transparent); background: var(--bg); box-shadow: 0 30px 80px rgba(0, 0, 0, 0.7); animation: lob-in 0.32s cubic-bezier(0.2, 0.9, 0.25, 1); }
 @keyframes lob-in { from { opacity: 0; transform: translate3d(-36px, 0, 0); } }
 .lob-frame-body > * { animation: ui2-fade 0.2s ease-out; }
+/* A dialog opened inside a page: WebKitGTK paints the page's overlay scrollbar above it, so hide
+   the scrollbars of the elements around the dialog while it's open (not the dialog's own). */
+.lob-frame-body:has(.modal-backdrop), .lob-frame-body :has(.modal-backdrop) { scrollbar-width: none; }
+.lob-frame-body:has(.modal-backdrop)::-webkit-scrollbar, .lob-frame-body :has(.modal-backdrop)::-webkit-scrollbar { display: none; }
 .lay-lobby.party-folded .lob-frame { right: 64px; }
 .lob-frame > header { flex: none; display: flex; align-items: center; gap: 10px; padding: 12px 14px 12px 22px; border-bottom: 2px solid var(--accent); background: var(--panel); }
 .lob-frame > header h1 { margin: 0; font-size: 20px; font-weight: 900; font-style: italic; text-transform: uppercase; letter-spacing: 0.04em; }

@@ -343,6 +343,7 @@ textarea { width: 100%; resize: vertical; }
 .row.tight { margin: 0; gap: 2px; }
 .btn.active { border-color: var(--accent); color: var(--accent); }
 .btn { display: inline-flex; align-items: center; gap: 5px; }
+a.btn, a.btn:visited { color: var(--text); text-decoration: none; }
 
 .swatch-wrap { position: relative; display: inline-flex; }
 .color-pop { position: absolute; top: 22px; left: -6px; z-index: 30; width: 214px; padding: 10px; background: var(--panel); border: 1px solid var(--border-strong); border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.45); }
