@@ -18,5 +18,18 @@
         "desktopTemplate": "../packaging/linux/vrc-friend-map.desktop"
       }
     }
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "VRC Friend Map",
+        "width": 1320,
+        "height": 860,
+        "minWidth": 360,
+        "minHeight": 520,
+        "visible": false
+      }
+    ]
   }
 }

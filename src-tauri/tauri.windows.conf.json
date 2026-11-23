@@ -1,0 +1,16 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "VRC Friend Map",
+        "width": 1320,
+        "height": 860,
+        "minWidth": 360,
+        "minHeight": 520,
+        "visible": false
+      }
+    ]
+  }
+}

@@ -356,6 +356,7 @@ export function NotificationsSection() {
 /** Settings → Closing the window (desktop). */
 export function CloseSection() {
   const closeAction = useApp((s) => s.settings.closeAction);
+  const startInTray = useApp((s) => s.settings.startInTray);
   return (
     <>
       <h3>{tr("notify.closingTheWindow")}</h3>
@@ -370,6 +371,11 @@ export function CloseSection() {
       <p className="small muted">
         {tr("notify.inTheTrayTheApp")}
       </p>
+      <label className="check">
+        <input type="checkbox" checked={startInTray} onChange={(e) => updateSettings({ startInTray: e.target.checked })} />
+        {tr("notify.startInTray")}
+      </label>
+      <p className="small muted">{tr("notify.startInTrayHelp")}</p>
     </>
   );
 }

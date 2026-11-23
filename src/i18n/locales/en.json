@@ -744,7 +744,9 @@
     "playTitle": "Play: {{event}}, then {{name}}'s tune",
     "inTheTrayTheApp": "In the tray the app keeps notifying and collecting (live updates, game logs, servers) without drawing anything. Click the tray icon to open it again; its menu can also mute notifications or quit.",
     "volumeValue": "Volume {{value}}%",
-    "pauseBeforeThePersonS": "Pause before the person's tune: {{value}} s"
+    "pauseBeforeThePersonS": "Pause before the person's tune: {{value}} s",
+    "startInTray": "Start in the tray (the window doesn't open)",
+    "startInTrayHelp": "This device only. Open the window from the tray icon. Without a tray icon on this system, the window opens as usual."
   },
   "serversModal": {
     "notAvailableInDemoMode": "Not available in demo mode.",

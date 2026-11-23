@@ -30,6 +30,13 @@ export function startAppVisibility() {
   if (isTauri) {
     void listen("window-hidden", () => set(true));
     void listen("window-shown", () => set(false));
+    // Started in the tray: the window was never shown, so draw nothing until it is.
+    void import("@tauri-apps/api/core").then(({ invoke }) =>
+      invoke<boolean>("window_started_hidden").then(
+        (h) => h && set(true),
+        () => {},
+      ),
+    );
   }
   // Any sign of life from the window means it's showing again.
   for (const e of ["focus", "pointermove", "pointerdown", "keydown"] as const) window.addEventListener(e, () => set(false), { passive: true, capture: true });

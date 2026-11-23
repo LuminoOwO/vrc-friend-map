@@ -562,6 +562,8 @@ export interface Settings {
   notify: NotifySettings;
   /** Desktop: what closing the window does. */
   closeAction: "ask" | "tray" | "quit";
+  /** Desktop, this device only: start hidden in the tray (src-tauri/src/tray.rs reads a flag file). */
+  startInTray: boolean;
   /** Linux/X11: take mouse wheel steps from the X server when the web view gets none. */
   wheelFix: boolean;
   age: AgeSettings;

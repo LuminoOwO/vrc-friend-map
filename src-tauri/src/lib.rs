@@ -863,6 +863,12 @@ pub fn run() {
             }));
             #[cfg(desktop)]
             tray::setup(app.handle());
+            #[cfg(desktop)]
+            if let Ok(dir) = app.path().app_data_dir() {
+                tray::startup_window(app.handle(), &dir);
+            } else if let Some(w) = app.get_webview_window("main") {
+                let _ = w.show();
+            }
             {
                 let handle = app.handle().clone();
                 single::on_show(move || {
@@ -956,6 +962,8 @@ pub fn run() {
             logger_status,
             logger_stats,
             tray::tray_available,
+            tray::tray_set_start_hidden,
+            tray::window_started_hidden,
             tray::tray_set_close_action,
             tray::tray_set_muted,
             tray::tray_set_extras,

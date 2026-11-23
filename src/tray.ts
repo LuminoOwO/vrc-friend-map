@@ -22,12 +22,17 @@ function tomorrowMorning(): number {
 export function startTray() {
   if (!trayHere) return;
   let lastClose = "";
+  let lastStart: boolean | undefined;
   let lastMute: string | null | undefined;
   const sync = () => {
     const s = getState().settings;
     if (s.closeAction !== lastClose) {
       lastClose = s.closeAction;
       invoke("tray_set_close_action", { action: s.closeAction }).catch(() => {});
+    }
+    if (s.startInTray !== lastStart) {
+      lastStart = s.startInTray;
+      invoke("tray_set_start_hidden", { on: s.startInTray }).catch(() => {});
     }
     const label = isMuted(s.notify) ? muteLabel(s.notify) : null;
     if (label !== lastMute) {

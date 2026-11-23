@@ -729,7 +729,7 @@ export function SettingsModal() {
         <Sec id="phone" cat="sounds" title={tr("settings.phoneInTheBackground")} keys="android background service push unifiedpush sunup ntfy battery refresh rate 120hz widget root quest singularity logs" unavailable={unavailable("backgroundService")}>
           <PhoneSection />
         </Sec>
-        <Sec id="close" cat="sounds" title={tr("settings.closingTheWindow")} keys="tray minimize background close quit exit" unavailable={unavailable("closeWindow")}>
+        <Sec id="close" cat="sounds" title={tr("settings.closingTheWindow")} keys="tray minimize background close quit exit start hidden startup autostart" unavailable={unavailable("closeWindow")}>
           <CloseSection />
         </Sec>
 

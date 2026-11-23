@@ -429,5 +429,9 @@
     "popupsOff": "Aus",
     "popupsHelp": "Sie erscheinen unter der Benachrichtigungszentrale (oben links); zeigst du darauf, bleiben sie. Klick öffnet sie.",
     "blockAskPopup": "„Warum hast du … blockiert?“ sofort fragen (sonst wartet es in der Benachrichtigungszentrale)"
+  },
+  "notify": {
+    "startInTray": "Im Tray starten (das Fenster öffnet sich nicht)",
+    "startInTrayHelp": "Nur dieses Gerät. Das Fenster öffnest du über das Tray-Symbol. Gibt es auf diesem System kein Tray-Symbol, öffnet sich das Fenster wie gewohnt."
   }
 }

@@ -20,6 +20,8 @@ const TRAY_ID: &str = "main";
 static AVAILABLE: AtomicBool = AtomicBool::new(false);
 /// 0 = ask (the page shows a dialog), 1 = hide to the tray, 2 = quit.
 static CLOSE_ACTION: AtomicU8 = AtomicU8::new(0);
+/// The window stayed hidden at start ("Start in the tray"); cleared once it's shown.
+static STARTED_HIDDEN: AtomicBool = AtomicBool::new(false);
 /// Set by "Quit" so the close that follows isn't intercepted.
 static QUITTING: AtomicBool = AtomicBool::new(false);
 /// "Muted until 18:30" (shown in the menu), or None when not muted.
@@ -138,6 +140,7 @@ fn build_menu<R: Runtime, M: Manager<R>>(app: &M) -> tauri::Result<Menu<R>> {
 }
 
 pub fn show_main<R: Runtime>(app: &AppHandle<R>) {
+    STARTED_HIDDEN.store(false, Ordering::SeqCst);
     if let Some(w) = app.get_webview_window("main") {
         #[cfg(desktop)]
         let _ = w.unminimize();
@@ -227,6 +230,44 @@ pub fn on_window_event<R: Runtime>(window: &tauri::Window<R>, event: &WindowEven
         _ => {
             api.prevent_close();
             let _ = window.emit("close-requested", ());
+        }
+    }
+}
+
+/// The flag file for "Start in the tray" (read before the page loads, so the window never flashes).
+fn start_hidden_file(data_dir: &std::path::Path) -> std::path::PathBuf {
+    data_dir.join("start-in-tray")
+}
+
+/// At start (desktop): the window is created hidden (platform configs); show it unless
+/// "Start in the tray" is on and there is a tray icon to bring it back with.
+pub fn startup_window<R: Runtime>(app: &AppHandle<R>, data_dir: &std::path::Path) {
+    let hidden = AVAILABLE.load(Ordering::SeqCst) && start_hidden_file(data_dir).exists();
+    if hidden {
+        STARTED_HIDDEN.store(true, Ordering::SeqCst);
+    } else if let Some(w) = app.get_webview_window("main") {
+        let _ = w.show();
+        let _ = w.set_focus();
+    }
+}
+
+/// Whether the window is still hidden after starting in the tray (the page then draws nothing).
+#[tauri::command]
+pub fn window_started_hidden() -> bool {
+    STARTED_HIDDEN.load(Ordering::SeqCst)
+}
+
+/// "Start in the tray" on or off: kept as a file the next start reads before the page loads.
+#[tauri::command]
+pub fn tray_set_start_hidden<R: Runtime>(app: AppHandle<R>, on: bool) -> Result<(), String> {
+    let dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let file = start_hidden_file(&dir);
+    if on {
+        std::fs::write(&file, b"1").map_err(|e| e.to_string())
+    } else {
+        match std::fs::remove_file(&file) {
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e.to_string()),
+            _ => Ok(()),
         }
     }
 }

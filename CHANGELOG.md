@@ -6,6 +6,9 @@ minor releases can change behavior.
 ## Unreleased
 
 ### Added
+- **Start in the tray** (Settings → Notifications & sounds → Closing the window, computers,
+  this device only): the app starts without opening its window; open it from the tray icon.
+  Without a tray icon on the system, the window opens as usual.
 - **Notification center, top left** (apart from the other buttons; on phones at the left of the
   title bar): only what wants something from you or matters for longer: friend requests (new:
   the app didn't notice them before), invites, invite requests, new and lost friends, a free

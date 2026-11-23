@@ -315,6 +315,7 @@ export const defaultSettings = (): Settings => ({
   sounds: defaultSounds(),
   notify: defaultNotify(),
   closeAction: "ask",
+  startInTray: false,
   wheelFix: false,
   age: { enabled: true, readLinks: false, warnRequests: true, linkDepth: 1, maxPages: 10, socials: true, fxTwitter: false },
   updates: { check: true, skipped: "" },
@@ -741,6 +742,7 @@ export function normalizeSettings(raw: Raw | null): Settings {
     },
     notify: normalizeNotify(raw.notify, snd),
     closeAction: oneOf(raw.closeAction, ["ask", "tray", "quit"] as const, d.closeAction),
+    startInTray: raw.startInTray === true,
     wheelFix: typeof raw.wheelFix === "boolean" ? raw.wheelFix : d.wheelFix,
     updates: {
       check: typeof raw.updates?.check === "boolean" ? raw.updates.check : d.updates.check,
