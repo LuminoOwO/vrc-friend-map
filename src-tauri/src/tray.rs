@@ -239,14 +239,36 @@ fn start_hidden_file(data_dir: &std::path::Path) -> std::path::PathBuf {
     data_dir.join("start-in-tray")
 }
 
-/// At start (desktop): the window is created hidden (platform configs); show it unless
-/// "Start in the tray" is on and there is a tray icon to bring it back with.
-pub fn startup_window<R: Runtime>(app: &AppHandle<R>, data_dir: &std::path::Path) {
-    let hidden = AVAILABLE.load(Ordering::SeqCst) && start_hidden_file(data_dir).exists();
-    if hidden {
-        STARTED_HIDDEN.store(true, Ordering::SeqCst);
-    } else if let Some(w) = app.get_webview_window("main") {
-        let _ = w.show();
+/// At start (desktop): create the main window (the platform configs say `"create": false`),
+/// hidden only when "Start in the tray" is on and there is a tray icon to bring it back with.
+/// It must be *created* visible otherwise: a Chromium (CEF) window created hidden and shown
+/// later on Linux never got the keyboard (clicks worked, no key reached the page; 0.14.0).
+pub fn startup_window<R: Runtime>(app: &AppHandle<R>, data_dir: Option<&std::path::Path>) {
+    let hidden = AVAILABLE.load(Ordering::SeqCst) && data_dir.is_some_and(|d| start_hidden_file(d).exists());
+    STARTED_HIDDEN.store(hidden, Ordering::SeqCst);
+    let w = match app.get_webview_window("main") {
+        Some(w) => {
+            if !hidden {
+                let _ = w.show();
+            }
+            Some(w)
+        }
+        None => app
+            .config()
+            .app
+            .windows
+            .iter()
+            .find(|c| c.label == "main")
+            .cloned()
+            .and_then(|c| match tauri::WebviewWindowBuilder::from_config(app, &c).and_then(|b| b.visible(!hidden).build()) {
+                Ok(w) => Some(w),
+                Err(e) => {
+                    eprintln!("can't create the main window: {e}");
+                    None
+                }
+            }),
+    };
+    if let (Some(w), false) = (w, hidden) {
         let _ = w.set_focus();
     }
 }

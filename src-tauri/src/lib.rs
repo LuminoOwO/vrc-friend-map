@@ -871,11 +871,7 @@ pub fn run() {
             #[cfg(desktop)]
             tray::setup(app.handle());
             #[cfg(desktop)]
-            if let Ok(dir) = app.path().app_data_dir() {
-                tray::startup_window(app.handle(), &dir);
-            } else if let Some(w) = app.get_webview_window("main") {
-                let _ = w.show();
-            }
+            tray::startup_window(app.handle(), app.path().app_data_dir().ok().as_deref());
             {
                 let handle = app.handle().clone();
                 single::on_show(move || {

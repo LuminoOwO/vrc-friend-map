@@ -1011,6 +1011,7 @@ export function compareVersions(a: string, b: string): number {
 }
 
 const WHATS_NEW: Record<string, string> = {
+  "0.14.1": "typing works again in the Linux app (Chromium build): since 0.14.0 no key reached the page.",
   "0.14.0": "a notification center for friend requests and invites, Online times (who was on when, a timeline you can drag and zoom, typical weeks, overlaps with yours, filled in by your server's logger), who's here in the bottom bar with a mutual-friends filter, a Blocked people list, friend groups and shared lists on the map, starting in the tray, faster pictures and profiles, keyboard control of the map, and the new logo.",
   "0.13.0": "the new interface for everyone (classic stays in Settings), a phone layout in the same look with Party and Menu tabs and full-screen profiles, a darker Dark theme, a smoother map and loading placeholders.",
   "0.12.4": "switching between the classic and the beta UI works again (each device keeps its own choice), and the Linux fixes for focus, the mouse wheel and dropdowns.",
