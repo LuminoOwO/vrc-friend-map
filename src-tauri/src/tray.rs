@@ -145,7 +145,7 @@ pub fn show_main<R: Runtime>(app: &AppHandle<R>) {
         #[cfg(desktop)]
         let _ = w.unminimize();
         let _ = w.show();
-        let _ = w.set_focus();
+        focus_main(&w);
         // The page pauses drawing while hidden (src/appvisible.ts).
         let _ = w.emit("window-shown", ());
     }
@@ -243,6 +243,11 @@ fn start_hidden_file(data_dir: &std::path::Path) -> std::path::PathBuf {
 /// hidden only when "Start in the tray" is on and there is a tray icon to bring it back with.
 /// It must be *created* visible otherwise: a Chromium (CEF) window created hidden and shown
 /// later on Linux never got the keyboard (clicks worked, no key reached the page; 0.14.0).
+/// Chromium on Linux only hands the keyboard to a page whose window was created visible (one
+/// created hidden and shown later took clicks but no keys), so there "Start in the tray" creates
+/// the window visible and hides it right away.
+const CREATE_VISIBLE: bool = cfg!(all(target_os = "linux", feature = "chromium"));
+
 pub fn startup_window<R: Runtime>(app: &AppHandle<R>, data_dir: Option<&std::path::Path>) {
     let hidden = AVAILABLE.load(Ordering::SeqCst) && data_dir.is_some_and(|d| start_hidden_file(d).exists());
     STARTED_HIDDEN.store(hidden, Ordering::SeqCst);
@@ -260,8 +265,13 @@ pub fn startup_window<R: Runtime>(app: &AppHandle<R>, data_dir: Option<&std::pat
             .iter()
             .find(|c| c.label == "main")
             .cloned()
-            .and_then(|c| match tauri::WebviewWindowBuilder::from_config(app, &c).and_then(|b| b.visible(!hidden).build()) {
-                Ok(w) => Some(w),
+            .and_then(|c| match tauri::WebviewWindowBuilder::from_config(app, &c).and_then(|b| b.visible(!hidden || CREATE_VISIBLE).build()) {
+                Ok(w) => {
+                    if hidden && CREATE_VISIBLE {
+                        let _ = w.hide();
+                    }
+                    Some(w)
+                }
                 Err(e) => {
                     eprintln!("can't create the main window: {e}");
                     None
@@ -269,8 +279,19 @@ pub fn startup_window<R: Runtime>(app: &AppHandle<R>, data_dir: Option<&std::pat
             }),
     };
     if let (Some(w), false) = (w, hidden) {
-        let _ = w.set_focus();
+        focus_main(&w);
     }
+}
+
+/// Bring the main window to the front. Not in the Chromium build on Linux: there, the window
+/// focus call (raise + focus through winit) left the keyboard with the window itself, so clicks
+/// still reached the page but no key did, not even Esc (0.14.0). Showing the window is enough:
+/// the window manager focuses it, and Chromium then gets the keyboard as usual.
+fn focus_main<R: Runtime>(w: &WebviewWindow<R>) {
+    #[cfg(not(all(target_os = "linux", feature = "chromium")))]
+    let _ = w.set_focus();
+    #[cfg(all(target_os = "linux", feature = "chromium"))]
+    let _ = w;
 }
 
 /// Whether the window is still hidden after starting in the tray (the page then draws nothing).

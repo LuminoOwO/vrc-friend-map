@@ -7,9 +7,11 @@ minor releases can change behavior.
 
 ### Fixed
 - **Linux (Chromium build): typing didn't work anywhere in the app** (no key reached it, not even
-  Esc; clicking still worked). Since 0.14.0 the window was created hidden and shown a moment
-  later (for "Start in the tray"), and Chromium on Linux then never handed the keyboard to the
-  page. The window is now created visible again, and hidden only when "Start in the tray" is on.
+  Esc; clicking still worked). Two things from "Start in the tray" in 0.14.0 caused it: the
+  window was created hidden and shown later, and the app then pulled the focus to the window
+  itself. Chromium on Linux gets the keyboard only from a window that was created visible and
+  that the window manager focuses. Now the window is always created visible (with "Start in the
+  tray" it hides again right away), and the Linux Chromium build no longer pulls the focus itself.
 
 ## 0.14.0 (2026-11-23)
 
